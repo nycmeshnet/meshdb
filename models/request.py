@@ -13,7 +13,7 @@ class request(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     status: Mapped[str] = mapped_column(String(45))
-    TicketId: Mapped[int] = mapped_column()
-    memberId: Mapped[int] = mapped_column(ForeignKey("members.id"), nullable=True)
-    buildingId: Mapped[int] = mapped_column(ForeignKey("buildings.id"), nullable=True)
-    installId: Mapped[int] = mapped_column(ForeignKey("installs.id"), nullable=True)
+    ticketid: Mapped[int] = mapped_column()
+    memberid: Mapped[int] = mapped_column(ForeignKey("members.id"), nullable=True)
+    buildingid: Mapped[int] = mapped_column(ForeignKey("buildings.id"), nullable=True)
+    installid: Mapped[int] = mapped_column(ForeignKey("installs.id"), nullable=True)

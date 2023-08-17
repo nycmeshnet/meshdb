@@ -14,16 +14,16 @@ class building(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     status: Mapped[str] = mapped_column(String(45))
-    streetAddress: Mapped[str] = mapped_column(TEXT)
+    streetaddress: Mapped[str] = mapped_column(TEXT)
     city: Mapped[str] = mapped_column(String(45))
     state: Mapped[str] = mapped_column(String(45))
-    zipCode: Mapped[int] = mapped_column()
+    zipcode: Mapped[int] = mapped_column()
     latitude: Mapped[float] = mapped_column()
     longitude: Mapped[float] = mapped_column()
     altitude: Mapped[float] = mapped_column()
 
 
-    networkNumber: Mapped[int] = mapped_column(nullable=True)
-    installDate: Mapped[datetime.date] = mapped_column(nullable=True)
-    abandonDate: Mapped[datetime.date] = mapped_column(nullable=True)
-    panoramaImage: Mapped[str] = mapped_column(TEXT, nullable=True)
+    networknumber: Mapped[int] = mapped_column(nullable=True)
+    installdate: Mapped[datetime.date] = mapped_column(nullable=True)
+    abandondate: Mapped[datetime.date] = mapped_column(nullable=True)
+    panoramaimage: Mapped[str] = mapped_column(TEXT, nullable=True)

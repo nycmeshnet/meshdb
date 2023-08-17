@@ -8,10 +8,10 @@ from sqlalchemy.orm import relationship
 import datetime
 from models.baseModel import Base
 
-class request(Base):
+class install(Base):
     __tablename__ = "installs"
 
     id: Mapped[int] = mapped_column(primary_key=True)
     status: Mapped[str] = mapped_column(String(45))
-    buildingId: Mapped[int] = mapped_column(ForeignKey("buildings.id"))
-    memberId: Mapped[int] = mapped_column(ForeignKey("members.id"))
+    buildingid: Mapped[int] = mapped_column(ForeignKey("buildings.id"))
+    memberid: Mapped[int] = mapped_column(ForeignKey("members.id"))
