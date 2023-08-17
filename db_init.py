@@ -1,33 +1,29 @@
+import variables
+from sqlalchemy_utils import database_exists, create_database
 
 
-# returns true if DB is present, false if DB is not
-def initDB(base):
-    import psycopg
-    import sys
-    import variables
-    try:
-        with psycopg.connect(
-        host=variables.db_host,
-        user=variables.db_user,
-        password=variables.db_password) as conn:
-            cur = conn.cursor()
-            cur.execute("select relname from pg_class where relkind='r' and relname !~ '^(pg_|sql_)';")
-            if variables.db_host in cur.fetchall():
-                return True
-            else:
-                return False
-            
-    except:
-        return "Error"
-    
+##MODELS NEED TO BE IMPORTED HERE
+import models.baseModel
+import models.building
+import models.member
+import models.request
+import models.baseModel
+import models.install
+
+
+
+from sqlalchemy import create_engine
 
 def main():
-    import models.building
-    import models.install
-    import models.member
-    import models.request
-    import models.baseModel
-    from sqlalchemy import create_engine
 
-    engine = create_engine("postgresql://", echo=True)
+    engine = create_engine("postgresql://{}:{}@{}/{}".format(variables.db_user,
+                                                             variables.db_password,
+                                                             variables.db_host,
+                                                             variables.db_name), echo=True)
+    if not database_exists(engine.url):
+        create_database(engine.url)
+    print(database_exists(engine.url))
     models.baseModel.Base.metadata.create_all(engine)
+
+if __name__ == "__main__":
+    main()
