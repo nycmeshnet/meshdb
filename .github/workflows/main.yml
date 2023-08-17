@@ -1,0 +1,20 @@
+name: Deploy on push
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Install SSH key
+      uses: shimataro/ssh-key-action@v2
+      with:
+        key: ${{ secrets.NYCMESH_713_APT_DEV_1 }}
+        name: id_rsa # optional
+        known_hosts: ${{ secrets.KNOWN_HOSTS }}
+        config: ${{ secrets.CONFIG }} # ssh_config; optional
+        if_key_exists: fail # replace / ignore / fail; optional (defaults to fail)
+    - name: Pull
+      run: ssh support@199.170.132.102 "cd /home/support/nycmesh-databse && /usr/bin/git reset --hard HEAD && /usr/bin/git pull"
