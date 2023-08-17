@@ -13,6 +13,7 @@ import models.install
 
 
 from sqlalchemy import create_engine
+    
 
 def main():
 
@@ -20,6 +21,7 @@ def main():
                                                              variables.db_password,
                                                              variables.db_host,
                                                              variables.db_name), echo=True)
+
     if not database_exists(engine.url):
         create_database(engine.url)
     print(database_exists(engine.url))
