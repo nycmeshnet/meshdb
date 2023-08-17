@@ -17,4 +17,4 @@ jobs:
         config: ${{ secrets.CONFIG }} # ssh_config; optional
         if_key_exists: fail # replace / ignore / fail; optional (defaults to fail)
     - name: Pull
-      run: ssh support@199.170.132.102 "cd /home/support/nycmesh-databse && /usr/bin/git reset --hard HEAD && /usr/bin/git pull"
+      run: ssh support@199.170.132.102 "cd /home/support/nycmesh-database && /usr/bin/git reset --hard HEAD && /usr/bin/git pull"
