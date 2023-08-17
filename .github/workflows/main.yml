@@ -11,7 +11,7 @@ jobs:
     - name: Install SSH key
       uses: shimataro/ssh-key-action@v2
       with:
-        key: ${{ secrets.NYCMESH_713_APT_DEV_1 }}
+        key: ${{ secrets.NYCMESH_713_API_DEV_1 }}
         name: id_rsa # optional
         known_hosts: ${{ secrets.KNOWN_HOSTS }}
         config: ${{ secrets.CONFIG }} # ssh_config; optional
