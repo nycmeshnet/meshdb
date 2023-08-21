@@ -3,21 +3,14 @@ from models.install import install
 from models.member import member
 from models.request import request
 from sqlalchemy import select
-from sqlalchemy.orm import Session
 import variables
-from sqlalchemy import create_engine
+from db.database import create_db_engine, executeQuery
 
 
 #execute query
 
-db_engine = create_engine("postgresql://{}:{}@{}/{}".format(variables.db_user,
-                                                             variables.db_password,
-                                                             variables.db_host,
-                                                             variables.db_name), echo=True)
+db_engine = create_db_engine()
 
-def executeQuery(statement, engine):
-    with Session(engine) as session:
-        return session.execute(statement)
     
 
 # returns list of dicts for each member
@@ -30,7 +23,7 @@ def getMembers():
                member.emailaddress,
                member.slackhandle)
     )
-    result = executeQuery(stmt,db_engine)
+    result = executeQuery(stmt, db_engine)
     baselist = []
     for row in result.all():
         baselist.append(dict(zip(result.keys(), row)))
@@ -53,3 +46,4 @@ def getMemberByID(memberId):
     except:
        raise ValueError("Member does not exist")
     return response
+
