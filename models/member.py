@@ -12,8 +12,8 @@ class member(Base):
     __tablename__ = "members"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    firstname: Mapped[str] = mapped_column(String(45))
-    lastname: Mapped[str] = mapped_column(String(45))
-    emailaddress: Mapped[str] = mapped_column(String(45))
-    phonenumber: Mapped[str] = mapped_column(String(20), nullable=True)
-    slackhandle: Mapped[str] = mapped_column(String(45), nullable=True)
+    first_name: Mapped[str] = mapped_column(String(45))
+    last_name: Mapped[str] = mapped_column(String(45))
+    email_address: Mapped[str] = mapped_column(String(45))
+    phone_number: Mapped[str] = mapped_column(String(20), nullable=True)
+    slack_handle: Mapped[str] = mapped_column(String(45), nullable=True)
