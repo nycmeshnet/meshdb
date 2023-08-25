@@ -9,20 +9,19 @@ from db.database import create_db_engine, executeQuery
 import stringcase
 
 
-
 db_engine = create_db_engine()
 
 # returns list of dicts for each member
 
 
 def getMembers():
-    stmt = (
-        select(member.id,
-               member.first_name,
-               member.last_name,
-               member.email_address,
-               member.phone_number,
-               member.slack_handle)
+    stmt = select(
+        member.id,
+        member.first_name,
+        member.last_name,
+        member.email_address,
+        member.phone_number,
+        member.slack_handle,
     )
     result = executeQuery(stmt, db_engine)
     baselist = []
@@ -31,9 +30,27 @@ def getMembers():
     return baselist
 
 
-#returns one member dict for a given member ID
+# returns one member dict for a given member ID
+
 
 def getMemberByID(memberId):
+    stmt = select(
+        member.id,
+        member.first_name,
+        member.last_name,
+        member.email_address,
+        member.phone_number,
+        member.slack_handle,
+    ).where(member.id == memberId)
+    result = executeQuery(stmt, db_engine)
+    try:
+        response = dict(zip(result.keys(), result.one()))
+    except:
+        raise ValueError("Member does not exist")
+    return response
+
+
+def getMemberByName(firstName, lastName):
     stmt = (
         select(
             member.id,
@@ -41,28 +58,12 @@ def getMemberByID(memberId):
             member.last_name,
             member.email_address,
             member.phone_number,
-            member.slack_handle)
-            .where(member.id == memberId)
+            member.slack_handle,
+        )
+        .where(member.first_name == firstName)
+        .where(member.lastname == lastName)
     )
-    result = executeQuery(stmt,db_engine)
-    try:
-        response = dict(zip(result.keys(), result.one()))
-    except:
-       raise ValueError("Member does not exist")
-    return response
-
-def getMemberByName(firstName, lastName):
-    stmt = (
-            select(
-            member.id,
-            member.first_name,
-            member.last_name,
-            member.email_address,
-            member.phone_number,
-            member.slack_handle
-        ).where(member.first_name == firstName).where(member.lastname == lastName)
-    )
-    result = executeQuery(stmt,db_engine)
+    result = executeQuery(stmt, db_engine)
     resultkeys = result.keys()
     resultall = result.all()
     if len(resultall) == 0:
@@ -100,8 +101,9 @@ def getMemberDetailsByID(memberID):
             building.network_number,
             building.install_date,
             building.abandon_date,
-            building.panorama_image
-        ).where(member.id == memberID)
+            building.panorama_image,
+        )
+        .where(member.id == memberID)
         .join(install, member.id == install.member_id)
         .join(building, install.building_id == building.id)
     )
@@ -111,27 +113,28 @@ def getMemberDetailsByID(memberID):
     except:
         raise ValueError("Member does not exist")
     returndict = {
-             'firstName': response['first_name'],
-             'lastName': response['last_name'],
-             'emailAddress': response['email_address'],
-             'phoneNumber': response['phone_number'],
-             'install': {
-                 'installNumber': response['building_id'],
-                 'status': response['install_status'],
-                },
-            'building': {
-                'networkNumber': response['network_number'],
-                'buildingStatus': response['building_status'],
-                'streetAddress': response['street_address'],
-                'city': response['city'],
-                'state': response['state'],
-                'zipCode': response['zip_code'],
-                'latitude': response['latitude'],
-                'longitude': response['longitude'],
-                'altitude': response['altitude']
-            }
-        }
-    return returndict   
+        "firstName": response["first_name"],
+        "lastName": response["last_name"],
+        "emailAddress": response["email_address"],
+        "phoneNumber": response["phone_number"],
+        "install": {
+            "installNumber": response["building_id"],
+            "status": response["install_status"],
+        },
+        "building": {
+            "networkNumber": response["network_number"],
+            "buildingStatus": response["building_status"],
+            "streetAddress": response["street_address"],
+            "city": response["city"],
+            "state": response["state"],
+            "zipCode": response["zip_code"],
+            "latitude": response["latitude"],
+            "longitude": response["longitude"],
+            "altitude": response["altitude"],
+        },
+    }
+    return returndict
+
 
 def createNewMember(**kwargs):
     newMember = member
@@ -140,5 +143,3 @@ def createNewMember(**kwargs):
     with Session(db_engine) as session:
         session.add_all([member])
         session.commit()
-    
-    
