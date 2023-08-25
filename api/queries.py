@@ -7,21 +7,21 @@ import variables
 from db.database import create_db_engine, executeQuery
 
 
-#execute query
+# execute query
 
 db_engine = create_db_engine()
 
-    
 
 # returns list of dicts for each member
 
+
 def getMembers():
-    stmt = (
-        select(member.id,
-               member.firstname,
-               member.lastname,
-               member.emailaddress,
-               member.slackhandle)
+    stmt = select(
+        member.id,
+        member.firstname,
+        member.lastname,
+        member.emailaddress,
+        member.slackhandle,
     )
     result = executeQuery(stmt, db_engine)
     baselist = []
@@ -30,20 +30,16 @@ def getMembers():
     return baselist
 
 
-#returns one member dict for a given member ID
+# returns one member dict for a given member ID
+
 
 def getMemberByID(memberId):
-    stmt = (
-        select(member.id,
-               member.firstname,
-               member.lastname,
-               member.emailaddress)
-               .where(member.id == memberId)
-    )
-    result = executeQuery(stmt,db_engine)
+    stmt = select(
+        member.id, member.firstname, member.lastname, member.emailaddress
+    ).where(member.id == memberId)
+    result = executeQuery(stmt, db_engine)
     try:
         response = dict(zip(result.keys(), result.one()))
     except:
-       raise ValueError("Member does not exist")
+        raise ValueError("Member does not exist")
     return response
-

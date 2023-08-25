@@ -8,6 +8,7 @@ from sqlalchemy.orm import relationship
 import datetime
 from models.baseModel import Base
 
+
 class install(Base):
     __tablename__ = "installs"
 
