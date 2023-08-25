@@ -22,4 +22,3 @@ def apiGetMemberById(id):
         return queries.getMemberByID(id)
     except:
         return "Member does not exist", 404
-
