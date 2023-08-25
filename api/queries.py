@@ -187,10 +187,12 @@ def getMemberDetailsByID(memberID):
     return returndict
 
 
-def createNewMember(**kwargs):
-    newMember = member
-    for key, value in kwargs:
-        setattr(member, key, value)
+def createNewMember(input):
+    newDict = {}
+    for key, value in input.items():
+        newDict[stringcase.snakecase(key)] =value
+    newMember = member(**newDict)
     with Session(db_engine) as session:
-        session.add_all([member])
+        session.add_all([newMember])
         session.commit()
+    return "OK"

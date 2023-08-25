@@ -66,8 +66,8 @@ def apiGetMemberDetailsByID(id):
 
 @app.route("/addMember", methods=["POST"])
 def apiAddMember():
-    try:
-        queries.createNewMember(**request.args)
-        return 200
+    try:   
+        queries.createNewMember(request.get_json())
+        return "OK", 200
     except:
         return "Error", 500
