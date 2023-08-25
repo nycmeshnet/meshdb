@@ -190,7 +190,7 @@ def getMemberDetailsByID(memberID):
 def createNewMember(input):
     newDict = {}
     for key, value in input.items():
-        newDict[stringcase.snakecase(key)] =value
+        newDict[stringcase.snakecase(key)] = value
     newMember = member(**newDict)
     with Session(db_engine) as session:
         session.add_all([newMember])

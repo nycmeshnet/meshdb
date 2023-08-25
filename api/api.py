@@ -68,11 +68,11 @@ def apiGetMemberDetailsByID(id):
 def apiAddMember():
     token = request.headers["token"]
     try:
-        permission = authenticate.getRolePermission(token, 'put')
+        permission = authenticate.getRolePermission(token, "put")
     except:
         return "Forbidden", 403
     if permission == True:
-        try:   
+        try:
             queries.createNewMember(request.get_json())
             return "OK", 200
         except:
