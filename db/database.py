@@ -1,15 +1,17 @@
 from sqlalchemy import create_engine
 import variables
 from sqlalchemy.orm import Session
+from dotenv import load_dotenv
 
 
 def create_db_engine():
+    load_dotenv() # Load .env file (FIXME: Probably move to somewhere less stupid)
     return create_engine(
         "postgresql://{}:{}@{}/{}".format(
-            variables.db_user,
-            variables.db_password,
-            variables.db_host,
-            variables.db_name,
+            os.getenv(DB_USER),
+            os.getenv(DB_PASSWORD),
+            os.getenv(DB_HOST),
+            os.getenv(DB_NAME),
         ),
         echo=True,
     )
