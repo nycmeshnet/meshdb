@@ -4,17 +4,16 @@ import json
 from auth import authenticate
 
 
-
 app = Flask(__name__)
 app.json.sort_keys = False
 
 
-
-@app.route('/getMembers', methods=['GET'])
+@app.route("/getMembers", methods=["GET"])
 def apiGetMembers():
-    return (queries.getMembers())
+    return queries.getMembers()
 
-@app.route('/getMemberById/<id>', methods=['GET'])
+
+@app.route("/getMemberById/<id>", methods=["GET"])
 def apiGetMemberById(id):
     try:
         return queries.getMemberByID(id)
