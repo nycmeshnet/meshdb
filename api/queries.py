@@ -25,7 +25,21 @@ def getMembers():
     result = executeQuery(stmt, db_engine)
     baselist = []
     for row in result.all():
-        baselist.append(dict(zip(result.keys(), row)))
+        baselist.append(
+            dict(
+                zip(
+                    [
+                        "id",
+                        "firstName",
+                        "lastName",
+                        "emailAddress",
+                        "phoneNumber",
+                        "slackHandle",
+                    ],
+                    row,
+                )
+            )
+        )
     return baselist
 
 
@@ -43,7 +57,19 @@ def getMemberByID(memberId):
     ).where(member.id == memberId)
     result = executeQuery(stmt, db_engine)
     try:
-        response = dict(zip(result.keys(), result.one()))
+        response = dict(
+            zip(
+                [
+                    "id",
+                    "firstName",
+                    "lastName",
+                    "emailAddress",
+                    "phoneNumber",
+                    "slackHandle",
+                ],
+                result.one(),
+            )
+        )
     except:
         raise ValueError("Member does not exist")
     return response
@@ -68,12 +94,38 @@ def getMemberByName(firstName, lastName):
     if len(resultall) == 0:
         return False
     elif len(resultall) == 1:
-        response = dict(zip(resultkeys, resultall[0]))
+        response = dict(
+            zip(
+                [
+                    "id",
+                    "firstName",
+                    "lastName",
+                    "emailAddress",
+                    "phoneNumber",
+                    "slackHandle",
+                ],
+                resultall[0],
+            )
+        )
         return response
     else:
         baselist = []
         for row in resultall:
-            baselist.append(dict(zip(resultkeys, row)))
+            baselist.append(
+                dict(
+                    zip(
+                        [
+                            "id",
+                            "firstName",
+                            "lastName",
+                            "emailAddress",
+                            "phoneNumber",
+                            "slackHandle",
+                        ],
+                        row,
+                    )
+                )
+            )
         return baselist
 
 

@@ -48,7 +48,7 @@ def apiGetMemberById(id):
         return "Member not found", 404
 
 
-@app.route("/getMemberDetailsByID/<id>", methods=["GET"])
+@app.route("/getMemberDetailsById/<id>", methods=["GET"])
 def apiGetMemberDetailsByID(id):
     token = request.headers["token"]
     try:
