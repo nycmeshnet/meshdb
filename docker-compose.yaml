@@ -1,6 +1,19 @@
 version: '3'
 services:
+  postgres:
+    networks:
+      - api
+    image: docker.io/postgres:latest
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER} 
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
   meshdb:
+    depends_on:
+      - postgres
     networks:
       - api
     build:
@@ -14,17 +27,8 @@ services:
       DB_USER: ${DB_USER}
       DB_HOST: 'postgres'
       DB_PASSWORD: ${DB_PASSWORD}
-
-  postgres:
-    networks:
-      - api
-    image: docker.io/postgres:latest
-    environment:
-      POSTGRES_DB: ${DB_NAME}
-      POSTGRES_USER: ${DB_USER} 
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
+    # Gross
+    entrypoint: ["sh", "-c", "sleep 5 && gunicorn api:app --bind=0.0.0.0:8080"]
 
 volumes:
   postgres_data:
