@@ -7,4 +7,4 @@ RUN pip install -r requirements.txt
 # FIXME: This probably isn't the file structure we want.
 COPY . .
 
-ENTRYPOINT flask --app api.api run
+ENTRYPOINT gunicorn api:app --bind=0.0.0.0:8080

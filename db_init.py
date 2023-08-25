@@ -1,4 +1,3 @@
-import variables
 from sqlalchemy_utils import database_exists, create_database
 from db.database import create_db_engine
 
