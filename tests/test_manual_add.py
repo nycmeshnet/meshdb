@@ -5,6 +5,7 @@ from models.building import building
 from models.install import install
 from db.database import create_db_engine
 
+
 def test_data():
     engine = create_db_engine()
     with Session(engine) as session:
