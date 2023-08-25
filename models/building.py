@@ -22,7 +22,6 @@ class building(Base):
     longitude: Mapped[float] = mapped_column()
     altitude: Mapped[float] = mapped_column()
 
-
     network_number: Mapped[int] = mapped_column(nullable=True)
     install_date: Mapped[datetime.date] = mapped_column(nullable=True)
     abandon_date: Mapped[datetime.date] = mapped_column(nullable=True)
