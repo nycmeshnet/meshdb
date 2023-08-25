@@ -13,16 +13,17 @@ class building(Base):
     __tablename__ = "buildings"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    status: Mapped[str] = mapped_column(String(45))
-    streetaddress: Mapped[str] = mapped_column(TEXT)
+    building_status: Mapped[str] = mapped_column(String(45))
+    street_address: Mapped[str] = mapped_column(TEXT)
     city: Mapped[str] = mapped_column(String(45))
     state: Mapped[str] = mapped_column(String(45))
-    zipcode: Mapped[int] = mapped_column()
+    zip_code: Mapped[int] = mapped_column()
     latitude: Mapped[float] = mapped_column()
     longitude: Mapped[float] = mapped_column()
     altitude: Mapped[float] = mapped_column()
 
-    networknumber: Mapped[int] = mapped_column(nullable=True)
-    installdate: Mapped[datetime.date] = mapped_column(nullable=True)
-    abandondate: Mapped[datetime.date] = mapped_column(nullable=True)
-    panoramaimage: Mapped[str] = mapped_column(TEXT, nullable=True)
+
+    network_number: Mapped[int] = mapped_column(nullable=True)
+    install_date: Mapped[datetime.date] = mapped_column(nullable=True)
+    abandon_date: Mapped[datetime.date] = mapped_column(nullable=True)
+    panorama_image: Mapped[str] = mapped_column(TEXT, nullable=True)
