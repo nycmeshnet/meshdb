@@ -142,6 +142,7 @@ def getMemberDetailsByID(memberID):
             install.building_id,
             install.install_status,
             building.street_address,
+            building.bin,
             building.building_status,
             building.city,
             building.state,
@@ -174,6 +175,7 @@ def getMemberDetailsByID(memberID):
         },
         "building": {
             "networkNumber": response["network_number"],
+            "bin": response["bin"],
             "buildingStatus": response["building_status"],
             "streetAddress": response["street_address"],
             "city": response["city"],
