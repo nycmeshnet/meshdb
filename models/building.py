@@ -13,6 +13,7 @@ class building(Base):
     __tablename__ = "buildings"
 
     id: Mapped[int] = mapped_column(primary_key=True)
+    bin: Mapped[int] = mapped_column()
     building_status: Mapped[str] = mapped_column(String(45))
     street_address: Mapped[str] = mapped_column(TEXT)
     city: Mapped[str] = mapped_column(String(45))
