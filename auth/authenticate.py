@@ -1,5 +1,4 @@
 from sqlalchemy import create_engine
-import variables
 from db.database import create_db_engine, executeQuery
 from auth.token import authToken
 from auth.token import userRole

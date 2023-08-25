@@ -3,7 +3,6 @@ from models.install import install
 from models.member import member
 from models.request import request
 from sqlalchemy import select
-import variables
 from sqlalchemy.orm import Session
 from db.database import create_db_engine, executeQuery
 import stringcase
