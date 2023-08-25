@@ -13,17 +13,18 @@ import models.install
 import auth.token
 
 
-from sqlalchemy import create_engine
 
+from sqlalchemy import create_engine
+    
 
 def main():
+
     engine = create_db_engine()
 
     if not database_exists(engine.url):
         create_database(engine.url)
     print(database_exists(engine.url))
     models.baseModel.Base.metadata.create_all(engine)
-
 
 if __name__ == "__main__":
     main()
