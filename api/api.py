@@ -66,8 +66,16 @@ def apiGetMemberDetailsByID(id):
 
 @app.route("/addMember", methods=["POST"])
 def apiAddMember():
-    try:   
-        queries.createNewMember(request.get_json())
-        return "OK", 200
+    token = request.headers["token"]
+    try:
+        permission = authenticate.getRolePermission(token, 'put')
     except:
-        return "Error", 500
+        return "Forbidden", 403
+    if permission == True:
+        try:   
+            queries.createNewMember(request.get_json())
+            return "OK", 200
+        except:
+            return "Error", 500
+    else:
+        return "Forbidden", 403
