@@ -12,7 +12,7 @@ app.json.sort_keys = False
 def apiGetMembers():
     token = request.headers["token"]
     try:
-        permission = authenticate.getRolePermission(token, "seemembers")
+        permission = authenticate.getRolePermission(token, "see_members")
     except:
         return "Forbidden", 403
     if permission == True:
@@ -25,7 +25,7 @@ def apiGetMembers():
 def apiGetMemberByName():
     token = request.headers["token"]
     try:
-        permission = authenticate.getRolePermission(token, "seemembers")
+        permission = authenticate.getRolePermission(token, "see_members")
     except:
         return "Forbidden", 403
     if permission == True:
@@ -52,7 +52,7 @@ def apiGetMemberById(id):
 def apiGetMemberDetailsByID(id):
     token = request.headers["token"]
     try:
-        permission = authenticate.getRolePermission(token, "seemembers")
+        permission = authenticate.getRolePermission(token, "see_members")
     except:
         return "Forbidden", 403
     if permission == True:
@@ -64,7 +64,7 @@ def apiGetMemberDetailsByID(id):
         return "Forbidden", 403
 
 
-@app.route("/addMember", methods="POST")
+@app.route("/addMember", methods=["POST"])
 def apiAddMember():
     try:
         queries.createNewMember(**request.args)

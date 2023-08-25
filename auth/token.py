@@ -14,7 +14,7 @@ class userRole(Base):
     get: Mapped[bool] = mapped_column()
     put: Mapped[bool] = mapped_column()
     update: Mapped[bool] = mapped_column()
-    seemembers: Mapped[bool] = mapped_column()
+    see_members: Mapped[bool] = mapped_column()
 
 
 class authToken(Base):
