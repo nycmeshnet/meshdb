@@ -1,0 +1,33 @@
+version: '3'
+services:
+  meshdb:
+    networks:
+      - api
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    # Other configuration options for your app service
+    environment:
+      DB_NAME: ${DB_NAME}
+      DB_USER: ${DB_USER}
+      DB_HOST: 'postgres'
+      DB_PASSWORD: ${DB_PASSWORD}
+
+  postgres:
+    networks:
+      - api
+    image: docker.io/postgres:latest
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER} 
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
+
+networks:
+  api:
