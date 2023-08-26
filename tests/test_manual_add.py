@@ -2,11 +2,11 @@ from sqlalchemy.orm import Session
 from sqlalchemy import create_engine, select
 from models.member import member
 from models.building import building
-from models.install import install
+from models.install import install, InstallStatusEnum
 from db.database import create_db_engine
 
 
-def test_data():
+def test_manual_add():
     engine = create_db_engine()
     with Session(engine) as session:
         daniel = member(
@@ -23,10 +23,11 @@ def test_data():
             latitude=40.695140,
             longitude=-73.902410,
             altitude=1,
+            bin=69421
         )
         danielInstall = install(
             install_number=69420,
-            install_status="Active",
+            install_status=InstallStatusEnum.Active,
             building_id="1",
             member_id="1",
         )

@@ -14,3 +14,16 @@ git clone https://github.com/andybaumgar/nycmesh-database
 
 docker-compose up
 ```
+
+## Tests
+
+```
+podman build --tag meshdb_integration -f ./tests/Dockerfile . && podman run --rm -it meshdb_integration
+```
+
+or
+
+```
+cd tests
+podman-compose up # Podman-compose profiles support should be coming soon™
+```
