@@ -13,7 +13,7 @@ class request(Base):
     __tablename__ = "requests"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    request_status: Mapped[str] = mapped_column(String(45))
+    request_status: Mapped[str] = mapped_column(String)
     ticket_id: Mapped[int] = mapped_column()
     member_id: Mapped[int] = mapped_column(ForeignKey("members.id"), nullable=True)
     building_id: Mapped[int] = mapped_column(ForeignKey("buildings.id"), nullable=True)
