@@ -12,18 +12,15 @@ For more information, [check the wiki](http://wiki.mesh.nycmesh.net/books/softwa
 ```
 git clone https://github.com/andybaumgar/nycmesh-database
 
-docker-compose up
+podman-compose up
 ```
 
 ## Tests
 
-```
-podman build --tag meshdb_integration -f ./tests/Dockerfile . && podman run --rm -it meshdb_integration
-```
-
-or
+### Integration Tests
 
 ```
-cd tests
-podman-compose up # Podman-compose profiles support should be coming soon™
+podman-compose up --build
+
+./tests/run_integration.sh
 ```
