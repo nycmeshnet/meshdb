@@ -14,10 +14,10 @@ class building(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     bin: Mapped[int] = mapped_column()
-    building_status: Mapped[str] = mapped_column(String(45))
+    building_status: Mapped[str] = mapped_column(String)
     street_address: Mapped[str] = mapped_column(TEXT)
-    city: Mapped[str] = mapped_column(String(45))
-    state: Mapped[str] = mapped_column(String(45))
+    city: Mapped[str] = mapped_column(String)
+    state: Mapped[str] = mapped_column(String)
     zip_code: Mapped[int] = mapped_column()
     latitude: Mapped[float] = mapped_column()
     longitude: Mapped[float] = mapped_column()
