@@ -1,9 +1,6 @@
 from sqlalchemy import Column, Integer, DateTime, String, Date, TEXT, ForeignKey
-from sqlalchemy.orm import DeclarativeBase
-from sqlalchemy.orm import Mapped
-from sqlalchemy.orm import mapped_column
-from sqlalchemy.orm import relationship
-from models.baseModel import Base
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
+from meshdb.models.baseModel import Base
 
 
 class userRole(Base):

@@ -1,21 +1,21 @@
 from sqlalchemy_utils import database_exists, create_database
-from db.database import create_db_engine
+from meshdb.db.database import create_db_engine
 
 
 ##MODELS NEED TO BE IMPORTED HERE
-import models.baseModel
-import models.building
-import models.member
-import models.request
-import models.baseModel
-import models.install
-import auth.token
+import meshdb.models.baseModel
+import meshdb.models.building
+import meshdb.models.member
+import meshdb.models.request
+import meshdb.models.baseModel
+import meshdb.models.install
+import meshdb.auth.token
 
 
 from sqlalchemy import create_engine
 
 
-def db_init():
+def setup_db():
     engine = create_db_engine()
 
     if not database_exists(engine.url):

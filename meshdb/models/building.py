@@ -8,7 +8,7 @@ from sqlalchemy.orm import Mapped
 from sqlalchemy.orm import mapped_column
 from sqlalchemy.orm import relationship
 import datetime
-from models.baseModel import Base
+from meshdb.models.baseModel import Base
 
 # TODO: Elaborate on this
 class BuildingStatusEnum(Enum):

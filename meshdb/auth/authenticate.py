@@ -1,9 +1,8 @@
-from sqlalchemy import create_engine
-from db.database import create_db_engine, executeQuery
-from auth.token import authToken
-from auth.token import userRole
-from sqlalchemy import select
+from sqlalchemy import create_engine, select
 from sqlalchemy.orm import Session
+from meshdb.auth.token import authToken
+from meshdb.auth.token import userRole
+from meshdb.db.database import create_db_engine, executeQuery
 
 db_engine = create_db_engine()
 

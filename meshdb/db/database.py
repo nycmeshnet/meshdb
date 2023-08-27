@@ -5,6 +5,7 @@ import os
 
 
 def create_db_engine():
+    print("Creating engine...")
     load_dotenv()  # Load .env file (FIXME: Probably move to somewhere less stupid)
     return create_engine(
         "postgresql://{}:{}@{}/{}".format(
@@ -15,7 +16,6 @@ def create_db_engine():
         ),
         echo=True,
     )
-
 
 def executeQuery(statement, db_engine):
     with Session(db_engine) as session:
