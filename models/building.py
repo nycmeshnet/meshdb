@@ -1,6 +1,8 @@
+from enum import Enum
 from typing import List
 from typing import Optional
 from sqlalchemy import Column, Integer, DateTime, String, Date, TEXT
+from sqlalchemy import Enum as SQLAlchemyEnum
 from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy.orm import Mapped
 from sqlalchemy.orm import mapped_column
@@ -9,12 +11,19 @@ import datetime
 from models.baseModel import Base
 
 
+# TODO: Elaborate on this
+class BuildingStatusEnum(Enum):
+    Active = "Active"
+    Inactive = "Inactive"
+
 class building(Base):
     __tablename__ = "buildings"
 
     id: Mapped[int] = mapped_column(primary_key=True)
     bin: Mapped[int] = mapped_column()
-    building_status: Mapped[str] = mapped_column(String(45))
+    building_status: Mapped[BuildingStatusEnum] = mapped_column(
+        SQLAlchemyEnum(BuildingStatusEnum), nullable=False
+    )
     street_address: Mapped[str] = mapped_column(TEXT)
     city: Mapped[str] = mapped_column(String(45))
     state: Mapped[str] = mapped_column(String(45))
