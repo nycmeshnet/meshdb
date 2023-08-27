@@ -16,6 +16,7 @@ class BuildingStatusEnum(Enum):
     Active = "Active"
     Inactive = "Inactive"
 
+
 class building(Base):
     __tablename__ = "buildings"
 

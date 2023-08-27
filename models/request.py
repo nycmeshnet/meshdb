@@ -10,10 +10,12 @@ from sqlalchemy.orm import relationship
 import datetime
 from models.baseModel import Base
 
+
 class RequestStatusEnum(Enum):
     Open = "Open"
     Closed = "Closed"
     Installed = "Installed"
+
 
 class request(Base):
     __tablename__ = "requests"
