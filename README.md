@@ -9,8 +9,26 @@ For more information, [check the wiki](http://wiki.mesh.nycmesh.net/books/softwa
 
 ## Setup
 
-```
+To run a local copy from source code, first clone the package with git and create the expected
+`.env` file (or otherwise configure the environment variables specified in `.env.sample` as 
+appropriate to your environment).
+```sh
 git clone https://github.com/andybaumgar/nycmesh-database
 
-docker-compose up
+cp .env.sample .env
+nano .env # Fill in any missing values
 ```
+
+Finally, start the application and database servers using `docker compose`
+```sh
+docker compose up
+```
+
+After a few minutes for image download & database setup, the development server should be 
+available at `127.0.0.1:8080`:
+```sh
+# Should return "[]" since the database is empty
+curl http://127.0.0.1:8080/getMembers
+```
+
+
