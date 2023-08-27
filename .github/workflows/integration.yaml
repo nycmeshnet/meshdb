@@ -34,16 +34,16 @@ jobs:
             postgres
             meshdb
         env:
-          DB_NAME: nymesh-dev
-          DB_USER: nycmesh
-          DB_HOST: postgres
-          DB_PASSWORD: helloThisIsATest
+          MESHDB_DB_NAME: nymesh-dev
+          MESHDB_DB_USER: nycmesh
+          MESHDB_DB_HOST: postgres
+          MESHDB_DB_PASSWORD: helloThisIsATest
       - name: "Run Integration Test Script"
         run: |
-          env > .env
+          env | grep MESHDB > .env
           ./tests/run_integration.sh -d
         env:
-          DB_NAME: nymesh-dev
-          DB_USER: nycmesh
-          DB_HOST: postgres
-          DB_PASSWORD: helloThisIsATest
+          MESHDB_DB_NAME: nymesh-dev
+          MESHDB_DB_USER: nycmesh
+          MESHDB_DB_HOST: postgres
+          MESHDB_DB_PASSWORD: helloThisIsATest

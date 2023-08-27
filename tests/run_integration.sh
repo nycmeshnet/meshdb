@@ -17,4 +17,4 @@ done
 
 $ct_cmd build --tag meshdb_integration -f ./tests/Dockerfile .
 
-$ct_cmd run --rm --network meshdb_api --env-file=.env -it meshdb_integration:latest
+$ct_cmd run --rm --network meshdb_api --env-file=.env meshdb_integration:latest

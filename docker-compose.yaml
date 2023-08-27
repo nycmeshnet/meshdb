@@ -8,9 +8,9 @@ services:
       - api
     image: docker.io/postgres:latest
     environment:
-      POSTGRES_DB: ${DB_NAME}
-      POSTGRES_USER: ${DB_USER} 
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${MESHDB_DB_NAME}
+      POSTGRES_USER: ${MESHDB_DB_USER} 
+      POSTGRES_PASSWORD: ${MESHDB_DB_PASSWORD}
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
@@ -28,10 +28,10 @@ services:
     ports:
       - "8080:8080"
     environment:
-      DB_NAME: ${DB_NAME}
-      DB_USER: ${DB_USER}
-      DB_HOST: ${DB_HOST}
-      DB_PASSWORD: ${DB_PASSWORD}
+      MESHDB_DB_NAME: ${MESHDB_DB_NAME}
+      MESHDB_DB_USER: ${MESHDB_DB_USER}
+      MESHDB_DB_HOST: ${MESHDB_DB_HOST}
+      MESHDB_DB_PASSWORD: ${MESHDB_DB_PASSWORD}
     # Gross
     entrypoint: ["sh", "-c", "sleep 3 && gunicorn api:app --bind=0.0.0.0:8080"]
 
