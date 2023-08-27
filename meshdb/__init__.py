@@ -1,8 +1,12 @@
 from flask import *
-from api import queries
+from meshdb.db import queries
 import json
-from auth import authenticate
+from meshdb.auth import authenticate
 
+from meshdb.db.setup import setup_db
+
+print("Configuring DB...")
+setup_db()
 
 app = Flask(__name__)
 app.json.sort_keys = False
