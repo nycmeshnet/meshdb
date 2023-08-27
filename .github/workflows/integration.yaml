@@ -40,8 +40,8 @@ jobs:
           DB_PASSWORD: helloThisIsATest
       - name: "Run Integration Test Script"
         run: |
-          pip install -r tests/requirements.txt
-          PYTHONPATH=. pytest .
+          env > .env
+          ./tests/run_integration.sh -d
         env:
           DB_NAME: nymesh-dev
           DB_USER: nycmesh
