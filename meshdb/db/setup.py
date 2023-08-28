@@ -21,4 +21,4 @@ def setup_db():
     if not database_exists(engine.url):
         create_database(engine.url)
     print(database_exists(engine.url))
-    models.baseModel.Base.metadata.create_all(engine)
+    meshdb.models.baseModel.Base.metadata.create_all(engine)
