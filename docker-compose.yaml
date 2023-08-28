@@ -28,7 +28,7 @@ services:
       DB_HOST: 'postgres'
       DB_PASSWORD: ${DB_PASSWORD}
     # Gross
-    entrypoint: ["sh", "-c", "sleep 5 && gunicorn api:app --bind=0.0.0.0:8080"]
+    entrypoint: ["sh", "-c", "sleep 3 && gunicorn meshdb:app --bind=0.0.0.0:8080"]
 
 volumes:
   postgres_data:
