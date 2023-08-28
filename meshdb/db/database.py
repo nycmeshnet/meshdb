@@ -17,6 +17,7 @@ def create_db_engine():
         echo=True,
     )
 
+
 def executeQuery(statement, db_engine):
     with Session(db_engine) as session:
         return session.execute(statement)

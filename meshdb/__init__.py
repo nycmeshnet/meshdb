@@ -1,6 +1,6 @@
+import json
 from flask import *
 from meshdb.db import queries
-import json
 from meshdb.auth import authenticate
 
 from meshdb.db.setup import setup_db
