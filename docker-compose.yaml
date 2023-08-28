@@ -8,6 +8,7 @@ services:
       POSTGRES_DB: ${DB_NAME}
       POSTGRES_USER: ${DB_USER} 
       POSTGRES_PASSWORD: ${DB_PASSWORD}
+    start_period: 3s
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
@@ -28,7 +29,7 @@ services:
       DB_HOST: 'postgres'
       DB_PASSWORD: ${DB_PASSWORD}
     # Gross
-    entrypoint: ["sh", "-c", "sleep 3 && gunicorn meshdb:app --bind=0.0.0.0:8080"]
+    entrypoint: "gunicorn meshdb:app --graceful-timeout 5 --bind=0.0.0.0:8080"
 
 volumes:
   postgres_data:
