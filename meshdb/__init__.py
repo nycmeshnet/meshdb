@@ -3,11 +3,6 @@ from flask import *
 from meshdb.db import queries
 from meshdb.auth import authenticate
 
-from meshdb.db.setup import setup_db
-
-print("Configuring DB...")
-setup_db()
-
 app = Flask(__name__)
 app.json.sort_keys = False
 
