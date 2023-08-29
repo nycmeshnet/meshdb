@@ -10,10 +10,12 @@ from sqlalchemy.orm import relationship
 import datetime
 from meshdb.models.baseModel import Base
 
+
 # TODO: Elaborate on this
 class BuildingStatusEnum(Enum):
     Active = "Active"
     Inactive = "Inactive"
+
 
 class building(Base):
     __tablename__ = "buildings"

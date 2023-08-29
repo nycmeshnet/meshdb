@@ -10,10 +10,12 @@ from sqlalchemy.orm import relationship
 import datetime
 from meshdb.models.baseModel import Base
 
+
 class InstallStatusEnum(Enum):
     Active = "Active"
     Inactive = "Inactive"
     Planned = "Planned"
+
 
 class install(Base):
     __tablename__ = "installs"
