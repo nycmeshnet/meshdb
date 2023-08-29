@@ -47,6 +47,20 @@ pip install -r requirements.txt
 
 Then, run the tests
 
-```
-PYTHONPATH=. pytest .
-```
+`PYTHONPATH=. pytest .`
+
+## Integration Tests (The right way™)
+
+If you want to continuously develop and test things, you probably want to have your IDE and debugger attached directly to the process that is running, which can be a little tricky in a container. Fortunately, `venv`s exist, so we can get around this problem pretty easily.
+
+First, set up the database, as before, but _just_ the database.
+
+`docker-compose up postgres`
+
+Then, in a separate window, or in your IDE, you can run the meshdb server
+
+`flask run --port 8080`
+
+Finally, open another window, and run the tests.
+
+`PYTHONPATH=. pytest .`
