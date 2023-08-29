@@ -32,3 +32,20 @@ curl http://127.0.0.1:8080/getMembers
 ```
 
 
+## Unit Tests
+To run the unit tests, first create a virtual env in the project root
+```sh
+python3 -m venv .venv
+source .venv/bin/activate
+```
+
+Next, install the project dependencies
+```sh
+pip install -r requirements.txt
+pip install -r requirements-dev.txt
+```
+
+Finally, run `pytest`:
+```
+pytest
+```
