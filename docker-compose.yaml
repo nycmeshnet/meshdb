@@ -4,9 +4,9 @@ services:
     network_mode: "host"
     image: docker.io/postgres:latest
     environment:
-      POSTGRES_DB: ${DB_NAME}
-      POSTGRES_USER: ${DB_USER} 
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${MESHDB_DB_NAME}
+      POSTGRES_USER: ${MESHDB_DB_USER} 
+      POSTGRES_PASSWORD: ${MESHDB_DB_PASSWORD}
     start_period: 3s
     volumes:
       - postgres_data:/var/lib/postgresql/data
@@ -22,10 +22,10 @@ services:
       - "8080:8080"
     # Other configuration options for your app service
     environment:
-      DB_NAME: ${DB_NAME}
-      DB_USER: ${DB_USER}
-      DB_HOST: 'postgres'
-      DB_PASSWORD: ${DB_PASSWORD}
+      MESHDB_DB_NAME: ${MESHDB_DB_NAME}
+      MESHDB_DB_USER: ${MESHDB_DB_USER}
+      MESHDB_DB_HOST: 'postgres'
+      MESHDB_DB_PASSWORD: ${MESHDB_DB_PASSWORD}
     # Gross
     entrypoint: "gunicorn meshdb:app --graceful-timeout 5 --bind=0.0.0.0:8080"
 
