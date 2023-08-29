@@ -163,7 +163,4 @@ testobj.py
 
 .env
 .env.dev
-<<<<<<< HEAD
-=======
 .env.local
->>>>>>> 01f2d87 (Refactor)
