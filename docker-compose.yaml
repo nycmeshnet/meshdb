@@ -1,8 +1,7 @@
 version: '3'
 services:
   postgres:
-    networks:
-      - api
+    network_mode: "host"
     image: docker.io/postgres:latest
     environment:
       POSTGRES_DB: ${DB_NAME}
@@ -13,10 +12,9 @@ services:
       - postgres_data:/var/lib/postgresql/data
 
   meshdb:
+    network_mode: "host"
     depends_on:
       - postgres
-    networks:
-      - api
     build:
       context: .
       dockerfile: Dockerfile
@@ -33,6 +31,3 @@ services:
 
 volumes:
   postgres_data:
-
-networks:
-  api:

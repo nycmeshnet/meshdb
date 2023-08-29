@@ -31,4 +31,22 @@ available at `127.0.0.1:8080`:
 curl http://127.0.0.1:8080/getMembers
 ```
 
+## Integration Tests (`docker-compose`)
 
+Setup a dev environment. This will launch an ephemeral database and an instance of meshdb visible on your host.
+
+`docker-compose up`
+
+In another window, setup a `venv`
+
+```
+python -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+```
+
+Then, run the tests
+
+```
+PYTHONPATH=. pytest .
+```
