@@ -1,0 +1,54 @@
+[project]
+name = "nycmesh-meshdb"
+version = "0.1"
+dependencies = [
+    "Flask==2.3.2",
+    "gunicorn==21.2.*",
+    "SQLAlchemy==2.0.20",
+    "SQLAlchemy_Utils==0.41.1",
+    "psycopg2-binary==2.9.*",
+    "python-dotenv==1.0.*",
+    "stringcase==1.2.*"
+]
+
+
+[project.optional-dependencies]
+dev = [
+    "invoke == 2.2.*",
+    "pytest == 7.4.*",
+    "flake8 == 6.1.*",
+    "black == 23.7.*",
+    "isort == 5.12.*",
+    "mypy == 1.5.*"
+]
+
+
+[build-system]
+requires = [ "setuptools >= 61", "wheel", "mypy" ]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = [ "meshdb" ]
+
+
+[tool.mypy]
+check_untyped_defs = true
+show_error_codes = true
+pretty = true
+ignore_missing_imports = true
+disallow_untyped_calls = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+warn_unused_configs = true
+
+
+[tool.black]
+line-length = 100
+include = '\.pyi?$'
+
+
+[tool.isort]
+profile = "black"
+line_length = 100
+known_first_party = [ "meshdb" ]
+

@@ -1,7 +1,0 @@
-Flask==2.3.2
-gunicorn
-SQLAlchemy==2.0.20
-SQLAlchemy_Utils==0.41.1
-psycopg2-binary
-python-dotenv
-stringcase
