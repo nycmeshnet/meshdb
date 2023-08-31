@@ -7,4 +7,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - uses: psf/black@stable
+      - name: "Upgrade pip"
+        run: "pip install --upgrade pip"
+      - name: "Install package"
+        run: pip install ".[dev]"
+      - name: "Run lint checks"
+        run: invoke lint
