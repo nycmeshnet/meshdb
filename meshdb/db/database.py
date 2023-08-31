@@ -4,16 +4,20 @@ from dotenv import load_dotenv
 import os
 
 
+def load_db_string_from_env():
+    load_dotenv()  # Load .env file (FIXME: Probably move to somewhere less stupid)
+    return "postgresql://{}:{}@{}/{}".format(
+        os.getenv("DB_USER"),
+        os.getenv("DB_PASSWORD"),
+        os.getenv("DB_HOST"),
+        os.getenv("DB_NAME"),
+    )
+
+
 def create_db_engine():
     print("Creating engine...")
-    load_dotenv()  # Load .env file (FIXME: Probably move to somewhere less stupid)
     return create_engine(
-        "postgresql://{}:{}@{}/{}".format(
-            os.getenv("DB_USER"),
-            os.getenv("DB_PASSWORD"),
-            os.getenv("DB_HOST"),
-            os.getenv("DB_NAME"),
-        ),
+        load_db_string_from_env(),
         echo=True,
     )
 
