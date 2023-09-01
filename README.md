@@ -39,13 +39,31 @@ python3 -m venv .venv
 source .venv/bin/activate
 ```
 
-Next, install the project dependencies
+Next, install the project dependencies, including dev dependencies
 ```sh
-pip install -r requirements.txt
-pip install -r requirements-dev.txt
+pip install -e ".[dev]"
 ```
 
 Finally, run `pytest`:
 ```
 pytest
 ```
+
+
+## Invoke.py Commands
+
+For convenience, this package uses [invoke](https://www.pyinvoke.org/) to wrap common
+tasks into one-line commands. For example:
+
+```sh
+invoke format
+```
+
+Will automatically apply `black` formatting and `isort` import sorting in a single command.
+
+You can also quickly peform all the relevant lint checks locally using
+```sh
+invoke lint
+```
+
+See `tasks.py` for a complete list of the tasks available.
