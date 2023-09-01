@@ -3,18 +3,26 @@ services:
   postgres:
     networks:
       - api
+    ports:
+      - 5432:5432
     image: docker.io/postgres:latest
     environment:
       POSTGRES_DB: ${DB_NAME}
       POSTGRES_USER: ${DB_USER} 
       POSTGRES_PASSWORD: ${DB_PASSWORD}
-    start_period: 3s
+    healthcheck:
+      test: pg_isready -U ${DB_USER}
+      interval: 10s 
+      timeout: 5s
+      retries: 3
+      start_period: 5s
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres-storage:/var/lib/postgresql/data/
 
   meshdb:
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
     networks:
       - api
     build:
@@ -22,17 +30,15 @@ services:
       dockerfile: Dockerfile
     ports:
       - "8080:8080"
-    # Other configuration options for your app service
     environment:
       DB_NAME: ${DB_NAME}
       DB_USER: ${DB_USER}
-      DB_HOST: 'postgres'
+      DB_HOST: ${DB_HOST}
       DB_PASSWORD: ${DB_PASSWORD}
-    # Gross
-    entrypoint: "gunicorn wsgi:app --graceful-timeout 5 --bind=0.0.0.0:8080"
+    #entrypoint: "gunicorn wsgi:app --graceful-timeout 5 --bind=0.0.0.0:8080"
 
 volumes:
-  postgres_data:
+  postgres-storage:
 
 networks:
   api:

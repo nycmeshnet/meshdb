@@ -1,6 +1,5 @@
 import os
 
-from dotenv import load_dotenv
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, scoped_session, sessionmaker
@@ -9,12 +8,8 @@ db = SQLAlchemy()
 
 
 def load_db_string_from_env():
-    load_dotenv()  # Load .env file (FIXME: Probably move to somewhere less stupid)
-    return "postgresql://{}:{}@{}/{}".format(
-        os.getenv("DB_USER"),
-        os.getenv("DB_PASSWORD"),
-        os.getenv("DB_HOST"),
-        os.getenv("DB_NAME"),
+    return (
+        f"postgresql://{os.getenv('DB_USER')}:{os.getenv('DB_PASSWORD')}@{os.getenv('DB_HOST')}/{os.getenv('DB_NAME')}"
     )
 
 

@@ -6,23 +6,25 @@ from flask_security import Security, SQLAlchemyUserDatastore, hash_password
 
 from .db.database import db
 
+from dotenv import load_dotenv
+
 
 def create_app():
     """App factory"""
+    load_dotenv()
     app = Flask(__name__)
     app.json.sort_keys = False
+
+    # Network I sure hope it does
+    app.config["IP"] = os.getenv("IP")
+    app.config["PORT"] = os.getenv("PORT")
 
     # set settings for flask-security, authentication DB
     app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY")
     app.config["SECURITY_PASSWORD_SALT"] = os.environ.get("SECURITY_PASSWORD_SALT")
     app.config["REMEMBER_COOKIE_SAMESITE"] = "strict"
     app.config["SESSION_COOKIE_SAMESITE"] = "strict"
-    app.config["SQLALCHEMY_DATABASE_URI"] = "postgresql://{}:{}@{}/{}".format(
-        os.getenv("DB_USER"),
-        os.getenv("DB_PASSWORD"),
-        os.getenv("DB_HOST"),
-        os.getenv("DB_AUTH_NAME"),
-    )
+    app.config["SQLALCHEMY_DATABASE_URI"] = f"postgresql://{os.getenv('DB_USER')}:{os.getenv('DB_PASSWORD')}@{os.getenv('DB_HOST')}/{os.getenv('DB_NAME')}"
 
     # csrf breaks token auth, need to investigate further
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = True
@@ -42,6 +44,9 @@ def create_app():
             app.security.datastore.create_user(email="example@nycmesh.net", password=hash_password("abcd1234"))
         db.session.commit()
 
-    db.init_app(app)
+    from .views import route_blueprint
+
+    app.register_blueprint(route_blueprint)
+
 
     return app
