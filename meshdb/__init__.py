@@ -30,6 +30,10 @@ def create_app():
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = True
     app.config["WTF_CSRF_ENABLED"] = False
 
+    # Configure Database
+    from meshdb.db.setup import setup_db
+    setup_db()
+
     db.init_app(app)
 
     import meshdb.auth.authmodels as authmodels
