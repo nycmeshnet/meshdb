@@ -34,6 +34,8 @@ jobs:
           MESHDB_DB_USER: nycmesh
           MESHDB_DB_HOST: localhost
           MESHDB_DB_PASSWORD: helloThisIsATest
+          MESHDB_SECRET_KEY: ${{ secrets.MESHDB_SECRET_KEY }}
+          MESHDB_SECRET_PASSWORD_SALT: ${{ secrets.MESHDB_SECRET_PASSWORD_SALT }}
       - name: "Run Integration Test Script"
         run: |
           PYTHONPATH=. pytest . 
@@ -42,3 +44,6 @@ jobs:
           MESHDB_DB_USER: nycmesh
           MESHDB_DB_HOST: localhost
           MESHDB_DB_PASSWORD: helloThisIsATest
+          MESHDB_SECRET_KEY: ${{ secrets.MESHDB_SECRET_KEY }}
+          MESHDB_SECRET_PASSWORD_SALT: ${{ secrets.MESHDB_SECRET_PASSWORD_SALT }}
+
