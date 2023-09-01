@@ -20,7 +20,7 @@ app = Flask(__name__)
 app.json.sort_keys = False
 
 # set settings for flask-security, authentication DB
-app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY")
+app.config["MESHDB_SECRET_KEY"] = os.environ.get("MESHDB_SECRET_KEY")
 app.config["SECURITY_PASSWORD_SALT"] = os.environ.get("SECURITY_PASSWORD_SALT")
 app.config["REMEMBER_COOKIE_SAMESITE"] = "strict"
 app.config["SESSION_COOKIE_SAMESITE"] = "strict"

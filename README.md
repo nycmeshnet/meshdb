@@ -49,6 +49,30 @@ Finally, run `pytest`:
 pytest
 ```
 
+## Integration Tests
+
+If you want to continuously develop and test things, you probably want to have your IDE and debugger attached directly to the process that is running, which can be a little tricky in a container. Fortunately, `venv`s exist, so we can get around this problem pretty easily.
+
+First, set up the database, as before, but _just_ the database.
+
+`docker-compose up postgres`
+
+In another window, setup a `venv`
+
+```
+python -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+```
+
+Then, in a separate window, or in your IDE, you can run the meshdb server
+
+`flask run --port 8080`
+
+Finally, open another window, and run the tests.
+
+`PYTHONPATH=. pytest .`
+
 
 ## Invoke.py Commands
 

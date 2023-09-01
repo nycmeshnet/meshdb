@@ -7,10 +7,10 @@ def test_db_string_generator():
     with mock.patch.dict(
         "os.environ",
         {
-            "DB_USER": "admin",
-            "DB_PASSWORD": "password123",
-            "DB_HOST": "localhost",
-            "DB_NAME": "mesh-db",
+            "MESHDB_DB_USER": "admin",
+            "MESHDB_DB_PASSWORD": "password123",
+            "MESHDB_DB_HOST": "localhost",
+            "MESHDB_DB_NAME": "mesh-db",
         },
     ):
         db_string = load_db_string_from_env()
