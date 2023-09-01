@@ -67,3 +67,8 @@ invoke lint
 ```
 
 See `tasks.py` for a complete list of the tasks available.
+
+## Dependencies
+
+This package uses [flask-security-too](https://flask-security-too.readthedocs.io/en/stable/) instead of flask-security. 
+Ensure that the coorect docs are being used for development.

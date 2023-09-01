@@ -8,7 +8,8 @@ dependencies = [
     "SQLAlchemy_Utils==0.41.1",
     "psycopg2-binary==2.9.*",
     "python-dotenv==1.0.*",
-    "stringcase==1.2.*"
+    "stringcase==1.2.*",
+    "flask-security-too==5.3.*"
 ]
 
 
