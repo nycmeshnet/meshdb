@@ -1,14 +1,18 @@
 import json
-from flask import *
-from meshdb.db import queries
+from typing import Dict, Tuple, Union
+
+from flask import Flask, request
+from flask.typing import ResponseReturnValue
+
 from meshdb.auth import authenticate
+from meshdb.db import queries
 
 app = Flask(__name__)
-app.json.sort_keys = False
+app.json.sort_keys = False  # type: ignore
 
 
 @app.route("/getMembers", methods=["GET"])
-def apiGetMembers():
+def apiGetMembers() -> ResponseReturnValue:
     token = request.headers["token"]
     try:
         permission = authenticate.getRolePermission(token, "see_members")
@@ -21,7 +25,7 @@ def apiGetMembers():
 
 
 @app.route("/getMemberByName", methods=["GET"])
-def apiGetMemberByName():
+def apiGetMemberByName() -> ResponseReturnValue:
     token = request.headers["token"]
     try:
         permission = authenticate.getRolePermission(token, "see_members")
@@ -30,6 +34,8 @@ def apiGetMemberByName():
     if permission == True:
         firstName = request.args.get("firstname")
         lastName = request.args.get("lastname")
+        if not firstName or not lastName:
+            return "firstname and lastname must be provided", 400
         result = queries.getMemberByName(firstName, lastName)
         if result == False:
             return "Member not found", 404
@@ -40,7 +46,7 @@ def apiGetMemberByName():
 
 
 @app.route("/getMemberById/<id>", methods=["GET"])
-def apiGetMemberById(id):
+def apiGetMemberById(id: str) -> ResponseReturnValue:
     try:
         return queries.getMemberByID(id)
     except:
@@ -48,7 +54,7 @@ def apiGetMemberById(id):
 
 
 @app.route("/getMemberDetailsById/<id>", methods=["GET"])
-def apiGetMemberDetailsByID(id):
+def apiGetMemberDetailsByID(id: str) -> ResponseReturnValue:
     token = request.headers["token"]
     try:
         permission = authenticate.getRolePermission(token, "see_members")
@@ -64,7 +70,7 @@ def apiGetMemberDetailsByID(id):
 
 
 @app.route("/addMember", methods=["POST"])
-def apiAddMember():
+def apiAddMember() -> ResponseReturnValue:
     token = request.headers["token"]
     try:
         permission = authenticate.getRolePermission(token, "put")

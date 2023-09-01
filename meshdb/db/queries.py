@@ -1,19 +1,21 @@
+from typing import Dict, List, Union
+
+import stringcase
+from sqlalchemy import select
+from sqlalchemy.orm import Session
+
+from meshdb.db.database import create_db_engine, executeQuery
 from meshdb.models.building import building
 from meshdb.models.install import install
 from meshdb.models.member import member
 from meshdb.models.request import request
-from sqlalchemy import select
-from sqlalchemy.orm import Session
-from meshdb.db.database import create_db_engine, executeQuery
-import stringcase
-
 
 db_engine = create_db_engine()
 
 # returns list of dicts for each member
 
 
-def getMembers():
+def getMembers() -> List[Dict]:
     stmt = select(
         member.id,
         member.first_name,
@@ -46,7 +48,7 @@ def getMembers():
 # returns one member dict for a given member ID
 
 
-def getMemberByID(memberId):
+def getMemberByID(memberId: str) -> Dict:
     stmt = select(
         member.id,
         member.first_name,
@@ -75,7 +77,7 @@ def getMemberByID(memberId):
     return response
 
 
-def getMemberByName(firstName, lastName):
+def getMemberByName(firstName: str, lastName: str) -> List[Dict]:
     stmt = (
         select(
             member.id,
@@ -86,13 +88,13 @@ def getMemberByName(firstName, lastName):
             member.slack_handle,
         )
         .where(member.first_name == firstName)
-        .where(member.lastname == lastName)
+        .where(member.last_name == lastName)
     )
     result = executeQuery(stmt, db_engine)
     resultkeys = result.keys()
     resultall = result.all()
     if len(resultall) == 0:
-        return False
+        return []
     elif len(resultall) == 1:
         response = dict(
             zip(
@@ -107,7 +109,7 @@ def getMemberByName(firstName, lastName):
                 resultall[0],
             )
         )
-        return response
+        return [response]
     else:
         baselist = []
         for row in resultall:
@@ -129,7 +131,7 @@ def getMemberByName(firstName, lastName):
         return baselist
 
 
-def getMemberDetailsByID(memberID):
+def getMemberDetailsByID(memberID: str) -> Dict:
     stmt = (
         select(
             member.id,
@@ -189,7 +191,7 @@ def getMemberDetailsByID(memberID):
     return returndict
 
 
-def createNewMember(input):
+def createNewMember(input: Dict) -> str:
     newDict = {}
     for key, value in input.items():
         newDict[stringcase.snakecase(key)] = value

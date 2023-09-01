@@ -12,7 +12,7 @@ def lint(context):
     context.run("black . --check")
     # context.run("isort . --check")
     # context.run("flake8 meshdb tests unit_tests")
-    # context.run("mypy meshdb")
+    context.run("mypy meshdb")
 
 
 @task
