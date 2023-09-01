@@ -31,11 +31,13 @@ available at `127.0.0.1:8080`:
 curl http://127.0.0.1:8080/getMembers
 ```
 
-## Integration Tests (`docker-compose`)
+## Integration Tests
 
-Setup a dev environment. This will launch an ephemeral database and an instance of meshdb visible on your host.
+If you want to continuously develop and test things, you probably want to have your IDE and debugger attached directly to the process that is running, which can be a little tricky in a container. Fortunately, `venv`s exist, so we can get around this problem pretty easily.
 
-`docker-compose up`
+First, set up the database, as before, but _just_ the database.
+
+`docker-compose up postgres`
 
 In another window, setup a `venv`
 
@@ -44,18 +46,6 @@ python -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
 ```
-
-Then, run the tests
-
-`PYTHONPATH=. pytest .`
-
-## Integration Tests (The right way™)
-
-If you want to continuously develop and test things, you probably want to have your IDE and debugger attached directly to the process that is running, which can be a little tricky in a container. Fortunately, `venv`s exist, so we can get around this problem pretty easily.
-
-First, set up the database, as before, but _just_ the database.
-
-`docker-compose up postgres`
 
 Then, in a separate window, or in your IDE, you can run the meshdb server
 

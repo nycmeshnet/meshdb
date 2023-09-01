@@ -5,43 +5,33 @@ on: [pull_request]
 jobs:
   integration-test-ephemeral:
     runs-on: ubuntu-latest
-#    services:
-#      postgres:
-#        image: postgres:latest
-#        # `POSTGRES_HOST` is `postgres`
-#        env:
-#          POSTGRES_DB: nycmesh-dev
-#          POSTGRES_USER: nycmesh
-#          POSTGRES_PASSWORD: helloThisIsATest
-#          POSTGRES_PORT: 5432
-#        ports:
-#          # maps tcp port 5432 on service container to the host
-#          - 5432:5432
-#        # set health checks to wait until postgres has started
-#        options: >-
-#          --health-cmd pg_isready
-#          --health-interval 10s
-#          --health-timeout 5s
-#          --health-retries 5
+    services:
+      postgres:
+        image: postgres:latest
+        env:
+          POSTGRES_DB: nycmesh-dev
+          POSTGRES_USER: nycmesh
+          POSTGRES_PASSWORD: helloThisIsATest
+          POSTGRES_PORT: 5432
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
 
     steps:
       - uses: actions/checkout@v3
-      - uses: isbang/compose-action@v1.5.1
-        with:
-          compose-file: "./docker-compose.yml"
-          down-flags: "--volumes"
-          services: |
-            postgres
-            meshdb
-        env:
-          MESHDB_DB_NAME: nymesh-dev
-          MESHDB_DB_USER: nycmesh
-          MESHDB_DB_HOST: localhost
-          MESHDB_DB_PASSWORD: helloThisIsATest
-      - name: "Run Integration Test Script"
+      # Set up the container
+      - name: "Install Dependencies"
         run: |
           pip install -r requirements.txt
           pip install -r tests/requirements.txt
+      - name: "Start meshdb API"
+        run: gunicorn meshdb:app --graceful-timeout 5 --bind=0.0.0.0:8080 & sleep 3
+      - name: "Run Integration Test Script"
+        run: |
           PYTHONPATH=. pytest . 
         env:
           MESHDB_DB_NAME: nymesh-dev

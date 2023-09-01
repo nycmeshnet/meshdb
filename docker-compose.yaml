@@ -11,23 +11,5 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
-  meshdb:
-    network_mode: "host"
-    depends_on:
-      - postgres
-    build:
-      context: .
-      dockerfile: Dockerfile
-    ports:
-      - "8080:8080"
-    # Other configuration options for your app service
-    environment:
-      MESHDB_DB_NAME: ${MESHDB_DB_NAME}
-      MESHDB_DB_USER: ${MESHDB_DB_USER}
-      MESHDB_DB_HOST: 'postgres'
-      MESHDB_DB_PASSWORD: ${MESHDB_DB_PASSWORD}
-    # Gross
-    entrypoint: "gunicorn meshdb:app --graceful-timeout 5 --bind=0.0.0.0:8080"
-
 volumes:
   postgres_data:
