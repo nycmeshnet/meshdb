@@ -22,9 +22,7 @@ class building(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     bin: Mapped[int] = mapped_column()
-    building_status: Mapped[BuildingStatusEnum] = mapped_column(
-        SQLAlchemyEnum(BuildingStatusEnum), nullable=False
-    )
+    building_status: Mapped[BuildingStatusEnum] = mapped_column(SQLAlchemyEnum(BuildingStatusEnum), nullable=False)
     street_address: Mapped[str] = mapped_column(TEXT)
     city: Mapped[str] = mapped_column(String)
     state: Mapped[str] = mapped_column(String)

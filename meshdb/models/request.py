@@ -21,9 +21,7 @@ class request(Base):
     __tablename__ = "requests"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    request_status: Mapped[RequestStatusEnum] = mapped_column(
-        SQLAlchemyEnum(RequestStatusEnum), nullable=False
-    )
+    request_status: Mapped[RequestStatusEnum] = mapped_column(SQLAlchemyEnum(RequestStatusEnum), nullable=False)
     ticket_id: Mapped[int] = mapped_column()
     member_id: Mapped[int] = mapped_column(ForeignKey("members.id"), nullable=True)
     building_id: Mapped[int] = mapped_column(ForeignKey("buildings.id"), nullable=True)
