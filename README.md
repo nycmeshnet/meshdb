@@ -19,8 +19,9 @@ cp .env.sample .env
 nano .env # Fill in any missing values
 ```
 
-SECRET_KEY can be generated with with secrets.token_urlsafe()
-SECURITY_PASSWORD_SALT can be generated with secrets.SystemRandom().getrandbits(128)
+### Generating secret keys for .env
+`SECRET_KEY` can be generated with `python -c "import secrets; print(secrets.token_urlsafe())"`
+`SECURITY_PASSWORD_SALT` can be generated with `python -c "import secrets; print(secrets.SystemRandom().getrandbits(128))"`
 
 Finally, start the application and database servers using `docker compose`
 ```sh
