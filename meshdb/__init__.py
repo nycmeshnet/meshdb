@@ -24,15 +24,18 @@ def create_app():
     app.config["SECURITY_PASSWORD_SALT"] = os.environ.get("SECURITY_PASSWORD_SALT")
     app.config["REMEMBER_COOKIE_SAMESITE"] = "strict"
     app.config["SESSION_COOKIE_SAMESITE"] = "strict"
-    app.config["SQLALCHEMY_DATABASE_URI"] = f"postgresql://{os.getenv('DB_USER')}:{os.getenv('DB_PASSWORD')}@{os.getenv('DB_HOST')}/{os.getenv('DB_NAME')}"
+    app.config[
+        "SQLALCHEMY_DATABASE_URI"
+    ] = f"postgresql://{os.getenv('DB_USER')}:{os.getenv('DB_PASSWORD')}@{os.getenv('DB_HOST')}/{os.getenv('DB_NAME')}"
 
     # csrf breaks token auth, need to investigate further
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = True
     app.config["WTF_CSRF_ENABLED"] = False
 
     # Configure Database
-    from meshdb.db.setup import setup_db
-    setup_db()
+    from meshdb.db.setup import initialize_db
+
+    initialize_db()
 
     db.init_app(app)
 
@@ -48,9 +51,8 @@ def create_app():
             app.security.datastore.create_user(email="example@nycmesh.net", password=hash_password("abcd1234"))
         db.session.commit()
 
-    from .views import route_blueprint
+    from .routes import route_blueprint
 
     app.register_blueprint(route_blueprint)
-
 
     return app

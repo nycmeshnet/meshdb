@@ -9,8 +9,8 @@ import meshdb.models.request
 from ..db.database import create_db_engine
 
 
-def setup_db():
-    engine = create_db_engine() # TODO: Delete?
+def initialize_db():
+    engine = create_db_engine()  # TODO: Delete?
 
     if not database_exists(engine.url):
         print("Database not found. Bootstrapping....")

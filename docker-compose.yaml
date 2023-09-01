@@ -17,7 +17,7 @@ services:
       retries: 3
       start_period: 5s
     volumes:
-      - postgres-storage:/var/lib/postgresql/data/
+      - postgres_data:/var/lib/postgresql/data/
 
   meshdb:
     depends_on:
@@ -35,10 +35,9 @@ services:
       DB_USER: ${DB_USER}
       DB_HOST: ${DB_HOST}
       DB_PASSWORD: ${DB_PASSWORD}
-    #entrypoint: "gunicorn wsgi:app --graceful-timeout 5 --bind=0.0.0.0:8080"
 
 volumes:
-  postgres-storage:
+  postgres_data:
 
 networks:
   api:
