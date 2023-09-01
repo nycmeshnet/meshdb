@@ -1,8 +1,7 @@
 version: '3'
 services:
   postgres:
-    networks:
-      - api
+    network_mode: "host"
     image: docker.io/postgres:latest
     environment:
       POSTGRES_DB: ${MESHDB_DB_NAME}
@@ -14,6 +13,3 @@ services:
 
 volumes:
   postgres_data:
-
-networks:
-  api:
