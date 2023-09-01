@@ -1,7 +1,11 @@
+import os
+
+from dotenv import load_dotenv
+from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, scoped_session, sessionmaker
-from dotenv import load_dotenv
-import os
+
+db = SQLAlchemy()
 
 
 def load_db_string_from_env():

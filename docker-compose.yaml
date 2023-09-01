@@ -29,7 +29,7 @@ services:
       DB_HOST: 'postgres'
       DB_PASSWORD: ${DB_PASSWORD}
     # Gross
-    entrypoint: "gunicorn meshdb:app --graceful-timeout 5 --bind=0.0.0.0:8080"
+    entrypoint: "gunicorn wsgi:app --graceful-timeout 5 --bind=0.0.0.0:8080"
 
 volumes:
   postgres_data:

@@ -1,19 +1,19 @@
-from meshdb.models.baseModel import Base
-from flask_security import UserMixin, RoleMixin, AsaList
-from sqlalchemy.orm import relationship, backref
+from flask_security import AsaList, RoleMixin, UserMixin
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String
 from sqlalchemy.ext.mutable import MutableList
-from sqlalchemy import Boolean, DateTime, Column, Integer, String, ForeignKey
-import meshdb
+from sqlalchemy.orm import backref, relationship
+
+from ..db.database import db
 
 
-class RolesUsers(meshdb.db.Model):
+class RolesUsers(db.Model):
     __tablename__ = "roles_users"
     id = Column(Integer(), primary_key=True)
     user_id = Column("user_id", Integer(), ForeignKey("nycmesh_user.id"))
     role_id = Column("role_id", Integer(), ForeignKey("role.id"))
 
 
-class Role(meshdb.db.Model, RoleMixin):
+class Role(db.Model, RoleMixin):
     __tablename__ = "role"
     id = Column(Integer(), primary_key=True)
     name = Column(String(80), unique=True)
@@ -21,7 +21,7 @@ class Role(meshdb.db.Model, RoleMixin):
     permissions = Column(MutableList.as_mutable(AsaList), nullable=True)
 
 
-class User(meshdb.db.Model, UserMixin):
+class User(db.Model, UserMixin):
     __tablename__ = "nycmesh_user"
     id = Column(Integer, primary_key=True)
     email = Column(String(255), unique=True)

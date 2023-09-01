@@ -9,4 +9,4 @@ RUN pip install .
 # FIXME: This probably isn't the file structure we want.
 COPY . .
 
-ENTRYPOINT gunicorn api:app --bind=0.0.0.0:8080
+ENTRYPOINT gunicorn wsgi:app --bind=0.0.0.0:8080
