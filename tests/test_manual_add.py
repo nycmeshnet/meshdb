@@ -1,9 +1,18 @@
+import pytest
 from sqlalchemy.orm import Session
 from sqlalchemy import create_engine, select
+
 from meshdb.models.member import member
 from meshdb.models.building import building, BuildingStatusEnum
 from meshdb.models.install import install, InstallStatusEnum
 from meshdb.db.database import create_db_engine
+from meshdb.db.setup import setup_db
+
+
+@pytest.fixture(autouse=True)
+def fixture_setup_db():
+    setup_db()
+    yield
 
 
 def test_manual_add():
