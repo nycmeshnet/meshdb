@@ -3,7 +3,7 @@ from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String
 from sqlalchemy.ext.mutable import MutableList
 from sqlalchemy.orm import backref, relationship
 
-from ..db.database import db
+from ..data.database import db
 
 
 class RolesUsers(db.Model):
