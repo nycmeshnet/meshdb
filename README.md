@@ -1,6 +1,6 @@
 # meshdb
 
-## The Premiere NYCMesh Member/Install Database
+## A Database for Tracking NYCMesh Member Installs
 
 Welcome to the `nth` attempt at making an API! This was started out of hatred for our current solution for tracking installs/buildings/requests, the **New Node Form**.
 
