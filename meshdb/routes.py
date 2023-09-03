@@ -1,11 +1,10 @@
 from flask import current_app as app
-from flask import request
+from flask import request, Blueprint
 from flask_security import auth_required
-from flask import Blueprint
+
+from .data import queries
 
 route_blueprint = Blueprint("route_blueprint", __name__)
-
-from .db import queries
 
 
 @route_blueprint.route("/getMembers", methods=["GET"])

@@ -6,14 +6,14 @@ import meshdb.models.install
 import meshdb.models.member
 import meshdb.models.request
 
-from ..db.database import create_db_engine
+from ..data.database import create_db_engine
 
 
 def initialize_db():
     engine = create_db_engine()  # TODO: Delete?
 
+    print(f"Database Exists: {database_exists(engine.url)}")
     if not database_exists(engine.url):
         print("Database not found. Bootstrapping....")
         create_database(engine.url)
-    print(database_exists(engine.url))
-    meshdb.models.baseModel.Base.metadata.create_all(engine)
+        meshdb.models.baseModel.Base.metadata.create_all(engine)

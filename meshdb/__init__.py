@@ -4,7 +4,7 @@ import os
 from flask import Flask
 from flask_security import Security, SQLAlchemyUserDatastore, hash_password
 
-from .db.database import db
+from .data.database import db
 
 from dotenv import load_dotenv
 
@@ -33,7 +33,7 @@ def create_app():
     app.config["WTF_CSRF_ENABLED"] = False
 
     # Configure Database
-    from meshdb.db.setup import initialize_db
+    from meshdb.data.setup import initialize_db
 
     initialize_db()
 
@@ -51,6 +51,7 @@ def create_app():
             app.security.datastore.create_user(email="example@nycmesh.net", password=hash_password("abcd1234"))
         db.session.commit()
 
+    # Register API routes
     from .routes import route_blueprint
 
     app.register_blueprint(route_blueprint)
