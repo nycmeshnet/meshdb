@@ -9,4 +9,4 @@ RUN pip install .
 # FIXME: This probably isn't the file structure we want.
 COPY . .
 
-ENTRYPOINT gunicorn 'meshdb:create_app()' --graceful-timeout 2 --bind=0.0.0.0:8080
+CMD exec gunicorn 'meshdb:create_app()' --graceful-timeout 2 --bind=0.0.0.0:8080
