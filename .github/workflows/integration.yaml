@@ -32,7 +32,7 @@ jobs:
         env:
           DB_NAME: nycmesh-dev
           DB_USER: nycmesh
-          DB_HOST: postgres
+          DB_HOST: localhost # Change to `postgres` when running `act`
           DB_PASSWORD: abcd1234
           SECRET_KEY: ${{ secrets.MESHDB_SECRET_KEY }}
           SECRET_PASSWORD_SALT: ${{ secrets.MESHDB_SECRET_PASSWORD_SALT }}
@@ -42,7 +42,7 @@ jobs:
         env:
           DB_NAME: nycmesh-dev
           DB_USER: nycmesh
-          DB_HOST: postgres
+          DB_HOST: localhost # Change to `postgres` when running `act` 
           DB_PASSWORD: abcd1234
           SECRET_KEY: ${{ secrets.MESHDB_SECRET_KEY }}
           SECRET_PASSWORD_SALT: ${{ secrets.MESHDB_SECRET_PASSWORD_SALT }}
