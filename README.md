@@ -73,6 +73,10 @@ Then, in a separate window, or in your IDE, you can run the meshdb server
 
 `flask run --port 8080`
 
+Copy the `.env.sample` file to `.env`, fill it out (prepend `export` for baremetal tests), and export it:
+
+`source .env`
+
 Finally, open another window, and run the tests.
 
 `PYTHONPATH=. pytest .`
