@@ -1,6 +1,6 @@
 from unittest import mock
 
-from db.database import load_db_string_from_env
+from meshdb.data.database import load_db_string_from_env
 
 
 def test_db_string_generator():

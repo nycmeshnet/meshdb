@@ -1,12 +1,20 @@
+import pytest
 from sqlalchemy.orm import Session
 from sqlalchemy import create_engine, select
-from models.member import member
-from models.building import building
-from models.install import install
-from db.database import create_db_engine
+
+from meshdb.models.member import member
+from meshdb.models.building import building, BuildingStatusEnum
+from meshdb.models.install import install, InstallStatusEnum
+from meshdb.data.database import create_db_engine
+from meshdb.data.initialize import initialize_db
+
+@pytest.fixture(autouse=True)
+def fixture_initialize_db():
+    initialize_db()
+    yield
 
 
-def test_data():
+def test_manual_add():
     engine = create_db_engine()
     with Session(engine) as session:
         daniel = member(
@@ -15,7 +23,8 @@ def test_data():
             email_address="dheredia@nycmesh.net",
         )
         danielBuilding = building(
-            building_status="Active",
+            bin=69421,
+            building_status=BuildingStatusEnum.Active,
             street_address="1615 Summerfield St",
             city="Queens",
             state="NY",
@@ -26,7 +35,7 @@ def test_data():
         )
         danielInstall = install(
             install_number=69420,
-            install_status="Active",
+            install_status=InstallStatusEnum.Active,
             building_id="1",
             member_id="1",
         )

@@ -53,6 +53,55 @@ Finally, run `pytest`:
 pytest
 ```
 
+## Integration Tests
+
+If you want to continuously develop and test things, you probably want to have your IDE and debugger attached directly to the process that is running, which can be a little tricky in a container. Fortunately, `venv`s exist, so we can get around this problem pretty easily.
+
+First, set up the database, as before, but _just_ the database.
+
+`docker-compose up postgres`
+
+In another window, setup a `venv`
+
+```
+python -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+```
+
+Then, in a separate window, or in your IDE, you can run the meshdb server
+
+`flask run --port 8080`
+
+Finally, open another window, and run the tests.
+
+`PYTHONPATH=. pytest .`
+
+## Testing with `act`
+
+You can use [`act`](https://github.com/nektos/act) to run our GitHub actions locally, if you want.
+
+We have a Dockerfile you can borrow for that:
+```
+FROM ubuntu
+
+RUN apt-get -y update; apt-get -y install python3.11-venv python3-pip
+```
+
+Build it: `docker build --tag=willnilges/act-ubuntu-latest .`
+
+Because act [does not currently have `services` support](https://github.com/nektos/act/issues/173), you need to use the `docker-compose.yaml` to run a Postgres database for our integration tests separately.
+```
+docker-compose up postgres
+```
+
+Run the actions like this:
+```
+act --pull=false -P ubuntu-latest=willnilges/act-ubuntu-latest:latest --container-options "--network meshdb_api"
+```
+
+Optionally you can add a flag to choose which action to run: `-W .github/workflows/integration.yaml`
+
 
 ## Invoke.py Commands
 

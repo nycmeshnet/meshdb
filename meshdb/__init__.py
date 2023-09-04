@@ -33,7 +33,7 @@ def create_app():
     app.config["WTF_CSRF_ENABLED"] = False
 
     # Configure Database
-    from meshdb.data.setup import initialize_db
+    from meshdb.data.initialize import initialize_db
 
     initialize_db()
 

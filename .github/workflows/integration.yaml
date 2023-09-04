@@ -1,0 +1,48 @@
+
+name: Integration
+
+on: [pull_request]
+
+jobs:
+  integration-test-ephemeral:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:latest
+        env:
+          POSTGRES_DB: nycmesh-dev
+          POSTGRES_USER: nycmesh
+          POSTGRES_PASSWORD: helloThisIsATest
+          POSTGRES_PORT: 5432
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v3
+      - name: "Install Dependencies"
+        run: |
+          pip install --upgrade pip
+          pip install '.[dev]'
+      - name: "Start meshdb API"
+        run: gunicorn 'meshdb:create_app()' --graceful-timeout 5 --bind=0.0.0.0:8080 & sleep 3
+        env:
+          MESHDB_DB_NAME: nycmesh-dev
+          MESHDB_DB_USER: nycmesh
+          MESHDB_DB_HOST: localhost
+          MESHDB_DB_PASSWORD: helloThisIsATest
+          MESHDB_SECRET_KEY: ${{ secrets.MESHDB_SECRET_KEY }}
+          MESHDB_SECRET_PASSWORD_SALT: ${{ secrets.MESHDB_SECRET_PASSWORD_SALT }}
+      - name: "Run Integration Test Script"
+        run: |
+          PYTHONPATH=. pytest . 
+        env:
+          MESHDB_DB_NAME: nycmesh-dev
+          MESHDB_DB_USER: nycmesh
+          MESHDB_DB_HOST: localhost
+          MESHDB_DB_PASSWORD: helloThisIsATest
+          MESHDB_SECRET_KEY: ${{ secrets.MESHDB_SECRET_KEY }}
+          MESHDB_SECRET_PASSWORD_SALT: ${{ secrets.MESHDB_SECRET_PASSWORD_SALT }}
