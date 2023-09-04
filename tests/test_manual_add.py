@@ -11,7 +11,7 @@ from meshdb.data.initialize import initialize_db
 
 @pytest.fixture(autouse=True)
 def fixture_initialize_db():
-    initialize_db()
+    initialize_db(force=True)
     yield
 
 
