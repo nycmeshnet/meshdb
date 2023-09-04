@@ -12,7 +12,7 @@ jobs:
         env:
           POSTGRES_DB: nycmesh-dev
           POSTGRES_USER: nycmesh
-          POSTGRES_PASSWORD: helloThisIsATest
+          POSTGRES_PASSWORD: abcd1234
           POSTGRES_PORT: 5432
         ports:
           - 5432:5432
@@ -30,19 +30,19 @@ jobs:
       - name: "Start meshdb API"
         run: gunicorn 'meshdb:create_app()' --graceful-timeout 5 --bind=0.0.0.0:8080 & sleep 3
         env:
-          MESHDB_DB_NAME: nycmesh-dev
-          MESHDB_DB_USER: nycmesh
-          MESHDB_DB_HOST: localhost
-          MESHDB_DB_PASSWORD: helloThisIsATest
-          MESHDB_SECRET_KEY: ${{ secrets.MESHDB_SECRET_KEY }}
-          MESHDB_SECRET_PASSWORD_SALT: ${{ secrets.MESHDB_SECRET_PASSWORD_SALT }}
+          DB_NAME: nycmesh-dev
+          DB_USER: nycmesh
+          DB_HOST: postgres
+          DB_PASSWORD: abcd1234
+          SECRET_KEY: ${{ secrets.MESHDB_SECRET_KEY }}
+          SECRET_PASSWORD_SALT: ${{ secrets.MESHDB_SECRET_PASSWORD_SALT }}
       - name: "Run Integration Test Script"
         run: |
           PYTHONPATH=. pytest . 
         env:
-          MESHDB_DB_NAME: nycmesh-dev
-          MESHDB_DB_USER: nycmesh
-          MESHDB_DB_HOST: localhost
-          MESHDB_DB_PASSWORD: helloThisIsATest
-          MESHDB_SECRET_KEY: ${{ secrets.MESHDB_SECRET_KEY }}
-          MESHDB_SECRET_PASSWORD_SALT: ${{ secrets.MESHDB_SECRET_PASSWORD_SALT }}
+          DB_NAME: nycmesh-dev
+          DB_USER: nycmesh
+          DB_HOST: postgres
+          DB_PASSWORD: abcd1234
+          SECRET_KEY: ${{ secrets.MESHDB_SECRET_KEY }}
+          SECRET_PASSWORD_SALT: ${{ secrets.MESHDB_SECRET_PASSWORD_SALT }}
