@@ -5,16 +5,10 @@ from sqlalchemy.orm import Session
 from ..models.building import building
 from ..models.install import install
 from ..models.member import member
-from database import db
-#from .database import create_db_engine, executeQuery
+from meshdb.data.database import db, executeQuery
 
-#db_engine = create_db_engine()
 
-# returns list of dicts for each member
-
-engine = db.get_engine()
-
-def getMembers():
+def getMembers(engine):
     stmt = select(
         member.id,
         member.first_name,
@@ -23,7 +17,7 @@ def getMembers():
         member.phone_number,
         member.slack_handle,
     )
-    result = db.get
+    result = executeQuery(stmt, engine)
     baselist = []
     for row in result.all():
         baselist.append(
@@ -47,7 +41,7 @@ def getMembers():
 # returns one member dict for a given member ID
 
 
-def getMemberByID(memberId):
+def getMemberByID(engine, memberId):
     stmt = select(
         member.id,
         member.first_name,
@@ -56,7 +50,7 @@ def getMemberByID(memberId):
         member.phone_number,
         member.slack_handle,
     ).where(member.id == memberId)
-    result = executeQuery(stmt, db_engine)
+    result = executeQuery(stmt, engine)
     try:
         response = dict(
             zip(
@@ -76,7 +70,7 @@ def getMemberByID(memberId):
     return response
 
 
-def getMemberByName(firstName, lastName):
+def getMemberByName(engine, firstName, lastName):
     stmt = (
         select(
             member.id,
@@ -89,7 +83,7 @@ def getMemberByName(firstName, lastName):
         .where(member.first_name == firstName)
         .where(member.lastname == lastName)
     )
-    result = executeQuery(stmt, db_engine)
+    result = executeQuery(stmt, engine)
     resultkeys = result.keys()
     resultall = result.all()
     if len(resultall) == 0:
@@ -130,7 +124,7 @@ def getMemberByName(firstName, lastName):
         return baselist
 
 
-def getMemberDetailsByID(memberID):
+def getMemberDetailsByID(engine, memberID):
     stmt = (
         select(
             member.id,
@@ -160,7 +154,7 @@ def getMemberDetailsByID(memberID):
         .join(install, member.id == install.member_id)
         .join(building, install.building_id == building.id)
     )
-    result = executeQuery(stmt, db_engine)
+    result = executeQuery(stmt, engine)
     try:
         response = dict(zip(result.keys(), result.one()))
     except:
@@ -190,12 +184,12 @@ def getMemberDetailsByID(memberID):
     return returndict
 
 
-def createNewMember(input):
+def createNewMember(engine, input):
     newDict = {}
     for key, value in input.items():
         newDict[stringcase.snakecase(key)] = value
     newMember = member(**newDict)
-    with Session(db_engine) as session:
+    with Session(engine) as session:
         session.add_all([newMember])
         session.commit()
     return "OK"
