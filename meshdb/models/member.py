@@ -3,7 +3,6 @@ from sqlalchemy.orm import Mapped, mapped_column
 from ..data.database import db
 
 
-
 class member(db.Model):
     __tablename__ = "members"
 

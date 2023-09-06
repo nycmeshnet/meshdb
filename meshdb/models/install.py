@@ -6,7 +6,6 @@ from sqlalchemy.orm import Mapped, mapped_column
 from ..data.database import db
 
 
-
 class InstallStatusEnum(Enum):
     Active = "Active"
     Inactive = "Inactive"

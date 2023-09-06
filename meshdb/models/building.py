@@ -8,8 +8,6 @@ from sqlalchemy.orm import Mapped, mapped_column
 from ..data.database import db
 
 
-
-
 # TODO: Elaborate on this
 class BuildingStatusEnum(Enum):
     Active = "Active"

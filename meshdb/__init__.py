@@ -13,6 +13,7 @@ import meshdb.models.install
 import meshdb.models.member
 import meshdb.models.request
 
+
 def create_app():
     """App factory"""
     load_dotenv()
@@ -38,8 +39,6 @@ def create_app():
     db.init_app(app)
     # Configure Database
 
-
-
     user_datastore = SQLAlchemyUserDatastore(db, authmodels.User, authmodels.Role)
     app.security = Security(app, user_datastore)
 
@@ -54,9 +53,5 @@ def create_app():
         if not app.security.datastore.find_user(email="example@nycmesh.net"):
             app.security.datastore.create_user(email="example@nycmesh.net", password=hash_password("abcd1234"))
         db.session.commit()
-
-    
-
-
 
     return app
