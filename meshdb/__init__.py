@@ -4,10 +4,14 @@ import os
 from flask import Flask
 from flask_security import Security, SQLAlchemyUserDatastore, hash_password
 
-from .data.database import db
+from meshdb.data.database import db
 
 from dotenv import load_dotenv
-
+import meshdb.auth.authmodels as authmodels
+import meshdb.models.building
+import meshdb.models.install
+import meshdb.models.member
+import meshdb.models.request
 
 def create_app():
     """App factory"""
@@ -31,20 +35,14 @@ def create_app():
     # csrf breaks token auth, need to investigate further
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = True
     app.config["WTF_CSRF_ENABLED"] = False
-
-    # Configure Database
-    from meshdb.data.setup import initialize_db
-
-    initialize_db()
-
     db.init_app(app)
+    # Configure Database
 
-    import meshdb.auth.authmodels as authmodels
 
     user_datastore = SQLAlchemyUserDatastore(db, authmodels.User, authmodels.Role)
     app.security = Security(app, user_datastore)
 
-    # test code to create user
+    # create all models and create user
     with app.app_context():
         db.create_all()
         if not app.security.datastore.find_user(email="example@nycmesh.net"):

@@ -5,8 +5,9 @@ from sqlalchemy import TEXT
 from sqlalchemy import Enum as SQLAlchemyEnum
 from sqlalchemy import String
 from sqlalchemy.orm import Mapped, mapped_column
+from ..data.database import db
 
-from ..models.baseModel import Base
+
 
 
 # TODO: Elaborate on this
@@ -15,7 +16,7 @@ class BuildingStatusEnum(Enum):
     Inactive = "Inactive"
 
 
-class building(Base):
+class building(db.Model):
     __tablename__ = "buildings"
 
     id: Mapped[int] = mapped_column(primary_key=True)

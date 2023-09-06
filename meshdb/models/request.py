@@ -3,8 +3,7 @@ from enum import Enum
 from sqlalchemy import Enum as SQLAlchemyEnum
 from sqlalchemy import ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column
-
-from ..models.baseModel import Base
+from ..data.database import db
 
 
 class RequestStatusEnum(Enum):
@@ -13,7 +12,7 @@ class RequestStatusEnum(Enum):
     Installed = "Installed"
 
 
-class request(Base):
+class request(db.Model):
     __tablename__ = "requests"
 
     id: Mapped[int] = mapped_column(primary_key=True)

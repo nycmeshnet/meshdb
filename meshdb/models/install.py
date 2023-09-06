@@ -3,8 +3,8 @@ from enum import Enum
 from sqlalchemy import Enum as SQLAlchemyEnum
 from sqlalchemy import ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column
+from ..data.database import db
 
-from ..models.baseModel import Base
 
 
 class InstallStatusEnum(Enum):
@@ -13,7 +13,7 @@ class InstallStatusEnum(Enum):
     Planned = "Planned"
 
 
-class install(Base):
+class install(db.Model):
     __tablename__ = "installs"
 
     id: Mapped[int] = mapped_column(primary_key=True)

@@ -1,10 +1,10 @@
 from sqlalchemy import String
 from sqlalchemy.orm import Mapped, mapped_column
+from ..data.database import db
 
-from ..models.baseModel import Base
 
 
-class member(Base):
+class member(db.Model):
     __tablename__ = "members"
 
     id: Mapped[int] = mapped_column(primary_key=True)

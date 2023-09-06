@@ -5,12 +5,14 @@ from sqlalchemy.orm import Session
 from ..models.building import building
 from ..models.install import install
 from ..models.member import member
-from .database import create_db_engine, executeQuery
+from database import db
+#from .database import create_db_engine, executeQuery
 
-db_engine = create_db_engine()
+#db_engine = create_db_engine()
 
 # returns list of dicts for each member
 
+engine = db.get_engine()
 
 def getMembers():
     stmt = select(
@@ -21,7 +23,7 @@ def getMembers():
         member.phone_number,
         member.slack_handle,
     )
-    result = executeQuery(stmt, db_engine)
+    result = db.get
     baselist = []
     for row in result.all():
         baselist.append(
