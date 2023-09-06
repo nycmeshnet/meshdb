@@ -7,6 +7,7 @@ from .data import queries
 route_blueprint = Blueprint("route_blueprint", __name__)
 
 
+
 @route_blueprint.route("/getMembers", methods=["GET"])
 @auth_required("token", "session")
 def apiGetMembers():
