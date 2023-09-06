@@ -39,19 +39,24 @@ def create_app():
     # Configure Database
 
 
+
     user_datastore = SQLAlchemyUserDatastore(db, authmodels.User, authmodels.Role)
     app.security = Security(app, user_datastore)
 
+    # Register API routes
+    from .routes import construct_blueprint
+
     # create all models and create user
     with app.app_context():
+        engine = db.get_engine()
+        app.register_blueprint(construct_blueprint(engine))
         db.create_all()
         if not app.security.datastore.find_user(email="example@nycmesh.net"):
             app.security.datastore.create_user(email="example@nycmesh.net", password=hash_password("abcd1234"))
         db.session.commit()
 
-    # Register API routes
-    from .routes import route_blueprint
+    
 
-    app.register_blueprint(route_blueprint)
+
 
     return app
