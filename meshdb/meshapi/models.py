@@ -1,0 +1,63 @@
+from django.db import models
+
+# Create your models here.
+
+
+class Building(models.Model):
+    class BuildingStatus(models.IntegerChoices):
+        INACTIVE = 0
+        ACTIVE = 1
+
+    id = models.IntegerField(primary_key=True)
+    bin = models.IntegerField()
+    building_status = models.IntegerField(choices=BuildingStatus.choices)
+    street_address = models.TextField()
+    city = models.TextField()
+    state = models.TextField()
+    zip_code = models.IntegerField()
+    latitude = models.FloatField()
+    longitude = models.FloatField()
+    altitude = models.FloatField()
+    network_number = models.IntegerField()
+    install_date = models.DateField(default=None, blank=True, null=True)
+    abandon_date = models.DateField(default=None, blank=True, null=True)
+
+
+class Member(models.Model):
+    id = models.IntegerField(primary_key=True)
+    first_name = models.TextField()
+    last_name = models.TextField()
+    email_address = models.EmailField()
+    phone_numer = models.TextField(
+        default=None, blank=True, null=True
+    )  # TODO (willnilges): Can we get some validation on this?
+    slack_handle = models.TextField(default=None, blank=True, null=True)
+
+
+class Install(models.Model):
+    class InstallStatus(models.IntegerChoices):
+        PLANNED = 0
+        INACTIVE = 1
+        ACTIVE = 2
+
+    id = models.IntegerField(primary_key=True)
+    install_number = models.IntegerField()
+    install_status = models.IntegerField(choices=InstallStatus.choices)
+    building_id = models.ForeignKey(Building, on_delete=models.PROTECT)
+    member_id = models.ForeignKey(Member, on_delete=models.PROTECT)
+    install_date = models.DateField(default=None, blank=True, null=True)
+    abandon_date = models.DateField(default=None, blank=True, null=True)
+
+
+class Request(models.Model):
+    class RequestStatus(models.IntegerChoices):
+        OPEN = 0
+        CLOSED = 1
+        INSTALLED = 2
+
+    id = models.IntegerField(primary_key=True)
+    request_status = models.IntegerField(choices=RequestStatus.choices)
+    ticket_id = models.IntegerField()
+    member_id = models.ForeignKey(Member, on_delete=models.PROTECT)
+    building_id = models.ForeignKey(Building, on_delete=models.PROTECT)
+    install_id = models.ForeignKey(Install, on_delete=models.PROTECT, blank=True)
