@@ -1,21 +1,19 @@
 version: '3'
 services:
   postgres:
+    healthcheck:
+      test: pg_isready -U ${DB_USER}
+      interval: 5s 
+      timeout: 3s
+      retries: 3
+      start_period: 5s
     networks:
       - api
     ports:
       - 5432:5432
     image: docker.io/postgres:latest
-    environment:
-      POSTGRES_DB: ${DB_NAME}
-      POSTGRES_USER: ${DB_USER} 
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
-    healthcheck:
-      test: pg_isready -U ${DB_USER}
-      interval: 10s 
-      timeout: 5s
-      retries: 3
-      start_period: 5s
+    env_file:
+      - .env
     volumes:
       - postgres_data:/var/lib/postgresql/data/
 
@@ -23,21 +21,41 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    healthcheck:
+      test: curl http://127.0.0.1:8081/
+      interval: 2s
+      timeout: 1s
+      retries: 3
+      start_period: 2s
     networks:
       - api
+    ports:
+      - "8081:8081"
     build:
       context: .
       dockerfile: Dockerfile
+    env_file:
+      - .env
+    volumes:
+      - static_files:/opt/meshdb/static
+
+
+  nginx:
+    depends_on:
+      meshdb:
+        condition: service_healthy
+    networks:
+      - api
     ports:
-      - "8080:8080"
-    environment:
-      DB_NAME: ${DB_NAME}
-      DB_USER: ${DB_USER}
-      DB_HOST: ${DB_HOST}
-      DB_PASSWORD: ${DB_PASSWORD}
+      - '8080:8080'
+    image: nginx
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/nginx.conf
+      - static_files:/var/www/html/static
 
 volumes:
   postgres_data:
+  static_files:
 
 networks:
   api:

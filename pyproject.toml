@@ -2,15 +2,12 @@
 name = "nycmesh-meshdb"
 version = "0.1"
 dependencies = [
-    "Flask==2.3.2",
-    "gunicorn==21.2.*",
-    "SQLAlchemy==2.0.20",
-    "SQLAlchemy_Utils==0.41.1",
+    "django==4.2.*",
+    "djangorestframework==3.14.*",
     "psycopg2-binary==2.9.*",
+    "gunicorn==21.2.*",
     "python-dotenv==1.0.*",
     "stringcase==1.2.*",
-    "flask-security-too==5.3.*",
-    "flask-sqlalchemy==3.0.*",
 ]
 
 [project.optional-dependencies]
