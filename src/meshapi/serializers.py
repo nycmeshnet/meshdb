@@ -4,14 +4,9 @@ from meshapi.models import Building, Member, Install, Request
 
 
 class UserSerializer(serializers.ModelSerializer):
-    buildings = serializers.PrimaryKeyRelatedField(many=True, queryset=Building.objects.all())
-    members = serializers.PrimaryKeyRelatedField(many=True, queryset=Member.objects.all())
-    installs = serializers.PrimaryKeyRelatedField(many=True, queryset=Install.objects.all())
-    requests = serializers.PrimaryKeyRelatedField(many=True, queryset=Request.objects.all())
-
     class Meta:
         model = User
-        fields = ["id", "username", "buildings", "installs", "requests"]
+        fields = "__all__"
 
 
 class BuildingSerializer(serializers.ModelSerializer):
