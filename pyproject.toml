@@ -25,8 +25,8 @@ dev = [
 requires = [ "setuptools >= 61", "wheel", "mypy" ]
 build-backend = "setuptools.build_meta"
 
-[tool.setuptools]
-packages = [ "meshdb" ]
+[tool.setuptools.packages.find]
+where = ["src"]
 
 
 [tool.mypy]

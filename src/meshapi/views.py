@@ -18,10 +18,6 @@ from rest_framework.reverse import reverse
 @api_view(["GET"])
 def api_root(request, format=None):
     return Response("We're meshin'.")
-    # return Response({
-    #     'installs': reverse('install-list', request=request, format=format),
-    #     'requests': reverse('request-list', request=request, format=format)
-    # })
 
 
 class UserList(generics.ListAPIView):

@@ -27,11 +27,9 @@ you can use Django's tools.
 
 First, fill out the `.env.sample` file and load it into your environment.
 
-Then, switch to Debug mode
-
-```sh
-sed -i 's/DEBUG = False/DEBUG = True/' meshdb/meshdb/settings.py
-```
+> [!IMPORTANT]
+> Make sure you're running in Debug mode if you want to see detailed traces.
+> Set DEBUG=True in your `.env` file.
 
 If you have a database, great, go nuts. If you don't, you can use
 `docker-compose`.
@@ -52,14 +50,6 @@ Then, you can get crackin'
 ```sh
 python manage.py runserver
 ```
-
-**When you're ready to commit, be sure to switch Debug mode off.**
-
-```sh
-sed -i 's/DEBUG = True/DEBUG = False/' meshdb/meshdb/settings.py
-```
-
-**If you don't, our CI will yell at you when you PR.**
 
 ### Prod Environment
 
