@@ -20,6 +20,9 @@ def api_root(request, format=None):
     return Response("We're meshin'.")
 
 
+# === USERS ===
+
+
 class UserList(generics.ListAPIView):
     permission_classes = [permissions.IsAdminUser]
     queryset = User.objects.all()
