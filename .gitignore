@@ -164,3 +164,6 @@ testobj.py
 .env
 .env.dev
 .env.local
+
+#quincy's env loading script
+loadenv.sh
