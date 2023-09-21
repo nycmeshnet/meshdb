@@ -39,6 +39,7 @@ class UserDetail(generics.RetrieveAPIView):
 
 
 class BuildingList(generics.ListCreateAPIView):
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
     queryset = Building.objects.all()
     serializer_class = BuildingSerializer
 
@@ -68,7 +69,7 @@ class MemberDetail(generics.RetrieveUpdateDestroyAPIView):
 
 
 class InstallList(generics.ListCreateAPIView):
-    permission_classes = [permissions.IsAdminUser, IsMeshMember]
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
     queryset = Install.objects.all()
     serializer_class = InstallSerializer
 
@@ -83,7 +84,7 @@ class InstallDetail(generics.RetrieveUpdateDestroyAPIView):
 
 
 class RequestList(generics.ListCreateAPIView):
-    permission_classes = [permissions.IsAdminUser]
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
     queryset = Request.objects.all()
     serializer_class = RequestSerializer
 

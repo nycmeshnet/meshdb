@@ -16,3 +16,12 @@ class TestViewsCodesUnauthenticated(TestCase):
     def test_api_members(self):
         response = self.c.get("/api/v1/members/")
         assert response.status_code == 403
+    def test_api_members(self):
+        response = self.c.get("/api/v1/installs/")
+        assert response.status_code == 200
+    def test_api_members(self):
+        response = self.c.get("/api/v1/requests/")
+        assert response.status_code == 200
+
+class TestViewsCodesAdmin(TestCase):
+    pass
