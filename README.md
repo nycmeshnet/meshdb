@@ -132,6 +132,13 @@ Finally, run the tests:
 python src/manage.py test meshapi
 ```
 
+## Adding Tests 
+
+Tests live in `src/meshapi/tests/`. It might make sense to add your test to
+an existing file within that directory, depending on what it's doing, or you
+can add a whole new file. See the [django documentation](https://docs.djangoproject.com/en/4.2/topics/testing/overview/)
+for details on how to write a test, or check the directory for examples.
+
 ## Invoke.py Commands
 
 For convenience, this package uses [invoke](https://www.pyinvoke.org/) to wrap
