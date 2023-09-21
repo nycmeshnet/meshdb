@@ -57,6 +57,7 @@ class Request(models.Model):
 
     id = models.IntegerField(primary_key=True)
     request_status = models.IntegerField(choices=RequestStatus.choices)
+    roof_access = models.BooleanField(default=False)
     ticket_id = models.IntegerField()
     member_id = models.ForeignKey(Member, on_delete=models.PROTECT)
     building_id = models.ForeignKey(Building, on_delete=models.PROTECT)
