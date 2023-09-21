@@ -23,9 +23,32 @@ wiki](http://wiki.mesh.nycmesh.net/books/software-services/page/meshdb)
 ### Dev Environment
 
 The production environment relies on Nginx and Gunicorn, but for development,
-you can use Django's tools.
+you can use Django's tools. You'll also need Python 3.11, and pip, of course.
 
-First, fill out the `.env.sample` file and load it into your environment.
+For safety, create a venv
+
+```
+python -m venv venv
+source .venv/bin/activate
+```
+
+Then, install dependencies
+
+```
+pip install '.[dev]'
+```
+
+Next, fill out the `.env.sample` file and load it into your environment.
+
+You're gonna need a `DJANGO_SECRET_KEY`:
+
+### Generating `DJANGO_SECRET_KEY`
+
+There's already a secret key for you in the .env.sample, but if you need another one...
+
+```python
+python -c 'from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())'
+```
 
 > [!IMPORTANT]
 > Make sure you're running in Debug mode if you want to see detailed traces.
@@ -33,6 +56,10 @@ First, fill out the `.env.sample` file and load it into your environment.
 
 If you have a database, great, go nuts. If you don't, you can use
 `docker-compose`.
+
+> [!WARNING]
+> If you have an old build, you might have to re-build the container
+> by adding `--build` to the below command.
 
 ```sh
 docker-compose up postgres
@@ -43,6 +70,11 @@ You might have to run the migrations. This will set up the DB for you.
 ```sh
 python manage.py makemigrations
 python manage.py migrate
+```
+
+You'll probably want an admin account
+```
+python ./src/manage.py createsuperuser
 ```
 
 Then, you can get crackin'
@@ -63,13 +95,8 @@ cp .env.sample .env
 nano .env # Fill in any missing values
 ```
 
-### Generating `DJANGO_SECRET_KEY`
-
-```python
-python # Open a python shell
-from django.core.management.utils import get_random_secret_key
-get_random_secret_key()
-```
+> [!NOTE]
+> Check the above instructions if you need a `DJANGO_SECRET_KEY`
 
 Finally, start the application and database servers using `docker compose`
 

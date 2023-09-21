@@ -9,8 +9,8 @@ services:
       start_period: 5s
     networks:
       - api
-    #ports:
-    #  - 5432:5432
+    ports:
+      - 5432:5432
     image: docker.io/postgres:latest
     environment:
       POSTGRES_DB: ${DB_NAME}
