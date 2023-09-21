@@ -114,10 +114,12 @@ curl http://127.0.0.1:8080/api/v1
 
 ## Unit Tests 
 
+We use django's testing framework, based on `unittest`
+
 To run the unit tests, first create a virtual env in the project root 
 
 ```sh
-python3 -m venv .venv source .venv/bin/activate
+python3 -m venv .venv && source .venv/bin/activate
 ```
 
 Next, install the project dependencies, including dev dependencies
@@ -125,9 +127,9 @@ Next, install the project dependencies, including dev dependencies
 pip install -e ".[dev]"
 ```
 
-Finally, run `pytest`:
+Finally, run the tests:
 ```sh
-pytest
+python src/manage.py test meshapi
 ```
 
 ## Invoke.py Commands
