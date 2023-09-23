@@ -8,18 +8,22 @@ class TestViewsCodesUnauthenticated(TestCase):
     c = Client()
 
     def test_all_views_codes_unauthenticated(self):
-        response = self.c.get("/api/v1/")
-        assert response.status_code == 200
-        response = self.c.get("/api/v1")
-        assert response.status_code == 301
-        response = self.c.get("/api/v1/buildings/")
-        assert response.status_code == 200
-        response = self.c.get("/api/v1/members/")
-        assert response.status_code == 403
-        response = self.c.get("/api/v1/installs/")
-        assert response.status_code == 200
-        response = self.c.get("/api/v1/requests/")
-        assert response.status_code == 200
+        routes = [
+            ("/api/v1/", 200),
+            ("/api/v1", 301),
+            ("/api/v1/buildings/", 200),
+            ("/api/v1/members/", 403),
+            ("/api/v1/installs/", 200),
+            ("/api/v1/requests/", 200),
+        ]
+
+        for route, code in routes:
+            response = self.c.get(route)
+            self.assertEqual(
+                code,
+                response.status_code,
+                f"status code incorrect for {route}. Should be {code}, but got {response.status_code}",
+            )
 
 
 class TestViewsCodesAdmin(TestCase):
@@ -32,15 +36,20 @@ class TestViewsCodesAdmin(TestCase):
 
     def test_all_views_codes_admin(self):
         self.c.login(username="admin", password="admin_password")
-        response = self.c.get("/api/v1/")
-        assert response.status_code == 200
-        response = self.c.get("/api/v1")
-        assert response.status_code == 301
-        response = self.c.get("/api/v1/buildings/")
-        assert response.status_code == 200
-        response = self.c.get("/api/v1/members/")
-        assert response.status_code == 200
-        response = self.c.get("/api/v1/installs/")
-        assert response.status_code == 200
-        response = self.c.get("/api/v1/requests/")
-        assert response.status_code == 200
+
+        routes = [
+            ("/api/v1/", 200),
+            ("/api/v1", 301),
+            ("/api/v1/buildings/", 200),
+            ("/api/v1/members/", 200),
+            ("/api/v1/installs/", 200),
+            ("/api/v1/requests/", 200),
+        ]
+
+        for route, code in routes:
+            response = self.c.get(route)
+            self.assertEqual(
+                code,
+                response.status_code,
+                f"status code incorrect for {route}. Should be {code}, but got {response.status_code}",
+            )
