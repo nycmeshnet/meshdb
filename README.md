@@ -164,6 +164,28 @@ an existing file within that directory, depending on what it's doing, or you
 can add a whole new file. See the [django documentation](https://docs.djangoproject.com/en/4.2/topics/testing/overview/)
 for details on how to write a test, or check the directory for examples.
 
+## Database
+
+If you ever need to get into the database directly, it's easy to do so.
+
+Get a shell on the postgres container:
+
+```sh
+docker exec -it meshdb-postgres-1 bash
+```
+
+Switch to `postgres` user.
+
+```sh
+su postgres
+```
+
+Run `psql`
+
+```sh
+psql -U meshdb
+```
+
 ## Invoke.py Commands
 
 For convenience, this package uses [invoke](https://www.pyinvoke.org/) to wrap
