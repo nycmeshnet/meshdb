@@ -4,6 +4,7 @@ from django.contrib.auth.models import User
 
 class TestMember(TestCase):
     c = Client()
+
     def setUp(self):
         self.admin_user = User.objects.create_superuser(
             username="admin", password="admin_password", email="admin@example.com"
@@ -17,7 +18,7 @@ class TestMember(TestCase):
             "last_name": "Smith",
             "email_address": "john.smith@example.com",
             "phone_numer": "555-555-5555",
-            "slack_handle": "@jsmith"
+            "slack_handle": "@jsmith",
         }
         response = self.c.post("/api/v1/members/", sample_member)
         assert response.status_code == 201
@@ -29,9 +30,7 @@ class TestMember(TestCase):
             "last_name": "",
             "email_address": "",
             "phone_numer": "",
-            "slack_handle": ""
+            "slack_handle": "",
         }
         response = self.c.post("/api/v1/members/", sample_member)
         assert response.status_code == 400
-
-
