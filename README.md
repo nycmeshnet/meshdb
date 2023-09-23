@@ -62,7 +62,7 @@ If you have a database, great, go nuts. If you don't, you can use
 > by adding `--build` to the below command.
 
 ```sh
-docker-compose up postgres
+docker-compose up -d postgres
 ```
 
 You might have to run the migrations. This will set up the DB for you.
@@ -127,9 +127,34 @@ Next, install the project dependencies, including dev dependencies
 pip install -e ".[dev]"
 ```
 
+Django's tests should spin up and tear down a mock database for us, but it's
+still going to need somewhere to put that database, so go ahead and boot up the
+one in your `docker-compose.yaml`
+
+```sh
+docker compose up -d postgres
+```
+
 Finally, run the tests:
 ```sh
 python src/manage.py test meshapi
+```
+
+### Code Coverage
+
+We'd like to cover as much of the code as is reasonable, and to see what we hit,
+we use `coverage.py` as suggested by Django.
+
+To run coverage, set up your venv, then wrap the testing command like so:
+
+```sh
+coverage run --source='.' src/manage.py test meshapi
+```
+
+To see the report, 
+
+```sh
+coverage report
 ```
 
 ## Adding Tests 
