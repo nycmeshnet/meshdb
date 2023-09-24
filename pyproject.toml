@@ -8,6 +8,7 @@ dependencies = [
     "gunicorn==21.2.*",
     "python-dotenv==1.0.*",
     "stringcase==1.2.*",
+    "python-dotenv==1.0.*",
 ]
 
 [project.optional-dependencies]

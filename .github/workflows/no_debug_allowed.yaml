@@ -7,5 +7,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+      - name: "Upgrade pip"
+        run: "pip install --upgrade pip"
+      - name: "Install package"
+        run: pip install ".[dev]"
       - name: "Your PR is not running in debug mode"
         run: cd src && python3 -c "import meshdb.settings; assert meshdb.settings.DEBUG == False"
