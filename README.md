@@ -62,7 +62,7 @@ If you have a database, great, go nuts. If you don't, you can use
 > by adding `--build` to the below command.
 
 ```sh
-docker-compose up postgres
+docker-compose up -d postgres
 ```
 
 You might have to run the migrations. This will set up the DB for you.
@@ -114,10 +114,12 @@ curl http://127.0.0.1:8080/api/v1
 
 ## Unit Tests 
 
+We use django's testing framework, based on `unittest`
+
 To run the unit tests, first create a virtual env in the project root 
 
 ```sh
-python3 -m venv .venv source .venv/bin/activate
+python3 -m venv .venv && source .venv/bin/activate
 ```
 
 Next, install the project dependencies, including dev dependencies
@@ -125,9 +127,63 @@ Next, install the project dependencies, including dev dependencies
 pip install -e ".[dev]"
 ```
 
-Finally, run `pytest`:
+Django's tests should spin up and tear down a mock database for us, but it's
+still going to need somewhere to put that database, so go ahead and boot up the
+one in your `docker-compose.yaml`
+
 ```sh
-pytest
+docker compose up -d postgres
+```
+
+Finally, run the tests:
+```sh
+python src/manage.py test meshapi
+```
+
+### Code Coverage
+
+We'd like to cover as much of the code as is reasonable, and to see what we hit,
+we use `coverage.py` as suggested by Django.
+
+To run coverage, set up your venv, then wrap the testing command like so:
+
+```sh
+coverage run --source='.' src/manage.py test meshapi
+```
+
+To see the report, 
+
+```sh
+coverage report
+```
+
+## Adding Tests 
+
+Tests live in `src/meshapi/tests/`. It might make sense to add your test to
+an existing file within that directory, depending on what it's doing, or you
+can add a whole new file. See the [django documentation](https://docs.djangoproject.com/en/4.2/topics/testing/overview/)
+for details on how to write a test, or check the directory for examples.
+
+## Database
+
+If you ever need to get into the database directly, it's easy to do so.
+
+Get a shell on the postgres container:
+
+```sh
+docker exec -it meshdb-postgres-1 bash
+```
+
+Switch to `postgres` user.
+
+```sh
+su postgres
+```
+
+Run `psql`
+
+```sh
+psql -U meshdb
 ```
 
 ## Invoke.py Commands
