@@ -63,4 +63,5 @@ class Request(models.Model):
     ticket_id = models.IntegerField()
     member_id = models.ForeignKey(Member, on_delete=models.PROTECT)
     building_id = models.ForeignKey(Building, on_delete=models.PROTECT)
+    unit = models.TextField(default=None, blank=True, null=True)
     install_id = models.ForeignKey(Install, on_delete=models.PROTECT, blank=True)
