@@ -1,6 +1,13 @@
 from django.db import models
 
-# Create your models here.
+from django.contrib.auth.models import Group
+
+
+class Installer(Group):
+    description = models.TextField(max_length=100, blank=True)
+
+    def __str__(self):
+        return self.name
 
 
 class Building(models.Model):
@@ -64,4 +71,4 @@ class Request(models.Model):
     member_id = models.ForeignKey(Member, on_delete=models.PROTECT)
     building_id = models.ForeignKey(Building, on_delete=models.PROTECT)
     unit = models.TextField(default=None, blank=True, null=True)
-    install_id = models.ForeignKey(Install, on_delete=models.PROTECT, blank=True)
+    install_id = models.ForeignKey(Install, on_delete=models.PROTECT, blank=True, null=True)

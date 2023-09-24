@@ -1,6 +1,8 @@
 from django.test import TestCase, Client
 from django.contrib.auth.models import User
 
+from .sample_data import sample_member
+
 
 class TestMember(TestCase):
     c = Client()
@@ -12,19 +14,16 @@ class TestMember(TestCase):
         self.c.login(username="admin", password="admin_password")
 
     def test_member(self):
-        sample_member = {
-            "id": "0",
-            "first_name": "John",
-            "last_name": "Smith",
-            "email_address": "john.smith@example.com",
-            "phone_numer": "555-555-5555",
-            "slack_handle": "@jsmith",
-        }
         response = self.c.post("/api/v1/members/", sample_member)
-        assert response.status_code == 201
+        code = 201
+        self.assertEqual(
+            code,
+            response.status_code,
+            f"status code incorrect. Should be {code}, but got {response.status_code}",
+        )
 
     def test_broken_member(self):
-        sample_member = {
+        err_member = {
             "id": "Error",
             "first_name": "",
             "last_name": "",
@@ -32,5 +31,10 @@ class TestMember(TestCase):
             "phone_numer": "",
             "slack_handle": "",
         }
-        response = self.c.post("/api/v1/members/", sample_member)
-        assert response.status_code == 400
+        response = self.c.post("/api/v1/members/", err_member)
+        code = 400
+        self.assertEqual(
+            code,
+            response.status_code,
+            f"status code incorrect. Should be {code}, but got {response.status_code}",
+        )

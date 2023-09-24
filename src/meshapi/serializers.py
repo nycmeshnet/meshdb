@@ -29,5 +29,5 @@ class InstallSerializer(serializers.ModelSerializer):
 
 class RequestSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Install
+        model = Request
         fields = "__all__"

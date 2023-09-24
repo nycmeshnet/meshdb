@@ -8,7 +8,16 @@ from meshapi.serializers import (
     InstallSerializer,
     RequestSerializer,
 )
-from meshapi.permissions import IsMeshInstaller, IsMeshMember
+from meshapi.permissions import (
+    BuildingListCreatePermissions,
+    BuildingRetrieveUpdateDestroyPermissions,
+    MemberListCreatePermissions,
+    MemberRetrieveUpdateDestroyPermissions,
+    InstallListCreatePermissions,
+    InstallRetrieveUpdateDestroyPermissions,
+    RequestListCreatePermissions,
+    RequestRetrieveUpdateDestroyPermissions,
+)
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework.reverse import reverse
@@ -39,28 +48,31 @@ class UserDetail(generics.RetrieveAPIView):
 
 
 class BuildingList(generics.ListCreateAPIView):
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    permission_classes = [BuildingListCreatePermissions]
     queryset = Building.objects.all()
     serializer_class = BuildingSerializer
 
 
 class BuildingDetail(generics.RetrieveUpdateDestroyAPIView):
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    permission_classes = [BuildingRetrieveUpdateDestroyPermissions]
     queryset = Building.objects.all()
     serializer_class = BuildingSerializer
+
+
+# TODO: Do we need more routes for just getting a NN and stuff?
 
 
 # === MEMBER ===
 
 
 class MemberList(generics.ListCreateAPIView):
-    permission_classes = [permissions.IsAdminUser]
+    permission_classes = [MemberListCreatePermissions]
     queryset = Member.objects.all()
     serializer_class = MemberSerializer
 
 
 class MemberDetail(generics.RetrieveUpdateDestroyAPIView):
-    permission_classes = [permissions.IsAdminUser]
+    permission_classes = [MemberRetrieveUpdateDestroyPermissions]
     queryset = Member.objects.all()
     serializer_class = MemberSerializer
 
@@ -69,13 +81,13 @@ class MemberDetail(generics.RetrieveUpdateDestroyAPIView):
 
 
 class InstallList(generics.ListCreateAPIView):
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    permission_classes = [InstallListCreatePermissions]
     queryset = Install.objects.all()
     serializer_class = InstallSerializer
 
 
 class InstallDetail(generics.RetrieveUpdateDestroyAPIView):
-    permission_classes = [permissions.IsAdminUser, IsMeshMember]
+    permission_classes = [InstallRetrieveUpdateDestroyPermissions]
     queryset = Install.objects.all()
     serializer_class = InstallSerializer
 
@@ -83,13 +95,26 @@ class InstallDetail(generics.RetrieveUpdateDestroyAPIView):
 # === REQUEST ===
 
 
+# class RequestList(mixins.ListModelMixin, mixins.CreateModelMixin, generics.GenericAPIView):
+#    queryset = Request.objects.all()
+#    serializer_class = RequestSerializer
+#
+#    def get(self, request, *args, **kwargs):
+#        return self.list(request, *args, **kwargs)
+#
+#    def post(self, request, *args, **kwargs):
+#        if not request.user.is_superuser:
+#            raise PermissionDenied("You do not have permission to delete this resource")
+#        return self.create(request, *args, **kwargs)
+
+
 class RequestList(generics.ListCreateAPIView):
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    permission_classes = [RequestListCreatePermissions]
     queryset = Request.objects.all()
     serializer_class = RequestSerializer
 
 
 class RequestDetail(generics.RetrieveUpdateDestroyAPIView):
-    permission_classes = [permissions.IsAdminUser]
+    permission_classes = [RequestRetrieveUpdateDestroyPermissions]
     queryset = Request.objects.all()
     serializer_class = RequestSerializer
