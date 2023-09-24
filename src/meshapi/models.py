@@ -44,6 +44,9 @@ class Install(models.Model):
     install_number = models.IntegerField()
     install_status = models.IntegerField(choices=InstallStatus.choices)
     building_id = models.ForeignKey(Building, on_delete=models.PROTECT)
+    unit = models.TextField(
+        default=None, blank=True, null=True
+    )
     member_id = models.ForeignKey(Member, on_delete=models.PROTECT)
     install_date = models.DateField(default=None, blank=True, null=True)
     abandon_date = models.DateField(default=None, blank=True, null=True)
@@ -58,6 +61,9 @@ class Request(models.Model):
     id = models.IntegerField(primary_key=True)
     request_status = models.IntegerField(choices=RequestStatus.choices)
     roof_access = models.BooleanField(default=False)
+    referral = models.TextField(
+        default=None, blank=True, null=True
+    )
     ticket_id = models.IntegerField()
     member_id = models.ForeignKey(Member, on_delete=models.PROTECT)
     building_id = models.ForeignKey(Building, on_delete=models.PROTECT)
