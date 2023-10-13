@@ -15,7 +15,6 @@ class Building(models.Model):
         INACTIVE = 0
         ACTIVE = 1
 
-    id = models.IntegerField(primary_key=True)
     bin = models.IntegerField()
     building_status = models.IntegerField(choices=BuildingStatus.choices)
     street_address = models.TextField()
@@ -25,13 +24,12 @@ class Building(models.Model):
     latitude = models.FloatField()
     longitude = models.FloatField()
     altitude = models.FloatField()
-    network_number = models.IntegerField()
+    network_number = models.IntegerField(blank=True, null=True)
     install_date = models.DateField(default=None, blank=True, null=True)
     abandon_date = models.DateField(default=None, blank=True, null=True)
 
 
 class Member(models.Model):
-    id = models.IntegerField(primary_key=True)
     first_name = models.TextField()
     last_name = models.TextField()
     email_address = models.EmailField()
@@ -47,7 +45,6 @@ class Install(models.Model):
         INACTIVE = 1
         ACTIVE = 2
 
-    id = models.IntegerField(primary_key=True)
     install_number = models.IntegerField()
     install_status = models.IntegerField(choices=InstallStatus.choices)
     building_id = models.ForeignKey(Building, on_delete=models.PROTECT)
@@ -63,11 +60,10 @@ class Request(models.Model):
         CLOSED = 1
         INSTALLED = 2
 
-    id = models.IntegerField(primary_key=True)
     request_status = models.IntegerField(choices=RequestStatus.choices)
     roof_access = models.BooleanField(default=False)
     referral = models.TextField(default=None, blank=True, null=True)
-    ticket_id = models.IntegerField()
+    ticket_id = models.IntegerField(blank=True, null=True)
     member_id = models.ForeignKey(Member, on_delete=models.PROTECT)
     building_id = models.ForeignKey(Building, on_delete=models.PROTECT)
     unit = models.TextField(default=None, blank=True, null=True)
