@@ -1,4 +1,6 @@
+import json
 from django.contrib.auth.models import User
+from django.db import IntegrityError
 from rest_framework import generics, permissions
 from meshapi.models import Building, Member, Install, Request
 from meshapi.serializers import (
@@ -20,7 +22,9 @@ from meshapi.permissions import (
 )
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from rest_framework.reverse import reverse
+from rest_framework import status
+from django.http.response import JsonResponse
+from rest_framework.parsers import JSONParser
 
 
 # Home view
@@ -118,3 +122,63 @@ class RequestDetail(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [RequestRetrieveUpdateDestroyPermissions]
     queryset = Request.objects.all()
     serializer_class = RequestSerializer
+
+
+# Join Form
+@api_view(["POST"])
+def join_form(request):
+    request_json = json.loads(request.body.decode("utf-8"))
+    first_name, last_name = request_json.get("name").split(" ")
+
+    join_form_member = Member(
+        first_name=first_name,
+        last_name=last_name,
+        email_address=request_json.get("email"),
+        phone_numer=request_json.get("phone"),
+        slack_handle="",
+    )
+
+    try:
+        join_form_member.save()
+    except IntegrityError as e:
+        print(e)
+        return Response({}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    # TODO: Implement BIN lookup, lat/long, and altitude
+    join_form_building = Building(
+        bin=69,
+        building_status=Building.BuildingStatus.INACTIVE,
+        street_address=request_json.get("street_address"),
+        city=request_json.get("city"),
+        state=request_json.get("state"),
+        zip_code=request_json.get("zip"),
+        latitude=69,
+        longitude=69,
+        altitude=69,
+        network_number=None,
+        install_date=None,
+        abandon_date=None,
+    )
+
+    try:
+        join_form_building.save()
+    except IntegrityError as e:
+        print(e)
+        return Response({}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    join_form_request = Request(
+        request_status=Request.RequestStatus.OPEN,
+        ticket_id=None,
+        member_id=join_form_member,
+        building_id=join_form_building,
+        unit=request_json.get("unit"),
+        install_id=None,
+    )
+
+    try:
+        join_form_request.save()
+    except IntegrityError as e:
+        print(e)
+        return Response({}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    return Response({}, status=status.HTTP_201_CREATED)

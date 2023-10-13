@@ -1,7 +1,6 @@
 from meshapi.models import Install, Request
 
 sample_member = {
-    "id": 0,
     "first_name": "John",
     "last_name": "Smith",
     "email_address": "john.smith@example.com",
@@ -10,7 +9,6 @@ sample_member = {
 }
 
 sample_building = {
-    "id": 0,
     "bin": 8888,
     "building_status": 1,
     "street_address": "3333 Chom St",
@@ -26,20 +24,18 @@ sample_building = {
 }
 
 sample_install = {
-    "id": 0,
     "install_number": 420,
     "install_status": Install.InstallStatus.ACTIVE,
     "install_date": "2022-03-01",
     "abandon_date": "",
-    "member_id": 0,
-    "building_id": 0,
+    "member_id": 1,
+    "building_id": 1,
 }
 
 sample_request = {
-    "id": 0,
     "request_status": Request.RequestStatus.OPEN,
-    "ticket_id": 0,
-    "member_id": 0,
-    "building_id": 0,
+    "ticket_id": 1,
+    "member_id": 1,
+    "building_id": 1,
     "install_id": "",
 }
