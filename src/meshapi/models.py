@@ -33,7 +33,7 @@ class Member(models.Model):
     first_name = models.TextField()
     last_name = models.TextField()
     email_address = models.EmailField()
-    phone_numer = models.TextField(
+    phone_number = models.TextField(
         default=None, blank=True, null=True
     )  # TODO (willnilges): Can we get some validation on this?
     slack_handle = models.TextField(default=None, blank=True, null=True)

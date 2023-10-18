@@ -129,41 +129,52 @@ class RequestDetail(generics.RetrieveUpdateDestroyAPIView):
 def join_form(request):
     request_json = json.loads(request.body)
 
+    first_name: str = request_json.get("first_name")
+    last_name: str = request_json.get("last_name")
+    email_address: str = request_json.get("email")
+    phone_number: str = request_json.get("phone")
+    street_address: str = request_json.get("street_address")
+    apartment: str = request_json.get("apartment")
+    roof_access: bool = request_json.get("roof_access")
+    city: str = request_json.get("city")
+    state: str = request_json.get("state")
+    zip_code: str = request_json.get("zip")
+
     existing_members = Member.objects.filter(
-        first_name=request_json.get("first_name"),
-        last_name=request_json.get("last_name"),
-        email_address=request_json.get("email"),
-        phone_numer=request_json.get("phone"),
+        first_name=first_name,
+        last_name=last_name,
+        email_address=email_address,
+        phone_number=phone_number,
     )
 
     join_form_member = existing_members[0] if len(existing_members) > 0 else Member(
-        first_name=request_json.get("first_name"),
-        last_name=request_json.get("last_name"),
-        email_address=request_json.get("email"),
-        phone_numer=request_json.get("phone"),
+        first_name=first_name,
+        last_name=last_name,
+        email_address=email_address,
+        phone_number=phone_number,
         slack_handle="",
     )
     try:
         join_form_member.save()
     except IntegrityError as e:
         print(e)
-        return Response({}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        return Response({}, status=status.HTTP_400_BAD_REQUEST)
 
     existing_buildings = Building.objects.filter(
-        street_address=request_json.get("street_address"),
-        city=request_json.get("city"),
-        state=request_json.get("state"),
-        zip_code=request_json.get("zip"),
+        street_address=street_address,
+        city=city,
+        state=state,
+        zip_code=zip_code,
     )
 
     # TODO: Implement BIN lookup, lat/long, and altitude
     join_form_building = existing_buildings[0] if len(existing_buildings) > 0 else Building(
         bin=69,
         building_status=Building.BuildingStatus.INACTIVE,
-        street_address=request_json.get("street_address"),
-        city=request_json.get("city"),
-        state=request_json.get("state"),
-        zip_code=request_json.get("zip"),
+        street_address=street_address,
+        city=city,
+        state=state,
+        zip_code=zip_code,
         latitude=69,
         longitude=69,
         altitude=69,
@@ -171,19 +182,20 @@ def join_form(request):
         install_date=None,
         abandon_date=None,
     )
-
     try:
         join_form_building.save()
     except IntegrityError as e:
         print(e)
-        return Response({}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        return Response({}, status=status.HTTP_400_BAD_REQUEST)
 
     join_form_request = Request(
         request_status=Request.RequestStatus.OPEN,
+        roof_access=roof_access,
+        referral="", # TODO (willnilges): Add referral stuff 
         ticket_id=None,
         member_id=join_form_member,
         building_id=join_form_building,
-        unit=request_json.get("unit"),
+        unit=apartment,
         install_id=None,
     )
 
@@ -191,6 +203,6 @@ def join_form(request):
         join_form_request.save()
     except IntegrityError as e:
         print(e)
-        return Response({}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        return Response({}, status=status.HTTP_400_BAD_REQUEST)
 
     return Response({}, status=status.HTTP_201_CREATED)
