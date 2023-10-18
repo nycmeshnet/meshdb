@@ -129,6 +129,30 @@ class RequestDetail(generics.RetrieveUpdateDestroyAPIView):
 def join_form(request):
     request_json = json.loads(request.body)
 
+    expected_structure = {
+        'first_name': str,
+        'last_name': str,
+        'email': str,
+        'phone': str,
+        'street_address': str,
+        'city': str,
+        'state': str,
+        'zip': int,
+        'apartment': str,
+        'roof_access': bool
+    }
+
+    for key, expected_type in expected_structure.items():
+        if key not in request_json:
+            print(f"Missing key: {key}")
+            # TODO: Return informative errors (not just here, this whole function)
+            return Response({}, status=status.HTTP_400_BAD_REQUEST)
+        elif not isinstance(request_json[key], expected_type):
+            print(f"Key '{key}' has an incorrect data type. Expected {expected_type}, but got {type(request_json[key])}")
+            return Response({}, status=status.HTTP_400_BAD_REQUEST)
+
+
+    # FIXME (willnilges): How do I validate the type of this JSON data?
     first_name: str = request_json.get("first_name")
     last_name: str = request_json.get("last_name")
     email_address: str = request_json.get("email")
