@@ -130,16 +130,16 @@ def join_form(request):
     request_json = json.loads(request.body)
 
     expected_structure = {
-        'first_name': str,
-        'last_name': str,
-        'email': str,
-        'phone': str,
-        'street_address': str,
-        'city': str,
-        'state': str,
-        'zip': int,
-        'apartment': str,
-        'roof_access': bool
+        "first_name": str,
+        "last_name": str,
+        "email": str,
+        "phone": str,
+        "street_address": str,
+        "city": str,
+        "state": str,
+        "zip": int,
+        "apartment": str,
+        "roof_access": bool,
     }
 
     for key, expected_type in expected_structure.items():
@@ -148,9 +148,10 @@ def join_form(request):
             # TODO: Return informative errors (not just here, this whole function)
             return Response({}, status=status.HTTP_400_BAD_REQUEST)
         elif not isinstance(request_json[key], expected_type):
-            print(f"Key '{key}' has an incorrect data type. Expected {expected_type}, but got {type(request_json[key])}")
+            print(
+                f"Key '{key}' has an incorrect data type. Expected {expected_type}, but got {type(request_json[key])}"
+            )
             return Response({}, status=status.HTTP_400_BAD_REQUEST)
-
 
     # FIXME (willnilges): How do I validate the type of this JSON data?
     first_name: str = request_json.get("first_name")
@@ -171,12 +172,16 @@ def join_form(request):
         phone_number=phone_number,
     )
 
-    join_form_member = existing_members[0] if len(existing_members) > 0 else Member(
-        first_name=first_name,
-        last_name=last_name,
-        email_address=email_address,
-        phone_number=phone_number,
-        slack_handle="",
+    join_form_member = (
+        existing_members[0]
+        if len(existing_members) > 0
+        else Member(
+            first_name=first_name,
+            last_name=last_name,
+            email_address=email_address,
+            phone_number=phone_number,
+            slack_handle="",
+        )
     )
     try:
         join_form_member.save()
@@ -192,19 +197,23 @@ def join_form(request):
     )
 
     # TODO: Implement BIN lookup, lat/long, and altitude
-    join_form_building = existing_buildings[0] if len(existing_buildings) > 0 else Building(
-        bin=69,
-        building_status=Building.BuildingStatus.INACTIVE,
-        street_address=street_address,
-        city=city,
-        state=state,
-        zip_code=zip_code,
-        latitude=69,
-        longitude=69,
-        altitude=69,
-        network_number=None,
-        install_date=None,
-        abandon_date=None,
+    join_form_building = (
+        existing_buildings[0]
+        if len(existing_buildings) > 0
+        else Building(
+            bin=69,
+            building_status=Building.BuildingStatus.INACTIVE,
+            street_address=street_address,
+            city=city,
+            state=state,
+            zip_code=zip_code,
+            latitude=69,
+            longitude=69,
+            altitude=69,
+            network_number=None,
+            install_date=None,
+            abandon_date=None,
+        )
     )
     try:
         join_form_building.save()
@@ -215,7 +224,7 @@ def join_form(request):
     join_form_request = Request(
         request_status=Request.RequestStatus.OPEN,
         roof_access=roof_access,
-        referral="", # TODO (willnilges): Add referral stuff 
+        referral="",  # TODO (willnilges): Add referral stuff
         ticket_id=None,
         member_id=join_form_member,
         building_id=join_form_building,

@@ -30,8 +30,7 @@ class TestJoinForm(TestCase):
 
     def test_empty_join_form(self):
         # Name, email, phone, location, apt, rooftop, referral
-        join_form_submission = {
-        }
+        join_form_submission = {}
         response = self.c.post("/api/v1/join/", join_form_submission, content_type="application/json")
 
         code = 400
@@ -40,7 +39,6 @@ class TestJoinForm(TestCase):
             response.status_code,
             f"status code incorrect for Empty Join Form. Should be {code}, but got {response.status_code}",
         )
-
 
     def test_invalid_join_form(self):
         # Name, email, phone, location, apt, rooftop, referral
