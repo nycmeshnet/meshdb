@@ -8,7 +8,8 @@ class TestJoinForm(TestCase):
     def test_valid_join_form(self):
         # Name, email, phone, location, apt, rooftop, referral
         join_form_submission = {
-            "name": "John Smith",
+            "first_name": "John",
+            "last_name": "Smith",
             "email": "jsmith@gmail.com",
             "phone": "555-555-5555",
             "street_address": "333 Chom St",

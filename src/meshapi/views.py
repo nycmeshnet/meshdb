@@ -127,25 +127,37 @@ class RequestDetail(generics.RetrieveUpdateDestroyAPIView):
 # Join Form
 @api_view(["POST"])
 def join_form(request):
-    request_json = json.loads(request.body.decode("utf-8"))
-    first_name, last_name = request_json.get("name").split(" ")
+    request_json = json.loads(request.body)
 
-    join_form_member = Member(
-        first_name=first_name,
-        last_name=last_name,
+    existing_members = Member.objects.filter(
+        first_name=request_json.get("first_name"),
+        last_name=request_json.get("last_name"),
+        email_address=request_json.get("email"),
+        phone_numer=request_json.get("phone"),
+    )
+
+    join_form_member = existing_members[0] if len(existing_members) > 0 else Member(
+        first_name=request_json.get("first_name"),
+        last_name=request_json.get("last_name"),
         email_address=request_json.get("email"),
         phone_numer=request_json.get("phone"),
         slack_handle="",
     )
-
     try:
         join_form_member.save()
     except IntegrityError as e:
         print(e)
         return Response({}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+    existing_buildings = Building.objects.filter(
+        street_address=request_json.get("street_address"),
+        city=request_json.get("city"),
+        state=request_json.get("state"),
+        zip_code=request_json.get("zip"),
+    )
+
     # TODO: Implement BIN lookup, lat/long, and altitude
-    join_form_building = Building(
+    join_form_building = existing_buildings[0] if len(existing_buildings) > 0 else Building(
         bin=69,
         building_status=Building.BuildingStatus.INACTIVE,
         street_address=request_json.get("street_address"),
