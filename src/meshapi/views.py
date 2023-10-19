@@ -153,6 +153,8 @@ def join_form(request):
             )
             return Response({}, status=status.HTTP_400_BAD_REQUEST)
 
+    # TODO: Formatting validation? Email, Phone, yada yada.
+
     # FIXME (willnilges): How do I validate the type of this JSON data?
     first_name: str = request_json.get("first_name")
     last_name: str = request_json.get("last_name")
@@ -172,17 +174,17 @@ def join_form(request):
         phone_number=phone_number,
     )
 
-    join_form_member = (
-        existing_members[0]
-        if len(existing_members) > 0
-        else Member(
+    if len(existing_members) > 0:
+        return Response({"Member already exists"}, status=status.HTTP_400_BAD_REQUEST)
+
+    join_form_member = Member(
             first_name=first_name,
             last_name=last_name,
             email_address=email_address,
             phone_number=phone_number,
             slack_handle="",
         )
-    )
+
     try:
         join_form_member.save()
     except IntegrityError as e:
