@@ -1,6 +1,7 @@
 import json
 from django.contrib.auth.models import User
 from django.db import IntegrityError
+from geopy.adapters import requests
 from rest_framework import generics, permissions
 from meshapi.models import Building, Member, Install, Request
 from meshapi.serializers import (
@@ -193,8 +194,6 @@ def join_form(request):
     except phonenumbers.NumberParseException:
         return Response({f"{phone_number} is not a valid phone number"}, status=status.HTTP_400_BAD_REQUEST)
 
-    # FIXME (willnilges): OSM apparently doesn't have altitude data
-    # (https://geopy.readthedocs.io/en/latest/index.html?highlight=Altitude#geopy.location.Location.altitude)
     try:
         print("Validating Address...")
         geolocator = Nominatim(user_agent="address_lookup")
@@ -208,6 +207,33 @@ def join_form(request):
         print(f"Altitude is: {location.altitude}")
         if location is None:
             raise ValueError()
+
+        # OSM apparently doesn't have altitude data
+        # (https://geopy.readthedocs.io/en/latest/index.html?highlight=Altitude#geopy.location.Location.altitude)
+        # But NYC does: https://data.cityofnewyork.us/Housing-Development/Building-Footprints/nqwf-w8eh
+        # https://github.com/CityOfNewYork/nyc-geo-metadata/blob/master/Metadata/Metadata_BuildingFootprints.md
+        # heightroof is how high the building is above ground level in feet.
+        # groundelev is the elevation from sea level in feet.
+        # FIXME (willnilges): spaghet
+        query_radius = 10
+        nyc_dataset_resp = []
+        while len(nyc_dataset_resp) == 0:
+            print(f"Querying NYC with radius {query_radius}")
+            query_params = {
+                "$where": f"within_circle(the_geom, {location.latitude}, {location.longitude}, {query_radius})",  # Define the radius (in meters)
+                "$select": "bin,heightroof,groundelev",  # Replace with the actual field name for building height
+                "$limit": 1,  # Limit the result to one record (or adjust as needed)
+            }
+            nyc_dataset_req = requests.get(f"https://data.cityofnewyork.us/resource/qb5r-6dgf.json", params=query_params)
+            nyc_dataset_resp = json.loads(nyc_dataset_req.content.decode("utf-8"))
+            if len(nyc_dataset_resp) == 0:
+                print("Search Failed. Increasing Radius.")
+                query_radius += 5
+        print(f"bin: {nyc_dataset_resp[0]['bin']}")
+        print(f"heightroof: {nyc_dataset_resp[0]['heightroof']}")
+        print(f"groundelev: {nyc_dataset_resp[0]['groundelev']}")
+        total_height = float(nyc_dataset_resp[0]['heightroof']) + float(nyc_dataset_resp[0]['groundelev'])
+        print(f"Total Height: {total_height}")
     except Exception as e:
         print(e)
         return Response(f"Error parsing address.", status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -248,7 +274,7 @@ def join_form(request):
         existing_buildings[0]
         if len(existing_buildings) > 0
         else Building(
-            bin=69,
+            bin=nyc_dataset_resp[0]["bin"],
             building_status=Building.BuildingStatus.INACTIVE,
             street_address=street_address,
             city=city,
@@ -256,7 +282,7 @@ def join_form(request):
             zip_code=zip_code,
             latitude=location.latitude,
             longitude=location.longitude,
-            altitude=location.altitude,
+            altitude=total_height,
             network_number=None,
             install_date=None,
             abandon_date=None,
