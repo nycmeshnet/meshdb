@@ -25,6 +25,9 @@ from rest_framework.response import Response
 from rest_framework import status
 from django.http.response import JsonResponse
 from rest_framework.parsers import JSONParser
+from validate_email import validate_email
+import phonenumbers
+from geopy.geocoders import Nominatim
 
 
 # Home view
@@ -140,22 +143,24 @@ def join_form(request):
         "zip": int,
         "apartment": str,
         "roof_access": bool,
+        "referral": str,
     }
 
     for key, expected_type in expected_structure.items():
         if key not in request_json:
             print(f"Missing key: {key}")
-            # TODO: Return informative errors (not just here, this whole function)
-            return Response({}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({f"Missing key: {key}"}, status=status.HTTP_400_BAD_REQUEST)
         elif not isinstance(request_json[key], expected_type):
             print(
                 f"Key '{key}' has an incorrect data type. Expected {expected_type}, but got {type(request_json[key])}"
             )
-            return Response({}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {
+                    f"Key '{key}' has an incorrect data type. Expected {expected_type}, but got {type(request_json[key])}"
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
-    # TODO: Formatting validation? Email, Phone, yada yada.
-
-    # FIXME (willnilges): How do I validate the type of this JSON data?
     first_name: str = request_json.get("first_name")
     last_name: str = request_json.get("last_name")
     email_address: str = request_json.get("email")
@@ -166,6 +171,46 @@ def join_form(request):
     city: str = request_json.get("city")
     state: str = request_json.get("state")
     zip_code: str = request_json.get("zip")
+    referral: str = request_json.get("referral")
+
+    # TODO: Formatting validation? Email, Phone, yada yada.
+    # FIXME (willnilges): No smtp?
+    print("Validating Email...")
+    if not validate_email(
+        email_address=email_address,
+        check_format=True,
+        check_blacklist=True,
+        check_dns=True,
+        dns_timeout=5,
+        check_smtp=False,
+    ):
+        return Response({f"{email_address} is not a valid email"}, status=status.HTTP_400_BAD_REQUEST)
+
+    # Expects country code!!!!
+    print("Validating Phone...")
+    try:
+        phonenumbers.parse(phone_number, None)
+    except phonenumbers.NumberParseException:
+        return Response({f"{phone_number} is not a valid phone number"}, status=status.HTTP_400_BAD_REQUEST)
+
+    # FIXME (willnilges): OSM apparently doesn't have altitude data
+    # (https://geopy.readthedocs.io/en/latest/index.html?highlight=Altitude#geopy.location.Location.altitude)
+    try:
+        print("Validating Address...")
+        geolocator = Nominatim(user_agent="address_lookup")
+        address = f"{street_address}, {city}, {state} {zip_code}"
+        location = geolocator.geocode(address)
+        # TODO: We need a log library, because I want to be able to turn on
+        # debug logs for tests and debugging
+        print(f"Location is: {location}")
+        print(f"Latitude is: {location.latitude}")
+        print(f"Longitude is: {location.longitude}")
+        print(f"Altitude is: {location.altitude}")
+        if location is None:
+            raise ValueError()
+    except Exception as e:
+        print(e)
+        return Response(f"Error parsing address.", status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     existing_members = Member.objects.filter(
         first_name=first_name,
@@ -178,18 +223,18 @@ def join_form(request):
         return Response({"Member already exists"}, status=status.HTTP_400_BAD_REQUEST)
 
     join_form_member = Member(
-            first_name=first_name,
-            last_name=last_name,
-            email_address=email_address,
-            phone_number=phone_number,
-            slack_handle="",
-        )
+        first_name=first_name,
+        last_name=last_name,
+        email_address=email_address,
+        phone_number=phone_number,
+        slack_handle="",
+    )
 
     try:
         join_form_member.save()
     except IntegrityError as e:
         print(e)
-        return Response({}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"Could not save member."}, status=status.HTTP_400_BAD_REQUEST)
 
     existing_buildings = Building.objects.filter(
         street_address=street_address,
@@ -209,9 +254,9 @@ def join_form(request):
             city=city,
             state=state,
             zip_code=zip_code,
-            latitude=69,
-            longitude=69,
-            altitude=69,
+            latitude=location.latitude,
+            longitude=location.longitude,
+            altitude=location.altitude,
             network_number=None,
             install_date=None,
             abandon_date=None,
@@ -221,12 +266,12 @@ def join_form(request):
         join_form_building.save()
     except IntegrityError as e:
         print(e)
-        return Response({}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"Could not save building"}, status=status.HTTP_400_BAD_REQUEST)
 
     join_form_request = Request(
         request_status=Request.RequestStatus.OPEN,
         roof_access=roof_access,
-        referral="",  # TODO (willnilges): Add referral stuff
+        referral=referral,
         ticket_id=None,
         member_id=join_form_member,
         building_id=join_form_building,
@@ -238,6 +283,6 @@ def join_form(request):
         join_form_request.save()
     except IntegrityError as e:
         print(e)
-        return Response({}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"Could not save request"}, status=status.HTTP_400_BAD_REQUEST)
 
     return Response({}, status=status.HTTP_201_CREATED)

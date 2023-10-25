@@ -6,21 +6,20 @@ from meshapi.models import Building, Member, Install, Request
 class TestJoinForm(TestCase):
     c = Client()
 
-    # TODO: Make sure that the models exist after creation
-
     def test_valid_join_form(self):
         # Name, email, phone, location, apt, rooftop, referral
         join_form_submission = {
             "first_name": "John",
             "last_name": "Smith",
             "email": "jsmith@gmail.com",
-            "phone": "555-555-5555",
-            "street_address": "333 Chom St",
-            "city": "Brooklyn",
+            "phone": "+1585-758-3425",  # CSH's phone number :P
+            "street_address": "151 Broome St",
+            "city": "New York",
             "state": "NY",
-            "zip": 11215,
-            "apartment": "3",
+            "zip": 10002,
+            "apartment": "",
             "roof_access": True,
+            "referral": "Googled it or something IDK",
         }
         response = self.c.post("/api/v1/join/", join_form_submission, content_type="application/json")
 
@@ -28,20 +27,20 @@ class TestJoinForm(TestCase):
         self.assertEqual(
             code,
             response.status_code,
-            f"status code incorrect for Valid Join Form. Should be {code}, but got {response.status_code}",
+            f"status code incorrect for Valid Join Form. Should be {code}, but got {response.status_code}.\n Response is: {response.content.decode('utf-8')}",
         )
 
         # Make sure that we get the right stuff out of the database afterwards
-        first_name: str = join_form_submission.get("first_name")
-        last_name: str = join_form_submission.get("last_name")
-        email_address: str = join_form_submission.get("email")
-        phone_number: str = join_form_submission.get("phone")
-        street_address: str = join_form_submission.get("street_address")
-        apartment: str = join_form_submission.get("apartment")
-        roof_access: bool = join_form_submission.get("roof_access")
-        city: str = join_form_submission.get("city")
-        state: str = join_form_submission.get("state")
-        zip_code: str = join_form_submission.get("zip")
+        first_name = join_form_submission.get("first_name")
+        last_name = join_form_submission.get("last_name")
+        email_address = join_form_submission.get("email")
+        phone_number = join_form_submission.get("phone")
+        street_address = join_form_submission.get("street_address")
+        apartment = join_form_submission.get("apartment")
+        roof_access = join_form_submission.get("roof_access")
+        city = join_form_submission.get("city")
+        state = join_form_submission.get("state")
+        zip_code = join_form_submission.get("zip")
 
         existing_members = Member.objects.filter(
             first_name=first_name,
@@ -51,7 +50,11 @@ class TestJoinForm(TestCase):
         )
 
         length = 1
-        self.assertEqual(len(existing_members), length, f"Didn't find created member for Valid Join Form. Should be {length}, but got {len(existing_members)}")
+        self.assertEqual(
+            len(existing_members),
+            length,
+            f"Didn't find created member for Valid Join Form. Should be {length}, but got {len(existing_members)}",
+        )
 
         existing_buildings = Building.objects.filter(
             street_address=street_address,
@@ -61,7 +64,20 @@ class TestJoinForm(TestCase):
         )
 
         length = 1
-        self.assertEqual(len(existing_buildings), length, f"Didn't find created building for Valid Join Form. Should be {length}, but got {len(existing_buildings)}")
+        self.assertEqual(
+            len(existing_buildings),
+            length,
+            f"Didn't find created building for Valid Join Form. Should be {length}, but got {len(existing_buildings)}",
+        )
+
+        join_form_requests = Request.objects.filter(member_id=1)
+
+        length = 1
+        self.assertEqual(
+            len(join_form_requests),
+            length,
+            f"Didn't find created request for Valid Join Form. Should be {length}, but got {len(join_form_requests)}",
+        )
 
     def test_empty_join_form(self):
         # Name, email, phone, location, apt, rooftop, referral
@@ -78,13 +94,20 @@ class TestJoinForm(TestCase):
         # Shouldn't have any data in the database
         existing_members = Member.objects.all()
         length = 0
-        self.assertEqual(len(existing_members), length, f"Didn't find created member for Empty Join Form. Should be {length}, but got {len(existing_members)}")
+        self.assertEqual(
+            len(existing_members),
+            length,
+            f"Didn't find created member for Empty Join Form. Should be {length}, but got {len(existing_members)}",
+        )
 
         existing_buildings = Building.objects.all()
 
         length = 0
-        self.assertEqual(len(existing_buildings), length, f"Didn't find created building for Valid Join Form. Should be {length}, but got {len(existing_buildings)}")
-
+        self.assertEqual(
+            len(existing_buildings),
+            length,
+            f"Didn't find created building for Valid Join Form. Should be {length}, but got {len(existing_buildings)}",
+        )
 
     def test_invalid_join_form(self):
         # Name, email, phone, location, apt, rooftop, referral
@@ -112,11 +135,17 @@ class TestJoinForm(TestCase):
         # Database should be empty
         existing_members = Member.objects.all()
         length = 0
-        self.assertEqual(len(existing_members), length, f"Didn't find created member for Empty Join Form. Should be {length}, but got {len(existing_members)}")
+        self.assertEqual(
+            len(existing_members),
+            length,
+            f"Didn't find created member for Empty Join Form. Should be {length}, but got {len(existing_members)}",
+        )
 
         existing_buildings = Building.objects.all()
 
         length = 0
-        self.assertEqual(len(existing_buildings), length, f"Didn't find created building for Valid Join Form. Should be {length}, but got {len(existing_buildings)}")
-
-
+        self.assertEqual(
+            len(existing_buildings),
+            length,
+            f"Didn't find created building for Valid Join Form. Should be {length}, but got {len(existing_buildings)}",
+        )
