@@ -34,8 +34,8 @@ jobs:
         run: pip install ".[dev]"
       - name: Run Django Tests
         env:
-          POSTGRES_DB: nycmesh-dev
-          POSTGRES_USER: nycmesh
-          POSTGRES_PASSWORD: abcd1234
-          POSTGRES_PORT: 5432
+          DB_NAME: nycmesh-dev
+          DB_USER: nycmesh
+          DB_PASSWORD: abcd1234
+          DB_PORT: 5432
         run: python3 src/manage.py test meshapi
