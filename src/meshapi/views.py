@@ -1,4 +1,5 @@
 import json
+from time import time
 from django.contrib.auth.models import User
 from django.db import IntegrityError
 from geopy.adapters import requests
@@ -194,33 +195,38 @@ def join_form(request):
     longitude = latitude = altitude = 0.0
     bin = 0
 
-    try:
-        print("Validating Address...")
-        address = f"{street_address}, {city}, {state} {zip_code}"
+    for attempts in range(0,2):
+        try:
+            print("Validating Address...")
+            address = f"{street_address}, {city}, {state} {zip_code}"
 
-        # Look up BIN in NYC Planning's Authoritative Search
-        query_params = {
-            "text": address,
-        }
-        nyc_planning_req = requests.get(f"https://geosearch.planninglabs.nyc/v2/search", params=query_params)
-        nyc_planning_resp = json.loads(nyc_planning_req.content.decode("utf-8"))
-        bin = nyc_planning_resp["features"][0]["properties"]["addendum"]["pad"]["bin"]
-        longitude, latitude = nyc_planning_resp["features"][0]["geometry"]["coordinates"]
+            # Look up BIN in NYC Planning's Authoritative Search
+            query_params = {
+                "text": address,
+            }
+            nyc_planning_req = requests.get(f"https://geosearch.planninglabs.nyc/v2/search", params=query_params)
+            nyc_planning_resp = json.loads(nyc_planning_req.content.decode("utf-8"))
+            bin = nyc_planning_resp["features"][0]["properties"]["addendum"]["pad"]["bin"]
+            longitude, latitude = nyc_planning_resp["features"][0]["geometry"]["coordinates"]
 
-        # Now that we have the bin, we can definitively get the height from
-        # NYC OpenData
-        query_params = {
-            "$where": f"bin={bin}",
-            "$select": "heightroof,groundelev",
-            "$limit": 1,
-        }
-        nyc_dataset_req = requests.get(f"https://data.cityofnewyork.us/resource/qb5r-6dgf.json", params=query_params)
-        nyc_dataset_resp = json.loads(nyc_dataset_req.content.decode("utf-8"))
-        altitude = float(nyc_dataset_resp[0]["heightroof"]) + float(nyc_dataset_resp[0]["groundelev"])
-
-    except Exception as e:
-        print(e)
-        return Response(f"Error parsing address.", status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            # Now that we have the bin, we can definitively get the height from
+            # NYC OpenData
+            query_params = {
+                "$where": f"bin={bin}",
+                "$select": "heightroof,groundelev",
+                "$limit": 1,
+            }
+            nyc_dataset_req = requests.get(f"https://data.cityofnewyork.us/resource/qb5r-6dgf.json", params=query_params)
+            nyc_dataset_resp = json.loads(nyc_dataset_req.content.decode("utf-8"))
+            altitude = float(nyc_dataset_resp[0]["heightroof"]) + float(nyc_dataset_resp[0]["groundelev"])
+            break # Bail if we succeed, only need to try again if we except
+        except Exception as e:
+            print(e)
+            if attempts == 1:
+                return Response(f"Error validating address.", status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            else:
+                print("Something went wrong validating the address. Re-trying...")
+                time.sleep(3)
 
     existing_members = Member.objects.filter(
         first_name=first_name,
