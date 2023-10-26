@@ -61,6 +61,7 @@ class TestJoinForm(TestCase):
             city=city,
             state=state,
             zip_code=zip_code,
+            bin=1077609,
         )
 
         length = 1

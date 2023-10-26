@@ -28,8 +28,6 @@ from django.http.response import JsonResponse
 from rest_framework.parsers import JSONParser
 from validate_email import validate_email
 import phonenumbers
-from geopy.geocoders import Nominatim
-
 
 # Home view
 @api_view(["GET"])
@@ -194,46 +192,33 @@ def join_form(request):
     except phonenumbers.NumberParseException:
         return Response({f"{phone_number} is not a valid phone number"}, status=status.HTTP_400_BAD_REQUEST)
 
+    longitude = latitude = altitude = 0.0
+    bin = 0
+
     try:
         print("Validating Address...")
-        geolocator = Nominatim(user_agent="address_lookup")
         address = f"{street_address}, {city}, {state} {zip_code}"
-        location = geolocator.geocode(address)
-        # TODO: We need a log library, because I want to be able to turn on
-        # debug logs for tests and debugging
-        print(f"Location is: {location}")
-        print(f"Latitude is: {location.latitude}")
-        print(f"Longitude is: {location.longitude}")
-        print(f"Altitude is: {location.altitude}")
-        if location is None:
-            raise ValueError()
 
-        # OSM apparently doesn't have altitude data
-        # (https://geopy.readthedocs.io/en/latest/index.html?highlight=Altitude#geopy.location.Location.altitude)
-        # But NYC does: https://data.cityofnewyork.us/Housing-Development/Building-Footprints/nqwf-w8eh
-        # https://github.com/CityOfNewYork/nyc-geo-metadata/blob/master/Metadata/Metadata_BuildingFootprints.md
-        # heightroof is how high the building is above ground level in feet.
-        # groundelev is the elevation from sea level in feet.
-        # FIXME (willnilges): spaghet
-        query_radius = 10
-        nyc_dataset_resp = []
-        while len(nyc_dataset_resp) == 0:
-            print(f"Querying NYC with radius {query_radius}")
-            query_params = {
-                "$where": f"within_circle(the_geom, {location.latitude}, {location.longitude}, {query_radius})",  # Define the radius (in meters)
-                "$select": "bin,heightroof,groundelev",  # Replace with the actual field name for building height
-                "$limit": 1,  # Limit the result to one record (or adjust as needed)
-            }
-            nyc_dataset_req = requests.get(f"https://data.cityofnewyork.us/resource/qb5r-6dgf.json", params=query_params)
-            nyc_dataset_resp = json.loads(nyc_dataset_req.content.decode("utf-8"))
-            if len(nyc_dataset_resp) == 0:
-                print("Search Failed. Increasing Radius.")
-                query_radius += 5
-        print(f"bin: {nyc_dataset_resp[0]['bin']}")
-        print(f"heightroof: {nyc_dataset_resp[0]['heightroof']}")
-        print(f"groundelev: {nyc_dataset_resp[0]['groundelev']}")
-        total_height = float(nyc_dataset_resp[0]['heightroof']) + float(nyc_dataset_resp[0]['groundelev'])
-        print(f"Total Height: {total_height}")
+        # Look up BIN in NYC Planning's Authoritative Search
+        query_params = {
+            "text": address,
+        }
+        nyc_planning_req = requests.get(f"https://geosearch.planninglabs.nyc/v2/search", params=query_params)
+        nyc_planning_resp = json.loads(nyc_planning_req.content.decode("utf-8"))
+        bin = nyc_planning_resp["features"][0]["properties"]["addendum"]["pad"]["bin"]
+        longitude, latitude = nyc_planning_resp["features"][0]["geometry"]["coordinates"]
+
+        # Now that we have the bin, we can definitively get the height from
+        # another API
+        query_params = {
+            "$where": f"bin={bin}",
+            "$select": "heightroof,groundelev",
+            "$limit": 1,
+        }
+        nyc_dataset_req = requests.get(f"https://data.cityofnewyork.us/resource/qb5r-6dgf.json", params=query_params)
+        nyc_dataset_resp = json.loads(nyc_dataset_req.content.decode("utf-8"))
+        altitude = float(nyc_dataset_resp[0]['heightroof']) + float(nyc_dataset_resp[0]['groundelev'])
+
     except Exception as e:
         print(e)
         return Response(f"Error parsing address.", status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -269,20 +254,19 @@ def join_form(request):
         zip_code=zip_code,
     )
 
-    # TODO: Implement BIN lookup, lat/long, and altitude
     join_form_building = (
         existing_buildings[0]
         if len(existing_buildings) > 0
         else Building(
-            bin=nyc_dataset_resp[0]["bin"],
+            bin=bin,
             building_status=Building.BuildingStatus.INACTIVE,
             street_address=street_address,
             city=city,
             state=state,
             zip_code=zip_code,
-            latitude=location.latitude,
-            longitude=location.longitude,
-            altitude=total_height,
+            latitude=latitude,
+            longitude=longitude,
+            altitude=altitude,
             network_number=None,
             install_date=None,
             abandon_date=None,
