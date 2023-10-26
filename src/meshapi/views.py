@@ -29,6 +29,7 @@ from rest_framework.parsers import JSONParser
 from validate_email import validate_email
 import phonenumbers
 
+
 # Home view
 @api_view(["GET"])
 def api_root(request, format=None):
@@ -217,7 +218,7 @@ def join_form(request):
         }
         nyc_dataset_req = requests.get(f"https://data.cityofnewyork.us/resource/qb5r-6dgf.json", params=query_params)
         nyc_dataset_resp = json.loads(nyc_dataset_req.content.decode("utf-8"))
-        altitude = float(nyc_dataset_resp[0]['heightroof']) + float(nyc_dataset_resp[0]['groundelev'])
+        altitude = float(nyc_dataset_resp[0]["heightroof"]) + float(nyc_dataset_resp[0]["groundelev"])
 
     except Exception as e:
         print(e)
