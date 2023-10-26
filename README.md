@@ -28,7 +28,8 @@ you can use Django's tools. You'll also need Python 3.11, and pip, of course.
 For safety, create a venv
 
 ```
-python -m venv venv
+python --version # Make sure this is python 3.11.x before continuing
+python -m venv .venv
 source .venv/bin/activate
 ```
 
@@ -68,19 +69,19 @@ docker-compose up -d postgres
 You might have to run the migrations. This will set up the DB for you.
 
 ```sh
-python manage.py makemigrations
-python manage.py migrate
+python src/manage.py makemigrations
+python src/manage.py migrate
 ```
 
 You'll probably want an admin account
 ```
-python ./src/manage.py createsuperuser
+python src/manage.py createsuperuser
 ```
 
 Then, you can get crackin'
 
 ```sh
-python manage.py runserver
+python src/manage.py runserver
 ```
 
 ### Prod Environment
@@ -116,16 +117,8 @@ curl http://127.0.0.1:8080/api/v1
 
 We use django's testing framework, based on `unittest`
 
-To run the unit tests, first create a virtual env in the project root 
-
-```sh
-python3 -m venv .venv && source .venv/bin/activate
-```
-
-Next, install the project dependencies, including dev dependencies
-```sh
-pip install -e ".[dev]"
-```
+To run the unit tests, first create a virtual environment and install the dependencies as specfied 
+under "Dev Environment" above
 
 Django's tests should spin up and tear down a mock database for us, but it's
 still going to need somewhere to put that database, so go ahead and boot up the
