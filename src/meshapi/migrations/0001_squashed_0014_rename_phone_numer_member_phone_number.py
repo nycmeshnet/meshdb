@@ -6,23 +6,6 @@ import django.db.models.deletion
 
 
 class Migration(migrations.Migration):
-    replaces = [
-        ("meshapi", "0001_squashed_0003_alter_request_install_id"),
-        ("meshapi", "0004_request_roof_access"),
-        ("meshapi", "0005_install_unit_request_referral_request_unit"),
-        ("meshapi", "0006_remove_request_unit"),
-        ("meshapi", "0007_request_unit"),
-        ("meshapi", "0004_installer"),
-        ("meshapi", "0005_alter_request_install_id"),
-        ("meshapi", "0008_merge_0005_alter_request_install_id_0007_request_unit"),
-        ("meshapi", "0009_alter_building_id_alter_install_id_alter_member_id_and_more"),
-        ("meshapi", "0010_alter_building_bin"),
-        ("meshapi", "0011_alter_building_bin"),
-        ("meshapi", "0012_alter_building_network_number"),
-        ("meshapi", "0013_alter_request_ticket_id"),
-        ("meshapi", "0014_rename_phone_numer_member_phone_number"),
-    ]
-
     initial = True
 
     dependencies = [
