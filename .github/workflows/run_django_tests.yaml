@@ -37,6 +37,6 @@ jobs:
           DB_NAME: nycmesh-dev
           DB_USER: nycmesh
           DB_PASSWORD: abcd1234
-          DB_HOST: postgres
-          DB_PORT: ${{ job.services.postgres.ports[5432] }}
+          DB_HOST: localhost
+          DB_PORT: 5432
         run: python3 src/manage.py test meshapi
