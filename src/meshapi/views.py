@@ -195,7 +195,7 @@ def join_form(request):
     longitude = latitude = altitude = 0.0
     bin = 0
 
-    for attempts in range(0,2):
+    for attempts in range(0, 2):
         try:
             print("Validating Address...")
             address = f"{street_address}, {city}, {state} {zip_code}"
@@ -216,10 +216,12 @@ def join_form(request):
                 "$select": "heightroof,groundelev",
                 "$limit": 1,
             }
-            nyc_dataset_req = requests.get(f"https://data.cityofnewyork.us/resource/qb5r-6dgf.json", params=query_params)
+            nyc_dataset_req = requests.get(
+                f"https://data.cityofnewyork.us/resource/qb5r-6dgf.json", params=query_params
+            )
             nyc_dataset_resp = json.loads(nyc_dataset_req.content.decode("utf-8"))
             altitude = float(nyc_dataset_resp[0]["heightroof"]) + float(nyc_dataset_resp[0]["groundelev"])
-            break # Bail if we succeed, only need to try again if we except
+            break  # Bail if we succeed, only need to try again if we except
         except Exception as e:
             print(e)
             if attempts == 1:
