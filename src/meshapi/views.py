@@ -173,8 +173,6 @@ def join_form(request):
     zip_code: str = request_json.get("zip")
     referral: str = request_json.get("referral")
 
-    # TODO: Formatting validation? Email, Phone, yada yada.
-    # FIXME (willnilges): No smtp?
     print("Validating Email...")
     if not validate_email(
         email_address=email_address,
@@ -210,7 +208,7 @@ def join_form(request):
         longitude, latitude = nyc_planning_resp["features"][0]["geometry"]["coordinates"]
 
         # Now that we have the bin, we can definitively get the height from
-        # another API
+        # NYC OpenData
         query_params = {
             "$where": f"bin={bin}",
             "$select": "heightroof,groundelev",
