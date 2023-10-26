@@ -9,6 +9,8 @@ dependencies = [
     "python-dotenv==1.0.*",
     "stringcase==1.2.*",
     "python-dotenv==1.0.*",
+    "py3-validate-email@git+https://gitea.ksol.io/karolyi/py3-validate-email#egg=@v1.0.9",
+    "phonenumbers==8.13.*",
 ]
 
 [project.optional-dependencies]

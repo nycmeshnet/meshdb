@@ -1,3 +1,4 @@
+import json
 from django.test import TestCase, Client
 from django.contrib.auth.models import User, Group
 
@@ -12,6 +13,11 @@ def assert_correct_response(test, response, code):
         response.status_code,
         f"status code incorrect. {path} should be {code}, but got {response.status_code}. {content}",
     )
+
+
+# Wow so brittle
+def get_first_id(client, route):
+    return json.loads(client.get(route).content.decode("utf-8")).get("results")[0].get("id")
 
 
 class TestViewsPostDeleteUnauthenticated(TestCase):
@@ -31,20 +37,16 @@ class TestViewsPostDeleteUnauthenticated(TestCase):
         assert_correct_response(self, response, 403)  # 400 because previous requests failed
 
     def test_views_delete_unauthenticated(self):
-        sample_request_id = sample_request.get("id")
-        response = self.c.delete(f"/api/v1/requests/{sample_request_id}/")
+        response = self.c.delete(f"/api/v1/requests/1/")
         assert_correct_response(self, response, 403)
 
-        sample_install_id = sample_install.get("id")
-        response = self.c.delete(f"/api/v1/installs/{sample_install_id}/")
+        response = self.c.delete(f"/api/v1/installs/1/")
         assert_correct_response(self, response, 403)
 
-        sample_member_id = sample_member.get("id")
-        response = self.c.delete(f"/api/v1/members/{sample_member_id}/")
+        response = self.c.delete(f"/api/v1/members/1/")
         assert_correct_response(self, response, 403)
 
-        sample_building_id = sample_building.get("id")
-        response = self.c.delete(f"/api/v1/buildings/{sample_building_id}/")
+        response = self.c.delete(f"/api/v1/buildings/1/")
         assert_correct_response(self, response, 403)
 
 
@@ -76,6 +78,11 @@ class TestViewsPostDeleteInstaller(TestCase):
         self.admin_c.post("/api/v1/members/", sample_member)
         self.admin_c.post("/api/v1/buildings/", sample_building)
 
+        member_id = get_first_id(self.c, "/api/v1/members/")
+        building_id = get_first_id(self.c, "/api/v1/buildings/")
+        sample_install["member_id"] = member_id
+        sample_install["building_id"] = building_id
+
         response = self.c.post("/api/v1/installs/", sample_install)
         assert_correct_response(self, response, 201)
 
@@ -83,20 +90,16 @@ class TestViewsPostDeleteInstaller(TestCase):
         assert_correct_response(self, response, 403)
 
     def test_views_delete_installer(self):
-        sample_request_id = sample_request.get("id")
-        response = self.c.delete(f"/api/v1/requests/{sample_request_id}/")
+        response = self.c.delete(f"/api/v1/requests/1/")
         assert_correct_response(self, response, 403)
 
-        sample_install_id = sample_install.get("id")
-        response = self.c.delete(f"/api/v1/installs/{sample_install_id}/")
+        response = self.c.delete(f"/api/v1/installs/1/")
         assert_correct_response(self, response, 403)
 
-        sample_member_id = sample_member.get("id")
-        response = self.c.delete(f"/api/v1/members/{sample_member_id}/")
+        response = self.c.delete(f"/api/v1/members/1/")
         assert_correct_response(self, response, 403)
 
-        sample_building_id = sample_building.get("id")
-        response = self.c.delete(f"/api/v1/buildings/{sample_building_id}/")
+        response = self.c.delete(f"/api/v1/buildings/1/")
         assert_correct_response(self, response, 403)
 
 
@@ -113,32 +116,36 @@ class TestViewsPostDeleteAdmin(TestCase):
         response = self.c.post("/api/v1/members/", sample_member)
         assert_correct_response(self, response, 201)
 
+        member_id = get_first_id(self.c, "/api/v1/members/")
         response = self.c.post("/api/v1/buildings/", sample_building)
         assert_correct_response(self, response, 201)
+        building_id = get_first_id(self.c, "/api/v1/buildings/")
 
+        sample_install["member_id"] = member_id
+        sample_install["building_id"] = building_id
         response = self.c.post("/api/v1/installs/", sample_install)
         assert_correct_response(self, response, 201)
+        install_id = get_first_id(self.c, "/api/v1/installs/")
 
+        sample_request["member_id"] = member_id
+        sample_request["building_id"] = building_id
         response = self.c.post("/api/v1/requests/", sample_request)
         assert_correct_response(self, response, 201)
+        request_id = get_first_id(self.c, "/api/v1/requests/")
 
         # FIXME: For some reason this fails as a separate test
         # I have literally no idea why. Could be an issue with
         # the test DB. None of the other tests hit this, probably
         # because nobody is allowed to do things that would warrant
         # cross-function testing. Fair enough I suppose.
-        sample_request_id = sample_request.get("id")
-        response = self.c.delete(f"/api/v1/requests/{sample_request_id}/")
+        response = self.c.delete(f"/api/v1/requests/{request_id}/")
         assert_correct_response(self, response, 204)
 
-        sample_install_id = sample_install.get("id")
-        response = self.c.delete(f"/api/v1/installs/{sample_install_id}/")
+        response = self.c.delete(f"/api/v1/installs/{install_id}/")
         assert_correct_response(self, response, 204)
 
-        sample_member_id = sample_member.get("id")
-        response = self.c.delete(f"/api/v1/members/{sample_member_id}/")
+        response = self.c.delete(f"/api/v1/members/{member_id}/")
         assert_correct_response(self, response, 204)
 
-        sample_building_id = sample_building.get("id")
-        response = self.c.delete(f"/api/v1/buildings/{sample_building_id}/")
+        response = self.c.delete(f"/api/v1/buildings/{building_id}/")
         assert_correct_response(self, response, 204)
