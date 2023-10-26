@@ -4,7 +4,7 @@ on:
   pull_request:
 
 jobs:
-  build:
+  run-django-tests:
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -39,4 +39,5 @@ jobs:
           DB_PASSWORD: abcd1234
           DB_HOST: localhost
           DB_PORT: 5432
+          DJANGO_SECRET_KEY: k7j&!u07c%%97s!^a_6%mh_wbzo*$hl4lj_6c2ee6dk)y9!k88
         run: python3 src/manage.py test meshapi
