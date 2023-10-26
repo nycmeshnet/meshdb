@@ -6,11 +6,6 @@ import django.db.models.deletion
 
 
 class Migration(migrations.Migration):
-    replaces = [
-        ("meshapi", "0001_squashed_0014_rename_phone_numer_member_phone_number"),
-        ("meshapi", "0015_alter_building_bin"),
-    ]
-
     initial = True
 
     dependencies = [
