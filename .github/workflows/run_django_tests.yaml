@@ -1,0 +1,21 @@
+name: Run Django Tests
+
+on: 
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      max-parallel: 4
+      matrix:
+        python-version: [3.11]
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: "Upgrade pip"
+        run: "pip install --upgrade pip"
+      - name: "Install package"
+        run: pip install ".[dev]"
+      - name: Run Django Tests
+        run: python3 src/manage.py test meshapi
