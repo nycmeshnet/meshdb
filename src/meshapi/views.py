@@ -1,5 +1,5 @@
 import json
-from time import time
+import time
 from django.contrib.auth.models import User
 from django.db import IntegrityError
 from geopy.adapters import requests
@@ -206,6 +206,10 @@ def join_form(request):
             }
             nyc_planning_req = requests.get(f"https://geosearch.planninglabs.nyc/v2/search", params=query_params)
             nyc_planning_resp = json.loads(nyc_planning_req.content.decode("utf-8"))
+
+            if len(nyc_planning_resp["features"]) == 0:
+                raise requests.exceptions.HTTPError("Address not found.")
+
             bin = nyc_planning_resp["features"][0]["properties"]["addendum"]["pad"]["bin"]
             longitude, latitude = nyc_planning_resp["features"][0]["geometry"]["coordinates"]
 
@@ -220,8 +224,16 @@ def join_form(request):
                 f"https://data.cityofnewyork.us/resource/qb5r-6dgf.json", params=query_params
             )
             nyc_dataset_resp = json.loads(nyc_dataset_req.content.decode("utf-8"))
+
+            if len(nyc_dataset_resp) == 0:
+                raise requests.exceptions.HTTPError("Bin not found.")
+
             altitude = float(nyc_dataset_resp[0]["heightroof"]) + float(nyc_dataset_resp[0]["groundelev"])
+
+            print(f"bin is {bin}")
             break  # Bail if we succeed, only need to try again if we except
+        except requests.exceptions.HTTPError as e:
+            return Response(str(e), status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             print(e)
             if attempts == 1:
