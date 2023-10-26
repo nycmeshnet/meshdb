@@ -5,11 +5,11 @@ import django.db.models.deletion
 
 
 class Migration(migrations.Migration):
-    replaces = [
-        ("meshapi", "0001_initial"),
-        ("meshapi", "0002_remove_building_panorama_image_install_abandon_date_and_more"),
-        ("meshapi", "0003_alter_request_install_id"),
-    ]
+#    replaces = [
+#        ("meshapi", "0001_initial"),
+#        ("meshapi", "0002_remove_building_panorama_image_install_abandon_date_and_more"),
+#        ("meshapi", "0003_alter_request_install_id"),
+#    ]
 
     initial = True
 
