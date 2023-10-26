@@ -84,6 +84,12 @@ Then, you can get crackin'
 python src/manage.py runserver
 ```
 
+You should now be able to access the API:
+```sh
+curl http://127.0.0.1:8000/api/v1/    # Should echo "We're Meshin" to indicate 200 status
+```
+
+
 ### Prod Environment
 
 Clone the package with git and create the expected `.env` file (or otherwise
