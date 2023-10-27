@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 import json
 import time
 import requests
@@ -26,7 +27,6 @@ from meshapi.validation import (
     validate_phone_number,
     validate_email_address,
     AddressInfo,
-    validate_street_address,
 )
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
@@ -131,10 +131,32 @@ class RequestDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = Request.objects.all()
     serializer_class = RequestSerializer
 
+@dataclass
+class JoinFormRequest:
+    first_name: str
+    last_name: str
+    email: str
+    phone: str
+    street_address: str
+    city: str
+    state: str
+    zip: int
+    apartment: str
+    roof_access: bool
+    referral: str
+
+
 
 # Join Form
 @api_view(["POST"])
 def join_form(request):
+    request_json = json.loads(request.body)
+    try:
+        r = JoinFormRequest(**request_json)
+    except TypeError as e:
+        return Response({"Got incomplete request"}, status=status.HTTP_400_BAD_REQUEST)
+
+    '''
     request_json = json.loads(request.body)
 
     expected_structure = {
@@ -177,21 +199,22 @@ def join_form(request):
     state: str = request_json.get("state")
     zip_code: str = request_json.get("zip")
     referral: str = request_json.get("referral")
+    '''
 
     print("Validating Email...")
-    if not validate_email_address(email_address):
-        return Response({f"{email_address} is not a valid email"}, status=status.HTTP_400_BAD_REQUEST)
+    if not validate_email_address(r.email):
+        return Response({f"{r.email} is not a valid email"}, status=status.HTTP_400_BAD_REQUEST)
 
     # Expects country code!!!!
     print("Validating Phone...")
-    if not validate_phone_number(phone_number):
-        return Response({f"{phone_number} is not a valid phone number"}, status=status.HTTP_400_BAD_REQUEST)
+    if not validate_phone_number(r.phone):
+        return Response({f"{r.phone} is not a valid phone number"}, status=status.HTTP_400_BAD_REQUEST)
 
     print("Validating Address...")
-    addr_info = AddressInfo(street_address, 0.0, 0.0, 0.0, 0)
+    addr_info = AddressInfo(f"{r.street_address}, {r.city}, {r.state} {r.zip}", 0.0, 0.0, 0.0, 0)
     for attempts in range(0, 2):
         try:
-            addr_info = validate_street_address(address = f"{street_address}, {city}, {state} {zip_code}")
+            addr_info.validate_street_address()
         except requests.exceptions.HTTPError as e:
             return Response(str(e), status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
@@ -203,20 +226,20 @@ def join_form(request):
                 time.sleep(3)
 
     existing_members = Member.objects.filter(
-        first_name=first_name,
-        last_name=last_name,
-        email_address=email_address,
-        phone_number=phone_number,
+        first_name=r.first_name,
+        last_name=r.last_name,
+        email_address=r.email,
+        phone_number=r.phone,
     )
 
     if len(existing_members) > 0:
         return Response({"Member already exists"}, status=status.HTTP_400_BAD_REQUEST)
 
     join_form_member = Member(
-        first_name=first_name,
-        last_name=last_name,
-        email_address=email_address,
-        phone_number=phone_number,
+        first_name=r.first_name,
+        last_name=r.last_name,
+        email_address=r.email,
+        phone_number=r.phone,
         slack_handle="",
     )
 
@@ -227,10 +250,10 @@ def join_form(request):
         return Response({"Could not save member."}, status=status.HTTP_400_BAD_REQUEST)
 
     existing_buildings = Building.objects.filter(
-        street_address=street_address,
-        city=city,
-        state=state,
-        zip_code=zip_code,
+        street_address=r.street_address,
+        city=r.city,
+        state=r.state,
+        zip_code=r.zip,
     )
 
     join_form_building = (
@@ -239,10 +262,10 @@ def join_form(request):
         else Building(
             bin=addr_info.bin,
             building_status=Building.BuildingStatus.INACTIVE,
-            street_address=street_address,
-            city=city,
-            state=state,
-            zip_code=zip_code,
+            street_address=r.street_address,
+            city=r.city,
+            state=r.state,
+            zip_code=r.zip,
             latitude=addr_info.latitude,
             longitude=addr_info.longitude,
             altitude=addr_info.altitude,
@@ -259,12 +282,12 @@ def join_form(request):
 
     join_form_request = Request(
         request_status=Request.RequestStatus.OPEN,
-        roof_access=roof_access,
-        referral=referral,
+        roof_access=r.roof_access,
+        referral=r.referral,
         ticket_id=None,
         member_id=join_form_member,
         building_id=join_form_building,
-        unit=apartment,
+        unit=r.apartment,
         install_id=None,
     )
 
