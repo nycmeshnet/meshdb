@@ -1,8 +1,8 @@
 import json
 import time
+import requests
 from django.contrib.auth.models import User
 from django.db import IntegrityError
-from geopy.adapters import requests
 from rest_framework import generics, permissions
 from meshapi.models import Building, Member, Install, Request
 from meshapi.serializers import (
@@ -22,13 +22,17 @@ from meshapi.permissions import (
     RequestListCreatePermissions,
     RequestRetrieveUpdateDestroyPermissions,
 )
+from meshapi.validation import (
+    validate_phone_number,
+    validate_email_address,
+    AddressInfo,
+    validate_street_address,
+)
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
 from django.http.response import JsonResponse
 from rest_framework.parsers import JSONParser
-from validate_email import validate_email
-import phonenumbers
 
 
 # Home view
@@ -175,63 +179,19 @@ def join_form(request):
     referral: str = request_json.get("referral")
 
     print("Validating Email...")
-    if not validate_email(
-        email_address=email_address,
-        check_format=True,
-        check_blacklist=True,
-        check_dns=True,
-        dns_timeout=5,
-        check_smtp=False,
-    ):
+    if not validate_email_address(email_address):
         return Response({f"{email_address} is not a valid email"}, status=status.HTTP_400_BAD_REQUEST)
 
     # Expects country code!!!!
     print("Validating Phone...")
-    try:
-        phonenumbers.parse(phone_number, None)
-    except phonenumbers.NumberParseException:
+    if not validate_phone_number(phone_number):
         return Response({f"{phone_number} is not a valid phone number"}, status=status.HTTP_400_BAD_REQUEST)
 
-    longitude = latitude = altitude = 0.0
-    bin = 0
-
+    print("Validating Address...")
+    addr_info = AddressInfo(street_address, 0.0, 0.0, 0.0, 0)
     for attempts in range(0, 2):
         try:
-            print("Validating Address...")
-            address = f"{street_address}, {city}, {state} {zip_code}"
-
-            # Look up BIN in NYC Planning's Authoritative Search
-            query_params = {
-                "text": address,
-            }
-            nyc_planning_req = requests.get(f"https://geosearch.planninglabs.nyc/v2/search", params=query_params)
-            nyc_planning_resp = json.loads(nyc_planning_req.content.decode("utf-8"))
-
-            if len(nyc_planning_resp["features"]) == 0:
-                raise requests.exceptions.HTTPError("Address not found.")
-
-            bin = nyc_planning_resp["features"][0]["properties"]["addendum"]["pad"]["bin"]
-            longitude, latitude = nyc_planning_resp["features"][0]["geometry"]["coordinates"]
-
-            # Now that we have the bin, we can definitively get the height from
-            # NYC OpenData
-            query_params = {
-                "$where": f"bin={bin}",
-                "$select": "heightroof,groundelev",
-                "$limit": 1,
-            }
-            nyc_dataset_req = requests.get(
-                f"https://data.cityofnewyork.us/resource/qb5r-6dgf.json", params=query_params
-            )
-            nyc_dataset_resp = json.loads(nyc_dataset_req.content.decode("utf-8"))
-
-            if len(nyc_dataset_resp) == 0:
-                raise requests.exceptions.HTTPError("Bin not found.")
-
-            altitude = float(nyc_dataset_resp[0]["heightroof"]) + float(nyc_dataset_resp[0]["groundelev"])
-
-            print(f"bin is {bin}")
-            break  # Bail if we succeed, only need to try again if we except
+            addr_info = validate_street_address(address = f"{street_address}, {city}, {state} {zip_code}")
         except requests.exceptions.HTTPError as e:
             return Response(str(e), status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
@@ -277,15 +237,15 @@ def join_form(request):
         existing_buildings[0]
         if len(existing_buildings) > 0
         else Building(
-            bin=bin,
+            bin=addr_info.bin,
             building_status=Building.BuildingStatus.INACTIVE,
             street_address=street_address,
             city=city,
             state=state,
             zip_code=zip_code,
-            latitude=latitude,
-            longitude=longitude,
-            altitude=altitude,
+            latitude=addr_info.latitude,
+            longitude=addr_info.longitude,
+            altitude=addr_info.altitude,
             network_number=None,
             install_date=None,
             abandon_date=None,
