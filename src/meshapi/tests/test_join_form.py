@@ -2,7 +2,11 @@ from django.test import TestCase, Client
 from .sample_data import sample_member, sample_building, sample_install, sample_request
 from meshapi.models import Building, Member, Install, Request
 
-from .sample_join_form_data import valid_join_form_submission, invalid_join_form_submission
+from .sample_join_form_data import (
+    valid_join_form_submission,
+    invalid_join_form_submission,
+    non_nyc_join_form_submission,
+)
 
 
 class TestJoinForm(TestCase):
@@ -95,7 +99,7 @@ class TestJoinForm(TestCase):
         self.assertEqual(
             len(existing_buildings),
             length,
-            f"Didn't find created building for Valid Join Form. Should be {length}, but got {len(existing_buildings)}",
+            f"Search for created building for Empty Join Form was wrong. Should be {length}, but got {len(existing_buildings)}",
         )
 
     def test_bad_phone_join_form(self):
@@ -152,3 +156,21 @@ class TestJoinForm(TestCase):
             response.content.decode("utf-8"),
             response.content.decode("utf-8"),
         )
+
+    def test_non_nyc_join_form(self):
+        # Name, email, phone, location, apt, rooftop, referral
+        form = non_nyc_join_form_submission.copy()
+        response = self.c.post("/api/v1/join/", form, content_type="application/json")
+
+        code = 400
+        self.assertEqual(
+            code,
+            response.status_code,
+            f"status code incorrect for Non NYC Join Form. Should be {code}, but got {response.status_code}.\n Response is: {response.content.decode('utf-8')}",
+        )
+
+        # self.assertEqual(
+        #    '"Address not found."',
+        #    response.content.decode("utf-8"),
+        #    response.content.decode("utf-8"),
+        # )

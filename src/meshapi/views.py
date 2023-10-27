@@ -26,7 +26,7 @@ from meshapi.permissions import (
 from meshapi.validation import (
     validate_phone_number,
     validate_email_address,
-    AddressInfo,
+    NYCAddressInfo,
 )
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
@@ -166,12 +166,13 @@ def join_form(request):
         return Response({f"{r.phone} is not a valid phone number"}, status=status.HTTP_400_BAD_REQUEST)
 
     print("Validating Address...")
-    addr_info = AddressInfo(f"{r.street_address}, {r.city}, {r.state} {r.zip}", 0.0, 0.0, 0.0, 0)
     for attempts in range(0, 2):
         try:
-            addr_info.validate_street_address()
+            addr_info = NYCAddressInfo(r.street_address, r.city, r.state, r.zip)
         except requests.exceptions.HTTPError as e:
             return Response(str(e), status=status.HTTP_404_NOT_FOUND)
+        except ValueError as e:
+            return Response(str(e), status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             print(e)
             if attempts == 1:

@@ -12,15 +12,15 @@ valid_join_form_submission = {
     "referral": "Googled it or something IDK",
 }
 
-bad_phone_join_form_submission = {
-    "first_name": "John",
-    "last_name": "Smith",
-    "email": "jsmith@gmail.com",
-    "phone": "555-555-5555",
-    "street_address": "151 Broome St",
-    "city": "New York",
-    "state": "NY",
-    "zip": 10002,
+non_nyc_join_form_submission = {
+    "first_name": "Jane",
+    "last_name": "Doe",
+    "email": "jdoe@gmail.com",
+    "phone": "+1585-758-3425",
+    "street_address": "1 Capitol Square",
+    "city": "Columbus",
+    "state": "OH",
+    "zip": 43215,
     "apartment": "",
     "roof_access": True,
     "referral": "Googled it or something IDK",
