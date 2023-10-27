@@ -131,6 +131,8 @@ class RequestDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = Request.objects.all()
     serializer_class = RequestSerializer
 
+
+# Join Form
 @dataclass
 class JoinFormRequest:
     first_name: str
@@ -146,8 +148,6 @@ class JoinFormRequest:
     referral: str
 
 
-
-# Join Form
 @api_view(["POST"])
 def join_form(request):
     request_json = json.loads(request.body)
@@ -155,51 +155,6 @@ def join_form(request):
         r = JoinFormRequest(**request_json)
     except TypeError as e:
         return Response({"Got incomplete request"}, status=status.HTTP_400_BAD_REQUEST)
-
-    '''
-    request_json = json.loads(request.body)
-
-    expected_structure = {
-        "first_name": str,
-        "last_name": str,
-        "email": str,
-        "phone": str,
-        "street_address": str,
-        "city": str,
-        "state": str,
-        "zip": int,
-        "apartment": str,
-        "roof_access": bool,
-        "referral": str,
-    }
-
-    for key, expected_type in expected_structure.items():
-        if key not in request_json:
-            print(f"Missing key: {key}")
-            return Response({f"Missing key: {key}"}, status=status.HTTP_400_BAD_REQUEST)
-        elif not isinstance(request_json[key], expected_type):
-            print(
-                f"Key '{key}' has an incorrect data type. Expected {expected_type}, but got {type(request_json[key])}"
-            )
-            return Response(
-                {
-                    f"Key '{key}' has an incorrect data type. Expected {expected_type}, but got {type(request_json[key])}"
-                },
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-    first_name: str = request_json.get("first_name")
-    last_name: str = request_json.get("last_name")
-    email_address: str = request_json.get("email")
-    phone_number: str = request_json.get("phone")
-    street_address: str = request_json.get("street_address")
-    apartment: str = request_json.get("apartment")
-    roof_access: bool = request_json.get("roof_access")
-    city: str = request_json.get("city")
-    state: str = request_json.get("state")
-    zip_code: str = request_json.get("zip")
-    referral: str = request_json.get("referral")
-    '''
 
     print("Validating Email...")
     if not validate_email_address(r.email):

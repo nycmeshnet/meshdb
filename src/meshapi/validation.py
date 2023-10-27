@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from validate_email import validate_email
 import phonenumbers
 
+
 def validate_email_address(email_address):
     return validate_email(
         email_address=email_address,
@@ -15,6 +16,7 @@ def validate_email_address(email_address):
         check_smtp=False,
     )
 
+
 # Expects country code!!!!
 def validate_phone_number(phone_number):
     try:
@@ -23,6 +25,7 @@ def validate_phone_number(phone_number):
         return False
     return True
 
+
 @dataclass
 class AddressInfo:
     address: str
@@ -30,7 +33,6 @@ class AddressInfo:
     latitude: float
     altitude: float
     bin: int
-
 
     def validate_street_address(self):
         # Look up BIN in NYC Planning's Authoritative Search
@@ -53,13 +55,10 @@ class AddressInfo:
             "$select": "heightroof,groundelev",
             "$limit": 1,
         }
-        nyc_dataset_req = requests.get(
-            f"https://data.cityofnewyork.us/resource/qb5r-6dgf.json", params=query_params
-        )
+        nyc_dataset_req = requests.get(f"https://data.cityofnewyork.us/resource/qb5r-6dgf.json", params=query_params)
         nyc_dataset_resp = json.loads(nyc_dataset_req.content.decode("utf-8"))
 
         if len(nyc_dataset_resp) == 0:
             raise requests.exceptions.HTTPError("Bin not found.")
 
         self.altitude = float(nyc_dataset_resp[0]["heightroof"]) + float(nyc_dataset_resp[0]["groundelev"])
-
