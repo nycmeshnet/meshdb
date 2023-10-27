@@ -45,8 +45,8 @@ class NYCAddressInfo:
         if state != "NY":
             raise ValueError("State is not New York.")
 
-        if not is_nyc_zip(zip):
-            raise ValueError("Zip code not within city limits.")
+        #if not is_nyc_zip(zip):
+        #    raise ValueError("Zip code not within city limits.")
 
         self.address = f"{street_address}, {city}, {state} {zip}"
         # Look up BIN in NYC Planning's Authoritative Search
@@ -59,6 +59,13 @@ class NYCAddressInfo:
 
         if len(nyc_planning_resp["features"]) == 0:
             raise requests.exceptions.HTTPError("Address not found.")
+
+        # If we enter something not within NYC, the API will still give us
+        # the closest matching street address it can find, so check that
+        # the ZIP of what we entered matches what we got.
+        found_zip = int(nyc_planning_resp["features"][0]["properties"]["postalcode"])
+        if found_zip != zip:
+            raise ValueError("Could not find address. Zip code is probably not within city limits")
 
         self.bin = nyc_planning_resp["features"][0]["properties"]["addendum"]["pad"]["bin"]
         self.longitude, self.latitude = nyc_planning_resp["features"][0]["geometry"]["coordinates"]
