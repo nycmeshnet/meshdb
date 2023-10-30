@@ -4,6 +4,7 @@ import requests
 from dataclasses import dataclass
 from validate_email import validate_email
 import phonenumbers
+from geopy.geocoders import Nominatim
 
 # Source: https://www.zip-codes.com/state/ny.asp
 # Contains all zips from Richmond, Kings, Queens, Bronx, and New York County
@@ -214,6 +215,27 @@ def validate_phone_number(phone_number):
     except phonenumbers.NumberParseException:
         return False
     return True
+
+@dataclass
+class OSMAddressInfo:
+    address: str
+    county: str
+    longitude: float
+    latitude: float
+    altitude: float
+
+    def __init__(self, street_address, city, state, zip):
+        geolocator = Nominatim(user_agent="address_lookup")
+        address = f"{street_address}, {city}, {state} {zip}"
+        location = geolocator.geocode(address)
+        # TODO: We need a log library, because I want to be able to turn on
+        # debug logs for tests and debugging
+        print(f"Location is: {location}")
+        print(f"Latitude is: {location.latitude}")
+        print(f"Longitude is: {location.longitude}")
+        print(f"Altitude is: {location.altitude}")
+        if location is None:
+            raise ValueError()
 
 
 def is_nyc_zip(zip):
