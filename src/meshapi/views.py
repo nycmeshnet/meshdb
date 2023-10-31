@@ -24,6 +24,7 @@ from meshapi.permissions import (
     RequestRetrieveUpdateDestroyPermissions,
 )
 from meshapi.validation import (
+    OSMAddressInfo,
     validate_phone_number,
     validate_email_address,
     NYCAddressInfo,
@@ -166,19 +167,36 @@ def join_form(request):
         return Response({f"{r.phone} is not a valid phone number"}, status=status.HTTP_400_BAD_REQUEST)
 
     print("Validating Address...")
+    try:
+        osm_addr_info = OSMAddressInfo(r.street_address, r.city, r.state, r.zip)
+        print(osm_addr_info.address)
+
+        boroughs = ['New York County', 'Kings County', 'Queens County', 'Bronx County', 'Richmond County']
+        if not any(borough in osm_addr_info.address for borough in boroughs):
+            return Response(f"(OSM) Address is not in NYC!", status=status.HTTP_404_NOT_FOUND)
+        
+    except ValueError as e:
+        print(e)
+        return Response(f"(OSM) Address not found", status=status.HTTP_404_NOT_FOUND)
+    except AttributeError as e:
+        print(e)
+        return Response(f"(OSM) Error validating address: {str(e)}", status=status.HTTP_400_BAD_REQUEST)
+
     for attempts in range(0, 2):
         try:
             addr_info = NYCAddressInfo(r.street_address, r.city, r.state, r.zip)
         except requests.exceptions.HTTPError as e:
+            print(e)
             return Response(str(e), status=status.HTTP_404_NOT_FOUND)
         except ValueError as e:
+            print(e)
             return Response(str(e), status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             print(e)
             if attempts == 1:
-                return Response(f"Error validating address.", status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                return Response(f"(NYC) Error validating address", status=status.HTTP_500_INTERNAL_SERVER_ERROR)
             else:
-                print("Something went wrong validating the address. Re-trying...")
+                print("(NYC) Something went wrong validating the address. Re-trying...")
                 time.sleep(3)
 
     existing_members = Member.objects.filter(

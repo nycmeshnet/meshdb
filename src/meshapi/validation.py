@@ -216,10 +216,11 @@ def validate_phone_number(phone_number):
         return False
     return True
 
+# Used to obtain information about addresses from the Open Street Map API.
+# This is our primiary source of information for addresses outside of NYC.
 @dataclass
 class OSMAddressInfo:
     address: str
-    county: str
     longitude: float
     latitude: float
     altitude: float
@@ -228,20 +229,24 @@ class OSMAddressInfo:
         geolocator = Nominatim(user_agent="address_lookup")
         address = f"{street_address}, {city}, {state} {zip}"
         location = geolocator.geocode(address)
-        # TODO: We need a log library, because I want to be able to turn on
-        # debug logs for tests and debugging
-        print(f"Location is: {location}")
-        print(f"Latitude is: {location.latitude}")
-        print(f"Longitude is: {location.longitude}")
-        print(f"Altitude is: {location.altitude}")
         if location is None:
             raise ValueError()
+        
+        self.address = location.address
+        #self.county = location.county # Not guaranteed to exist!?
+        self.longitude = location.longitude
+        self.latitude = location.latitude
+        self.altitude = location.altitude # Usually 0 because very few places have it
 
 
+# FIXME (willnilges): This can probably be straight-up deleted
 def is_nyc_zip(zip):
     return zip in nyc_postal_codes
 
-
+# Used to obtain info about addresses within NYC. Uses a pair of APIs
+# hosted by the city with all kinds of good info. Unfortunately, there's
+# not a solid way to check if an address is actually _within_ NYC, so this
+# is gated by OSMAddressInfo.
 @dataclass
 class NYCAddressInfo:
     address: str

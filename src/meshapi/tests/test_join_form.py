@@ -1,16 +1,18 @@
+from django.contrib.auth.models import User
 from django.test import TestCase, Client
-from .sample_data import sample_member, sample_building, sample_install, sample_request
 from meshapi.models import Building, Member, Install, Request
 
-from .sample_join_form_data import (
-    valid_join_form_submission,
-    invalid_join_form_submission,
-    non_nyc_join_form_submission,
-)
-
+from .sample_join_form_data import *
 
 class TestJoinForm(TestCase):
     c = Client()
+    admin_c = Client()
+    
+    def setUp(self):
+        self.admin_user = User.objects.create_superuser(
+            username="admin", password="admin_password", email="admin@example.com"
+        )
+        self.admin_c.login(username="admin", password="admin_password")
 
     def test_valid_join_form(self):
         # Name, email, phone, location, apt, rooftop, referral
@@ -152,7 +154,7 @@ class TestJoinForm(TestCase):
         )
 
         self.assertEqual(
-            '"Address not found."',
+            '"(OSM) Address not found"',
             response.content.decode("utf-8"),
             response.content.decode("utf-8"),
         )
@@ -174,3 +176,9 @@ class TestJoinForm(TestCase):
         #    response.content.decode("utf-8"),
         #    response.content.decode("utf-8"),
         # )
+
+    def test_borough_join_form(self):
+        # Name, email, phone, location, apt, rooftop, referral
+        for form in [kings_join_form_submission, queens_join_form_submission, bronx_join_form_submission, richmond_join_form_submission]:
+            response = self.c.post("/api/v1/join/", form, content_type="application/json")
+
