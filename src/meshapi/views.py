@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 import json
 import time
+from geopy.exc import GeocoderUnavailable
 import requests
 from django.contrib.auth.models import User
 from django.db import IntegrityError
@@ -177,6 +178,9 @@ def join_form(request):
     except AttributeError as e:
         print(e)
         return Response(f"(OSM) Error validating address: {str(e)}", status=status.HTTP_400_BAD_REQUEST)
+    except GeocoderUnavailable as e:
+        print(e)
+        return Response(f"(OSM) Error validating address: {str(e)}", status=status.HTTP_503_SERVICE_UNAVAILABLE)
 
     # Only bother with the NYC APIs if we know the address is in NYC
     print(osm_addr_info)
@@ -271,4 +275,8 @@ def join_form(request):
         print(e)
         return Response({"Could not save request"}, status=status.HTTP_400_BAD_REQUEST)
 
-    return Response({}, status=status.HTTP_201_CREATED)
+    return Response({
+        "building_id": join_form_building.id,
+        "member_id": join_form_member.id,
+        "request_id": join_form_request.id
+    }, status=status.HTTP_201_CREATED)

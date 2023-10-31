@@ -1,3 +1,4 @@
+import json
 from django.contrib.auth.models import User
 from django.test import TestCase, Client
 from meshapi.models import Building, Member, Install, Request
@@ -25,8 +26,9 @@ class TestJoinForm(TestCase):
             response.status_code,
             f"status code incorrect for Valid Join Form. Should be {code}, but got {response.status_code}.\n Response is: {response.content.decode('utf-8')}",
         )
-
+        
         # Make sure that we get the right stuff out of the database afterwards
+        # FIXME (willnilges): use a dataclass like in views.py
         first_name = valid_join_form_submission.get("first_name")
         last_name = valid_join_form_submission.get("last_name")
         email_address = valid_join_form_submission.get("email")
@@ -67,7 +69,11 @@ class TestJoinForm(TestCase):
             f"Didn't find created building for Valid Join Form. Should be {length}, but got {len(existing_buildings)}",
         )
 
-        join_form_requests = Request.objects.filter(member_id=1)
+        all_requests = Request.objects.all().values()
+        for r in all_requests:
+            print(r)
+
+        join_form_requests = Request.objects.filter(pk=request_id)
 
         length = 1
         self.assertEqual(
