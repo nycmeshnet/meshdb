@@ -216,6 +216,7 @@ def validate_phone_number(phone_number):
         return False
     return True
 
+
 # Used to obtain information about addresses from the Open Street Map API.
 # This is our primiary source of information for addresses outside of NYC.
 @dataclass
@@ -224,6 +225,7 @@ class OSMAddressInfo:
     longitude: float
     latitude: float
     altitude: float
+    nyc: bool
 
     def __init__(self, street_address, city, state, zip):
         geolocator = Nominatim(user_agent="address_lookup")
@@ -231,17 +233,24 @@ class OSMAddressInfo:
         location = geolocator.geocode(address)
         if location is None:
             raise ValueError()
-        
+
         self.address = location.address
-        #self.county = location.county # Not guaranteed to exist!?
+        # self.county = location.county # Not guaranteed to exist!?
         self.longitude = location.longitude
         self.latitude = location.latitude
-        self.altitude = location.altitude # Usually 0 because very few places have it
+        self.altitude = location.altitude  # Usually 0 because very few places have it
+
+        boroughs = ["New York County", "Kings County", "Queens County", "Bronx County", "Richmond County"]
+        if any(f"{borough}, City of New York" in self.address for borough in boroughs):
+            self.nyc = True
+        else:
+            self.nyc = False
 
 
 # FIXME (willnilges): This can probably be straight-up deleted
 def is_nyc_zip(zip):
     return zip in nyc_postal_codes
+
 
 # Used to obtain info about addresses within NYC. Uses a pair of APIs
 # hosted by the city with all kinds of good info. Unfortunately, there's
@@ -257,7 +266,7 @@ class NYCAddressInfo:
 
     def __init__(self, street_address, city, state, zip):
         if state != "NY":
-            raise ValueError("State is not New York.")
+            raise ValueError("(NYC) State is not New York.")
 
         # if not is_nyc_zip(zip):
         #    raise ValueError("Zip code not within city limits.")

@@ -3,7 +3,7 @@ valid_join_form_submission = {
     "last_name": "Smith",
     "email": "jsmith@gmail.com",
     "phone": "+1585-758-3425",  # CSH's phone number :P
-    "street_address": "151 Broome St", # Also covers New York County Test Case
+    "street_address": "151 Broome St",  # Also covers New York County Test Case
     "city": "New York",
     "state": "NY",
     "zip": 10002,
@@ -13,9 +13,9 @@ valid_join_form_submission = {
 }
 
 richmond_join_form_submission = {
-    "first_name": "John",
-    "last_name": "Smith",
-    "email": "jsmith@gmail.com",
+    "first_name": "Maya",
+    "last_name": "Viernes",
+    "email": "maya.viernes@gmail.com",
     "phone": "+1585-758-3425",  # CSH's phone number :P
     "street_address": "475 Seaview Ave",
     "city": "Staten Island",
@@ -27,9 +27,9 @@ richmond_join_form_submission = {
 }
 
 kings_join_form_submission = {
-    "first_name": "John",
-    "last_name": "Smith",
-    "email": "jsmith@gmail.com",
+    "first_name": "Anna",
+    "last_name": "Edwards",
+    "email": "aedwards@gmail.com",
     "phone": "+1585-758-3425",  # CSH's phone number :P
     "street_address": "188 Prospect Park W",
     "city": "Brooklyn",
@@ -41,9 +41,9 @@ kings_join_form_submission = {
 }
 
 queens_join_form_submission = {
-    "first_name": "John",
-    "last_name": "Smith",
-    "email": "jsmith@gmail.com",
+    "first_name": "Lee",
+    "last_name": "Cho",
+    "email": "lcho@gmail.com",
     "phone": "+1585-758-3425",  # CSH's phone number :P
     "street_address": "36-01 35th Ave",
     "city": "Queens",
@@ -55,9 +55,9 @@ queens_join_form_submission = {
 }
 
 bronx_join_form_submission = {
-    "first_name": "John",
+    "first_name": "Richie",
     "last_name": "Smith",
-    "email": "jsmith@gmail.com",
+    "email": "rsmith@gmail.com",
     "phone": "+1585-758-3425",  # CSH's phone number :P
     "street_address": "250 Bedford Park Blvd W",
     "city": "Bronx",

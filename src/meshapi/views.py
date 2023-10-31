@@ -169,12 +169,8 @@ def join_form(request):
     print("Validating Address...")
     try:
         osm_addr_info = OSMAddressInfo(r.street_address, r.city, r.state, r.zip)
-        print(osm_addr_info.address)
-
-        boroughs = ['New York County', 'Kings County', 'Queens County', 'Bronx County', 'Richmond County']
-        if not any(borough in osm_addr_info.address for borough in boroughs):
-            return Response(f"(OSM) Address is not in NYC!", status=status.HTTP_404_NOT_FOUND)
-        
+        if not osm_addr_info.nyc:
+            print("(OSM) Address is not NYC")
     except ValueError as e:
         print(e)
         return Response(f"(OSM) Address not found", status=status.HTTP_404_NOT_FOUND)
@@ -182,22 +178,26 @@ def join_form(request):
         print(e)
         return Response(f"(OSM) Error validating address: {str(e)}", status=status.HTTP_400_BAD_REQUEST)
 
-    for attempts in range(0, 2):
-        try:
-            addr_info = NYCAddressInfo(r.street_address, r.city, r.state, r.zip)
-        except requests.exceptions.HTTPError as e:
-            print(e)
-            return Response(str(e), status=status.HTTP_404_NOT_FOUND)
-        except ValueError as e:
-            print(e)
-            return Response(str(e), status=status.HTTP_400_BAD_REQUEST)
-        except Exception as e:
-            print(e)
-            if attempts == 1:
-                return Response(f"(NYC) Error validating address", status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-            else:
-                print("(NYC) Something went wrong validating the address. Re-trying...")
-                time.sleep(3)
+    # Only bother with the NYC APIs if we know the address is in NYC
+    print(osm_addr_info)
+    nyc_addr_info = None
+    if osm_addr_info.nyc:
+        for attempts in range(0, 2):
+            try:
+                nyc_addr_info = NYCAddressInfo(r.street_address, r.city, r.state, r.zip)
+            except requests.exceptions.HTTPError as e:
+                print(e)
+                return Response(str(e), status=status.HTTP_404_NOT_FOUND)
+            except ValueError as e:
+                print(e)
+                return Response(str(e), status=status.HTTP_400_BAD_REQUEST)
+            except Exception as e:
+                print(e)
+                if attempts == 1:
+                    return Response(f"(NYC) Error validating address", status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                else:
+                    print("(NYC) Something went wrong validating the address. Re-trying...")
+                    time.sleep(3)
 
     existing_members = Member.objects.filter(
         first_name=r.first_name,
@@ -234,15 +234,15 @@ def join_form(request):
         existing_buildings[0]
         if len(existing_buildings) > 0
         else Building(
-            bin=addr_info.bin,
+            bin=nyc_addr_info.bin if nyc_addr_info is not None else -1,
             building_status=Building.BuildingStatus.INACTIVE,
             street_address=r.street_address,
             city=r.city,
             state=r.state,
             zip_code=r.zip,
-            latitude=addr_info.latitude,
-            longitude=addr_info.longitude,
-            altitude=addr_info.altitude,
+            latitude=nyc_addr_info.latitude if nyc_addr_info is not None else osm_addr_info.latitude,
+            longitude=nyc_addr_info.longitude if nyc_addr_info is not None else osm_addr_info.longitude,
+            altitude=nyc_addr_info.altitude if nyc_addr_info is not None else osm_addr_info.altitude,
             network_number=None,
             install_date=None,
             abandon_date=None,
