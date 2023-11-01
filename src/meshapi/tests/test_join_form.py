@@ -6,52 +6,52 @@ from meshapi.views import JoinFormRequest
 
 from .sample_join_form_data import *
 
-def validate_successful_join_form_submission(test_name, s):
-        # Make sure that we get the right stuff out of the database afterwards
 
-        # Check if the member was created and that we see it when we
-        # filter for it.
-        existing_members = Member.objects.filter(
-            first_name=s.first_name,
-            last_name=s.last_name,
-            email_address=s.email,
-            phone_number=s.phone,
-        )
+def validate_successful_join_form_submission(test_case, test_name, s, response):
+    # Make sure that we get the right stuff out of the database afterwards
 
-        length = 1
-        self.assertEqual(
-            len(existing_members),
-            length,
-            f"Didn't find created member for {test_name}. Should be {length}, but got {len(existing_members)}",
-        )
+    # Check if the member was created and that we see it when we
+    # filter for it.
+    existing_members = Member.objects.filter(
+        first_name=s.first_name,
+        last_name=s.last_name,
+        email_address=s.email,
+        phone_number=s.phone,
+    )
 
-        # Check if the building was created and that we see it when we
-        # filter for it.
-        existing_buildings = Building.objects.filter(
-            street_address=s.street_address,
-            city=s.city,
-            state=s.state,
-            zip_code=s.zip,
-            bin=1077609,
-        )
+    length = 1
+    test_case.assertEqual(
+        len(existing_members),
+        length,
+        f"Didn't find created member for {test_name}. Should be {length}, but got {len(existing_members)}",
+    )
 
-        length = 1
-        self.assertEqual(
-            len(existing_buildings),
-            length,
-            f"Didn't find created building for {test_name}. Should be {length}, but got {len(existing_buildings)}",
-        )
+    # Check if the building was created and that we see it when we
+    # filter for it.
+    existing_buildings = Building.objects.filter(
+        street_address=s.street_address,
+        city=s.city,
+        state=s.state,
+        zip_code=s.zip,
+    )
 
-        # Check that a request was created
-        request_id = json.loads(response.content.decode('utf-8'))['request_id']
-        join_form_requests = Request.objects.filter(pk=request_id)
+    length = 1
+    test_case.assertEqual(
+        len(existing_buildings),
+        length,
+        f"Didn't find created building for {test_name}. Should be {length}, but got {len(existing_buildings)}",
+    )
 
-        length = 1
-        self.assertEqual(
-            len(join_form_requests),
-            length,
-            f"Didn't find created request for {test_name}. Should be {length}, but got {len(join_form_requests)}",
-        )
+    # Check that a request was created
+    request_id = json.loads(response.content.decode("utf-8"))["request_id"]
+    join_form_requests = Request.objects.filter(pk=request_id)
+
+    length = 1
+    test_case.assertEqual(
+        len(join_form_requests),
+        length,
+        f"Didn't find created request for {test_name}. Should be {length}, but got {len(join_form_requests)}",
+    )
 
 
 class TestJoinForm(TestCase):
@@ -74,53 +74,27 @@ class TestJoinForm(TestCase):
             response.status_code,
             f"status code incorrect for Valid Join Form. Should be {code}, but got {response.status_code}.\n Response is: {response.content.decode('utf-8')}",
         )
-        
+
         # Make sure that we get the right stuff out of the database afterwards
         s = JoinFormRequest(**valid_join_form_submission)
 
-        # Check if the member was created and that we see it when we
-        # filter for it.
-        existing_members = Member.objects.filter(
-            first_name=s.first_name,
-            last_name=s.last_name,
-            email_address=s.email,
-            phone_number=s.phone,
-        )
+        validate_successful_join_form_submission(self, "Valid Join Form", s, response)
 
-        length = 1
+    def test_non_nyc_join_form(self):
+        # Name, email, phone, location, apt, rooftop, referral
+        form = non_nyc_join_form_submission.copy()
+        response = self.c.post("/api/v1/join/", form, content_type="application/json")
+
+        code = 201
         self.assertEqual(
-            len(existing_members),
-            length,
-            f"Didn't find created member for Valid Join Form. Should be {length}, but got {len(existing_members)}",
+            code,
+            response.status_code,
+            f"status code incorrect for Non NYC Join Form. Should be {code}, but got {response.status_code}.\n Response is: {response.content.decode('utf-8')}",
         )
 
-        # Check if the building was created and that we see it when we
-        # filter for it.
-        existing_buildings = Building.objects.filter(
-            street_address=s.street_address,
-            city=s.city,
-            state=s.state,
-            zip_code=s.zip,
-            bin=1077609,
-        )
+        s = JoinFormRequest(**non_nyc_join_form_submission)
 
-        length = 1
-        self.assertEqual(
-            len(existing_buildings),
-            length,
-            f"Didn't find created building for Valid Join Form. Should be {length}, but got {len(existing_buildings)}",
-        )
-
-        # Check that a request was created
-        request_id = json.loads(response.content.decode('utf-8'))['request_id']
-        join_form_requests = Request.objects.filter(pk=request_id)
-
-        length = 1
-        self.assertEqual(
-            len(join_form_requests),
-            length,
-            f"Didn't find created request for Valid Join Form. Should be {length}, but got {len(join_form_requests)}",
-        )
+        validate_successful_join_form_submission(self, "Non-NYC Join Form", s, response)
 
     def test_empty_join_form(self):
         # Name, email, phone, location, apt, rooftop, referral
@@ -205,28 +179,3 @@ class TestJoinForm(TestCase):
             response.content.decode("utf-8"),
             response.content.decode("utf-8"),
         )
-
-    # FIXME: This test passing makes valid join form fail
-    # Probably has something to do with hardcoding the query?
-    def test_non_nyc_join_form(self):
-        # Name, email, phone, location, apt, rooftop, referral
-        form = non_nyc_join_form_submission.copy()
-        response = self.c.post("/api/v1/join/", form, content_type="application/json")
-
-        code = 201
-        self.assertEqual(
-            code,
-            response.status_code,
-            f"status code incorrect for Non NYC Join Form. Should be {code}, but got {response.status_code}.\n Response is: {response.content.decode('utf-8')}",
-        )
-
-        # self.assertEqual(
-        #    '"Address not found."',
-        #    response.content.decode("utf-8"),
-        #    response.content.decode("utf-8"),
-        # )
-
-    # def test_borough_join_form(self):
-    #    # Name, email, phone, location, apt, rooftop, referral
-    #    for form in [kings_join_form_submission, queens_join_form_submission, bronx_join_form_submission, richmond_join_form_submission]:
-    #        response = self.c.post("/api/v1/join/", form, content_type="application/json")
