@@ -2,8 +2,56 @@ import json
 from django.contrib.auth.models import User
 from django.test import TestCase, Client
 from meshapi.models import Building, Member, Install, Request
+from meshapi.views import JoinFormRequest
 
 from .sample_join_form_data import *
+
+def validate_successful_join_form_submission(test_name, s):
+        # Make sure that we get the right stuff out of the database afterwards
+
+        # Check if the member was created and that we see it when we
+        # filter for it.
+        existing_members = Member.objects.filter(
+            first_name=s.first_name,
+            last_name=s.last_name,
+            email_address=s.email,
+            phone_number=s.phone,
+        )
+
+        length = 1
+        self.assertEqual(
+            len(existing_members),
+            length,
+            f"Didn't find created member for {test_name}. Should be {length}, but got {len(existing_members)}",
+        )
+
+        # Check if the building was created and that we see it when we
+        # filter for it.
+        existing_buildings = Building.objects.filter(
+            street_address=s.street_address,
+            city=s.city,
+            state=s.state,
+            zip_code=s.zip,
+            bin=1077609,
+        )
+
+        length = 1
+        self.assertEqual(
+            len(existing_buildings),
+            length,
+            f"Didn't find created building for {test_name}. Should be {length}, but got {len(existing_buildings)}",
+        )
+
+        # Check that a request was created
+        request_id = json.loads(response.content.decode('utf-8'))['request_id']
+        join_form_requests = Request.objects.filter(pk=request_id)
+
+        length = 1
+        self.assertEqual(
+            len(join_form_requests),
+            length,
+            f"Didn't find created request for {test_name}. Should be {length}, but got {len(join_form_requests)}",
+        )
 
 
 class TestJoinForm(TestCase):
@@ -28,23 +76,15 @@ class TestJoinForm(TestCase):
         )
         
         # Make sure that we get the right stuff out of the database afterwards
-        # FIXME (willnilges): use a dataclass like in views.py
-        first_name = valid_join_form_submission.get("first_name")
-        last_name = valid_join_form_submission.get("last_name")
-        email_address = valid_join_form_submission.get("email")
-        phone_number = valid_join_form_submission.get("phone")
-        street_address = valid_join_form_submission.get("street_address")
-        apartment = valid_join_form_submission.get("apartment")
-        roof_access = valid_join_form_submission.get("roof_access")
-        city = valid_join_form_submission.get("city")
-        state = valid_join_form_submission.get("state")
-        zip_code = valid_join_form_submission.get("zip")
+        s = JoinFormRequest(**valid_join_form_submission)
 
+        # Check if the member was created and that we see it when we
+        # filter for it.
         existing_members = Member.objects.filter(
-            first_name=first_name,
-            last_name=last_name,
-            email_address=email_address,
-            phone_number=phone_number,
+            first_name=s.first_name,
+            last_name=s.last_name,
+            email_address=s.email,
+            phone_number=s.phone,
         )
 
         length = 1
@@ -54,11 +94,13 @@ class TestJoinForm(TestCase):
             f"Didn't find created member for Valid Join Form. Should be {length}, but got {len(existing_members)}",
         )
 
+        # Check if the building was created and that we see it when we
+        # filter for it.
         existing_buildings = Building.objects.filter(
-            street_address=street_address,
-            city=city,
-            state=state,
-            zip_code=zip_code,
+            street_address=s.street_address,
+            city=s.city,
+            state=s.state,
+            zip_code=s.zip,
             bin=1077609,
         )
 
@@ -69,10 +111,8 @@ class TestJoinForm(TestCase):
             f"Didn't find created building for Valid Join Form. Should be {length}, but got {len(existing_buildings)}",
         )
 
-        all_requests = Request.objects.all().values()
-        for r in all_requests:
-            print(r)
-
+        # Check that a request was created
+        request_id = json.loads(response.content.decode('utf-8'))['request_id']
         join_form_requests = Request.objects.filter(pk=request_id)
 
         length = 1
