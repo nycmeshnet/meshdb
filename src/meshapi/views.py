@@ -158,16 +158,13 @@ def join_form(request):
     except TypeError as e:
         return Response({"Got incomplete request"}, status=status.HTTP_400_BAD_REQUEST)
 
-    print("Validating Email...")
     if not validate_email_address(r.email):
         return Response({f"{r.email} is not a valid email"}, status=status.HTTP_400_BAD_REQUEST)
 
     # Expects country code!!!!
-    print("Validating Phone...")
     if not validate_phone_number(r.phone):
         return Response({f"{r.phone} is not a valid phone number"}, status=status.HTTP_400_BAD_REQUEST)
 
-    print("Validating Address...")
     try:
         osm_addr_info = OSMAddressInfo(r.street_address, r.city, r.state, r.zip)
         if not osm_addr_info.nyc:
@@ -226,12 +223,17 @@ def join_form(request):
         print(e)
         return Response({"Could not save member."}, status=status.HTTP_400_BAD_REQUEST)
 
-    existing_buildings = Building.objects.filter(
-        street_address=r.street_address,
-        city=r.city,
-        state=r.state,
-        zip_code=r.zip,
-    )
+    # If the address is in NYC, then try to look up by BIN, otherwise fallback
+    # to address
+    if nyc_addr_info is not None:
+        existing_buildings = Building.objects.filter(bin=nyc_addr_info.bin)
+    else:
+        existing_buildings = Building.objects.filter(
+            street_address=r.street_address,
+            city=r.city,
+            state=r.state,
+            zip_code=r.zip,
+        )
 
     join_form_building = (
         existing_buildings[0]
