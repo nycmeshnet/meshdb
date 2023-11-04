@@ -89,7 +89,6 @@ You should now be able to access the API:
 curl http://127.0.0.1:8000/api/v1/    # Should echo "We're Meshin" to indicate 200 status
 ```
 
-
 ### Prod Environment
 
 Clone the package with git and create the expected `.env` file (or otherwise
@@ -123,8 +122,8 @@ curl http://127.0.0.1:8080/api/v1
 
 We use django's testing framework, based on `unittest`
 
-To run the unit tests, first create a virtual environment and install the dependencies as specfied 
-under "Dev Environment" above
+To run the unit tests, first create a virtual environment and install the dependencies as specified 
+under [Dev Environment](#dev-environment) above
 
 Django's tests should spin up and tear down a mock database for us, but it's
 still going to need somewhere to put that database, so go ahead and boot up the
