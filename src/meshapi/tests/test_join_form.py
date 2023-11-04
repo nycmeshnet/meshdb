@@ -167,7 +167,7 @@ class TestJoinForm(TestCase):
         form["street_address"] = "fjdfahuweildhjweiklfhjkhklfhj"
         response = self.c.post("/api/v1/join/", form, content_type="application/json")
 
-        code = 404
+        code = 400
         self.assertEqual(
             code,
             response.status_code,

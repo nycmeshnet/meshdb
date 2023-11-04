@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from validate_email import validate_email
 import phonenumbers
 from geopy.geocoders import Nominatim
+from meshapi.exceptions import AddressError
 
 
 def validate_email_address(email_address):
@@ -42,7 +43,7 @@ class OSMAddressInfo:
         address = f"{street_address}, {city}, {state} {zip}"
         location = geolocator.geocode(address)
         if location is None:
-            raise ValueError()
+            raise AddressError("(OSM) Address not found.")
 
         self.address = location.address
         # self.county = location.county # Not guaranteed to exist!?
@@ -73,10 +74,8 @@ class NYCAddressInfo:
         if state != "NY":
             raise ValueError("(NYC) State is not New York.")
 
-        # if not is_nyc_zip(zip):
-        #    raise ValueError("Zip code not within city limits.")
-
         self.address = f"{street_address}, {city}, {state} {zip}"
+
         # Look up BIN in NYC Planning's Authoritative Search
         query_params = {
             "text": self.address,
@@ -86,14 +85,14 @@ class NYCAddressInfo:
         nyc_planning_resp = json.loads(nyc_planning_req.content.decode("utf-8"))
 
         if len(nyc_planning_resp["features"]) == 0:
-            raise requests.exceptions.HTTPError("Address not found.")
+            raise AddressError("(NYC) Address not found.")
 
         # If we enter something not within NYC, the API will still give us
         # the closest matching street address it can find, so check that
         # the ZIP of what we entered matches what we got.
         found_zip = int(nyc_planning_resp["features"][0]["properties"]["postalcode"])
         if found_zip != zip:
-            raise ValueError("Could not find address. Zip code is probably not within city limits")
+            raise AddressError(f"(NYC) Could not find address. Zip code ({zip}) is probably not within city limits")
 
         self.bin = nyc_planning_resp["features"][0]["properties"]["addendum"]["pad"]["bin"]
         self.longitude, self.latitude = nyc_planning_resp["features"][0]["geometry"]["coordinates"]
@@ -109,6 +108,6 @@ class NYCAddressInfo:
         nyc_dataset_resp = json.loads(nyc_dataset_req.content.decode("utf-8"))
 
         if len(nyc_dataset_resp) == 0:
-            raise requests.exceptions.HTTPError("Bin not found.")
+            raise AddressError(f"(NYC) Bin ({self.bin}) not found.")
 
         self.altitude = float(nyc_dataset_resp[0]["heightroof"]) + float(nyc_dataset_resp[0]["groundelev"])

@@ -30,6 +30,7 @@ from meshapi.validation import (
     validate_email_address,
     NYCAddressInfo,
 )
+from meshapi.exceptions import AddressError
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
@@ -165,39 +166,49 @@ def join_form(request):
     if not validate_phone_number(r.phone):
         return Response({f"{r.phone} is not a valid phone number"}, status=status.HTTP_400_BAD_REQUEST)
 
-    try:
-        osm_addr_info = OSMAddressInfo(r.street_address, r.city, r.state, r.zip)
-        if not osm_addr_info.nyc:
-            print("(OSM) Address is not NYC")
-    except ValueError as e:
-        print(e)
-        return Response(f"(OSM) Address not found", status=status.HTTP_404_NOT_FOUND)
-    except AttributeError as e:
-        print(e)
-        return Response(f"(OSM) Error validating address: {str(e)}", status=status.HTTP_400_BAD_REQUEST)
-    except GeocoderUnavailable as e:
-        print(e)
-        return Response(f"(OSM) Error validating address: {str(e)}", status=status.HTTP_503_SERVICE_UNAVAILABLE)
+    osm_addr_info = None
+    attempts_remaining = 2
+    while attempts_remaining > 0:
+        attempts_remaining -= 1
+        try:
+            osm_addr_info = OSMAddressInfo(r.street_address, r.city, r.state, r.zip)
+            if not osm_addr_info.nyc:
+                print("(OSM) Address is not NYC")
+        # If the user has given us an invalid address, tell them to buzz off.
+        except AddressError as e:
+            print(e)
+            return Response(f"(OSM) Address not found", status=status.HTTP_400_BAD_REQUEST)
+        # If the API gives us an error, then try again
+        except (GeocoderUnavailable, Exception) as e:
+            print(e)
+            print("(OSM) Something went wrong validating the address. Re-trying...")
+            time.sleep(3)
+    if osm_addr_info == None:
+        return Response(f"(OSM) Error validating address", status=status.HTTP_503_SERVICE_UNAVAILABLE)
 
     # Only bother with the NYC APIs if we know the address is in NYC
     nyc_addr_info = None
     if osm_addr_info.nyc:
-        for attempts in range(0, 2):
+        attempts_remaining = 2
+        while attempts_remaining > 0:
+            attempts_remaining -= 1
             try:
                 nyc_addr_info = NYCAddressInfo(r.street_address, r.city, r.state, r.zip)
-            except requests.exceptions.HTTPError as e:
-                print(e)
-                return Response(str(e), status=status.HTTP_404_NOT_FOUND)
-            except ValueError as e:
+                break
+            # If the user has given us an invalid address. Tell them to buzz
+            # off.
+            except AddressError as e:
                 print(e)
                 return Response(str(e), status=status.HTTP_400_BAD_REQUEST)
+            # If we get any other error, then there was probably an issue
+            # using the API, and we should wait a bit and re-try
             except Exception as e:
                 print(e)
-                if attempts == 1:
-                    return Response(f"(NYC) Error validating address", status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-                else:
-                    print("(NYC) Something went wrong validating the address. Re-trying...")
-                    time.sleep(3)
+                print("(NYC) Something went wrong validating the address. Re-trying...")
+                time.sleep(3)
+        # If we run out of tries, bail.
+        if nyc_addr_info == None:
+            return Response(f"(NYC) Error validating address", status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     existing_members = Member.objects.filter(
         first_name=r.first_name,
