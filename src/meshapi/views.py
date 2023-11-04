@@ -30,7 +30,7 @@ from meshapi.validation import (
     validate_email_address,
     NYCAddressInfo,
 )
-from meshapi.exceptions import AddressError
+from meshapi.exceptions import AddressError, AddressAPIError
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
@@ -203,7 +203,7 @@ def join_form(request):
                 return Response(str(e), status=status.HTTP_400_BAD_REQUEST)
             # If we get any other error, then there was probably an issue
             # using the API, and we should wait a bit and re-try
-            except Exception as e:
+            except (AddressAPIError, Exception) as e:
                 print(e)
                 print("(NYC) Something went wrong validating the address. Re-trying...")
                 time.sleep(3)
