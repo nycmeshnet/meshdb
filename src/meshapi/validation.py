@@ -109,6 +109,6 @@ class NYCAddressInfo:
         nyc_dataset_resp = json.loads(nyc_dataset_req.content.decode("utf-8"))
 
         if len(nyc_dataset_resp) == 0:
-            raise AddressAPIError(f"(NYC) Bin ({self.bin}) not found.")
+            raise AddressAPIError(f"(NYC) DOB BIN ({self.bin}) not found in NYC OpenData while trying to query for altitude information")
 
         self.altitude = float(nyc_dataset_resp[0]["heightroof"]) + float(nyc_dataset_resp[0]["groundelev"])
