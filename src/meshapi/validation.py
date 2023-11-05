@@ -43,7 +43,7 @@ class OSMAddressInfo:
         address = f"{street_address}, {city}, {state} {zip}"
         location = geolocator.geocode(address)
         if location is None:
-            raise AddressError("(OSM) Address not found.")
+            raise AddressError(f"(OSM) Address not found for user input: '{address}'")
 
         self.address = location.address
         # self.county = location.county # Not guaranteed to exist!?
