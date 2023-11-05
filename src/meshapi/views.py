@@ -173,7 +173,7 @@ def join_form(request):
         try:
             osm_addr_info = OSMAddressInfo(r.street_address, r.city, r.state, r.zip)
             if not osm_addr_info.nyc:
-                print("(OSM) Address is not NYC")
+                print("(OSM) Address '{osm_addr_info.address}' is not in NYC")
             break
         # If the user has given us an invalid address, tell them to buzz off.
         except AddressError as e:
