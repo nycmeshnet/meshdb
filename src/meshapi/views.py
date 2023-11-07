@@ -176,14 +176,19 @@ def join_form(request):
         try:
             osm_addr_info = OSMAddressInfo(r.street_address, r.city, r.state, r.zip)
             if not osm_addr_info.nyc:
-                print(f"(OSM) Address '{osm_addr_info.street_address}, {osm_addr_info.city}, {osm_addr_info.state} {osm_addr_info.zip}' is not in NYC")
+                print(
+                    f"(OSM) Address '{osm_addr_info.street_address}, {osm_addr_info.city}, {osm_addr_info.state} {osm_addr_info.zip}' is not in NYC"
+                )
             break
         # If the user has given us an invalid address, tell them to buzz off.
         except AddressError as e:
             print(e)
-            return Response({f"(OSM) Address '{r.street_address}, {r.city}, {r.state} {r.zip}' not found"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {f"(OSM) Address '{r.street_address}, {r.city}, {r.state} {r.zip}' not found"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         except AssertionError as e:
-            print('Zip is not an int!?')
+            print("Zip is not an int!?")
             return Response({""}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         # If the API gives us an error, then try again
         except (GeocoderUnavailable, Exception) as e:
@@ -201,7 +206,9 @@ def join_form(request):
         while attempts_remaining > 0:
             attempts_remaining -= 1
             try:
-                nyc_addr_info = NYCAddressInfo(osm_addr_info.street_address, osm_addr_info.city, osm_addr_info.state, osm_addr_info.zip)
+                nyc_addr_info = NYCAddressInfo(
+                    osm_addr_info.street_address, osm_addr_info.city, osm_addr_info.state, osm_addr_info.zip
+                )
                 break
             # If the user has given us an invalid address. Tell them to buzz
             # off.

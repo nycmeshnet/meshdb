@@ -77,9 +77,9 @@ class TestJoinForm(TestCase):
 
         # Make sure that we get the right stuff out of the database afterwards
         s = JoinFormRequest(**valid_join_form_submission)
-        
+
         # Match the format from OSM. I did this to see how OSM would mutate the
-        # raw request we get. 
+        # raw request we get.
         s.street_address = "151 Broome Street"
         s.city = "Manhattan"
         s.state = "New York"
