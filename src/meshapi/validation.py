@@ -32,30 +32,44 @@ def validate_phone_number(phone_number):
 # This is our primiary source of information for addresses outside of NYC.
 @dataclass
 class OSMAddressInfo:
-    address: str
+    street_address: str
+    city: str
+    state: str
+    zip: int
     longitude: float
     latitude: float
     altitude: float
     nyc: bool
 
-    def __init__(self, street_address, city, state, zip):
+    def __init__(self, street_address: str, city: str, state: str, zip: int):
         geolocator = Nominatim(user_agent="address_lookup")
         address = f"{street_address}, {city}, {state} {zip}"
-        location = geolocator.geocode(address)
+        location = geolocator.geocode(address, addressdetails=True)
         if location is None:
             raise AddressError(f"(OSM) Address not found for user input: '{address}'")
 
-        self.address = location.address
-        # self.county = location.county # Not guaranteed to exist!?
+        r_addr = location.raw["address"]
+
+        self.street_address = f"{r_addr['house_number']} {r_addr['road']}"
+        self.city = r_addr['city']
+        self.state = r_addr['state']
+        self.zip = int(r_addr['postcode'])
         self.longitude = location.longitude
         self.latitude = location.latitude
         self.altitude = location.altitude  # Usually 0 because very few places have it
 
         boroughs = ["New York County", "Kings County", "Queens County", "Bronx County", "Richmond County"]
-        if any(f"{borough}, City of New York" in self.address for borough in boroughs):
+        if any(f"{borough}" in r_addr['county'] for borough in boroughs):
+            # OSM defines the boroughs in a weird way. Where a sane person
+            # would write "City: Brooklyn", they write "City: City of New York"
+            self.city = r_addr['suburb']
             self.nyc = True
         else:
             self.nyc = False
+
+        # Python is on a lot of drugs
+        # Actually, python _is_ a lot of drugs
+        assert(isinstance(self.zip, int))
 
 
 # Used to obtain info about addresses within NYC. Uses a pair of APIs
@@ -70,9 +84,9 @@ class NYCAddressInfo:
     altitude: float
     bin: int
 
-    def __init__(self, street_address, city, state, zip):
-        if state != "NY":
-            raise ValueError("(NYC) State is not New York.")
+    def __init__(self, street_address: str, city: str, state: str, zip: int):
+        if state != "New York" and state != "NY":
+            raise ValueError(f"(NYC) State '{state}' is not New York.")
 
         self.address = f"{street_address}, {city}, {state} {zip}"
 
@@ -86,14 +100,14 @@ class NYCAddressInfo:
         nyc_planning_resp = json.loads(nyc_planning_req.content.decode("utf-8"))
 
         if len(nyc_planning_resp["features"]) == 0:
-            raise AddressAPIError("(NYC) Address not found.")
+            raise AddressAPIError(f"(NYC) Got bad API response when querying geosearch.planninglabs.nyc for  '{self.address}'.")
 
         # If we enter something not within NYC, the API will still give us
         # the closest matching street address it can find, so check that
         # the ZIP of what we entered matches what we got.
         found_zip = int(nyc_planning_resp["features"][0]["properties"]["postalcode"])
         if found_zip != zip:
-            raise AddressError(f"(NYC) Could not find address. Zip code ({zip}) is probably not within city limits")
+            raise AddressError(f"(NYC) Could not find address '{street_address}, {city}, {state} {zip}'. Zip code ({zip}) is probably not within city limits")
 
         self.bin = nyc_planning_resp["features"][0]["properties"]["addendum"]["pad"]["bin"]
         self.longitude, self.latitude = nyc_planning_resp["features"][0]["geometry"]["coordinates"]

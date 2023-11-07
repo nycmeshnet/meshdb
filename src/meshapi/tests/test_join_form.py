@@ -77,6 +77,12 @@ class TestJoinForm(TestCase):
 
         # Make sure that we get the right stuff out of the database afterwards
         s = JoinFormRequest(**valid_join_form_submission)
+        
+        # Match the format from OSM. I did this to see how OSM would mutate the
+        # raw request we get. 
+        s.street_address = "151 Broome Street"
+        s.city = "Manhattan"
+        s.state = "New York"
 
         validate_successful_join_form_submission(self, "Valid Join Form", s, response)
 
@@ -93,6 +99,10 @@ class TestJoinForm(TestCase):
         )
 
         s = JoinFormRequest(**non_nyc_join_form_submission)
+
+        # Match the format from OSM
+        s.street_address = "480 East Broad Street"
+        s.state = "Ohio"
 
         validate_successful_join_form_submission(self, "Non-NYC Join Form", s, response)
 
@@ -175,7 +185,7 @@ class TestJoinForm(TestCase):
         )
 
         self.assertEqual(
-            '"(OSM) Address not found"',
+            f"[\"(OSM) Address '{form['street_address']}, {form['city']}, {form['state']} {form['zip']}' not found\"]",
             response.content.decode("utf-8"),
-            response.content.decode("utf-8"),
+            f"Did not get correct response content for bad address join form: {response.content.decode('utf-8')}",
         )

@@ -166,6 +166,9 @@ def join_form(request):
     if not validate_phone_number(r.phone):
         return Response({f"{r.phone} is not a valid phone number"}, status=status.HTTP_400_BAD_REQUEST)
 
+    # Query the Open Street Map to validate and "standardize" the member's
+    # inputs. We're going to use this as the canonical address, and then
+    # supplement with NYC API information
     osm_addr_info = None
     attempts_remaining = 2
     while attempts_remaining > 0:
@@ -173,17 +176,21 @@ def join_form(request):
         try:
             osm_addr_info = OSMAddressInfo(r.street_address, r.city, r.state, r.zip)
             if not osm_addr_info.nyc:
-                print("(OSM) Address '{osm_addr_info.address}' is not in NYC")
+                print(f"(OSM) Address '{osm_addr_info.street_address}, {osm_addr_info.city}, {osm_addr_info.state} {osm_addr_info.zip}' is not in NYC")
             break
         # If the user has given us an invalid address, tell them to buzz off.
         except AddressError as e:
             print(e)
-            return Response(f"(OSM) Address not found", status=status.HTTP_400_BAD_REQUEST)
+            return Response({f"(OSM) Address '{r.street_address}, {r.city}, {r.state} {r.zip}' not found"}, status=status.HTTP_400_BAD_REQUEST)
+        except AssertionError as e:
+            print('Zip is not an int!?')
+            return Response({""}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         # If the API gives us an error, then try again
         except (GeocoderUnavailable, Exception) as e:
             print(e)
             print("(OSM) Something went wrong validating the address. Re-trying...")
             time.sleep(3)
+    # If we try multiple times without success, bail.
     if osm_addr_info == None:
         return Response(f"(OSM) Error validating address", status=status.HTTP_503_SERVICE_UNAVAILABLE)
 
@@ -194,7 +201,7 @@ def join_form(request):
         while attempts_remaining > 0:
             attempts_remaining -= 1
             try:
-                nyc_addr_info = NYCAddressInfo(r.street_address, r.city, r.state, r.zip)
+                nyc_addr_info = NYCAddressInfo(osm_addr_info.street_address, osm_addr_info.city, osm_addr_info.state, osm_addr_info.zip)
                 break
             # If the user has given us an invalid address. Tell them to buzz
             # off.
@@ -211,13 +218,13 @@ def join_form(request):
         if nyc_addr_info == None:
             return Response(f"(NYC) Error validating address", status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+    # Check if there's an existing member, and bail if there is
     existing_members = Member.objects.filter(
         first_name=r.first_name,
         last_name=r.last_name,
         email_address=r.email,
         phone_number=r.phone,
     )
-
     if len(existing_members) > 0:
         return Response({"Member already exists"}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -229,22 +236,17 @@ def join_form(request):
         slack_handle="",
     )
 
-    try:
-        join_form_member.save()
-    except IntegrityError as e:
-        print(e)
-        return Response({"Could not save member."}, status=status.HTTP_400_BAD_REQUEST)
-
     # If the address is in NYC, then try to look up by BIN, otherwise fallback
     # to address
+    existing_buildings = None
     if nyc_addr_info is not None:
         existing_buildings = Building.objects.filter(bin=nyc_addr_info.bin)
     else:
         existing_buildings = Building.objects.filter(
-            street_address=r.street_address,
-            city=r.city,
-            state=r.state,
-            zip_code=r.zip,
+            street_address=osm_addr_info.street_address,
+            city=osm_addr_info.city,
+            state=osm_addr_info.state,
+            zip_code=osm_addr_info.zip,
         )
 
     join_form_building = (
@@ -253,10 +255,10 @@ def join_form(request):
         else Building(
             bin=nyc_addr_info.bin if nyc_addr_info is not None else -1,
             building_status=Building.BuildingStatus.INACTIVE,
-            street_address=r.street_address,
-            city=r.city,
-            state=r.state,
-            zip_code=r.zip,
+            street_address=osm_addr_info.street_address,
+            city=osm_addr_info.city,
+            state=osm_addr_info.state,
+            zip_code=int(osm_addr_info.zip),
             latitude=nyc_addr_info.latitude if nyc_addr_info is not None else osm_addr_info.latitude,
             longitude=nyc_addr_info.longitude if nyc_addr_info is not None else osm_addr_info.longitude,
             altitude=nyc_addr_info.altitude if nyc_addr_info is not None else osm_addr_info.altitude,
@@ -265,11 +267,6 @@ def join_form(request):
             abandon_date=None,
         )
     )
-    try:
-        join_form_building.save()
-    except IntegrityError as e:
-        print(e)
-        return Response({"Could not save building"}, status=status.HTTP_400_BAD_REQUEST)
 
     join_form_request = Request(
         request_status=Request.RequestStatus.OPEN,
@@ -283,9 +280,26 @@ def join_form(request):
     )
 
     try:
+        join_form_member.save()
+    except IntegrityError as e:
+        print(e)
+        return Response({"Could not save member."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    try:
+        join_form_building.save()
+    except IntegrityError as e:
+        print(e)
+        # Delete the member and bail
+        join_form_member.delete()
+        return Response({"Could not save building"}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
         join_form_request.save()
     except IntegrityError as e:
         print(e)
+        # Delete the member, building, and bail
+        join_form_member.delete()
+        join_form_building.delete()
         return Response({"Could not save request"}, status=status.HTTP_400_BAD_REQUEST)
 
     return Response(
