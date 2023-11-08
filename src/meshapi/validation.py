@@ -59,7 +59,7 @@ class OSMAddressInfo:
         self.altitude = location.altitude  # Usually 0 because very few places have it
 
         boroughs = ["New York County", "Kings County", "Queens County", "Bronx County", "Richmond County"]
-        if any(f"{borough}" in r_addr["county"] for borough in boroughs):
+        if any(borough in r_addr["county"] for borough in boroughs):
             # OSM defines the boroughs in a weird way. Where a sane person
             # would write "City: Brooklyn", they write "City: City of New York"
             self.city = r_addr["suburb"]
