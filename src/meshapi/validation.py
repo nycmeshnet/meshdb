@@ -62,6 +62,8 @@ class OSMAddressInfo:
         if any(borough in r_addr["county"] for borough in boroughs):
             # OSM defines the boroughs in a weird way. Where a sane person
             # would write "City: Brooklyn", they write "City: City of New York"
+            # and "Suburb: Brooklyn"
+            # So the "suburb" field will give us the borough.
             self.city = r_addr["suburb"]
             self.nyc = True
         else:
@@ -69,7 +71,7 @@ class OSMAddressInfo:
 
         # Python is on a lot of drugs
         # Actually, python _is_ a lot of drugs
-        assert isinstance(self.zip, int)
+        assert isinstance(self.zip, int), "Zip is not an int!?"
 
 
 # Used to obtain info about addresses within NYC. Uses a pair of APIs

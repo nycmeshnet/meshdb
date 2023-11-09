@@ -149,7 +149,7 @@ class TestJoinForm(TestCase):
         )
 
         self.assertEqual(
-            '["555-555-5555 is not a valid phone number"]', response.content.decode("utf-8"), f"Content is wrong"
+            '"555-555-5555 is not a valid phone number"', response.content.decode("utf-8"), f"Content is wrong"
         )
 
     def test_bad_email_join_form(self):
@@ -166,9 +166,9 @@ class TestJoinForm(TestCase):
         )
 
         self.assertEqual(
-            '["notareal@email.meshmeshmeshmeshmesh is not a valid email"]',
+            '"notareal@email.meshmeshmeshmeshmesh is not a valid email"',
             response.content.decode("utf-8"),
-            f"Content is wrong",
+            "Content is wrong",
         )
 
     def test_bad_address_join_form(self):
@@ -185,7 +185,7 @@ class TestJoinForm(TestCase):
         )
 
         self.assertEqual(
-            f"[\"(OSM) Address '{form['street_address']}, {form['city']}, {form['state']} {form['zip']}' not found\"]",
+            f"\"(OSM) Address '{form['street_address']}, {form['city']}, {form['state']} {form['zip']}' not found\"",
             response.content.decode("utf-8"),
             f"Did not get correct response content for bad address join form: {response.content.decode('utf-8')}",
         )

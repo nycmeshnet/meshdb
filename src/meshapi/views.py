@@ -160,11 +160,11 @@ def join_form(request):
         return Response({"Got incomplete request"}, status=status.HTTP_400_BAD_REQUEST)
 
     if not validate_email_address(r.email):
-        return Response({f"{r.email} is not a valid email"}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(f"{r.email} is not a valid email", status=status.HTTP_400_BAD_REQUEST)
 
     # Expects country code!!!!
     if not validate_phone_number(r.phone):
-        return Response({f"{r.phone} is not a valid phone number"}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(f"{r.phone} is not a valid phone number", status=status.HTTP_400_BAD_REQUEST)
 
     # Query the Open Street Map to validate and "standardize" the member's
     # inputs. We're going to use this as the canonical address, and then
@@ -184,12 +184,11 @@ def join_form(request):
         except AddressError as e:
             print(e)
             return Response(
-                {f"(OSM) Address '{r.street_address}, {r.city}, {r.state} {r.zip}' not found"},
+                f"(OSM) Address '{r.street_address}, {r.city}, {r.state} {r.zip}' not found",
                 status=status.HTTP_400_BAD_REQUEST,
             )
         except AssertionError as e:
-            print("Zip is not an int!?")
-            return Response({""}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response("Unexpected internal state", status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         # If the API gives us an error, then try again
         except (GeocoderUnavailable, Exception) as e:
             print(e)
@@ -197,7 +196,7 @@ def join_form(request):
             time.sleep(3)
     # If we try multiple times without success, bail.
     if osm_addr_info == None:
-        return Response(f"(OSM) Error validating address", status=status.HTTP_503_SERVICE_UNAVAILABLE)
+        return Response("(OSM) Error validating address", status=status.HTTP_503_SERVICE_UNAVAILABLE)
 
     # Only bother with the NYC APIs if we know the address is in NYC
     nyc_addr_info = None
@@ -223,7 +222,7 @@ def join_form(request):
                 time.sleep(3)
         # If we run out of tries, bail.
         if nyc_addr_info == None:
-            return Response(f"(NYC) Error validating address", status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response("(NYC) Error validating address", status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     # Check if there's an existing member, and bail if there is
     existing_members = Member.objects.filter(
@@ -233,7 +232,7 @@ def join_form(request):
         phone_number=r.phone,
     )
     if len(existing_members) > 0:
-        return Response({"Member already exists"}, status=status.HTTP_400_BAD_REQUEST)
+        return Response("Member already exists", status=status.HTTP_400_BAD_REQUEST)
 
     join_form_member = Member(
         first_name=r.first_name,
@@ -290,7 +289,7 @@ def join_form(request):
         join_form_member.save()
     except IntegrityError as e:
         print(e)
-        return Response({"Could not save member."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        return Response("Could not save member.", status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     try:
         join_form_building.save()
@@ -298,16 +297,17 @@ def join_form(request):
         print(e)
         # Delete the member and bail
         join_form_member.delete()
-        return Response({"Could not save building"}, status=status.HTTP_400_BAD_REQUEST)
+        return Response("Could not save building", status=status.HTTP_400_BAD_REQUEST)
 
     try:
         join_form_request.save()
     except IntegrityError as e:
         print(e)
-        # Delete the member, building, and bail
+        # Delete the member, building (if we just created it), and bail
         join_form_member.delete()
-        join_form_building.delete()
-        return Response({"Could not save request"}, status=status.HTTP_400_BAD_REQUEST)
+        if len(existing_buildings) == 0:
+            join_form_building.delete()
+        return Response("Could not save request", status=status.HTTP_400_BAD_REQUEST)
 
     return Response(
         {"building_id": join_form_building.id, "member_id": join_form_member.id, "request_id": join_form_request.id},
