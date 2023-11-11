@@ -188,6 +188,7 @@ def join_form(request):
                 status=status.HTTP_400_BAD_REQUEST,
             )
         except AssertionError as e:
+            print(e)
             return Response("Unexpected internal state", status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         # If the API gives us an error, then try again
         except (GeocoderUnavailable, Exception) as e:
