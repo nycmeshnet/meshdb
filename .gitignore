@@ -167,3 +167,6 @@ testobj.py
 
 #quincy's env loading script
 loadenv.sh
+
+# RTX
+.rtx.toml

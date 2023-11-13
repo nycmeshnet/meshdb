@@ -1,12 +1,68 @@
+import json
+from django.contrib.auth.models import User
 from django.test import TestCase, Client
-from .sample_data import sample_member, sample_building, sample_install, sample_request
 from meshapi.models import Building, Member, Install, Request
+from meshapi.views import JoinFormRequest
 
-from .sample_join_form_data import valid_join_form_submission, invalid_join_form_submission
+from .sample_join_form_data import *
+
+
+def validate_successful_join_form_submission(test_case, test_name, s, response):
+    # Make sure that we get the right stuff out of the database afterwards
+
+    # Check if the member was created and that we see it when we
+    # filter for it.
+    existing_members = Member.objects.filter(
+        first_name=s.first_name,
+        last_name=s.last_name,
+        email_address=s.email,
+        phone_number=s.phone,
+    )
+
+    length = 1
+    test_case.assertEqual(
+        len(existing_members),
+        length,
+        f"Didn't find created member for {test_name}. Should be {length}, but got {len(existing_members)}",
+    )
+
+    # Check if the building was created and that we see it when we
+    # filter for it.
+    existing_buildings = Building.objects.filter(
+        street_address=s.street_address,
+        city=s.city,
+        state=s.state,
+        zip_code=s.zip,
+    )
+
+    length = 1
+    test_case.assertEqual(
+        len(existing_buildings),
+        length,
+        f"Didn't find created building for {test_name}. Should be {length}, but got {len(existing_buildings)}",
+    )
+
+    # Check that a request was created
+    request_id = json.loads(response.content.decode("utf-8"))["request_id"]
+    join_form_requests = Request.objects.filter(pk=request_id)
+
+    length = 1
+    test_case.assertEqual(
+        len(join_form_requests),
+        length,
+        f"Didn't find created request for {test_name}. Should be {length}, but got {len(join_form_requests)}",
+    )
 
 
 class TestJoinForm(TestCase):
     c = Client()
+    admin_c = Client()
+
+    def setUp(self):
+        self.admin_user = User.objects.create_superuser(
+            username="admin", password="admin_password", email="admin@example.com"
+        )
+        self.admin_c.login(username="admin", password="admin_password")
 
     def test_valid_join_form(self):
         # Name, email, phone, location, apt, rooftop, referral
@@ -20,54 +76,35 @@ class TestJoinForm(TestCase):
         )
 
         # Make sure that we get the right stuff out of the database afterwards
-        first_name = valid_join_form_submission.get("first_name")
-        last_name = valid_join_form_submission.get("last_name")
-        email_address = valid_join_form_submission.get("email")
-        phone_number = valid_join_form_submission.get("phone")
-        street_address = valid_join_form_submission.get("street_address")
-        apartment = valid_join_form_submission.get("apartment")
-        roof_access = valid_join_form_submission.get("roof_access")
-        city = valid_join_form_submission.get("city")
-        state = valid_join_form_submission.get("state")
-        zip_code = valid_join_form_submission.get("zip")
+        s = JoinFormRequest(**valid_join_form_submission)
 
-        existing_members = Member.objects.filter(
-            first_name=first_name,
-            last_name=last_name,
-            email_address=email_address,
-            phone_number=phone_number,
-        )
+        # Match the format from OSM. I did this to see how OSM would mutate the
+        # raw request we get.
+        s.street_address = "151 Broome Street"
+        s.city = "Manhattan"
+        s.state = "New York"
 
-        length = 1
+        validate_successful_join_form_submission(self, "Valid Join Form", s, response)
+
+    def test_non_nyc_join_form(self):
+        # Name, email, phone, location, apt, rooftop, referral
+        form = non_nyc_join_form_submission.copy()
+        response = self.c.post("/api/v1/join/", form, content_type="application/json")
+
+        code = 201
         self.assertEqual(
-            len(existing_members),
-            length,
-            f"Didn't find created member for Valid Join Form. Should be {length}, but got {len(existing_members)}",
+            code,
+            response.status_code,
+            f"status code incorrect for Non NYC Join Form. Should be {code}, but got {response.status_code}.\n Response is: {response.content.decode('utf-8')}",
         )
 
-        existing_buildings = Building.objects.filter(
-            street_address=street_address,
-            city=city,
-            state=state,
-            zip_code=zip_code,
-            bin=1077609,
-        )
+        s = JoinFormRequest(**non_nyc_join_form_submission)
 
-        length = 1
-        self.assertEqual(
-            len(existing_buildings),
-            length,
-            f"Didn't find created building for Valid Join Form. Should be {length}, but got {len(existing_buildings)}",
-        )
+        # Match the format from OSM
+        s.street_address = "480 East Broad Street"
+        s.state = "Ohio"
 
-        join_form_requests = Request.objects.filter(member_id=1)
-
-        length = 1
-        self.assertEqual(
-            len(join_form_requests),
-            length,
-            f"Didn't find created request for Valid Join Form. Should be {length}, but got {len(join_form_requests)}",
-        )
+        validate_successful_join_form_submission(self, "Non-NYC Join Form", s, response)
 
     def test_empty_join_form(self):
         # Name, email, phone, location, apt, rooftop, referral
@@ -95,7 +132,7 @@ class TestJoinForm(TestCase):
         self.assertEqual(
             len(existing_buildings),
             length,
-            f"Didn't find created building for Valid Join Form. Should be {length}, but got {len(existing_buildings)}",
+            f"Search for created building for Empty Join Form was wrong. Should be {length}, but got {len(existing_buildings)}",
         )
 
     def test_bad_phone_join_form(self):
@@ -112,7 +149,7 @@ class TestJoinForm(TestCase):
         )
 
         self.assertEqual(
-            '["555-555-5555 is not a valid phone number"]', response.content.decode("utf-8"), f"Content is wrong"
+            '"555-555-5555 is not a valid phone number"', response.content.decode("utf-8"), f"Content is wrong"
         )
 
     def test_bad_email_join_form(self):
@@ -129,9 +166,9 @@ class TestJoinForm(TestCase):
         )
 
         self.assertEqual(
-            '["notareal@email.meshmeshmeshmeshmesh is not a valid email"]',
+            '"notareal@email.meshmeshmeshmeshmesh is not a valid email"',
             response.content.decode("utf-8"),
-            f"Content is wrong",
+            "Content is wrong",
         )
 
     def test_bad_address_join_form(self):
@@ -140,7 +177,7 @@ class TestJoinForm(TestCase):
         form["street_address"] = "fjdfahuweildhjweiklfhjkhklfhj"
         response = self.c.post("/api/v1/join/", form, content_type="application/json")
 
-        code = 404
+        code = 400
         self.assertEqual(
             code,
             response.status_code,
@@ -148,7 +185,7 @@ class TestJoinForm(TestCase):
         )
 
         self.assertEqual(
-            '"Address not found."',
+            f"\"(OSM) Address '{form['street_address']}, {form['city']}, {form['state']} {form['zip']}' not found\"",
             response.content.decode("utf-8"),
-            response.content.decode("utf-8"),
+            f"Did not get correct response content for bad address join form: {response.content.decode('utf-8')}",
         )

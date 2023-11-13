@@ -1,8 +1,10 @@
+from dataclasses import dataclass
 import json
 import time
+from geopy.exc import GeocoderUnavailable
+import requests
 from django.contrib.auth.models import User
 from django.db import IntegrityError
-from geopy.adapters import requests
 from rest_framework import generics, permissions
 from meshapi.models import Building, Member, Install, Request
 from meshapi.serializers import (
@@ -22,13 +24,18 @@ from meshapi.permissions import (
     RequestListCreatePermissions,
     RequestRetrieveUpdateDestroyPermissions,
 )
+from meshapi.validation import (
+    OSMAddressInfo,
+    validate_phone_number,
+    validate_email_address,
+    NYCAddressInfo,
+)
+from meshapi.exceptions import AddressError, AddressAPIError
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
 from django.http.response import JsonResponse
 from rest_framework.parsers import JSONParser
-from validate_email import validate_email
-import phonenumbers
 
 
 # Home view
@@ -129,189 +136,181 @@ class RequestDetail(generics.RetrieveUpdateDestroyAPIView):
 
 
 # Join Form
+@dataclass
+class JoinFormRequest:
+    first_name: str
+    last_name: str
+    email: str
+    phone: str
+    street_address: str
+    city: str
+    state: str
+    zip: int
+    apartment: str
+    roof_access: bool
+    referral: str
+
+
 @api_view(["POST"])
 def join_form(request):
     request_json = json.loads(request.body)
+    try:
+        r = JoinFormRequest(**request_json)
+    except TypeError as e:
+        return Response({"Got incomplete request"}, status=status.HTTP_400_BAD_REQUEST)
 
-    expected_structure = {
-        "first_name": str,
-        "last_name": str,
-        "email": str,
-        "phone": str,
-        "street_address": str,
-        "city": str,
-        "state": str,
-        "zip": int,
-        "apartment": str,
-        "roof_access": bool,
-        "referral": str,
-    }
-
-    for key, expected_type in expected_structure.items():
-        if key not in request_json:
-            print(f"Missing key: {key}")
-            return Response({f"Missing key: {key}"}, status=status.HTTP_400_BAD_REQUEST)
-        elif not isinstance(request_json[key], expected_type):
-            print(
-                f"Key '{key}' has an incorrect data type. Expected {expected_type}, but got {type(request_json[key])}"
-            )
-            return Response(
-                {
-                    f"Key '{key}' has an incorrect data type. Expected {expected_type}, but got {type(request_json[key])}"
-                },
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-    first_name: str = request_json.get("first_name")
-    last_name: str = request_json.get("last_name")
-    email_address: str = request_json.get("email")
-    phone_number: str = request_json.get("phone")
-    street_address: str = request_json.get("street_address")
-    apartment: str = request_json.get("apartment")
-    roof_access: bool = request_json.get("roof_access")
-    city: str = request_json.get("city")
-    state: str = request_json.get("state")
-    zip_code: str = request_json.get("zip")
-    referral: str = request_json.get("referral")
-
-    print("Validating Email...")
-    if not validate_email(
-        email_address=email_address,
-        check_format=True,
-        check_blacklist=True,
-        check_dns=True,
-        dns_timeout=5,
-        check_smtp=False,
-    ):
-        return Response({f"{email_address} is not a valid email"}, status=status.HTTP_400_BAD_REQUEST)
+    if not validate_email_address(r.email):
+        return Response(f"{r.email} is not a valid email", status=status.HTTP_400_BAD_REQUEST)
 
     # Expects country code!!!!
-    print("Validating Phone...")
-    try:
-        phonenumbers.parse(phone_number, None)
-    except phonenumbers.NumberParseException:
-        return Response({f"{phone_number} is not a valid phone number"}, status=status.HTTP_400_BAD_REQUEST)
+    if not validate_phone_number(r.phone):
+        return Response(f"{r.phone} is not a valid phone number", status=status.HTTP_400_BAD_REQUEST)
 
-    longitude = latitude = altitude = 0.0
-    bin = 0
-
-    for attempts in range(0, 2):
+    # Query the Open Street Map to validate and "standardize" the member's
+    # inputs. We're going to use this as the canonical address, and then
+    # supplement with NYC API information
+    osm_addr_info = None
+    attempts_remaining = 2
+    while attempts_remaining > 0:
+        attempts_remaining -= 1
         try:
-            print("Validating Address...")
-            address = f"{street_address}, {city}, {state} {zip_code}"
-
-            # Look up BIN in NYC Planning's Authoritative Search
-            query_params = {
-                "text": address,
-            }
-            nyc_planning_req = requests.get(f"https://geosearch.planninglabs.nyc/v2/search", params=query_params)
-            nyc_planning_resp = json.loads(nyc_planning_req.content.decode("utf-8"))
-
-            if len(nyc_planning_resp["features"]) == 0:
-                raise requests.exceptions.HTTPError("Address not found.")
-
-            bin = nyc_planning_resp["features"][0]["properties"]["addendum"]["pad"]["bin"]
-            longitude, latitude = nyc_planning_resp["features"][0]["geometry"]["coordinates"]
-
-            # Now that we have the bin, we can definitively get the height from
-            # NYC OpenData
-            query_params = {
-                "$where": f"bin={bin}",
-                "$select": "heightroof,groundelev",
-                "$limit": 1,
-            }
-            nyc_dataset_req = requests.get(
-                f"https://data.cityofnewyork.us/resource/qb5r-6dgf.json", params=query_params
-            )
-            nyc_dataset_resp = json.loads(nyc_dataset_req.content.decode("utf-8"))
-
-            if len(nyc_dataset_resp) == 0:
-                raise requests.exceptions.HTTPError("Bin not found.")
-
-            altitude = float(nyc_dataset_resp[0]["heightroof"]) + float(nyc_dataset_resp[0]["groundelev"])
-
-            print(f"bin is {bin}")
-            break  # Bail if we succeed, only need to try again if we except
-        except requests.exceptions.HTTPError as e:
-            return Response(str(e), status=status.HTTP_404_NOT_FOUND)
-        except Exception as e:
+            osm_addr_info = OSMAddressInfo(r.street_address, r.city, r.state, r.zip)
+            if not osm_addr_info.nyc:
+                print(
+                    f"(OSM) Address '{osm_addr_info.street_address}, {osm_addr_info.city}, {osm_addr_info.state} {osm_addr_info.zip}' is not in NYC"
+                )
+            break
+        # If the user has given us an invalid address, tell them to buzz off.
+        except AddressError as e:
             print(e)
-            if attempts == 1:
-                return Response(f"Error validating address.", status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-            else:
-                print("Something went wrong validating the address. Re-trying...")
+            return Response(
+                f"(OSM) Address '{r.street_address}, {r.city}, {r.state} {r.zip}' not found",
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except AssertionError as e:
+            print(e)
+            return Response("Unexpected internal state", status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        # If the API gives us an error, then try again
+        except (GeocoderUnavailable, Exception) as e:
+            print(e)
+            print("(OSM) Something went wrong validating the address. Re-trying...")
+            time.sleep(3)
+    # If we try multiple times without success, bail.
+    if osm_addr_info == None:
+        return Response("(OSM) Error validating address", status=status.HTTP_503_SERVICE_UNAVAILABLE)
+
+    # Only bother with the NYC APIs if we know the address is in NYC
+    nyc_addr_info = None
+    if osm_addr_info.nyc:
+        attempts_remaining = 2
+        while attempts_remaining > 0:
+            attempts_remaining -= 1
+            try:
+                nyc_addr_info = NYCAddressInfo(
+                    osm_addr_info.street_address, osm_addr_info.city, osm_addr_info.state, osm_addr_info.zip
+                )
+                break
+            # If the user has given us an invalid address. Tell them to buzz
+            # off.
+            except AddressError as e:
+                print(e)
+                return Response(str(e), status=status.HTTP_400_BAD_REQUEST)
+            # If we get any other error, then there was probably an issue
+            # using the API, and we should wait a bit and re-try
+            except (AddressAPIError, Exception) as e:
+                print(e)
+                print("(NYC) Something went wrong validating the address. Re-trying...")
                 time.sleep(3)
+        # If we run out of tries, bail.
+        if nyc_addr_info == None:
+            return Response("(NYC) Error validating address", status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+    # Check if there's an existing member, and bail if there is
     existing_members = Member.objects.filter(
-        first_name=first_name,
-        last_name=last_name,
-        email_address=email_address,
-        phone_number=phone_number,
+        first_name=r.first_name,
+        last_name=r.last_name,
+        email_address=r.email,
+        phone_number=r.phone,
     )
-
     if len(existing_members) > 0:
-        return Response({"Member already exists"}, status=status.HTTP_400_BAD_REQUEST)
+        return Response("Member already exists", status=status.HTTP_400_BAD_REQUEST)
 
     join_form_member = Member(
-        first_name=first_name,
-        last_name=last_name,
-        email_address=email_address,
-        phone_number=phone_number,
+        first_name=r.first_name,
+        last_name=r.last_name,
+        email_address=r.email,
+        phone_number=r.phone,
         slack_handle="",
+    )
+
+    # If the address is in NYC, then try to look up by BIN, otherwise fallback
+    # to address
+    existing_buildings = None
+    if nyc_addr_info is not None:
+        existing_buildings = Building.objects.filter(bin=nyc_addr_info.bin)
+    else:
+        existing_buildings = Building.objects.filter(
+            street_address=osm_addr_info.street_address,
+            city=osm_addr_info.city,
+            state=osm_addr_info.state,
+            zip_code=osm_addr_info.zip,
+        )
+
+    join_form_building = (
+        existing_buildings[0]
+        if len(existing_buildings) > 0
+        else Building(
+            bin=nyc_addr_info.bin if nyc_addr_info is not None else -1,
+            building_status=Building.BuildingStatus.INACTIVE,
+            street_address=osm_addr_info.street_address,
+            city=osm_addr_info.city,
+            state=osm_addr_info.state,
+            zip_code=int(osm_addr_info.zip),
+            latitude=nyc_addr_info.latitude if nyc_addr_info is not None else osm_addr_info.latitude,
+            longitude=nyc_addr_info.longitude if nyc_addr_info is not None else osm_addr_info.longitude,
+            altitude=nyc_addr_info.altitude if nyc_addr_info is not None else osm_addr_info.altitude,
+            network_number=None,
+            install_date=None,
+            abandon_date=None,
+        )
+    )
+
+    join_form_request = Request(
+        request_status=Request.RequestStatus.OPEN,
+        roof_access=r.roof_access,
+        referral=r.referral,
+        ticket_id=None,
+        member_id=join_form_member,
+        building_id=join_form_building,
+        unit=r.apartment,
+        install_id=None,
     )
 
     try:
         join_form_member.save()
     except IntegrityError as e:
         print(e)
-        return Response({"Could not save member."}, status=status.HTTP_400_BAD_REQUEST)
+        return Response("Could not save member.", status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-    existing_buildings = Building.objects.filter(
-        street_address=street_address,
-        city=city,
-        state=state,
-        zip_code=zip_code,
-    )
-
-    join_form_building = (
-        existing_buildings[0]
-        if len(existing_buildings) > 0
-        else Building(
-            bin=bin,
-            building_status=Building.BuildingStatus.INACTIVE,
-            street_address=street_address,
-            city=city,
-            state=state,
-            zip_code=zip_code,
-            latitude=latitude,
-            longitude=longitude,
-            altitude=altitude,
-            network_number=None,
-            install_date=None,
-            abandon_date=None,
-        )
-    )
     try:
         join_form_building.save()
     except IntegrityError as e:
         print(e)
-        return Response({"Could not save building"}, status=status.HTTP_400_BAD_REQUEST)
-
-    join_form_request = Request(
-        request_status=Request.RequestStatus.OPEN,
-        roof_access=roof_access,
-        referral=referral,
-        ticket_id=None,
-        member_id=join_form_member,
-        building_id=join_form_building,
-        unit=apartment,
-        install_id=None,
-    )
+        # Delete the member and bail
+        join_form_member.delete()
+        return Response("Could not save building", status=status.HTTP_400_BAD_REQUEST)
 
     try:
         join_form_request.save()
     except IntegrityError as e:
         print(e)
-        return Response({"Could not save request"}, status=status.HTTP_400_BAD_REQUEST)
+        # Delete the member, building (if we just created it), and bail
+        join_form_member.delete()
+        if len(existing_buildings) == 0:
+            join_form_building.delete()
+        return Response("Could not save request", status=status.HTTP_400_BAD_REQUEST)
 
-    return Response({}, status=status.HTTP_201_CREATED)
+    return Response(
+        {"building_id": join_form_building.id, "member_id": join_form_member.id, "request_id": join_form_request.id},
+        status=status.HTTP_201_CREATED,
+    )
