@@ -20,6 +20,9 @@ load_dotenv()
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# Log users out automatically after 2 days
+SESSION_COOKIE_AGE = 172800  # Expire sessions after 2 Days. "1209600(2 weeks)" by default
+SESSION_SAVE_EVERY_REQUEST = True  # "False" by default
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
