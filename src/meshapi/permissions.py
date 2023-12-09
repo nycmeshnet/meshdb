@@ -5,6 +5,10 @@ from rest_framework import permissions
 def is_installer(user):
     return user.groups.filter(name="Installer").exists()
 
+def is_admin(user):
+    return user.groups.filter(name="Admin").exists()
+
+
 
 perm_denied_generic_msg = "You do not have access to this resource."
 
@@ -15,7 +19,7 @@ class BuildingListCreatePermissions(permissions.BasePermission):
         if request.method == "GET":
             return True
         else:
-            if not request.user.is_superuser:
+            if not request.user.is_superuser or is_admin(request.user):
                 raise PermissionDenied(perm_denied_generic_msg)
             return True
 
@@ -27,11 +31,11 @@ class BuildingRetrieveUpdateDestroyPermissions(permissions.BasePermission):
         if request.method == "GET":
             return True
         elif request.method == "PATCH":
-            if not (request.user.is_superuser or is_installer(request.user)):
+            if not (request.user.is_superuser or is_admin(request.user) or is_installer(request.user)):
                 raise PermissionDenied(perm_denied_generic_msg)
             return True
         else:
-            if not request.user.is_superuser:
+            if not request.user.is_superuser or is_admin(request.user):
                 raise PermissionDenied(perm_denied_generic_msg)
             return True
 
@@ -40,11 +44,11 @@ class BuildingRetrieveUpdateDestroyPermissions(permissions.BasePermission):
 class MemberListCreatePermissions(permissions.BasePermission):
     def has_permission(self, request, view):
         if request.method == "GET":
-            if not (request.user.is_superuser or is_installer(request.user)):
+            if not (request.user.is_superuser or is_admin(request.user) or is_installer(request.user)):
                 raise PermissionDenied(perm_denied_generic_msg)
             return True
         else:
-            if not request.user.is_superuser:
+            if not request.user.is_superuser or is_admin(request.user):
                 raise PermissionDenied(perm_denied_generic_msg)
             return True
 
@@ -53,11 +57,11 @@ class MemberListCreatePermissions(permissions.BasePermission):
 class MemberRetrieveUpdateDestroyPermissions(permissions.BasePermission):
     def has_permission(self, request, view):
         if request.method == "GET":
-            if not (request.user.is_superuser or is_installer(request.user)):
+            if not (request.user.is_superuser or is_admin(request.user) or is_installer(request.user)):
                 raise PermissionDenied(perm_denied_generic_msg)
             return True
         else:
-            if not request.user.is_superuser:
+            if not request.user.is_superuser or is_admin(request.user):
                 raise PermissionDenied(perm_denied_generic_msg)
             return True
 
@@ -68,7 +72,7 @@ class InstallListCreatePermissions(permissions.BasePermission):
         if request.method == "GET":
             return True
         else:
-            if not (request.user.is_superuser or is_installer(request.user)):
+            if not (request.user.is_superuser or is_admin(request.user) or is_installer(request.user)):
                 raise PermissionDenied(perm_denied_generic_msg)
             return True
 
@@ -80,11 +84,11 @@ class InstallRetrieveUpdateDestroyPermissions(permissions.BasePermission):
         if request.method == "GET":
             return True
         elif request.method == "PATCH":
-            if not (request.user.is_superuser or is_installer(request.user)):
+            if not (request.user.is_superuser or is_admin(request.user) or is_installer(request.user)):
                 raise PermissionDenied(perm_denied_generic_msg)
             return True
         else:
-            if not request.user.is_superuser:
+            if not request.user.is_superuser or is_admin(request.user):
                 raise PermissionDenied(perm_denied_generic_msg)
             return True
 
@@ -95,7 +99,7 @@ class RequestListCreatePermissions(permissions.BasePermission):
         if request.method == "GET":
             return True
         else:
-            if not request.user.is_superuser:
+            if not request.user.is_superuser or is_admin(request.user):
                 raise PermissionDenied(perm_denied_generic_msg)
             return True
 
@@ -106,6 +110,6 @@ class RequestRetrieveUpdateDestroyPermissions(permissions.BasePermission):
         if request.method == "GET":
             return True
         else:
-            if not request.user.is_superuser:
+            if not request.user.is_superuser or is_admin(request.user):
                 raise PermissionDenied(perm_denied_generic_msg)
             return True
