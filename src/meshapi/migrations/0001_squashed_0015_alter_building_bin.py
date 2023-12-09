@@ -6,11 +6,13 @@ import django.db.models.deletion
 
 from django.contrib.auth.models import Group
 
+
 # Make sure that the basic groups are created.
 def create_default_groups(apps, schema_editor):
-    Group.objects.get_or_create(name='Installer')
-    Group.objects.get_or_create(name='Admin')
-    Group.objects.get_or_create(name='ReadOnly')
+    Group.objects.get_or_create(name="Installer")
+    Group.objects.get_or_create(name="Admin")
+    Group.objects.get_or_create(name="ReadOnly")
+
 
 class Migration(migrations.Migration):
     initial = True

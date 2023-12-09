@@ -127,9 +127,9 @@ We have very simple permission levels.
 - **Admin**: Full access
 
 We use Django Rest Framework's basic Auth Token implementation. To add a token,
-you need a user, which can be created at `/admin/auth/user/`. To determine permissions,
-add them to the `Installer` group to make them an Installer (create it if necessary),
-add them to the `Admin` group to make them an Admin (create it if necessary),
+you need a user, which can be created at `/admin/auth/user/`.
+
+To determine what permissions the user has, add them to one of the pre-existing groups.
 
 (Superuser and Staff are DRF-specific and should be restricted to people maintaining
 the instance)
