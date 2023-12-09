@@ -5,12 +5,13 @@ from rest_framework import permissions
 def is_installer(user):
     return user.groups.filter(name="Installer").exists()
 
+
 def is_admin(user):
     return user.groups.filter(name="Admin").exists()
 
+
 def is_readonly(user):
     return user.groups.filter(name="ReadOnly").exists()
-
 
 
 perm_denied_generic_msg = "You do not have access to this resource."
@@ -47,7 +48,12 @@ class BuildingRetrieveUpdateDestroyPermissions(permissions.BasePermission):
 class MemberListCreatePermissions(permissions.BasePermission):
     def has_permission(self, request, view):
         if request.method == "GET":
-            if not (request.user.is_superuser or is_admin(request.user) or is_installer(request.user) or is_readonly(request.user)):
+            if not (
+                request.user.is_superuser
+                or is_admin(request.user)
+                or is_installer(request.user)
+                or is_readonly(request.user)
+            ):
                 raise PermissionDenied(perm_denied_generic_msg)
             return True
         else:
@@ -60,7 +66,12 @@ class MemberListCreatePermissions(permissions.BasePermission):
 class MemberRetrieveUpdateDestroyPermissions(permissions.BasePermission):
     def has_permission(self, request, view):
         if request.method == "GET":
-            if not (request.user.is_superuser or is_admin(request.user) or is_installer(request.user) or is_readonly(request.user)):
+            if not (
+                request.user.is_superuser
+                or is_admin(request.user)
+                or is_installer(request.user)
+                or is_readonly(request.user)
+            ):
                 raise PermissionDenied(perm_denied_generic_msg)
             return True
         else:
