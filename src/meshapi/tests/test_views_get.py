@@ -87,7 +87,6 @@ class TestViewsGetAdmin(TestCase):
     def test_views_get_admin_token(self):
         t = Client()
         token = Token.objects.create(user=self.admin_user)
-        print(token.key)
 
         routes = [
             ("/api/v1/", 200),
