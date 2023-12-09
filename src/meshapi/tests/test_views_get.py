@@ -1,5 +1,6 @@
 from django.test import TestCase, Client
 from django.contrib.auth.models import User, Group
+from rest_framework.authtoken.models import Token
 
 
 class TestViewsGetUnauthenticated(TestCase):
@@ -77,6 +78,31 @@ class TestViewsGetAdmin(TestCase):
 
         for route, code in routes:
             response = self.c.get(route)
+            self.assertEqual(
+                code,
+                response.status_code,
+                f"status code incorrect for {route}. Should be {code}, but got {response.status_code}",
+            )
+
+    def test_views_get_admin_token(self):
+        t = Client()
+        token = Token.objects.create(user=self.admin_user)
+        print(token.key)
+
+        routes = [
+            ("/api/v1/", 200),
+            ("/api/v1", 301),
+            ("/api/v1/buildings/", 200),
+            ("/api/v1/members/", 200),
+            ("/api/v1/installs/", 200),
+            ("/api/v1/requests/", 200),
+        ]
+
+        for route, code in routes:
+            response = t.get(
+                route,
+                HTTP_AUTHORIZATION=f"Token {token.key}",
+            )
             self.assertEqual(
                 code,
                 response.status_code,
