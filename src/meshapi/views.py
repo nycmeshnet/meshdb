@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 import json
+from json.decoder import JSONDecodeError
 import time
 from geopy.exc import GeocoderUnavailable
 import requests
@@ -331,16 +332,20 @@ def new_node(request):
     First 100 NNs are reserved.
     """
 
-    request_json = json.loads(request.body)
     try:
+        request_json = json.loads(request.body)
         r = NewNodeRequest(**request_json)
-    except TypeError as e:
-        print(e)
+    except (TypeError, JSONDecodeError) as e:
+        print(f"NN Request failed. Could not decode request: {e}")
         return Response({"Got incomplete request"}, status=status.HTTP_400_BAD_REQUEST)
 
-    new_node_building = Building.objects.get(id=r.meshapi_building_id)
+    try:
+        new_node_building = Building.objects.get(id=r.meshapi_building_id)
+    except Exception as e:
+        print(f"NN Request failed. Could not get Building \"{r.meshapi_building_id}\": {e}")
+        return Response({"Building ID not found"}, status=status.HTTP_404_NOT_FOUND)
 
-    free_nn = 0
+    free_nn = None
 
     # Get the highest in-use NN
     max_nn = Building.objects.aggregate(models.Max("network_number"))["network_number__max"]
@@ -352,7 +357,11 @@ def new_node(request):
 
     # Set the NN
     new_node_building.network_number = free_nn
-    new_node_building.save()
+    try:
+        new_node_building.save()
+    except IntegrityError as e:
+        print(e)
+        return Response("NN Request failed. Could not save node number.", status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     return Response(
         {"building_id": new_node_building.id, "node_number": new_node_building.network_number},
