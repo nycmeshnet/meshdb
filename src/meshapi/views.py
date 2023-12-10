@@ -3,7 +3,7 @@ import json
 import time
 from geopy.exc import GeocoderUnavailable
 import requests
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User, models
 from django.db import IntegrityError
 from rest_framework import generics, permissions
 from meshapi.models import Building, Member, Install, Request
@@ -21,6 +21,7 @@ from meshapi.permissions import (
     MemberRetrieveUpdateDestroyPermissions,
     InstallListCreatePermissions,
     InstallRetrieveUpdateDestroyPermissions,
+    NewNodePermissions,
     RequestListCreatePermissions,
     RequestRetrieveUpdateDestroyPermissions,
 )
@@ -31,7 +32,7 @@ from meshapi.validation import (
     NYCAddressInfo,
 )
 from meshapi.exceptions import AddressError, AddressAPIError
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework import status
 from django.http.response import JsonResponse
@@ -313,4 +314,47 @@ def join_form(request):
     return Response(
         {"building_id": join_form_building.id, "member_id": join_form_member.id, "request_id": join_form_request.id},
         status=status.HTTP_201_CREATED,
+    )
+
+
+@dataclass
+class NewNodeRequest:
+    meshapi_building_id: int
+
+
+@api_view(["POST"])
+@permission_classes([NewNodePermissions])
+def new_node(request):
+    """
+    Takes in an existing building ID (not an NYC BIN, one of ours), and assigns
+    it a network number, deduping using the other buildings in our database.
+    First 100 NNs are reserved.
+    """
+
+    request_json = json.loads(request.body)
+    try:
+        r = NewNodeRequest(**request_json)
+    except TypeError as e:
+        print(e)
+        return Response({"Got incomplete request"}, status=status.HTTP_400_BAD_REQUEST)
+
+    new_node_building = Building.objects.get(id=r.meshapi_building_id)
+
+    free_nn = 0
+
+    # Get the highest in-use NN
+    max_nn = Building.objects.aggregate(models.Max("network_number"))["network_number__max"]
+
+    defined_nns = set(Building.objects.values_list("network_number", flat=True))
+
+    # Find the first valid NN that isn't in use
+    free_nn = next(i for i in range(101, max_nn + 1) if i not in defined_nns)
+
+    # Set the NN
+    new_node_building.network_number = free_nn
+    new_node_building.save()
+
+    return Response(
+        {"building_id": new_node_building.id, "node_number": new_node_building.network_number},
+        status=status.HTTP_200_OK,
     )

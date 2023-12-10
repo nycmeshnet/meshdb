@@ -131,3 +131,10 @@ class RequestRetrieveUpdateDestroyPermissions(permissions.BasePermission):
             if not request.user.is_superuser or is_admin(request.user):
                 raise PermissionDenied(perm_denied_generic_msg)
             return True
+
+
+class NewNodePermissions(permissions.BasePermission):
+    def has_permission(self, request, view):
+        if not (request.user.is_superuser or is_installer(request.user)):
+            raise PermissionDenied(perm_denied_generic_msg)
+        return True
