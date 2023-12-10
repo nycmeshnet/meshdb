@@ -342,7 +342,7 @@ def new_node(request):
     try:
         new_node_building = Building.objects.get(id=r.meshapi_building_id)
     except Exception as e:
-        print(f"NN Request failed. Could not get Building \"{r.meshapi_building_id}\": {e}")
+        print(f'NN Request failed. Could not get Building "{r.meshapi_building_id}": {e}')
         return Response({"Building ID not found"}, status=status.HTTP_404_NOT_FOUND)
 
     free_nn = None
