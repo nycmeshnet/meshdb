@@ -2,14 +2,12 @@ import json
 from django.contrib.auth.models import User
 from django.test import TestCase, Client
 from meshapi.models import Building
-from meshapi.views import NewNodeRequest
 
-from .sample_data import *
+from .sample_data import sample_member, sample_building, sample_install, sample_request
 
 
 # Test basic NN form stuff (input validation, etc)
 class TestNN(TestCase):
-    c = Client()
     admin_c = Client()
 
     def setUp(self):
