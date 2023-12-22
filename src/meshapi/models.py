@@ -4,6 +4,7 @@ from django.contrib.auth.models import Group
 
 NETWORK_NUMBER_MAX = 8000
 
+
 class Installer(Group):
     description = models.TextField(max_length=100, blank=True)
 
@@ -46,13 +47,13 @@ class Install(models.Model):
         INACTIVE = 1
         ACTIVE = 2
 
-    install_number = models.IntegerField()
     install_status = models.IntegerField(choices=InstallStatus.choices)
+    install_date = models.DateField(default=None, blank=True, null=True)
+    abandon_date = models.DateField(default=None, blank=True, null=True)
+    install_number = models.IntegerField()
     building_id = models.ForeignKey(Building, on_delete=models.PROTECT)
     unit = models.TextField(default=None, blank=True, null=True)
     member_id = models.ForeignKey(Member, on_delete=models.PROTECT)
-    install_date = models.DateField(default=None, blank=True, null=True)
-    abandon_date = models.DateField(default=None, blank=True, null=True)
 
 
 class Request(models.Model):
@@ -65,7 +66,4 @@ class Request(models.Model):
     roof_access = models.BooleanField(default=False)
     referral = models.TextField(default=None, blank=True, null=True)
     ticket_id = models.IntegerField(blank=True, null=True)
-    member_id = models.ForeignKey(Member, on_delete=models.PROTECT)
-    building_id = models.ForeignKey(Building, on_delete=models.PROTECT)
-    unit = models.TextField(default=None, blank=True, null=True)
     install_id = models.ForeignKey(Install, on_delete=models.PROTECT, blank=True, null=True)
