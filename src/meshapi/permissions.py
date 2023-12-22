@@ -1,17 +1,20 @@
 from django.contrib.auth import PermissionDenied
 from rest_framework import permissions
 
+INSTALLER_GROUP="Installer"
+ADMIN_GROUP="Admin"
+READONLY_GROUP="ReadOnly"
 
 def is_installer(user):
-    return user.groups.filter(name="Installer").exists()
+    return user.groups.filter(name=INSTALLER_GROUP).exists()
 
 
 def is_admin(user):
-    return user.groups.filter(name="Admin").exists()
+    return user.groups.filter(name=ADMIN_GROUP).exists()
 
 
 def is_readonly(user):
-    return user.groups.filter(name="ReadOnly").exists()
+    return user.groups.filter(name=READONLY_GROUP).exists()
 
 
 perm_denied_generic_msg = "You do not have access to this resource."
