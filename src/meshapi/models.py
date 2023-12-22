@@ -51,9 +51,10 @@ class Install(models.Model):
     class InstallStatus(models.IntegerChoices):
         OPEN = 0
         SCHEDULED = 1
-        INACTIVE = 2
+        BLOCKED = 2
         ACTIVE = 3
-        CLOSED = 4
+        INACTIVE = 4
+        CLOSED = 5
 
     # Summary status of install
     install_status = models.IntegerField(choices=InstallStatus.choices)

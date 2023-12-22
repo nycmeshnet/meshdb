@@ -278,9 +278,16 @@ def join_form(request):
         )
     )
 
+    free_install_num = None
+
+    defined_install_nums = set(Building.objects.values_list("network_number", flat=True))
+
+    # Find the first valid NN that isn't in use
+    free_install_num = next(i for i in range(len(defined_install_nums) + 1) if i not in defined_install_nums)
+
     join_form_install = Install(
         install_status=Install.InstallStatus.OPEN,
-        install_number=None, # TODO: Generate Install Number
+        install_number=free_install_num,
         ticket_id=None,
         request_date=datetime.today(),
         install_date=None,
