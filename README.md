@@ -73,6 +73,12 @@ python src/manage.py makemigrations
 python src/manage.py migrate
 ```
 
+> [!WARNING]
+> If you are modifying the migrations and want to squash, be aware that there
+> are hand-written migrations in `0016_create_default_groups.py` that will need
+> to be dealt with manually. Recommended practice is to leave this migration
+> separate and change the dependency to the new squashed file.
+
 You'll probably want an admin account
 ```
 python src/manage.py createsuperuser
