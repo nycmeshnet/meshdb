@@ -285,7 +285,7 @@ def join_form(request):
 
 @dataclass
 class NetworkNumberAssignmentRequest:
-    meshapi_building_id: int
+    install_number: int
 
 
 @api_view(["POST"])
@@ -305,9 +305,15 @@ def network_number_assignment(request):
         return Response({"Got incomplete request"}, status=status.HTTP_400_BAD_REQUEST)
 
     try:
-        new_node_building = Building.objects.get(id=r.meshapi_building_id)
+        nn_install = Install.objects.get(install_number=r.install_number)
     except Exception as e:
-        print(f'NN Request failed. Could not get Building "{r.meshapi_building_id}": {e}')
+        print(f'NN Request failed. Could not get Install w/ Install Number "{r.install_number}": {e}')
+        return Response({"Install Number not found"}, status=status.HTTP_404_NOT_FOUND)
+
+    try:
+        nn_building = Building.objects.get(id=nn_install.building_id)
+    except Exception as e:
+        print(f'NN Request failed. Could not get Building "{nn_install.building_id}": {e}')
         return Response({"Building ID not found"}, status=status.HTTP_404_NOT_FOUND)
 
     free_nn = None
@@ -318,14 +324,23 @@ def network_number_assignment(request):
     free_nn = next(i for i in range(101, NETWORK_NUMBER_MAX + 1) if i not in defined_nns)
 
     # Set the NN
-    new_node_building.network_number = free_nn
+    if nn_building.network_number == None:
+        nn_building.network_number = free_nn
+    elif nn_building.secondary_nn == None:
+        nn_building.secondary_nn = [free_nn]
+    else:
+        nn_building.secondary_nn.append(free_nn)
+
+    nn_install.install_status = Install.InstallStatus.ACTIVE
+    nn_install.install_date = datetime.today()
+
     try:
-        new_node_building.save()
+        nn_building.save()
     except IntegrityError as e:
         print(e)
         return Response("NN Request failed. Could not save node number.", status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     return Response(
-        {"building_id": new_node_building.id, "node_number": new_node_building.network_number},
+        {"building_id": nn_building.id, "node_number": nn_building.network_number},
         status=status.HTTP_200_OK,
     )
