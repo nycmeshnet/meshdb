@@ -1,6 +1,8 @@
 from django.db import models
+from django.contrib.postgres.fields import ArrayField
 
 from django.contrib.auth.models import Group
+from django.db.models.fields import EmailField
 
 NETWORK_NUMBER_MAX = 8000
 
@@ -27,6 +29,7 @@ class Building(models.Model):
     longitude = models.FloatField()
     altitude = models.FloatField()
     network_number = models.IntegerField(blank=True, null=True)
+    node_name = models.TextField()
     install_date = models.DateField(default=None, blank=True, null=True)
     abandon_date = models.DateField(default=None, blank=True, null=True)
 
@@ -35,35 +38,43 @@ class Member(models.Model):
     first_name = models.TextField()
     last_name = models.TextField()
     email_address = models.EmailField()
+    secondary_emails = ArrayField(EmailField())
     phone_number = models.TextField(
         default=None, blank=True, null=True
-    )  # TODO (willnilges): Can we get some validation on this?
+    )
     slack_handle = models.TextField(default=None, blank=True, null=True)
 
 
 class Install(models.Model):
     class InstallStatus(models.IntegerChoices):
-        PLANNED = 0
-        INACTIVE = 1
-        ACTIVE = 2
+        OPEN = 0
+        SCHEDULED = 1
+        INACTIVE = 2
+        ACTIVE = 3
+        CLOSED = 4
 
+    # Summary status of install
     install_status = models.IntegerField(choices=InstallStatus.choices)
+
+    # Install Number (generated when form is submitted)
+    install_number = models.IntegerField()
+
+    # OSTicket ID
+    ticket_id = models.IntegerField(blank=True, null=True)
+
+    # Important dates
+    request_date = models.DateField(default=None, blank=True, null=True)
     install_date = models.DateField(default=None, blank=True, null=True)
     abandon_date = models.DateField(default=None, blank=True, null=True)
-    install_number = models.IntegerField()
+
+    # Relation to Building
     building_id = models.ForeignKey(Building, on_delete=models.PROTECT)
     unit = models.TextField(default=None, blank=True, null=True)
-    member_id = models.ForeignKey(Member, on_delete=models.PROTECT)
-
-
-class Request(models.Model):
-    class RequestStatus(models.IntegerChoices):
-        OPEN = 0
-        CLOSED = 1
-        INSTALLED = 2
-
-    request_status = models.IntegerField(choices=RequestStatus.choices)
     roof_access = models.BooleanField(default=False)
+
+    # Relation to Member
+    member_id = models.ForeignKey(Member, on_delete=models.PROTECT)
     referral = models.TextField(default=None, blank=True, null=True)
-    ticket_id = models.IntegerField(blank=True, null=True)
-    install_id = models.ForeignKey(Install, on_delete=models.PROTECT, blank=True, null=True)
+
+    notes = models.TextField()
+
