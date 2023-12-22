@@ -1,9 +1,10 @@
 from django.contrib.auth import PermissionDenied
 from rest_framework import permissions
 
-INSTALLER_GROUP="Installer"
-ADMIN_GROUP="Admin"
-READONLY_GROUP="ReadOnly"
+INSTALLER_GROUP = "Installer"
+ADMIN_GROUP = "Admin"
+READONLY_GROUP = "ReadOnly"
+
 
 def is_installer(user):
     return user.groups.filter(name=INSTALLER_GROUP).exists()
