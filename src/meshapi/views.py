@@ -2,12 +2,13 @@ from dataclasses import dataclass
 import json
 from json.decoder import JSONDecodeError
 import time
+from django.utils.timezone import datetime
 from geopy.exc import GeocoderUnavailable
 import requests
 from django.contrib.auth.models import User, models
 from django.db import IntegrityError
 from rest_framework import generics, permissions
-from meshapi.models import NETWORK_NUMBER_MAX, Building, Member, Install, Request
+from meshapi.models import NETWORK_NUMBER_MAX, Building, Member, Install
 from meshapi.serializers import (
     UserSerializer,
     BuildingSerializer,
@@ -277,15 +278,19 @@ def join_form(request):
         )
     )
 
-    join_form_request = Request(
-        request_status=Request.RequestStatus.OPEN,
-        roof_access=r.roof_access,
-        referral=r.referral,
+    join_form_install = Install(
+        install_status=Install.InstallStatus.OPEN,
+        install_number=None, # TODO: Generate Install Number
         ticket_id=None,
-        member_id=join_form_member,
+        request_date=datetime.today(),
+        install_date=None,
+        abandon_date=None,
         building_id=join_form_building,
         unit=r.apartment,
-        install_id=None,
+        roof_access=r.roof_access,
+        member_id=join_form_member,
+        referral=r.referral,
+        notes="",
     )
 
     try:
@@ -303,7 +308,7 @@ def join_form(request):
         return Response("Could not save building", status=status.HTTP_400_BAD_REQUEST)
 
     try:
-        join_form_request.save()
+        join_form_install.save()
     except IntegrityError as e:
         print(e)
         # Delete the member, building (if we just created it), and bail
@@ -313,7 +318,11 @@ def join_form(request):
         return Response("Could not save request", status=status.HTTP_400_BAD_REQUEST)
 
     return Response(
-        {"building_id": join_form_building.id, "member_id": join_form_member.id, "request_id": join_form_request.id},
+        {
+            "building_id": join_form_building.id,
+            "member_id": join_form_member.id,
+            "request_id": join_form_install.id
+        },
         status=status.HTTP_201_CREATED,
     )
 

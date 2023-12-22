@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.postgres.fields import ArrayField
 
 from django.contrib.auth.models import Group
+from django.db.models.aggregates import IntegerField
 from django.db.models.fields import EmailField
 
 NETWORK_NUMBER_MAX = 8000
@@ -29,6 +30,7 @@ class Building(models.Model):
     longitude = models.FloatField()
     altitude = models.FloatField()
     network_number = models.IntegerField(blank=True, null=True)
+    secondary_nn = ArrayField(IntegerField())
     node_name = models.TextField()
     install_date = models.DateField(default=None, blank=True, null=True)
     abandon_date = models.DateField(default=None, blank=True, null=True)
