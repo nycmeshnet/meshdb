@@ -2,6 +2,7 @@ from django.db import models
 
 from django.contrib.auth.models import Group
 
+NETWORK_NUMBER_MAX = 8000
 
 class Installer(Group):
     description = models.TextField(max_length=100, blank=True)

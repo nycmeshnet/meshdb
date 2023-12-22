@@ -7,7 +7,7 @@ import requests
 from django.contrib.auth.models import User, models
 from django.db import IntegrityError
 from rest_framework import generics, permissions
-from meshapi.models import Building, Member, Install, Request
+from meshapi.models import NETWORK_NUMBER_MAX, Building, Member, Install, Request
 from meshapi.serializers import (
     UserSerializer,
     BuildingSerializer,
@@ -347,13 +347,10 @@ def network_number_assignment(request):
 
     free_nn = None
 
-    # Get the highest in-use NN
-    max_nn = Building.objects.aggregate(models.Max("network_number"))["network_number__max"]
-
     defined_nns = set(Building.objects.values_list("network_number", flat=True))
 
     # Find the first valid NN that isn't in use
-    free_nn = next(i for i in range(101, max_nn + 1) if i not in defined_nns)
+    free_nn = next(i for i in range(101, NETWORK_NUMBER_MAX + 1) if i not in defined_nns)
 
     # Set the NN
     new_node_building.network_number = free_nn
