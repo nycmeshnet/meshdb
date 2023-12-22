@@ -26,7 +26,7 @@ class TestNN(TestCase):
 
     def test_nn_valid_building_id(self):
         response = self.admin_c.post(
-            "/api/v1/new-node/", {"meshapi_building_id": self.building_id}, content_type="application/json"
+            "/api/v1/nn-assign/", {"meshapi_building_id": self.building_id}, content_type="application/json"
         )
 
         code = 200
@@ -46,7 +46,7 @@ class TestNN(TestCase):
 
     def test_nn_invalid_building_id(self):
         response = self.admin_c.post(
-            "/api/v1/new-node/", {"meshapi_building_id": 69420}, content_type="application/json"
+            "/api/v1/nn-assign/", {"meshapi_building_id": 69420}, content_type="application/json"
         )
 
         code = 404
@@ -58,7 +58,7 @@ class TestNN(TestCase):
 
     def test_nn_bad_request(self):
         response = self.admin_c.post(
-            "/api/v1/new-node/", {"meshapi_building_id": "chom"}, content_type="application/json"
+            "/api/v1/nn-assign/", {"meshapi_building_id": "chom"}, content_type="application/json"
         )
 
         code = 404
@@ -68,7 +68,7 @@ class TestNN(TestCase):
             f"status code incorrect for test_nn_invalid_building_id. Should be {code}, but got {response.status_code}",
         )
 
-        response = self.admin_c.post("/api/v1/new-node/", "Tell me your secrets >:)", content_type="application/json")
+        response = self.admin_c.post("/api/v1/nn-assign/", "Tell me your secrets >:)", content_type="application/json")
 
         code = 400
         self.assertEqual(
@@ -125,7 +125,7 @@ class TestNNSearchForNewNumber(TestCase):
 
         for b_id, nn in [(self.b2_bid, 111), (self.b3_bid, 112), (self.b4_bid, 130)]:
             response = self.admin_c.post(
-                "/api/v1/new-node/", {"meshapi_building_id": b_id}, content_type="application/json"
+                "/api/v1/nn-assign/", {"meshapi_building_id": b_id}, content_type="application/json"
             )
 
             code = 200

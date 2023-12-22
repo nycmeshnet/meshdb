@@ -22,7 +22,7 @@ from meshapi.permissions import (
     MemberRetrieveUpdateDestroyPermissions,
     InstallListCreatePermissions,
     InstallRetrieveUpdateDestroyPermissions,
-    NewNodePermissions,
+    NetworkNumberAssignmentPermissions,
     RequestListCreatePermissions,
     RequestRetrieveUpdateDestroyPermissions,
 )
@@ -319,13 +319,13 @@ def join_form(request):
 
 
 @dataclass
-class NewNodeRequest:
+class NetworkNumberAssignmentRequest:
     meshapi_building_id: int
 
 
 @api_view(["POST"])
-@permission_classes([NewNodePermissions])
-def new_node(request):
+@permission_classes([NetworkNumberAssignmentPermissions])
+def network_number_assignment(request):
     """
     Takes in an existing building ID (not an NYC BIN, one of ours), and assigns
     it a network number, deduping using the other buildings in our database.
@@ -334,7 +334,7 @@ def new_node(request):
 
     try:
         request_json = json.loads(request.body)
-        r = NewNodeRequest(**request_json)
+        r = NetworkNumberAssignmentRequest(**request_json)
     except (TypeError, JSONDecodeError) as e:
         print(f"NN Request failed. Could not decode request: {e}")
         return Response({"Got incomplete request"}, status=status.HTTP_400_BAD_REQUEST)
