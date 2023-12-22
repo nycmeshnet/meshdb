@@ -3,7 +3,7 @@ from django.contrib.auth.models import User
 from django.test import TestCase, Client
 from meshapi.models import Building
 
-from .sample_data import sample_member, sample_building, sample_install, sample_request
+from .sample_data import sample_member, sample_building, sample_install
 
 
 # Test basic NN form stuff (input validation, etc)
@@ -20,7 +20,6 @@ class TestNN(TestCase):
         self.admin_c.post("/api/v1/members/", sample_member)
         self.admin_c.post("/api/v1/buildings/", sample_building)
         self.admin_c.post("/api/v1/installs/", sample_install)
-        self.admin_c.post("/api/v1/requests/", sample_request)
 
         self.building_id = Building.objects.filter(street_address=sample_building["street_address"])[0].id
 

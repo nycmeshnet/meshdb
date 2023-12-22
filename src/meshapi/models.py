@@ -30,8 +30,8 @@ class Building(models.Model):
     longitude = models.FloatField()
     altitude = models.FloatField()
     network_number = models.IntegerField(blank=True, null=True)
-    secondary_nn = ArrayField(IntegerField())
-    node_name = models.TextField()
+    secondary_nn = ArrayField(IntegerField(blank=True, null=True), null=True)
+    node_name = models.TextField(default=None, blank=True, null=True)
     install_date = models.DateField(default=None, blank=True, null=True)
     abandon_date = models.DateField(default=None, blank=True, null=True)
 
@@ -40,10 +40,8 @@ class Member(models.Model):
     first_name = models.TextField()
     last_name = models.TextField()
     email_address = models.EmailField()
-    secondary_emails = ArrayField(EmailField())
-    phone_number = models.TextField(
-        default=None, blank=True, null=True
-    )
+    secondary_emails = ArrayField(EmailField(), null=True)
+    phone_number = models.TextField(default=None, blank=True, null=True)
     slack_handle = models.TextField(default=None, blank=True, null=True)
 
 
@@ -79,5 +77,4 @@ class Install(models.Model):
     member_id = models.ForeignKey(Member, on_delete=models.PROTECT)
     referral = models.TextField(default=None, blank=True, null=True)
 
-    notes = models.TextField()
-
+    notes = models.TextField(default=None, blank=True, null=True)

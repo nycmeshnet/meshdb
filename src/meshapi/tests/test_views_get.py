@@ -13,7 +13,6 @@ class TestViewsGetUnauthenticated(TestCase):
             ("/api/v1/buildings/", 200),
             ("/api/v1/members/", 403),
             ("/api/v1/installs/", 200),
-            ("/api/v1/requests/", 200),
         ]
 
         for route, code in routes:
@@ -44,7 +43,6 @@ class TestViewsGetInstaller(TestCase):
             ("/api/v1/buildings/", 200),
             ("/api/v1/members/", 200),
             ("/api/v1/installs/", 200),
-            ("/api/v1/requests/", 200),
         ]
 
         for route, code in routes:
@@ -73,7 +71,6 @@ class TestViewsGetAdmin(TestCase):
             ("/api/v1/buildings/", 200),
             ("/api/v1/members/", 200),
             ("/api/v1/installs/", 200),
-            ("/api/v1/requests/", 200),
         ]
 
         for route, code in routes:
@@ -94,7 +91,6 @@ class TestViewsGetAdmin(TestCase):
             ("/api/v1/buildings/", 200),
             ("/api/v1/members/", 200),
             ("/api/v1/installs/", 200),
-            ("/api/v1/requests/", 200),
         ]
 
         for route, code in routes:

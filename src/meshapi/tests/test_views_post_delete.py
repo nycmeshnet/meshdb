@@ -2,7 +2,7 @@ import json
 from django.test import TestCase, Client
 from django.contrib.auth.models import User, Group
 
-from .sample_data import sample_member, sample_building, sample_install, sample_request
+from .sample_data import sample_member, sample_building, sample_install
 
 
 def assert_correct_response(test, response, code):
@@ -33,13 +33,7 @@ class TestViewsPostDeleteUnauthenticated(TestCase):
         response = self.c.post("/api/v1/installs/", sample_install)
         assert_correct_response(self, response, 403)
 
-        response = self.c.post("/api/v1/requests/", sample_request)
-        assert_correct_response(self, response, 403)  # 400 because previous requests failed
-
     def test_views_delete_unauthenticated(self):
-        response = self.c.delete(f"/api/v1/requests/1/")
-        assert_correct_response(self, response, 403)
-
         response = self.c.delete(f"/api/v1/installs/1/")
         assert_correct_response(self, response, 403)
 
@@ -86,13 +80,7 @@ class TestViewsPostDeleteInstaller(TestCase):
         response = self.c.post("/api/v1/installs/", sample_install)
         assert_correct_response(self, response, 201)
 
-        response = self.c.post("/api/v1/requests/", sample_request)
-        assert_correct_response(self, response, 403)
-
     def test_views_delete_installer(self):
-        response = self.c.delete(f"/api/v1/requests/1/")
-        assert_correct_response(self, response, 403)
-
         response = self.c.delete(f"/api/v1/installs/1/")
         assert_correct_response(self, response, 403)
 
@@ -127,20 +115,11 @@ class TestViewsPostDeleteAdmin(TestCase):
         assert_correct_response(self, response, 201)
         install_id = get_first_id(self.c, "/api/v1/installs/")
 
-        sample_request["member_id"] = member_id
-        sample_request["building_id"] = building_id
-        response = self.c.post("/api/v1/requests/", sample_request)
-        assert_correct_response(self, response, 201)
-        request_id = get_first_id(self.c, "/api/v1/requests/")
-
         # FIXME: For some reason this fails as a separate test
         # I have literally no idea why. Could be an issue with
         # the test DB. None of the other tests hit this, probably
         # because nobody is allowed to do things that would warrant
         # cross-function testing. Fair enough I suppose.
-        response = self.c.delete(f"/api/v1/requests/{request_id}/")
-        assert_correct_response(self, response, 204)
-
         response = self.c.delete(f"/api/v1/installs/{install_id}/")
         assert_correct_response(self, response, 204)
 

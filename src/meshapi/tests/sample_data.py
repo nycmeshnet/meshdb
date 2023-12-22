@@ -1,4 +1,4 @@
-from meshapi.models import Install, Request
+from meshapi.models import Install
 
 sample_member = {
     "first_name": "John",
@@ -24,18 +24,16 @@ sample_building = {
 }
 
 sample_install = {
-    "install_number": 420,
     "install_status": Install.InstallStatus.ACTIVE,
+    "install_number": 420,
+    "ticket_id": 69,
+    "request_date": "2022-02-27",
     "install_date": "2022-03-01",
     "abandon_date": "",
-    "member_id": 1,
     "building_id": 1,
-}
-
-sample_request = {
-    "request_status": Request.RequestStatus.OPEN,
-    "ticket_id": 1,
+    "unit": 3,
+    "roof_access": True,
     "member_id": 1,
-    "building_id": 1,
-    "install_id": "",
+    "referral": "Read about it on the internet",
+    "notes": "",
 }

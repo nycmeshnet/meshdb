@@ -1,7 +1,7 @@
 import json
 from django.contrib.auth.models import User
 from django.test import TestCase, Client
-from meshapi.models import Building, Member, Install, Request
+from meshapi.models import Building, Member, Install
 from meshapi.views import JoinFormRequest
 
 from .sample_join_form_data import *
@@ -42,15 +42,15 @@ def validate_successful_join_form_submission(test_case, test_name, s, response):
         f"Didn't find created building for {test_name}. Should be {length}, but got {len(existing_buildings)}",
     )
 
-    # Check that a request was created
-    request_id = json.loads(response.content.decode("utf-8"))["request_id"]
-    join_form_requests = Request.objects.filter(pk=request_id)
+    # Check that a install was created
+    install_id = json.loads(response.content.decode("utf-8"))["install_id"]
+    join_form_installs = Install.objects.filter(pk=install_id)
 
     length = 1
     test_case.assertEqual(
-        len(join_form_requests),
+        len(join_form_installs),
         length,
-        f"Didn't find created request for {test_name}. Should be {length}, but got {len(join_form_requests)}",
+        f"Didn't find created install for {test_name}. Should be {length}, but got {len(join_form_installs)}",
     )
 
 
