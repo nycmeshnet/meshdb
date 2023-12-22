@@ -181,22 +181,22 @@ def join_form(request):
         if nyc_addr_info == None:
             return Response("(NYC) Error validating address", status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-    # Check if there's an existing member, and bail if there is
+    # Check if there's an existing member. Dedupe on email for now.
+    # A member can have multiple install requests
     existing_members = Member.objects.filter(
-        first_name=r.first_name,
-        last_name=r.last_name,
         email_address=r.email,
-        phone_number=r.phone,
     )
-    if len(existing_members) > 0:
-        return Response("Member already exists", status=status.HTTP_400_BAD_REQUEST)
 
-    join_form_member = Member(
-        first_name=r.first_name,
-        last_name=r.last_name,
-        email_address=r.email,
-        phone_number=r.phone,
-        slack_handle="",
+    join_form_member = (
+        existing_members[0]
+        if len(existing_members) > 0
+        else Member(
+            first_name=r.first_name,
+            last_name=r.last_name,
+            email_address=r.email,
+            phone_number=r.phone,
+            slack_handle="",
+        )
     )
 
     # If the address is in NYC, then try to look up by BIN, otherwise fallback

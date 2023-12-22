@@ -189,3 +189,50 @@ class TestJoinForm(TestCase):
             response.content.decode("utf-8"),
             f"Did not get correct response content for bad address join form: {response.content.decode('utf-8')}",
         )
+
+    def test_member_moved_join_form(self):
+        # Name, email, phone, location, apt, rooftop, referral
+        response = self.c.post("/api/v1/join/", valid_join_form_submission, content_type="application/json")
+
+        code = 201
+        self.assertEqual(
+            code,
+            response.status_code,
+            f"status code incorrect for Valid Join Form. Should be {code}, but got {response.status_code}.\n Response is: {response.content.decode('utf-8')}",
+        )
+
+        # Make sure that we get the right stuff out of the database afterwards
+        s = JoinFormRequest(**valid_join_form_submission)
+
+        # Match the format from OSM. I did this to see how OSM would mutate the
+        # raw request we get.
+        s.street_address = "151 Broome Street"
+        s.city = "Manhattan"
+        s.state = "New York"
+
+        validate_successful_join_form_submission(self, "Valid Join Form", s, response)
+
+        # Now test that the member can "move" and still access the jon form
+        form = valid_join_form_submission.copy()
+        form["street_address"] = "152 Broome Street"
+
+        # Name, email, phone, location, apt, rooftop, referral
+        response = self.c.post("/api/v1/join/", form, content_type="application/json")
+
+        code = 201
+        self.assertEqual(
+            code,
+            response.status_code,
+            f"status code incorrect for Valid Join Form. Should be {code}, but got {response.status_code}.\n Response is: {response.content.decode('utf-8')}",
+        )
+
+        # Make sure that we get the right stuff out of the database afterwards
+        s = JoinFormRequest(**valid_join_form_submission)
+
+        # Match the format from OSM. I did this to see how OSM would mutate the
+        # raw request we get.
+        s.street_address = "152 Broome Street"
+        s.city = "Manhattan"
+        s.state = "New York"
+
+        validate_successful_join_form_submission(self, "Valid Join Form", s, response)
