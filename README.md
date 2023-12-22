@@ -73,6 +73,12 @@ python src/manage.py makemigrations
 python src/manage.py migrate
 ```
 
+> [!WARNING]
+> If you are modifying the migrations and want to squash, be aware that there
+> are hand-written migrations in `0016_create_default_groups.py` that will need
+> to be dealt with manually. Recommended practice is to leave this migration
+> separate and change the dependency to the new squashed file.
+
 You'll probably want an admin account
 ```
 python src/manage.py createsuperuser
@@ -116,6 +122,29 @@ should be available at `127.0.0.1:8080`:
 ```sh
 # Should return "We're meshin'."
 curl http://127.0.0.1:8080/api/v1
+```
+
+### Auth Tokens
+
+We have very simple permission levels.
+
+- **Unauthenticated**: A user using a route without authenticating
+- **Installer**: Can view all fields, provision NNs, and edit installs
+- **Admin**: Full access
+
+We use Django Rest Framework's basic Auth Token implementation. To add a token,
+you need a user, which can be created at `/admin/auth/user/`.
+
+To determine what permissions the user has, add them to one of the pre-existing groups.
+
+(Superuser and Staff are DRF-specific and should be restricted to people maintaining
+the instance)
+
+Auth tokens can be created at `/admin/authtoken/tokenproxy/`.
+
+To use them, you can include them as an HTTP header like so:
+```
+curl -X GET http://127.0.0.1:8000/api/v1/members/ -H 'Authorization: Token <auth_token>'
 ```
 
 ## Unit Tests 
