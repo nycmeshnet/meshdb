@@ -186,7 +186,6 @@ def join_form(request):
     existing_members = Member.objects.filter(
         email_address=r.email,
     )
-
     join_form_member = (
         existing_members[0]
         if len(existing_members) > 0
@@ -198,6 +197,12 @@ def join_form(request):
             slack_handle="",
         )
     )
+
+    # If this is an existing member, update the email and phone with whatever
+    # new info they gave us
+    if len(existing_members) > 0:
+        join_form_member.email_address = r.email
+        join_form_member.phone_number = r.phone
 
     # If the address is in NYC, then try to look up by BIN, otherwise fallback
     # to address

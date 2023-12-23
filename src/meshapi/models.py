@@ -53,14 +53,11 @@ class Install(models.Model):
         INACTIVE = 4
         CLOSED = 5
 
-    # The NN this install is associated with. Through this, a building can have multiple NNs
-    network_number = models.IntegerField(blank=True, null=True)
+    # Install Number (generated when form is submitted)
+    install_number = models.IntegerField(primary_key=True)
 
     # Summary status of install
     install_status = models.IntegerField(choices=InstallStatus.choices)
-
-    # Install Number (generated when form is submitted)
-    install_number = models.IntegerField()
 
     # OSTicket ID
     ticket_id = models.IntegerField(blank=True, null=True)
@@ -69,6 +66,9 @@ class Install(models.Model):
     request_date = models.DateField(default=None, blank=True, null=True)
     install_date = models.DateField(default=None, blank=True, null=True)
     abandon_date = models.DateField(default=None, blank=True, null=True)
+
+    # The NN this install is associated with. Through this, a building can have multiple NNs
+    network_number = models.IntegerField(blank=True, null=True)
 
     # Relation to Building
     building_id = models.ForeignKey(Building, on_delete=models.PROTECT)
