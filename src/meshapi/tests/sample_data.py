@@ -18,14 +18,14 @@ sample_building = {
     "latitude": 0.0,
     "longitude": 0.0,
     "altitude": 0.0,
-    "network_number": 9001,
+    "primary_nn": 9001,
     "install_date": "2222-02-02",
     "abandon_date": "",
 }
 
 sample_install = {
+    "network_number": 2000,
     "install_status": Install.InstallStatus.ACTIVE,
-    "install_number": 420,
     "ticket_id": 69,
     "request_date": "2022-02-27",
     "install_date": "2022-03-01",
@@ -34,6 +34,5 @@ sample_install = {
     "unit": 3,
     "roof_access": True,
     "member_id": 1,
-    "referral": "Read about it on the internet",
-    "notes": "",
+    "notes": "Referral: Read about it on the internet",
 }
