@@ -29,8 +29,7 @@ class Building(models.Model):
     latitude = models.FloatField()
     longitude = models.FloatField()
     altitude = models.FloatField()
-    network_number = models.IntegerField(blank=True, null=True)
-    secondary_nn = ArrayField(IntegerField(blank=True, null=True), null=True)
+    primary_nn = models.IntegerField(blank=True, null=True)
     node_name = models.TextField(default=None, blank=True, null=True)
     install_date = models.DateField(default=None, blank=True, null=True)
     abandon_date = models.DateField(default=None, blank=True, null=True)
@@ -53,6 +52,9 @@ class Install(models.Model):
         ACTIVE = 3
         INACTIVE = 4
         CLOSED = 5
+
+    # The NN this install is associated with. Through this, a building can have multiple NNs
+    network_number = models.IntegerField(blank=True, null=True)
 
     # Summary status of install
     install_status = models.IntegerField(choices=InstallStatus.choices)

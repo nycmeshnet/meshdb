@@ -225,7 +225,7 @@ def join_form(request):
             latitude=nyc_addr_info.latitude if nyc_addr_info is not None else osm_addr_info.latitude,
             longitude=nyc_addr_info.longitude if nyc_addr_info is not None else osm_addr_info.longitude,
             altitude=nyc_addr_info.altitude if nyc_addr_info is not None else osm_addr_info.altitude,
-            network_number=None,
+            primary_nn=None,
             install_date=None,
             abandon_date=None,
         )
@@ -239,6 +239,7 @@ def join_form(request):
     free_install_num = next(i for i in range(len(defined_install_nums) + 1) if i not in defined_install_nums)
 
     join_form_install = Install(
+        network_number=None,
         install_status=Install.InstallStatus.OPEN,
         install_number=free_install_num,
         ticket_id=None,
@@ -324,13 +325,12 @@ def network_number_assignment(request):
     free_nn = next(i for i in range(101, NETWORK_NUMBER_MAX + 1) if i not in defined_nns)
 
     # Set the NN
-    if nn_building.network_number == None:
-        nn_building.network_number = free_nn
-    elif nn_building.secondary_nn == None:
-        nn_building.secondary_nn = [free_nn]
-    else:
-        nn_building.secondary_nn.append(free_nn)
+    if nn_install.network_number != None:
+        message = f"NN Request failed. This Install Number already has a Network Number associated with it! ({nn_install.network_number})"
+        print(message)
+        return Response(message, status=status.HTTP_409_CONFLICT)
 
+    nn_install.network_number = free_nn
     nn_install.install_status = Install.InstallStatus.ACTIVE
     nn_install.install_date = datetime.today()
 
