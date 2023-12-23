@@ -312,11 +312,7 @@ def network_number_assignment(request):
         print(message)
         return Response(message, status=status.HTTP_409_CONFLICT)
 
-    try:
-        nn_building = Building.objects.get(id=nn_install.building_id)
-    except Exception as e:
-        print(f'NN Request failed. Could not get Building "{nn_install.building_id}": {e}')
-        return Response({"Building ID not found"}, status=status.HTTP_404_NOT_FOUND)
+    nn_building = nn_install.building_id
 
     # If the building already has a primary NN, then use that.
     if nn_building.primary_nn is not None:
@@ -343,6 +339,10 @@ def network_number_assignment(request):
         return Response("NN Request failed. Could not save node number.", status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     return Response(
-        {"building_id": nn_building.id, "node_number": nn_building.network_number},
+        {
+            "building_id": nn_building.id,
+            "install_number": nn_install.install_number,
+            "network_number": nn_install.network_number
+        },
         status=status.HTTP_200_OK,
     )

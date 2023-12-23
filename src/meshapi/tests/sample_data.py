@@ -18,7 +18,7 @@ sample_building = {
     "latitude": 0.0,
     "longitude": 0.0,
     "altitude": 0.0,
-    "primary_nn": 9001,
+    "primary_nn": 2000,
     "install_date": "2222-02-02",
     "abandon_date": "",
 }
