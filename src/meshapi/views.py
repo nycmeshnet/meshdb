@@ -7,7 +7,7 @@ from geopy.exc import GeocoderUnavailable
 from django.contrib.auth.models import User
 from django.db import IntegrityError
 from rest_framework import generics, permissions
-from meshapi.models import NETWORK_NUMBER_MAX, Building, Member, Install
+from meshapi.models import NETWORK_NUMBER_MAX, NETWORK_NUMBER_MIN, Building, Member, Install
 from meshapi.serializers import (
     UserSerializer,
     BuildingSerializer,
@@ -236,17 +236,9 @@ def join_form(request):
         )
     )
 
-    free_install_num = None
-
-    defined_install_nums = set(Building.objects.values_list("network_number", flat=True))
-
-    # Find the first valid NN that isn't in use
-    free_install_num = next(i for i in range(len(defined_install_nums) + 1) if i not in defined_install_nums)
-
     join_form_install = Install(
         network_number=None,
         install_status=Install.InstallStatus.OPEN,
-        install_number=free_install_num,
         ticket_id=None,
         request_date=datetime.today(),
         install_date=None,
@@ -255,8 +247,7 @@ def join_form(request):
         unit=r.apartment,
         roof_access=r.roof_access,
         member_id=join_form_member,
-        referral=r.referral,
-        notes="",
+        notes=f"Referral: r.referral" if len(r.referral) > 0 else "",
     )
 
     try:
@@ -284,7 +275,7 @@ def join_form(request):
         return Response("Could not save request", status=status.HTTP_400_BAD_REQUEST)
 
     return Response(
-        {"building_id": join_form_building.id, "member_id": join_form_member.id, "install_id": join_form_install.id},
+        {"building_id": join_form_building.id, "member_id": join_form_member.id, "install_number": join_form_install.install_number},
         status=status.HTTP_201_CREATED,
     )
 
@@ -324,10 +315,10 @@ def network_number_assignment(request):
 
     free_nn = None
 
-    defined_nns = set(Building.objects.values_list("network_number", flat=True))
+    defined_nns = set(Install.objects.values_list("network_number", flat=True))
 
     # Find the first valid NN that isn't in use
-    free_nn = next(i for i in range(101, NETWORK_NUMBER_MAX + 1) if i not in defined_nns)
+    free_nn = next(i for i in range(NETWORK_NUMBER_MIN, NETWORK_NUMBER_MAX + 1) if i not in defined_nns)
 
     # Set the NN
     if nn_install.network_number != None:
