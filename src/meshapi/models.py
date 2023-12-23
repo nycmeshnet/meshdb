@@ -1,3 +1,4 @@
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.contrib.postgres.fields import ArrayField
 
@@ -54,11 +55,21 @@ class Install(models.Model):
         CLOSED = 5
 
     # Install Number (generated when form is submitted)
-    install_number = models.IntegerField(primary_key=True)
+    install_number = models.AutoField(
+        primary_key=True,
+        db_column='install_number',
+    )
 
     # The NN this install is associated with.
     # Through this, a building can have multiple NNs
-    network_number = models.IntegerField(blank=True, null=True)
+    network_number = models.IntegerField(
+        blank=True,
+        null=True,
+        validators=[
+            MinValueValidator(NETWORK_NUMBER_MIN),
+            MaxValueValidator(NETWORK_NUMBER_MAX)
+        ],
+    )
 
     # Summary status of install
     install_status = models.IntegerField(choices=InstallStatus.choices)

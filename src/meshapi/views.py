@@ -289,9 +289,8 @@ class NetworkNumberAssignmentRequest:
 @permission_classes([NetworkNumberAssignmentPermissions])
 def network_number_assignment(request):
     """
-    Takes in an existing building ID (not an NYC BIN, one of ours), and assigns
-    it a network number, deduping using the other buildings in our database.
-    First 100 NNs are reserved.
+    Takes an install number, and assigns the install a network number,
+    deduping using the other buildings in our database.
     """
 
     try:
@@ -307,26 +306,33 @@ def network_number_assignment(request):
         print(f'NN Request failed. Could not get Install w/ Install Number "{r.install_number}": {e}')
         return Response({"Install Number not found"}, status=status.HTTP_404_NOT_FOUND)
 
+    # Check if the install already has a network number
+    if nn_install.network_number != None:
+        message = f"NN Request failed. This Install Number already has a Network Number associated with it! ({nn_install.network_number})"
+        print(message)
+        return Response(message, status=status.HTTP_409_CONFLICT)
+
     try:
         nn_building = Building.objects.get(id=nn_install.building_id)
     except Exception as e:
         print(f'NN Request failed. Could not get Building "{nn_install.building_id}": {e}')
         return Response({"Building ID not found"}, status=status.HTTP_404_NOT_FOUND)
 
-    free_nn = None
+    # If the building already has a primary NN, then use that.
+    if nn_building.primary_nn is not None:
+        nn_install.network_number = nn_building.primary_nn
+    else:
+        free_nn = None
 
-    defined_nns = set(Install.objects.values_list("network_number", flat=True))
+        defined_nns = set(Install.objects.values_list("network_number", flat=True))
 
-    # Find the first valid NN that isn't in use
-    free_nn = next(i for i in range(NETWORK_NUMBER_MIN, NETWORK_NUMBER_MAX + 1) if i not in defined_nns)
+        # Find the first valid NN that isn't in use
+        free_nn = next(i for i in range(NETWORK_NUMBER_MIN, NETWORK_NUMBER_MAX + 1) if i not in defined_nns)
 
-    # Set the NN
-    if nn_install.network_number != None:
-        message = f"NN Request failed. This Install Number already has a Network Number associated with it! ({nn_install.network_number})"
-        print(message)
-        return Response(message, status=status.HTTP_409_CONFLICT)
+        # Set the NN on both the install and the Building
+        nn_install.network_number = free_nn
+        nn_building.primary_nn = free_nn
 
-    nn_install.network_number = free_nn
     nn_install.install_status = Install.InstallStatus.ACTIVE
     nn_install.install_date = datetime.today()
 

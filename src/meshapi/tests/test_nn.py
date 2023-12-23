@@ -1,7 +1,7 @@
 import json
 from django.contrib.auth.models import User
 from django.test import TestCase, Client
-from meshapi.models import Building
+from meshapi.models import Building, Install
 
 from .sample_data import sample_member, sample_building, sample_install
 
@@ -21,11 +21,11 @@ class TestNN(TestCase):
         self.admin_c.post("/api/v1/buildings/", sample_building)
         self.admin_c.post("/api/v1/installs/", sample_install)
 
-        self.building_id = Building.objects.filter(street_address=sample_building["street_address"])[0].id
+        self.install_number = Install.objects.all()[0].id
 
-    def test_nn_valid_building_id(self):
+    def test_nn_valid_install_number(self):
         response = self.admin_c.post(
-            "/api/v1/nn-assign/", {"meshapi_building_id": self.building_id}, content_type="application/json"
+            "/api/v1/nn-assign/", {"install_number": self.install_number}, content_type="application/json"
         )
 
         code = 200
@@ -45,7 +45,7 @@ class TestNN(TestCase):
 
     def test_nn_invalid_building_id(self):
         response = self.admin_c.post(
-            "/api/v1/nn-assign/", {"meshapi_building_id": 69420}, content_type="application/json"
+            "/api/v1/nn-assign/", {"install_number": 69420}, content_type="application/json"
         )
 
         code = 404
@@ -57,7 +57,7 @@ class TestNN(TestCase):
 
     def test_nn_bad_request(self):
         response = self.admin_c.post(
-            "/api/v1/nn-assign/", {"meshapi_building_id": "chom"}, content_type="application/json"
+            "/api/v1/nn-assign/", {"install_number": "chom"}, content_type="application/json"
         )
 
         code = 404
@@ -89,7 +89,7 @@ class TestNNSearchForNewNumber(TestCase):
         self.admin_c.login(username="admin", password="admin_password")
 
         # Create a whole bunch of sample data
-        b = sample_building.copy()
+        b = sample_install.copy()
         b["street_address"] = "123 Fake St"
         for i in range(101, 111):
             b["zip_code"] += 1
@@ -124,7 +124,7 @@ class TestNNSearchForNewNumber(TestCase):
 
         for b_id, nn in [(self.b2_bid, 111), (self.b3_bid, 112), (self.b4_bid, 130)]:
             response = self.admin_c.post(
-                "/api/v1/nn-assign/", {"meshapi_building_id": b_id}, content_type="application/json"
+                "/api/v1/nn-assign/", {"install_number": b_id}, content_type="application/json"
             )
 
             code = 200
