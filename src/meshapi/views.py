@@ -2,7 +2,7 @@ from dataclasses import dataclass
 import json
 from json.decoder import JSONDecodeError
 import time
-from django.utils.timezone import datetime
+from django.utils import timezone
 from geopy.exc import GeocoderUnavailable
 from django.contrib.auth.models import User
 from django.db import IntegrityError
@@ -241,7 +241,7 @@ def join_form(request):
         network_number=None,
         install_status=Install.InstallStatus.OPEN,
         ticket_id=None,
-        request_date=datetime.now(),
+        request_date=timezone.now(),
         install_date=None,
         abandon_date=None,
         building_id=join_form_building,
@@ -335,7 +335,7 @@ def network_number_assignment(request):
         nn_building.primary_nn = free_nn
 
     nn_install.install_status = Install.InstallStatus.ACTIVE
-    nn_install.install_date = datetime.now()
+    nn_install.install_date = timezone.now()
     nn_building.install_date = nn_install.install_date 
 
     try:
