@@ -23,7 +23,6 @@ class TestViewsGetUnauthenticated(TestCase):
                 f"status code incorrect for {route}. Should be {code}, but got {response.status_code}",
             )
 
-
 class TestViewsGetInstaller(TestCase):
     c = Client()
 
