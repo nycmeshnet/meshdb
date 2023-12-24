@@ -90,9 +90,6 @@ class Migration(migrations.Migration):
                 ('unit', models.TextField(blank=True, default=None, null=True)),
             ],
         ),
-        migrations.RunPython(
-            code=meshapi.migrations.0016_create_default_groups.create_default_groups,
-        ),
         migrations.AddField(
             model_name='building',
             name='node_name',
