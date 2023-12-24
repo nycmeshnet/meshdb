@@ -113,6 +113,7 @@ class TestViewsPostDeleteAdmin(TestCase):
         sample_install["building_id"] = building_id
         response = self.c.post("/api/v1/installs/", sample_install)
         assert_correct_response(self, response, 201)
+        # XXX: This is how I know that getting the install number from the API is working
         install_id = get_first_id(self.c, "/api/v1/installs/", "install_number")
 
         # Now delete

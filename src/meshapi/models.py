@@ -46,8 +46,6 @@ class Building(models.Model):
     altitude = models.FloatField()
     primary_nn = models.IntegerField(blank=True, null=True)
     node_name = models.TextField(default=None, blank=True, null=True)
-    install_date = models.DateTimeField(default=None, blank=True, null=True)
-    abandon_date = models.DateTimeField(default=None, blank=True, null=True)
 
 
 class Member(models.Model):
@@ -63,10 +61,11 @@ class Install(models.Model):
     class InstallStatus(models.IntegerChoices):
         OPEN = 0
         SCHEDULED = 1
-        BLOCKED = 2
-        ACTIVE = 3
-        INACTIVE = 4
-        CLOSED = 5
+        NN_ASSIGNED = 2
+        BLOCKED = 3
+        ACTIVE = 4
+        INACTIVE = 5
+        CLOSED = 6
 
     # Install Number (generated when form is submitted)
     install_number = models.AutoField(
@@ -89,9 +88,9 @@ class Install(models.Model):
     ticket_id = models.IntegerField(blank=True, null=True)
 
     # Important dates
-    request_date = models.DateTimeField(default=None, blank=True, null=True)
-    install_date = models.DateTimeField(default=None, blank=True, null=True)
-    abandon_date = models.DateTimeField(default=None, blank=True, null=True)
+    request_date = models.DateField(default=None, blank=True, null=True)
+    install_date = models.DateField(default=None, blank=True, null=True)
+    abandon_date = models.DateField(default=None, blank=True, null=True)
 
     # Relation to Building
     building_id = models.ForeignKey(Building, on_delete=models.PROTECT)

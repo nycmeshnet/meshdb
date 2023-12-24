@@ -1,8 +1,8 @@
 from dataclasses import dataclass
+from datetime import datetime
 import json
 from json.decoder import JSONDecodeError
 import time
-from django.utils import timezone
 from geopy.exc import GeocoderUnavailable
 from django.contrib.auth.models import User
 from django.db import IntegrityError
@@ -198,13 +198,6 @@ def join_form(request):
         )
     )
 
-    # If this is an existing member, update the name and phone with whatever
-    # new info they gave us
-    if len(existing_members) > 0:
-        join_form_member.first_name = r.first_name
-        join_form_member.last_name = r.last_name
-        join_form_member.phone_number = r.phone
-
     # If the address is in NYC, then try to look up by BIN, otherwise fallback
     # to address
     existing_buildings = None
@@ -241,7 +234,7 @@ def join_form(request):
         network_number=None,
         install_status=Install.InstallStatus.OPEN,
         ticket_id=None,
-        request_date=timezone.now(),
+        request_date=datetime.today(),
         install_date=None,
         abandon_date=None,
         building_id=join_form_building,
@@ -281,6 +274,10 @@ def join_form(request):
             "building_id": join_form_building.id,
             "member_id": join_form_member.id,
             "install_number": join_form_install.install_number,
+
+            # If this is an existing member, then set a flag to let them know we have
+            # their information in case they need to update anything.
+            "member_exists": True if len(existing_members) > 0 else False,
         },
         status=status.HTTP_201_CREATED,
     )
@@ -335,9 +332,7 @@ def network_number_assignment(request):
         nn_install.network_number = free_nn
         nn_building.primary_nn = free_nn
 
-    nn_install.install_status = Install.InstallStatus.ACTIVE
-    nn_install.install_date = timezone.now()
-    nn_building.install_date = nn_install.install_date
+    nn_install.install_status = Install.InstallStatus.NN_ASSIGNED
 
     try:
         nn_building.save()
