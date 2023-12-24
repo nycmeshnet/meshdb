@@ -43,8 +43,8 @@ def validate_successful_join_form_submission(test_case, test_name, s, response):
     )
 
     # Check that a install was created
-    install_id = json.loads(response.content.decode("utf-8"))["install_id"]
-    join_form_installs = Install.objects.filter(pk=install_id)
+    install_number = json.loads(response.content.decode("utf-8"))["install_number"]
+    join_form_installs = Install.objects.filter(pk=install_number)
 
     length = 1
     test_case.assertEqual(

@@ -16,8 +16,8 @@ def assert_correct_response(test, response, code):
 
 
 # Wow so brittle
-def get_first_id(client, route):
-    return json.loads(client.get(route).content.decode("utf-8")).get("results")[0].get("id")
+def get_first_id(client, route, field="id"):
+    return json.loads(client.get(route).content.decode("utf-8")).get("results")[0].get(field)
 
 
 class TestViewsPostDeleteUnauthenticated(TestCase):
@@ -113,13 +113,9 @@ class TestViewsPostDeleteAdmin(TestCase):
         sample_install["building_id"] = building_id
         response = self.c.post("/api/v1/installs/", sample_install)
         assert_correct_response(self, response, 201)
-        install_id = get_first_id(self.c, "/api/v1/installs/")
+        install_id = get_first_id(self.c, "/api/v1/installs/", "install_number")
 
-        # FIXME: For some reason this fails as a separate test
-        # I have literally no idea why. Could be an issue with
-        # the test DB. None of the other tests hit this, probably
-        # because nobody is allowed to do things that would warrant
-        # cross-function testing. Fair enough I suppose.
+        # Now delete
         response = self.c.delete(f"/api/v1/installs/{install_id}/")
         assert_correct_response(self, response, 204)
 

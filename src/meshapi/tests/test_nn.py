@@ -18,10 +18,16 @@ class TestNN(TestCase):
 
         # Create sample data
         self.admin_c.post("/api/v1/members/", sample_member)
-        self.admin_c.post("/api/v1/buildings/", sample_building)
-        self.admin_c.post("/api/v1/installs/", sample_install)
+        building = sample_building.copy()
+        building["primary_nn"] = "" 
+        self.admin_c.post("/api/v1/buildings/", building)
+        inst = sample_install.copy()
+        inst["building_id"] = Building.objects.all()[0].id
+        inst["member_id"] = Member.objects.all()[0].id
+        inst["network_number"] = ""
+        self.admin_c.post("/api/v1/installs/", inst)
 
-        self.install_number = Install.objects.all()[0].id
+        self.install_number = Install.objects.all()[0].install_number
 
     def test_nn_valid_install_number(self):
         response = self.admin_c.post(
@@ -32,15 +38,15 @@ class TestNN(TestCase):
         self.assertEqual(
             code,
             response.status_code,
-            f"status code incorrect for test_nn_valid_building_id. Should be {code}, but got {response.status_code}",
+            f"status code incorrect for test_nn_valid_install_number. Should be {code}, but got {response.status_code}",
         )
 
-        resp_nn = json.loads(response.content.decode("utf-8"))["node_number"]
+        resp_nn = json.loads(response.content.decode("utf-8"))["network_number"]
         expected_nn = 101
         self.assertEqual(
             expected_nn,
             resp_nn,
-            f"status code incorrect for test_nn_valid_building_id. Should be {code}, but got {response.status_code}",
+            f"status code incorrect for test_nn_valid_install_number. Should be {code}, but got {response.status_code}",
         )
 
     def test_nn_invalid_building_id(self):
