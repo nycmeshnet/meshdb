@@ -225,8 +225,6 @@ def join_form(request):
             longitude=nyc_addr_info.longitude if nyc_addr_info is not None else osm_addr_info.longitude,
             altitude=nyc_addr_info.altitude if nyc_addr_info is not None else osm_addr_info.altitude,
             primary_nn=None,
-            install_date=None,
-            abandon_date=None,
         )
     )
 
@@ -274,7 +272,6 @@ def join_form(request):
             "building_id": join_form_building.id,
             "member_id": join_form_member.id,
             "install_number": join_form_install.install_number,
-
             # If this is an existing member, then set a flag to let them know we have
             # their information in case they need to update anything.
             "member_exists": True if len(existing_members) > 0 else False,
