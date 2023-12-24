@@ -194,14 +194,15 @@ def join_form(request):
             last_name=r.last_name,
             email_address=r.email,
             phone_number=r.phone,
-            slack_handle="",
+            slack_handle=None,
         )
     )
 
-    # If this is an existing member, update the email and phone with whatever
+    # If this is an existing member, update the name and phone with whatever
     # new info they gave us
     if len(existing_members) > 0:
-        join_form_member.email_address = r.email
+        join_form_member.first_name = r.first_name
+        join_form_member.last_name = r.last_name
         join_form_member.phone_number = r.phone
 
     # If the address is in NYC, then try to look up by BIN, otherwise fallback
