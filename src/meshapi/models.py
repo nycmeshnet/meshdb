@@ -100,4 +100,5 @@ class Install(models.Model):
 
     # Relation to Member
     member_id = models.ForeignKey(Member, on_delete=models.PROTECT)
+    referral = models.TextField(default=None, blank=True, null=True)
     notes = models.TextField(default=None, blank=True, null=True)

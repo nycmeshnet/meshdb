@@ -248,7 +248,8 @@ def join_form(request):
         unit=r.apartment,
         roof_access=r.roof_access,
         member_id=join_form_member,
-        notes=f"Referral: r.referral" if len(r.referral) > 0 else "",
+        referral=r.referral,
+        notes=None,
     )
 
     try:
