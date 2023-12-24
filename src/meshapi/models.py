@@ -32,8 +32,8 @@ class Building(models.Model):
     altitude = models.FloatField()
     primary_nn = models.IntegerField(blank=True, null=True)
     node_name = models.TextField(default=None, blank=True, null=True)
-    install_date = models.DateField(default=None, blank=True, null=True)
-    abandon_date = models.DateField(default=None, blank=True, null=True)
+    install_date = models.DateTimeField(default=None, blank=True, null=True)
+    abandon_date = models.DateTimeField(default=None, blank=True, null=True)
 
 
 class Member(models.Model):
@@ -75,9 +75,9 @@ class Install(models.Model):
     ticket_id = models.IntegerField(blank=True, null=True)
 
     # Important dates
-    request_date = models.DateField(default=None, blank=True, null=True)
-    install_date = models.DateField(default=None, blank=True, null=True)
-    abandon_date = models.DateField(default=None, blank=True, null=True)
+    request_date = models.DateTimeField(default=None, blank=True, null=True)
+    install_date = models.DateTimeField(default=None, blank=True, null=True)
+    abandon_date = models.DateTimeField(default=None, blank=True, null=True)
 
     # Relation to Building
     building_id = models.ForeignKey(Building, on_delete=models.PROTECT)
