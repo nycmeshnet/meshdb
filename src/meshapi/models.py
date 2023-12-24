@@ -15,11 +15,13 @@ class Installer(Group):
     def __str__(self):
         return self.name
 
+
 class Admin(Group):
     description = models.TextField(max_length=100, blank=True)
 
     def __str__(self):
         return self.name
+
 
 class ReadOnly(Group):
     description = models.TextField(max_length=100, blank=True)

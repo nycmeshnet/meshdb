@@ -336,7 +336,7 @@ def network_number_assignment(request):
 
     nn_install.install_status = Install.InstallStatus.ACTIVE
     nn_install.install_date = timezone.now()
-    nn_building.install_date = nn_install.install_date 
+    nn_building.install_date = nn_install.install_date
 
     try:
         nn_building.save()
