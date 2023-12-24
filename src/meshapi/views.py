@@ -275,7 +275,11 @@ def join_form(request):
         return Response("Could not save request", status=status.HTTP_400_BAD_REQUEST)
 
     return Response(
-        {"building_id": join_form_building.id, "member_id": join_form_member.id, "install_number": join_form_install.install_number},
+        {
+            "building_id": join_form_building.id,
+            "member_id": join_form_member.id,
+            "install_number": join_form_install.install_number,
+        },
         status=status.HTTP_201_CREATED,
     )
 
@@ -334,6 +338,7 @@ def network_number_assignment(request):
 
     try:
         nn_building.save()
+        nn_install.save()
     except IntegrityError as e:
         print(e)
         return Response("NN Request failed. Could not save node number.", status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -342,7 +347,7 @@ def network_number_assignment(request):
         {
             "building_id": nn_building.id,
             "install_number": nn_install.install_number,
-            "network_number": nn_install.network_number
+            "network_number": nn_install.network_number,
         },
         status=status.HTTP_200_OK,
     )

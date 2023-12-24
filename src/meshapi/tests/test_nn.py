@@ -19,7 +19,7 @@ class TestNN(TestCase):
         # Create sample data
         self.admin_c.post("/api/v1/members/", sample_member)
         building = sample_building.copy()
-        building["primary_nn"] = "" 
+        building["primary_nn"] = ""
         self.admin_c.post("/api/v1/buildings/", building)
         inst = sample_install.copy()
         inst["building_id"] = Building.objects.all()[0].id
@@ -50,9 +50,7 @@ class TestNN(TestCase):
         )
 
     def test_nn_invalid_building_id(self):
-        response = self.admin_c.post(
-            "/api/v1/nn-assign/", {"install_number": 69420}, content_type="application/json"
-        )
+        response = self.admin_c.post("/api/v1/nn-assign/", {"install_number": 69420}, content_type="application/json")
 
         code = 404
         self.assertEqual(
@@ -62,9 +60,7 @@ class TestNN(TestCase):
         )
 
     def test_nn_bad_request(self):
-        response = self.admin_c.post(
-            "/api/v1/nn-assign/", {"install_number": "chom"}, content_type="application/json"
-        )
+        response = self.admin_c.post("/api/v1/nn-assign/", {"install_number": "chom"}, content_type="application/json")
 
         code = 404
         self.assertEqual(
@@ -134,19 +130,15 @@ class TestFindGaps(TestCase):
         self.inst2 = sample_install.copy()
         self.add_data(b2, m2, self.inst2, index=5002, nn=False)
 
-
         b3 = sample_building.copy()
         m3 = sample_member.copy()
         self.inst3 = sample_install.copy()
-        b3["street_address"] = "123 Fake St"
         self.add_data(b3, m3, self.inst3, index=5003, nn=False)
 
         b4 = sample_building.copy()
         m4 = sample_member.copy()
         self.inst4 = sample_install.copy()
-        b4["street_address"] = "123 Fake St"
-        self.add_data(b4, m4, self.inst4, index=5003, nn=False)
-
+        self.add_data(b4, m4, self.inst4, index=5004, nn=False)
 
     def test_nn_search_for_new_number(self):
         # Try to give NNs to all the installs. Should end up with two right
@@ -167,6 +159,7 @@ class TestFindGaps(TestCase):
 
             resp_nn = json.loads(response.content.decode("utf-8"))["network_number"]
             expected_nn = nn
+
             self.assertEqual(
                 resp_nn,
                 expected_nn,
@@ -174,5 +167,8 @@ class TestFindGaps(TestCase):
             )
 
         # Sanity check that the other buildings actually exist
-        self.assertIsNotNone(Install.objects.filter(network_number=129)[0].id)
+        self.assertIsNotNone(Install.objects.filter(network_number=129)[0].install_number)
         self.assertIsNotNone(Building.objects.filter(primary_nn=129)[0].id)
+
+        self.assertIsNotNone(Install.objects.filter(network_number=130)[0].install_number)
+        self.assertIsNotNone(Building.objects.filter(primary_nn=130)[0].id)

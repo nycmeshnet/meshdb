@@ -57,7 +57,7 @@ class Install(models.Model):
     # Install Number (generated when form is submitted)
     install_number = models.AutoField(
         primary_key=True,
-        db_column='install_number',
+        db_column="install_number",
     )
 
     # The NN this install is associated with.
@@ -65,10 +65,7 @@ class Install(models.Model):
     network_number = models.IntegerField(
         blank=True,
         null=True,
-        validators=[
-            MinValueValidator(NETWORK_NUMBER_MIN),
-            MaxValueValidator(NETWORK_NUMBER_MAX)
-        ],
+        validators=[MinValueValidator(NETWORK_NUMBER_MIN), MaxValueValidator(NETWORK_NUMBER_MAX)],
     )
 
     # Summary status of install
