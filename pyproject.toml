@@ -14,6 +14,8 @@ dependencies = [
     "requests==2.31.*",
     "geopy==2.4.*",
     "django-cors-headers==4.3.*",
+    "nameparser==1.1.*",
+    "inflect==7.0.*",
 ]
 
 [project.optional-dependencies]
@@ -27,6 +29,8 @@ dev = [
     "mypy == 1.5.*"
 ]
 
+[project.scripts]
+meshdb-spreadsheet-import = "meshdb.utils.spreadsheet_import:main"
 
 [build-system]
 requires = [ "setuptools >= 61", "wheel", "mypy" ]
@@ -48,7 +52,7 @@ warn_unused_configs = true
 
 
 [tool.black]
-line-length = 120
+line-length = 100
 include = '\.pyi?$'
 
 
