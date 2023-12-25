@@ -1,6 +1,6 @@
 from django.contrib.auth.models import User
 from rest_framework import serializers
-from meshapi.models import Building, Member, Install, Request
+from meshapi.models import Building, Member, Install
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -24,10 +24,4 @@ class MemberSerializer(serializers.ModelSerializer):
 class InstallSerializer(serializers.ModelSerializer):
     class Meta:
         model = Install
-        fields = "__all__"
-
-
-class RequestSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Request
         fields = "__all__"

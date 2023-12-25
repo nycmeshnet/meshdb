@@ -1,18 +1,18 @@
 from dataclasses import dataclass
+from datetime import datetime
 import json
+from json.decoder import JSONDecodeError
 import time
 from geopy.exc import GeocoderUnavailable
-import requests
 from django.contrib.auth.models import User
 from django.db import IntegrityError
 from rest_framework import generics, permissions
-from meshapi.models import Building, Member, Install, Request
+from meshapi.models import NETWORK_NUMBER_MAX, NETWORK_NUMBER_MIN, Building, Member, Install
 from meshapi.serializers import (
     UserSerializer,
     BuildingSerializer,
     MemberSerializer,
     InstallSerializer,
-    RequestSerializer,
 )
 from meshapi.permissions import (
     BuildingListCreatePermissions,
@@ -21,8 +21,7 @@ from meshapi.permissions import (
     MemberRetrieveUpdateDestroyPermissions,
     InstallListCreatePermissions,
     InstallRetrieveUpdateDestroyPermissions,
-    RequestListCreatePermissions,
-    RequestRetrieveUpdateDestroyPermissions,
+    NetworkNumberAssignmentPermissions,
 )
 from meshapi.validation import (
     OSMAddressInfo,
@@ -31,20 +30,17 @@ from meshapi.validation import (
     NYCAddressInfo,
 )
 from meshapi.exceptions import AddressError, AddressAPIError
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework import status
-from django.http.response import JsonResponse
-from rest_framework.parsers import JSONParser
+
+# TODO: Do we need more routes for just getting a NN and stuff?
 
 
 # Home view
 @api_view(["GET"])
 def api_root(request, format=None):
     return Response("We're meshin'.")
-
-
-# === USERS ===
 
 
 class UserList(generics.ListAPIView):
@@ -59,9 +55,6 @@ class UserDetail(generics.RetrieveAPIView):
     serializer_class = UserSerializer
 
 
-# === BUILDINGS ===
-
-
 class BuildingList(generics.ListCreateAPIView):
     permission_classes = [BuildingListCreatePermissions]
     queryset = Building.objects.all()
@@ -72,12 +65,6 @@ class BuildingDetail(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [BuildingRetrieveUpdateDestroyPermissions]
     queryset = Building.objects.all()
     serializer_class = BuildingSerializer
-
-
-# TODO: Do we need more routes for just getting a NN and stuff?
-
-
-# === MEMBER ===
 
 
 class MemberList(generics.ListCreateAPIView):
@@ -92,9 +79,6 @@ class MemberDetail(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = MemberSerializer
 
 
-# === INSTALL ===
-
-
 class InstallList(generics.ListCreateAPIView):
     permission_classes = [InstallListCreatePermissions]
     queryset = Install.objects.all()
@@ -105,34 +89,6 @@ class InstallDetail(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [InstallRetrieveUpdateDestroyPermissions]
     queryset = Install.objects.all()
     serializer_class = InstallSerializer
-
-
-# === REQUEST ===
-
-
-# class RequestList(mixins.ListModelMixin, mixins.CreateModelMixin, generics.GenericAPIView):
-#    queryset = Request.objects.all()
-#    serializer_class = RequestSerializer
-#
-#    def get(self, request, *args, **kwargs):
-#        return self.list(request, *args, **kwargs)
-#
-#    def post(self, request, *args, **kwargs):
-#        if not request.user.is_superuser:
-#            raise PermissionDenied("You do not have permission to delete this resource")
-#        return self.create(request, *args, **kwargs)
-
-
-class RequestList(generics.ListCreateAPIView):
-    permission_classes = [RequestListCreatePermissions]
-    queryset = Request.objects.all()
-    serializer_class = RequestSerializer
-
-
-class RequestDetail(generics.RetrieveUpdateDestroyAPIView):
-    permission_classes = [RequestRetrieveUpdateDestroyPermissions]
-    queryset = Request.objects.all()
-    serializer_class = RequestSerializer
 
 
 # Join Form
@@ -225,22 +181,21 @@ def join_form(request):
         if nyc_addr_info == None:
             return Response("(NYC) Error validating address", status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-    # Check if there's an existing member, and bail if there is
+    # Check if there's an existing member. Dedupe on email for now.
+    # A member can have multiple install requests
     existing_members = Member.objects.filter(
-        first_name=r.first_name,
-        last_name=r.last_name,
         email_address=r.email,
-        phone_number=r.phone,
     )
-    if len(existing_members) > 0:
-        return Response("Member already exists", status=status.HTTP_400_BAD_REQUEST)
-
-    join_form_member = Member(
-        first_name=r.first_name,
-        last_name=r.last_name,
-        email_address=r.email,
-        phone_number=r.phone,
-        slack_handle="",
+    join_form_member = (
+        existing_members[0]
+        if len(existing_members) > 0
+        else Member(
+            first_name=r.first_name,
+            last_name=r.last_name,
+            email_address=r.email,
+            phone_number=r.phone,
+            slack_handle=None,
+        )
     )
 
     # If the address is in NYC, then try to look up by BIN, otherwise fallback
@@ -269,21 +224,23 @@ def join_form(request):
             latitude=nyc_addr_info.latitude if nyc_addr_info is not None else osm_addr_info.latitude,
             longitude=nyc_addr_info.longitude if nyc_addr_info is not None else osm_addr_info.longitude,
             altitude=nyc_addr_info.altitude if nyc_addr_info is not None else osm_addr_info.altitude,
-            network_number=None,
-            install_date=None,
-            abandon_date=None,
+            primary_nn=None,
         )
     )
 
-    join_form_request = Request(
-        request_status=Request.RequestStatus.OPEN,
-        roof_access=r.roof_access,
-        referral=r.referral,
+    join_form_install = Install(
+        network_number=None,
+        install_status=Install.InstallStatus.OPEN,
         ticket_id=None,
-        member_id=join_form_member,
+        request_date=datetime.today(),
+        install_date=None,
+        abandon_date=None,
         building_id=join_form_building,
         unit=r.apartment,
-        install_id=None,
+        roof_access=r.roof_access,
+        member_id=join_form_member,
+        referral=r.referral,
+        notes=None,
     )
 
     try:
@@ -301,7 +258,7 @@ def join_form(request):
         return Response("Could not save building", status=status.HTTP_400_BAD_REQUEST)
 
     try:
-        join_form_request.save()
+        join_form_install.save()
     except IntegrityError as e:
         print(e)
         # Delete the member, building (if we just created it), and bail
@@ -311,6 +268,81 @@ def join_form(request):
         return Response("Could not save request", status=status.HTTP_400_BAD_REQUEST)
 
     return Response(
-        {"building_id": join_form_building.id, "member_id": join_form_member.id, "request_id": join_form_request.id},
+        {
+            "building_id": join_form_building.id,
+            "member_id": join_form_member.id,
+            "install_number": join_form_install.install_number,
+            # If this is an existing member, then set a flag to let them know we have
+            # their information in case they need to update anything.
+            "member_exists": True if len(existing_members) > 0 else False,
+        },
         status=status.HTTP_201_CREATED,
+    )
+
+
+@dataclass
+class NetworkNumberAssignmentRequest:
+    install_number: int
+
+
+@api_view(["POST"])
+@permission_classes([NetworkNumberAssignmentPermissions])
+def network_number_assignment(request):
+    """
+    Takes an install number, and assigns the install a network number,
+    deduping using the other buildings in our database.
+    """
+
+    try:
+        request_json = json.loads(request.body)
+        r = NetworkNumberAssignmentRequest(**request_json)
+    except (TypeError, JSONDecodeError) as e:
+        print(f"NN Request failed. Could not decode request: {e}")
+        return Response({"Got incomplete request"}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        nn_install = Install.objects.get(install_number=r.install_number)
+    except Exception as e:
+        print(f'NN Request failed. Could not get Install w/ Install Number "{r.install_number}": {e}')
+        return Response({"Install Number not found"}, status=status.HTTP_404_NOT_FOUND)
+
+    # Check if the install already has a network number
+    if nn_install.network_number != None:
+        message = f"NN Request failed. This Install Number already has a Network Number associated with it! ({nn_install.network_number})"
+        print(message)
+        return Response(message, status=status.HTTP_409_CONFLICT)
+
+    nn_building = nn_install.building_id
+
+    # If the building already has a primary NN, then use that.
+    if nn_building.primary_nn is not None:
+        nn_install.network_number = nn_building.primary_nn
+    else:
+        free_nn = None
+
+        defined_nns = set(Install.objects.values_list("network_number", flat=True))
+
+        # Find the first valid NN that isn't in use
+        free_nn = next(i for i in range(NETWORK_NUMBER_MIN, NETWORK_NUMBER_MAX + 1) if i not in defined_nns)
+
+        # Set the NN on both the install and the Building
+        nn_install.network_number = free_nn
+        nn_building.primary_nn = free_nn
+
+    nn_install.install_status = Install.InstallStatus.NN_ASSIGNED
+
+    try:
+        nn_building.save()
+        nn_install.save()
+    except IntegrityError as e:
+        print(e)
+        return Response("NN Request failed. Could not save node number.", status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    return Response(
+        {
+            "building_id": nn_building.id,
+            "install_number": nn_install.install_number,
+            "network_number": nn_install.network_number,
+        },
+        status=status.HTTP_200_OK,
     )
