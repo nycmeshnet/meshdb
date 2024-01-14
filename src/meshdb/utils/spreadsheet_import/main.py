@@ -1,6 +1,7 @@
 import logging
 import os
 import sys
+import time
 from collections import defaultdict
 from typing import List
 
@@ -50,11 +51,15 @@ def main():
 
     dropped_modifications: List[DroppedModification] = []
 
+    start_time = time.time()
     logging.info(f"Processing install # 2/{len(rows)}...")
     try:
         for i, row in enumerate(rows):
             if (i + 2) % 100 == 0:
-                logging.info(f"Processing install # {i + 2}/{len(rows)}...")
+                logging.info(
+                    f"Processing install # {i + 2}/{len(rows)}... "
+                    f"({int(time.time() - start_time)} seconds elapsed)"
+                )
 
             member, new = get_or_create_member(row, dropped_modifications.append)
             if not new:
@@ -109,7 +114,6 @@ def main():
         # Always print the failure report on our way out, even if we're interrupted
         print_failure_report(skipped, form_responses_path)
         print_dropped_edit_report(dropped_modifications, form_responses_path)
-
 
 
 if __name__ == "__main__":
