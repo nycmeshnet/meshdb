@@ -3,7 +3,7 @@ from enum import Enum
 from typing import List, Optional, Tuple
 
 LOCAL_MESH_NOMINATIM_ADDR = "10.70.178.53:8080"
-INVALID_BIN_NUMBERS = [-2, -1, 0, 1000000, 2000000, 3000000]
+INVALID_BIN_NUMBERS = [-2, -1, 0, 1000000, 2000000, 3000000, 4000000]
 
 NYC_BIN_LOOKUP_PREFIX = "https://a810-dobnow.nyc.gov/Publish/WrapperPP/PublicPortal.svc/getPublicPortalPropertyDetailsGet/2%7C"
 # This API is private, and doesn't respond to us if we don't pretend to be a browser-based client

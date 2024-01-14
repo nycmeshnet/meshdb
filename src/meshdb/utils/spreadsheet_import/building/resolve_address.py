@@ -331,7 +331,7 @@ class AddressParser:
                     f"Spreadsheet uses {spreadsheet_bin}, but we found {output_bin} "
                     f"for this address. We checked to see if this building has more than one BIN, "
                     f"or if the old BIN was incorrect, but couldn't explain the discrepancy "
-                    f"using these methods. We're going to assume that our search was correct and"
+                    f"using these methods. We're going to assume that our search was correct and "
                     f"use {output_bin} in the database."
                 )
 
