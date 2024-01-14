@@ -51,13 +51,15 @@ def main():
 
     dropped_modifications: List[DroppedModification] = []
 
+    max_install_num = max(row.id for row in rows)
+
     start_time = time.time()
-    logging.info(f"Processing install # 2/{len(rows)}...")
+    logging.info(f"Processing install # 2/{max_install_num}...")
     try:
         for i, row in enumerate(rows):
             if (i + 2) % 100 == 0:
                 logging.info(
-                    f"Processing install # {i + 2}/{len(rows)}... "
+                    f"Processing install # {row.id}/{max_install_num}... "
                     f"({int(time.time() - start_time)} seconds elapsed)"
                 )
 
