@@ -103,13 +103,13 @@ def main():
     except BaseException as e:
         if isinstance(e, KeyboardInterrupt):
             logging.error("Received keyboard interrupt, exiting early...")
-
-        # If we're interrupted early, print the failure report on our way out
+        if not isinstance(e, KeyboardInterrupt):
+            raise e
+    finally:
+        # Always print the failure report on our way out, even if we're interrupted
         print_failure_report(skipped, form_responses_path)
         print_dropped_edit_report(dropped_modifications, form_responses_path)
 
-        if not isinstance(e, KeyboardInterrupt):
-            raise e
 
 
 if __name__ == "__main__":
