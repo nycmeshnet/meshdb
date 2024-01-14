@@ -109,6 +109,7 @@ class JoinFormRequest:
 
 @api_view(["POST"])
 def join_form(request):
+    print(f"chom skz: {request.body}")
     request_json = json.loads(request.body)
     try:
         r = JoinFormRequest(**request_json)

@@ -26,13 +26,13 @@ services:
     healthcheck:
       test: curl http://127.0.0.1:8081/api/v1
       interval: 2s
-      timeout: 1s
+      timeout: 5s
       retries: 3
-      start_period: 2s
+      start_period: 5s
     networks:
       - api
-    #ports:
-    #  - 8081:8081
+    ports:
+      - 8081:8081
     build:
       context: .
       dockerfile: Dockerfile
