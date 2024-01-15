@@ -54,7 +54,7 @@ def main():
     max_install_num = max(row.id for row in rows)
 
     start_time = time.time()
-    logging.info(f"Processing install # 2/{max_install_num}...")
+    logging.info(f"Processing install # {rows[0].id}/{max_install_num}...")
     try:
         for i, row in enumerate(rows):
             if (i + 2) % 100 == 0:
