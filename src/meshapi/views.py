@@ -109,7 +109,6 @@ class JoinFormRequest:
 
 @api_view(["POST"])
 def join_form(request):
-    print(f"chom skz: {request.body}")
     request_json = json.loads(request.body)
     try:
         r = JoinFormRequest(**request_json)
@@ -145,11 +144,11 @@ def join_form(request):
                 status=status.HTTP_400_BAD_REQUEST,
             )
         except AssertionError as e:
-            print(e)
+            print(f"Assertion Error: {e}")
             return Response("Unexpected internal state", status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         # If the API gives us an error, then try again
         except (GeocoderUnavailable, Exception) as e:
-            print(e)
+            print(f"GeocoderUnavailable: {e}") if e is GeocoderUnavailable else print(f"An unknown error occurred: {e}")
             print("(OSM) Something went wrong validating the address. Re-trying...")
             time.sleep(3)
     # If we try multiple times without success, bail.
@@ -268,6 +267,7 @@ def join_form(request):
             join_form_building.delete()
         return Response("Could not save request", status=status.HTTP_400_BAD_REQUEST)
 
+    print(f"JoinForm submission success. building_id: {join_form_building.id}, member_id: {join_form_member.id}, install_number: {join_form_install.install_number}")
     return Response(
         {
             "building_id": join_form_building.id,
