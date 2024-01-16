@@ -49,7 +49,6 @@ class OSMAddressInfo:
             raise AddressError(f"(OSM) Address not found for user input: '{address}'")
 
         r_addr = location.raw["address"]
-        print(r_addr)
 
         self.street_address = f"{r_addr['house_number']} {r_addr['road']}"
         self.city = r_addr["city"]
@@ -64,17 +63,6 @@ class OSMAddressInfo:
             self.nyc = True
         else:
             self.nyc = False
-
-        # boroughs = ["New York County", "Kings County", "Queens County", "Bronx County", "Richmond County"]
-        # if any(borough in r_addr["county"] for borough in boroughs):
-        #     # OSM defines the boroughs in a weird way. Where a sane person
-        #     # would write "City: Brooklyn", they write "City: City of New York"
-        #     # and "Suburb: Brooklyn"
-        #     # So the "suburb" field will give us the borough.
-        #     self.city = r_addr["suburb"]
-        #     self.nyc = True
-        # else:
-        #     self.nyc = False
 
         # Python is on a lot of drugs
         # Actually, python _is_ a lot of drugs
