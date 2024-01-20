@@ -55,6 +55,13 @@ services:
       - ./nginx.conf:/etc/nginx/conf.d/nginx.conf
       - static_files:/var/www/html/static
 
+  pelias:
+    networks:
+      - api
+    ports:
+      - 6800:3000
+    image: pelias/parser
+
 volumes:
   postgres_data:
   static_files:

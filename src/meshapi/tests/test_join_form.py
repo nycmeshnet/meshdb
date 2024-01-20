@@ -55,6 +55,24 @@ def validate_successful_join_form_submission(test_case, test_name, s, response):
     )
 
 
+# Pulls the parsed_street_address out of the test data so that we don't have to later
+# Returns JSON and a JoinFormRequest in the correct format to be given to the above function
+def pull_apart_join_form_submission(submission):
+    request = submission.copy()
+    del request["parsed_street_address"]
+
+    # Make sure that we get the right stuff out of the database afterwards
+    s = JoinFormRequest(**request)
+
+    # Match the format from OSM. I did this to see how OSM would mutate the
+    # raw request we get.
+    s.street_address = submission["parsed_street_address"]
+    s.city = submission["city"]
+    s.state = submission["state"]
+
+    return request, s
+
+
 class TestJoinForm(TestCase):
     c = Client()
     admin_c = Client()
@@ -66,46 +84,35 @@ class TestJoinForm(TestCase):
         self.admin_c.login(username="admin", password="admin_password")
 
     def test_valid_join_form(self):
-        # Name, email, phone, location, apt, rooftop, referral
-        response = self.c.post("/api/v1/join/", valid_join_form_submission, content_type="application/json")
+        for submission in [
+            valid_join_form_submission,
+            richmond_join_form_submission,
+            kings_join_form_submission,
+            queens_join_form_submission,
+            bronx_join_form_submission,
+        ]:
+            request, s = pull_apart_join_form_submission(submission)
 
-        code = 201
-        self.assertEqual(
-            code,
-            response.status_code,
-            f"status code incorrect for Valid Join Form. Should be {code}, but got {response.status_code}.\n Response is: {response.content.decode('utf-8')}",
-        )
-
-        # Make sure that we get the right stuff out of the database afterwards
-        s = JoinFormRequest(**valid_join_form_submission)
-
-        # Match the format from OSM. I did this to see how OSM would mutate the
-        # raw request we get.
-        s.street_address = "151 Broome Street"
-        s.city = "Manhattan"
-        s.state = "New York"
-
-        validate_successful_join_form_submission(self, "Valid Join Form", s, response)
+            response = self.c.post("/api/v1/join/", request, content_type="application/json")
+            code = 201
+            self.assertEqual(
+                code,
+                response.status_code,
+                f"status code incorrect for Valid Join Form. Should be {code}, but got {response.status_code}.\n Response is: {response.content.decode('utf-8')}",
+            )
+            validate_successful_join_form_submission(self, "Valid Join Form", s, response)
 
     def test_non_nyc_join_form(self):
         # Name, email, phone, location, apt, rooftop, referral
-        form = non_nyc_join_form_submission.copy()
+        form, _ = pull_apart_join_form_submission(non_nyc_join_form_submission)
         response = self.c.post("/api/v1/join/", form, content_type="application/json")
 
-        code = 201
+        code = 400
         self.assertEqual(
             code,
             response.status_code,
             f"status code incorrect for Non NYC Join Form. Should be {code}, but got {response.status_code}.\n Response is: {response.content.decode('utf-8')}",
         )
-
-        s = JoinFormRequest(**non_nyc_join_form_submission)
-
-        # Match the format from OSM
-        s.street_address = "480 East Broad Street"
-        s.state = "Ohio"
-
-        validate_successful_join_form_submission(self, "Non-NYC Join Form", s, response)
 
     def test_empty_join_form(self):
         # Name, email, phone, location, apt, rooftop, referral
@@ -138,7 +145,7 @@ class TestJoinForm(TestCase):
 
     def test_bad_phone_join_form(self):
         # Name, email, phone, location, apt, rooftop, referral
-        form = valid_join_form_submission.copy()
+        form, _ = pull_apart_join_form_submission(valid_join_form_submission)
         form["phone"] = "555-555-5555"
         response = self.c.post("/api/v1/join/", form, content_type="application/json")
 
@@ -155,7 +162,7 @@ class TestJoinForm(TestCase):
 
     def test_bad_email_join_form(self):
         # Name, email, phone, location, apt, rooftop, referral
-        form = valid_join_form_submission.copy()
+        form, _ = pull_apart_join_form_submission(valid_join_form_submission)
         form["email"] = "notareal@email.meshmeshmeshmeshmesh"
         response = self.c.post("/api/v1/join/", form, content_type="application/json")
 
@@ -174,7 +181,7 @@ class TestJoinForm(TestCase):
 
     def test_bad_address_join_form(self):
         # Name, email, phone, location, apt, rooftop, referral
-        form = valid_join_form_submission.copy()
+        form, _ = pull_apart_join_form_submission(valid_join_form_submission)
         form["street_address"] = "fjdfahuweildhjweiklfhjkhklfhj"
         response = self.c.post("/api/v1/join/", form, content_type="application/json")
 
@@ -186,14 +193,15 @@ class TestJoinForm(TestCase):
         )
 
         self.assertEqual(
-            f"\"(OSM) Address '{form['street_address']}, {form['city']}, {form['state']} {form['zip']}' not found\"",
+            f"\"(NYC) Address '{form['street_address']}, {form['city']}, {form['state']} {form['zip']}' not found in geosearch.planninglabs.nyc.\"",
             response.content.decode("utf-8"),
             f"Did not get correct response content for bad address join form: {response.content.decode('utf-8')}",
         )
 
     def test_member_moved_join_form(self):
         # Name, email, phone, location, apt, rooftop, referral
-        response = self.c.post("/api/v1/join/", valid_join_form_submission, content_type="application/json")
+        form, s = pull_apart_join_form_submission(valid_join_form_submission)
+        response = self.c.post("/api/v1/join/", form, content_type="application/json")
 
         code = 201
         self.assertEqual(
@@ -202,20 +210,13 @@ class TestJoinForm(TestCase):
             f"status code incorrect for Valid Join Form. Should be {code}, but got {response.status_code}.\n Response is: {response.content.decode('utf-8')}",
         )
 
-        # Make sure that we get the right stuff out of the database afterwards
-        s = JoinFormRequest(**valid_join_form_submission)
-
-        # Match the format from OSM. I did this to see how OSM would mutate the
-        # raw request we get.
-        s.street_address = "151 Broome Street"
-        s.city = "Manhattan"
-        s.state = "New York"
-
         validate_successful_join_form_submission(self, "Valid Join Form", s, response)
 
         # Now test that the member can "move" and still access the jon form
-        form = valid_join_form_submission.copy()
-        form["street_address"] = "152 Broome Street"
+        v_sub_2 = valid_join_form_submission.copy()
+        v_sub_2["street_address"] = "152 Broome Street"
+
+        form, s = pull_apart_join_form_submission(v_sub_2)
 
         # Name, email, phone, location, apt, rooftop, referral
         response = self.c.post("/api/v1/join/", form, content_type="application/json")
@@ -226,14 +227,5 @@ class TestJoinForm(TestCase):
             response.status_code,
             f"status code incorrect for Valid Join Form. Should be {code}, but got {response.status_code}.\n Response is: {response.content.decode('utf-8')}",
         )
-
-        # Make sure that we get the right stuff out of the database afterwards
-        s = JoinFormRequest(**valid_join_form_submission)
-
-        # Match the format from OSM. I did this to see how OSM would mutate the
-        # raw request we get.
-        s.street_address = "152 Broome Street"
-        s.city = "Manhattan"
-        s.state = "New York"
 
         validate_successful_join_form_submission(self, "Valid Join Form", s, response)

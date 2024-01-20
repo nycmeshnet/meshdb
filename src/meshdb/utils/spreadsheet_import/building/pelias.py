@@ -2,6 +2,8 @@ import logging
 import re
 from typing import List, Optional, Tuple
 
+from django.conf import os
+
 import inflect
 import requests
 
@@ -11,7 +13,7 @@ from meshdb.utils.spreadsheet_import.building.constants import (
 )
 from meshdb.utils.spreadsheet_import.building.us_state_codes import convert_state_name_to_code
 
-PELIAS_ADDRESS_PARSER_URL = "http://10.70.178.56:6800/parser/parse"
+PELIAS_ADDRESS_PARSER_URL = os.environ.get("PELIAS_ADDRESS_PARSER_URL")
 
 
 def call_pelias_parser(address_str: str) -> List[Tuple[float, dict, dict]]:
