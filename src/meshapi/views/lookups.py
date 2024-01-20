@@ -1,7 +1,7 @@
 from rest_framework import generics
 from rest_framework import generics, filters
-from meshapi.models import Member
-from meshapi.serializers import MemberSerializer
+from meshapi.models import Install, Member
+from meshapi.serializers import InstallSerializer, MemberSerializer
 
 
 # https://medium.com/geekculture/make-an-api-search-endpoint-with-django-rest-framework-111f307747b8
@@ -25,28 +25,22 @@ class LookupMember(generics.ListAPIView):
         queryset = Member.objects.filter(**filter_keyword_arguments_dict)
         return queryset 
 
-# @dataclass
-# class LookupMemberRequest:
-#     name: Optional[str] = field(default=None)
-#     phone: Optional[str] = field(default=None) # TODO: search
-#     email: Optional[str] = field(default=None)
-# 
-# @api_view(["GET"])
-# def lookup_member(request):
-#     request_json = json.loads(request.body)
-#     try:
-#         r = LookupMemberRequest(**request_json)
-#     except TypeError as e:
-#         return Response({"Got incomplete request"}, status=status.HTTP_400_BAD_REQUEST)
-# 
-            #     existing_members = Member.objects.filter(
-#         name=r.name,
-#         email_address=r.email,
-#         phone_number=r.phone,
-#     )
-# 
-#     for m in existing_members:
-#         print(m)
-# 
-#     return Response({"member_id": existing_members[0].id,}, status=status.HTTP_200_OK)
-#     
+
+# https://medium.com/geekculture/make-an-api-search-endpoint-with-django-rest-framework-111f307747b8
+class LookupInstall(generics.ListAPIView):
+    # TODO: Add more search fields later
+    search_fields = ["install_number", "network_number", "member_id", "building_id"]
+    filter_backends = (filters.SearchFilter, filters.OrderingFilter)
+    serializer_class = InstallSerializer 
+
+    def get_queryset(self):
+        # TODO: Validate Parameters?
+        
+        query_dict = {k: v for k, v in self.request.query_params.items() if v}
+        filter_keyword_arguments_dict = {}
+        for k, v in query_dict.items():
+            if k in self.search_fields:
+                filter_keyword_arguments_dict[f"{k}__exact"] = v
+        queryset = Install.objects.filter(**filter_keyword_arguments_dict)
+        return queryset 
+
