@@ -15,6 +15,7 @@ from meshdb.utils.spreadsheet_import.building.us_state_codes import convert_stat
 
 PELIAS_ADDRESS_PARSER_URL = os.environ.get("PELIAS_ADDRESS_PARSER_URL")
 
+
 def call_pelias_parser(address_str: str) -> List[Tuple[float, dict, dict]]:
     response = requests.get(PELIAS_ADDRESS_PARSER_URL, params={"text": address_str})
     output = []
