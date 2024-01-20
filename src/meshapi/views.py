@@ -1,38 +1,30 @@
+import json
+import time
 from dataclasses import dataclass
 from datetime import datetime
-import json
 from json.decoder import JSONDecodeError
-import time
-from geopy.exc import GeocoderUnavailable
+
 from django.contrib.auth.models import User
 from django.db import IntegrityError
-from rest_framework import generics, permissions
-from meshapi.models import NETWORK_NUMBER_MAX, NETWORK_NUMBER_MIN, Building, Member, Install
-from meshapi.serializers import (
-    UserSerializer,
-    BuildingSerializer,
-    MemberSerializer,
-    InstallSerializer,
-)
+from geopy.exc import GeocoderUnavailable
+from rest_framework import generics, permissions, status
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.response import Response
+
+from meshapi.exceptions import AddressAPIError, AddressError
+from meshapi.models import NETWORK_NUMBER_MAX, NETWORK_NUMBER_MIN, Building, Install, Member
 from meshapi.permissions import (
     BuildingListCreatePermissions,
     BuildingRetrieveUpdateDestroyPermissions,
-    MemberListCreatePermissions,
-    MemberRetrieveUpdateDestroyPermissions,
     InstallListCreatePermissions,
     InstallRetrieveUpdateDestroyPermissions,
+    MemberListCreatePermissions,
+    MemberRetrieveUpdateDestroyPermissions,
     NetworkNumberAssignmentPermissions,
 )
-from meshapi.validation import (
-    OSMAddressInfo,
-    validate_phone_number,
-    validate_email_address,
-    NYCAddressInfo,
-)
-from meshapi.exceptions import AddressError, AddressAPIError
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework.response import Response
-from rest_framework import status
+from meshapi.serializers import BuildingSerializer, InstallSerializer, MemberSerializer, UserSerializer
+from meshapi.validation import NYCAddressInfo, OSMAddressInfo, validate_email_address, validate_phone_number
+from meshdb.utils.spreadsheet_import.building.constants import AddressTruthSource
 
 # TODO: Do we need more routes for just getting a NN and stuff?
 
@@ -190,8 +182,7 @@ def join_form(request):
         existing_members[0]
         if len(existing_members) > 0
         else Member(
-            first_name=r.first_name,
-            last_name=r.last_name,
+            name=r.first_name + " " + r.last_name,
             email_address=r.email,
             phone_number=r.phone,
             slack_handle=None,
@@ -224,6 +215,7 @@ def join_form(request):
             latitude=nyc_addr_info.latitude if nyc_addr_info is not None else osm_addr_info.latitude,
             longitude=nyc_addr_info.longitude if nyc_addr_info is not None else osm_addr_info.longitude,
             altitude=nyc_addr_info.altitude if nyc_addr_info is not None else osm_addr_info.altitude,
+            address_truth_sources=[AddressTruthSource.NYCPlanningLabs],
             primary_nn=None,
         )
     )
@@ -235,10 +227,10 @@ def join_form(request):
         request_date=datetime.today(),
         install_date=None,
         abandon_date=None,
-        building_id=join_form_building,
+        building=join_form_building,
         unit=r.apartment,
         roof_access=r.roof_access,
-        member_id=join_form_member,
+        member=join_form_member,
         referral=r.referral,
         notes=None,
     )
@@ -312,7 +304,7 @@ def network_number_assignment(request):
         print(message)
         return Response(message, status=status.HTTP_409_CONFLICT)
 
-    nn_building = nn_install.building_id
+    nn_building = nn_install.building
 
     # If the building already has a primary NN, then use that.
     if nn_building.primary_nn is not None:

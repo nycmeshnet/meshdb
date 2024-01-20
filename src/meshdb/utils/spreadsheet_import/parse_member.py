@@ -1,0 +1,236 @@
+import logging
+import re
+from typing import Callable, List, Optional, Tuple
+
+import phonenumbers
+from nameparser import HumanName
+from validate_email import validate_email
+
+from meshapi import models
+from meshapi.models import Member
+from meshdb.utils.spreadsheet_import.csv_load import DroppedModification, SpreadsheetRow
+
+BASIC_EMAIL_REGEX = re.compile(r"\S+@\S+\.\S+")
+
+# Fix some common formatting mistakes and ease the parser's job by removing
+# invalid characters
+EMAIL_REPLACEMENTS = {
+    "<": "",
+    ">": "",
+    ",": " ",
+    "\/": " ",
+    "gmailcom": "gmail.com",
+    "\.\.@gmail\.com": "@gmail.com",
+    "\.\.\.": ".",
+    "\.@gmail\.com": "@gmail.com",
+    "@ gmail\.com": "@gmail.com",
+    "@@gmail\.com": "@gmail.com",
+    "@yahoo\.\.com": "@yahoo.com",
+    "&gmail\.com": "@gmail.com",
+    "gmail$": "gmail.com",
+    " \.net$": ".net",
+    "\. net$": ".net",
+    " @hotmail\.com": "@hotmail.com",
+    "@ hotmail\.com": "@hotmail.com",
+}
+
+
+def parse_name(input_name: str) -> Tuple[Optional[str], Optional[str]]:
+    parsed = HumanName(input_name)
+    return parsed.first, parsed.surnames
+
+
+def parse_emails(input_emails: str) -> List[str]:
+    replaced_input = input_emails
+    for old, new in EMAIL_REPLACEMENTS.items():
+        replaced_input = re.sub(old, new, replaced_input)
+
+    email_matches = BASIC_EMAIL_REGEX.findall(replaced_input)
+
+    # Brian's email is often used for members / buildings where we don't have
+    # an email address. This is a problem when de-duplicating using email
+    # address, since we would end up consolidating all of "Brian's" entries
+    # into a single member, losing name and phone number info in the process
+    if "brian@nycmesh.net" in email_matches:
+        email_matches.remove("brian@nycmesh.net")
+
+    return [
+        email
+        for email in email_matches
+        # The below check doesn't do a lot for us, because we are able to do a
+        # bit of repair using the regexes, and because we have disabled all the
+        # non-formatting checks.
+        #
+        # You might say, let's leave it enabled just in case. However, it seems
+        # to filter out valid emails (for example one that contains á)
+        #
+        # if validate_email(
+        #     email_address=email,
+        #     check_format=True,
+        #     check_blacklist=False,  # "Evil" emails are still "valid" historical data
+        #     check_dns=False,  # This is too slow
+        #     check_smtp=False,  # This is too slow
+        # )
+    ]
+
+
+def parse_phone(input_phone: str) -> Optional[phonenumbers.PhoneNumber]:
+    try:
+        parsed = phonenumbers.parse(input_phone, "US")
+    except phonenumbers.NumberParseException:
+        parsed = None
+
+    if parsed is None or not phonenumbers.is_possible_number(parsed):
+        # Try again, but trim off everything after the first " " character and
+        # strip "," characters from the start and end of the remaining string
+        # to get rid of notes, additional phone numbers, etc
+        try:
+            parsed = phonenumbers.parse(input_phone.split(" ")[0].strip(","), "US")
+        except phonenumbers.NumberParseException:
+            return None
+
+    # TODO: Bring this validation to the join form
+    if phonenumbers.is_possible_number(parsed):
+        return parsed
+    else:
+        return None
+
+
+def diff_new_member_against_existing(
+    row_id: int,
+    existing_member: models.Member,
+    new_member: models.Member,
+    add_dropped_edit: Callable[[DroppedModification], None],
+) -> str:
+    diff_notes = ""
+    if existing_member.name != new_member.name and new_member.name:
+        add_dropped_edit(
+            DroppedModification(
+                list(install.install_number for install in existing_member.install_set.all()),
+                row_id,
+                existing_member.email_address,
+                "member.name",
+                existing_member.name if existing_member.name else "",
+                new_member.name,
+            )
+        )
+        logging.debug(
+            f"Dropping changed name from install # {row_id} " f"{repr(existing_member.name)} -> {repr(new_member.name)}"
+        )
+        diff_notes += f"\nDropped name change from install #{row_id}: {new_member.name}"
+
+    if existing_member.phone_number != new_member.phone_number and new_member.phone_number:
+        add_dropped_edit(
+            DroppedModification(
+                list(install.install_number for install in existing_member.install_set.all()),
+                row_id,
+                existing_member.email_address,
+                "member.phone_number",
+                existing_member.phone_number if existing_member.phone_number else "",
+                new_member.phone_number,
+            )
+        )
+        logging.debug(
+            f"Dropping changed last name from install # {row_id} "
+            f"{repr(existing_member.phone_number)} -> {repr(new_member.phone_number)}"
+        )
+        diff_notes += f"\nDropped phone number change from install #{row_id}: {new_member.phone_number}"
+
+    return diff_notes
+
+
+def get_or_create_member(
+    row: SpreadsheetRow,
+    add_dropped_edit: Optional[Callable[[DroppedModification], None]] = None,
+) -> Tuple[models.Member, bool]:
+    if not add_dropped_edit:
+        # Use a no-op function if our caller doesn't specify a destination
+        # for dropped edits, to avoid runtime errors
+        add_dropped_edit = lambda x: None
+
+    primary_emails = parse_emails(row.email)
+    stripe_emails = parse_emails(row.stripeEmail)
+    secondary_emails = parse_emails(row.secondEmail)
+    emails = primary_emails + stripe_emails + secondary_emails
+
+    parsed_phone = parse_phone(row.phone)
+
+    notes = ""
+
+    # TODO: this might actually be better in the install notes, since most of
+    #  these relate to specific installs, and only some relate to contact info
+    #  for the member. We should maybe talk to Olivier about this tradeoff?
+    #  (also don't forget to remove the occurrence flagged below if you remove this one)
+    if row.contactNotes:
+        notes += f"Spreadsheet Contact Notes:\n{row.contactNotes}\n\n"
+
+    # Keep track of garbage phone numbers just in case we're wrong about
+    # their garbage-ness
+    if row.phone and not parsed_phone:
+        notes += f"Un-parsable Phone Number: {row.phone}\n"
+
+    # If there were any letters in the phone number
+    # (that we didn't parse into an extension)
+    # it's probably a contact note like "text only".
+    # Record that in the contact notes
+    if re.search("[a-zA-Z]", row.phone) and parsed_phone and not parsed_phone.extension:
+        notes += f"Phone Notes: {row.phone}\n"
+
+    if row.contactNotes:
+        notes += f"Spreadsheet Emails:\n{row.email}\n{row.stripeEmail}\n{row.secondEmail}\n"
+
+    formatted_phone_number = (
+        # TODO: Bring this formatting to the join form
+        phonenumbers.format_number(parsed_phone, phonenumbers.PhoneNumberFormat.INTERNATIONAL)
+        if parsed_phone
+        else None
+    )
+
+    if len(emails) > 0:
+        existing_members = Member.objects.filter(
+            email_address=emails[0],
+        )
+
+        if existing_members:
+            if len(existing_members) > 1:
+                logging.error(
+                    f"Duplicate entries detected for {emails[0]} at install # {row.id} "
+                    f"This should not happen, these should be consolidated by a previous iteration."
+                )
+
+            diff_notes = diff_new_member_against_existing(
+                row.id,
+                existing_members[0],
+                models.Member(
+                    name=row.name,
+                    phone_number=formatted_phone_number,
+                ),
+                add_dropped_edit,
+            )
+
+            # TODO: Don't forget to remove me if we remove the previous use of contact notes above
+            if row.contactNotes:
+                if not existing_members[0].contact_notes:
+                    existing_members[0].contact_notes = ""
+
+                existing_members[0].contact_notes += f"Spreadsheet Contact Notes:\n{row.contactNotes}\n\n"
+
+            if diff_notes:
+                existing_members[0].contact_notes += diff_notes
+
+            return existing_members[0], False
+
+    return (
+        models.Member(
+            name=row.name,
+            email_address=emails[0] if len(emails) > 0 else None,
+            secondary_emails=emails[1:],
+            phone_number=formatted_phone_number,
+            slack_handle=None,
+            invalid=len(emails) == 0,
+            # TODO: Is this column useful if this is all it means?
+            #  should we include invalid content in the email fields but mark it here instead of making it NULL?
+            contact_notes=notes if notes else None,
+        ),
+        True,
+    )

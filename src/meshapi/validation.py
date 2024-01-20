@@ -64,6 +64,7 @@ class OSMAddressInfo:
             # would write "City: Brooklyn", they write "City: City of New York"
             # and "Suburb: Brooklyn"
             # So the "suburb" field will give us the borough.
+            # FIXME: This adds "Manhattan" as a city which makes no sense
             self.city = r_addr["suburb"]
             self.nyc = True
         else:

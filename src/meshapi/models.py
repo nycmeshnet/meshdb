@@ -1,8 +1,7 @@
+from django.contrib.auth.models import Group
+from django.contrib.postgres.fields import ArrayField
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
-from django.contrib.postgres.fields import ArrayField
-
-from django.contrib.auth.models import Group
 from django.db.models.fields import EmailField
 
 NETWORK_NUMBER_MIN = 101
@@ -35,26 +34,30 @@ class Building(models.Model):
         INACTIVE = 0
         ACTIVE = 1
 
-    bin = models.IntegerField()
+    bin = models.IntegerField(blank=True, null=True)
     building_status = models.IntegerField(choices=BuildingStatus.choices)
-    street_address = models.TextField()
-    city = models.TextField()
-    state = models.TextField()
-    zip_code = models.IntegerField()
+    street_address = models.TextField(blank=True, null=True)
+    city = models.TextField(blank=True, null=True)
+    state = models.TextField(blank=True, null=True)
+    zip_code = models.TextField(blank=True, null=True)
+    invalid = models.BooleanField(default=False)
+    address_truth_sources = models.TextField()
     latitude = models.FloatField()
     longitude = models.FloatField()
-    altitude = models.FloatField()
+    altitude = models.FloatField(blank=True, null=True)
     primary_nn = models.IntegerField(blank=True, null=True)
     node_name = models.TextField(default=None, blank=True, null=True)
+    notes = models.TextField(blank=True, null=True)
 
 
 class Member(models.Model):
-    first_name = models.TextField()
-    last_name = models.TextField()
-    email_address = models.EmailField()
+    name = models.TextField()
+    email_address = models.EmailField(null=True)
     secondary_emails = ArrayField(EmailField(), null=True)
     phone_number = models.TextField(default=None, blank=True, null=True)
     slack_handle = models.TextField(default=None, blank=True, null=True)
+    invalid = models.BooleanField(default=False)
+    contact_notes = models.TextField(default=None, blank=True, null=True)
 
 
 class Install(models.Model):
@@ -88,16 +91,16 @@ class Install(models.Model):
     ticket_id = models.IntegerField(blank=True, null=True)
 
     # Important dates
-    request_date = models.DateField(default=None, blank=True, null=True)
+    request_date = models.DateField()
     install_date = models.DateField(default=None, blank=True, null=True)
     abandon_date = models.DateField(default=None, blank=True, null=True)
 
     # Relation to Building
-    building_id = models.ForeignKey(Building, on_delete=models.PROTECT)
+    building = models.ForeignKey(Building, on_delete=models.PROTECT)
     unit = models.TextField(default=None, blank=True, null=True)
     roof_access = models.BooleanField(default=False)
 
     # Relation to Member
-    member_id = models.ForeignKey(Member, on_delete=models.PROTECT)
+    member = models.ForeignKey(Member, on_delete=models.PROTECT)
     referral = models.TextField(default=None, blank=True, null=True)
     notes = models.TextField(default=None, blank=True, null=True)

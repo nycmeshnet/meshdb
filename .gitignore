@@ -170,3 +170,6 @@ loadenv.sh
 
 # RTX
 .rtx.toml
+
+# Spreadsheet data
+spreadsheet_data

@@ -1,7 +1,9 @@
 import json
+
 from django.contrib.auth.models import User
-from django.test import TestCase, Client
-from meshapi.models import Building, Member, Install
+from django.test import Client, TestCase
+
+from meshapi.models import Building, Install, Member
 from meshapi.views import JoinFormRequest
 
 from .sample_join_form_data import *
@@ -13,8 +15,7 @@ def validate_successful_join_form_submission(test_case, test_name, s, response):
     # Check if the member was created and that we see it when we
     # filter for it.
     existing_members = Member.objects.filter(
-        first_name=s.first_name,
-        last_name=s.last_name,
+        name=s.first_name + " " + s.last_name,
         email_address=s.email,
         phone_number=s.phone,
     )
