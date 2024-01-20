@@ -226,6 +226,9 @@ def get_or_create_building(
         )
 
         if diff_notes:
+            if not existing_building.notes:
+                existing_building.notes = ""
+
             existing_building.notes += diff_notes
 
         return existing_building
