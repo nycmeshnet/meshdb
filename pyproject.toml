@@ -30,7 +30,7 @@ dev = [
 ]
 
 [project.scripts]
-meshdb-spreadsheet-import = "meshdb.utils.spreadsheet_import:main"
+meshdb-spreadsheet-import = "meshdb.utils.spreadsheet_import.main:main"
 
 [build-system]
 requires = [ "setuptools >= 61", "wheel", "mypy" ]
