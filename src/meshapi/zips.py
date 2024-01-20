@@ -200,9 +200,8 @@ richmond = [
     10306,
 ]
 
+
 class NYCZipCodes:
     @staticmethod
     def match_zip(zip):
         return any(zip in a for a in [bronx, new_york, kings, queens, richmond])
-
-

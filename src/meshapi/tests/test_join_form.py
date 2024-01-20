@@ -91,8 +91,8 @@ class TestJoinForm(TestCase):
             # Match the format from OSM. I did this to see how OSM would mutate the
             # raw request we get.
             s.street_address = submission["parsed_street_address"]
-            s.city = submission["city"] 
-            s.state = submission["state"] 
+            s.city = submission["city"]
+            s.state = submission["state"]
 
             validate_successful_join_form_submission(self, "Valid Join Form", s, response)
 
