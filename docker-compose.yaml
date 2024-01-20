@@ -41,7 +41,6 @@ services:
     volumes:
       - static_files:/opt/meshdb/static
 
-
   nginx:
     depends_on:
       meshdb:
@@ -58,8 +57,8 @@ services:
   pelias:
     networks:
       - api
-    ports:
-      - 6800:3000
+    #ports:
+    #  - 6800:3000
     image: pelias/parser
 
 volumes:
