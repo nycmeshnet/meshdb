@@ -6,7 +6,7 @@ from validate_email import validate_email
 import phonenumbers
 from geopy.geocoders import Nominatim
 from meshapi.exceptions import AddressError, AddressAPIError
-
+from meshapi.zips import NYCZipCodes
 
 def validate_email_address(email_address):
     return validate_email(
