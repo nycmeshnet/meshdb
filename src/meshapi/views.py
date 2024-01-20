@@ -107,6 +107,7 @@ class JoinFormRequest:
     apartment: str
     roof_access: bool
     referral: str
+    ncl: bool
 
 
 @api_view(["POST"])
@@ -116,6 +117,9 @@ def join_form(request):
         r = JoinFormRequest(**request_json)
     except TypeError as e:
         return Response({"Got incomplete request"}, status=status.HTTP_400_BAD_REQUEST)
+
+    if not r.ncl:
+        return Response("You must agree to the Network Commons License!", status=status.HTTP_400_BAD_REQUEST)
 
     if not validate_email_address(r.email):
         return Response(f"{r.email} is not a valid email", status=status.HTTP_400_BAD_REQUEST)

@@ -102,6 +102,19 @@ class TestJoinForm(TestCase):
             )
             validate_successful_join_form_submission(self, "Valid Join Form", s, response)
 
+    def test_no_ncl(self):
+        request, _ = pull_apart_join_form_submission(valid_join_form_submission)
+
+        request["ncl"] = False
+
+        response = self.c.post("/api/v1/join/", request, content_type="application/json")
+        code = 400
+        self.assertEqual(
+            code,
+            response.status_code,
+            f"status code incorrect for No NCL. Should be {code}, but got {response.status_code}.\n Response is: {response.content.decode('utf-8')}",
+        )
+
     def test_non_nyc_join_form(self):
         # Name, email, phone, location, apt, rooftop, referral
         form, _ = pull_apart_join_form_submission(non_nyc_join_form_submission)
