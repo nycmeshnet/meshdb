@@ -101,7 +101,8 @@ def diff_new_member_against_existing(
     existing_member: models.Member,
     new_member: models.Member,
     add_dropped_edit: Callable[[DroppedModification], None],
-) -> None:
+) -> str:
+    diff_notes = ""
     if existing_member.name != new_member.name and new_member.name:
         add_dropped_edit(
             DroppedModification(
@@ -117,6 +118,7 @@ def diff_new_member_against_existing(
             f"Dropping changed name from install # {row_id} "
             f"{repr(existing_member.name)} -> {repr(new_member.name)}"
         )
+        diff_notes += f"\nDropped name change from install #{row_id}: {new_member.name}"
 
     if existing_member.phone_number != new_member.phone_number and new_member.phone_number:
         add_dropped_edit(
@@ -133,6 +135,11 @@ def diff_new_member_against_existing(
             f"Dropping changed last name from install # {row_id} "
             f"{repr(existing_member.phone_number)} -> {repr(new_member.phone_number)}"
         )
+        diff_notes += (
+            f"\nDropped phone number change from install #{row_id}: {new_member.phone_number}"
+        )
+
+    return diff_notes
 
 
 def get_or_create_member(
@@ -194,7 +201,7 @@ def get_or_create_member(
                     f"This should not happen, these should be consolidated by a previous iteration."
                 )
 
-            diff_new_member_against_existing(
+            diff_notes = diff_new_member_against_existing(
                 row.id,
                 existing_members[0],
                 models.Member(
@@ -212,6 +219,9 @@ def get_or_create_member(
                 existing_members[
                     0
                 ].contact_notes += f"Spreadsheet Contact Notes:\n{row.contactNotes}\n\n"
+
+            if diff_notes:
+                existing_members[0].contact_notes += diff_notes
 
             return existing_members[0], False
 

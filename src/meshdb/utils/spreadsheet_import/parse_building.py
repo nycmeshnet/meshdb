@@ -46,7 +46,8 @@ def diff_new_building_against_existing(
     existing_building: models.Building,
     new_building: models.Building,
     add_dropped_edit: Callable[[DroppedModification], None],
-) -> None:
+) -> str:
+    diff_notes = ""
     if existing_building.bin != new_building.bin and new_building.bin:
         add_dropped_edit(
             DroppedModification(
@@ -62,6 +63,7 @@ def diff_new_building_against_existing(
             f"Dropping changed BIN from install # {row_id} "
             f"{repr(existing_building.bin)} -> {repr(new_building.bin)}"
         )
+        diff_notes += f"\nDropped BIN change from install #{row_id}: {new_building.bin}"
 
     if (
         existing_building.street_address != new_building.street_address
@@ -83,6 +85,9 @@ def diff_new_building_against_existing(
             f"Dropping changed street address from install # {row_id} "
             f"{repr(existing_building.street_address)} -> {repr(new_building.street_address)}"
         )
+        diff_notes += (
+            f"\nDropped address change from install #{row_id}: {new_building.street_address}"
+        )
 
     if existing_building.city != new_building.city and new_building.city:
         add_dropped_edit(
@@ -101,6 +106,7 @@ def diff_new_building_against_existing(
             f"Dropping changed city from install # {row_id} "
             f"{repr(existing_building.city)} -> {repr(new_building.city)}"
         )
+        diff_notes += f"\nDropped city change from install #{row_id}: {new_building.city}"
 
     if existing_building.state != new_building.state and new_building.state:
         add_dropped_edit(
@@ -119,6 +125,7 @@ def diff_new_building_against_existing(
             f"Dropping changed state from install # {row_id} "
             f"{repr(existing_building.state)} -> {repr(new_building.state)}"
         )
+        diff_notes += f"\nDropped state change from install #{row_id}: {new_building.state}"
 
     if existing_building.zip_code != new_building.zip_code and new_building.zip_code:
         add_dropped_edit(
@@ -137,6 +144,7 @@ def diff_new_building_against_existing(
             f"Dropping changed zip code from install # {row_id} "
             f"{repr(existing_building.zip_code)} -> {repr(new_building.zip_code)}"
         )
+        diff_notes += f"\nDropped ZIP change from install #{row_id}: {new_building.zip_code}"
 
     if existing_building.primary_nn != new_building.primary_nn and new_building.primary_nn:
         if not existing_building.primary_nn:
@@ -161,6 +169,7 @@ def diff_new_building_against_existing(
                 f"Dropping changed nn from install # {row_id} "
                 f"{repr(existing_building.primary_nn)} -> {repr(new_building.primary_nn)}"
             )
+            diff_notes += f"\nDropped NN change from install #{row_id}: {new_building.primary_nn}"
 
     if existing_building.node_name != new_building.node_name and new_building.node_name:
         if not existing_building.node_name:
@@ -185,6 +194,11 @@ def diff_new_building_against_existing(
                 f"Dropping changed node name from install # {row_id} "
                 f"{repr(existing_building.node_name)} -> {repr(new_building.node_name)}"
             )
+            diff_notes += (
+                f"\nDropped node name change from install #{row_id}: {new_building.node_name}"
+            )
+
+    return diff_notes
 
 
 def get_or_create_building(
@@ -223,7 +237,7 @@ def get_or_create_building(
 
     existing_building = get_existing_building(dob_bin, (latitude, longitude))
     if existing_building:
-        diff_new_building_against_existing(
+        diff_notes = diff_new_building_against_existing(
             row.id,
             existing_building,
             models.Building(
@@ -235,6 +249,9 @@ def get_or_create_building(
             ),
             add_dropped_edit,
         )
+
+        if diff_notes:
+            existing_building.notes += diff_notes
 
         return existing_building
 
