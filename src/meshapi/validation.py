@@ -7,6 +7,7 @@ import phonenumbers
 from geopy.geocoders import Nominatim
 from meshapi.exceptions import AddressError, AddressAPIError
 from meshapi.zips import NYCZipCodes
+from meshdb.utils.spreadsheet_import.building.constants import INVALID_BIN_NUMBERS
 from meshdb.utils.spreadsheet_import.building.pelias import humanify_street_address
 
 
@@ -45,7 +46,7 @@ class NYCAddressInfo:
     longitude: float
     latitude: float
     altitude: float
-    bin: int
+    bin: int | None
 
     def __init__(self, street_address: str, city: str, state: str, zip: int):
         if state != "New York" and state != "NY":
@@ -90,6 +91,8 @@ class NYCAddressInfo:
         # TODO (willnilges): Bail if no BIN. Given that we're guaranteeing this is NYC, if
         # there is no BIN, then we've really foweled something up
         self.bin = addr_props["addendum"]["pad"]["bin"]
+        if self.bin in INVALID_BIN_NUMBERS:
+            self.bin = None
         self.longitude, self.latitude = nyc_planning_resp["features"][0]["geometry"]["coordinates"]
 
         # Now that we have the bin, we can definitively get the height from
