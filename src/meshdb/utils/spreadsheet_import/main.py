@@ -7,13 +7,12 @@ from typing import List
 
 import django
 
-from meshdb.utils.spreadsheet_import import logger
-from meshdb.utils.spreadsheet_import.building.resolve_address import AddressParser
-
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "meshdb.settings")
 django.setup()
 
 from meshapi import models
+from meshdb.utils.spreadsheet_import import logger
+from meshdb.utils.spreadsheet_import.building.resolve_address import AddressParser
 from meshdb.utils.spreadsheet_import.csv_load import (
     DroppedModification,
     get_spreadsheet_rows,
