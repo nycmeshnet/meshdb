@@ -3,6 +3,7 @@ import time
 from dataclasses import dataclass
 from datetime import datetime
 from json.decoder import JSONDecodeError
+from django.conf import os
 
 from django.contrib.auth.models import User
 from django.db import IntegrityError
@@ -254,10 +255,11 @@ def join_form(request):
 @dataclass
 class NetworkNumberAssignmentRequest:
     install_number: int
+    password: str # Pre-shared key
 
 
 @api_view(["POST"])
-@permission_classes([NetworkNumberAssignmentPermissions])
+#@permission_classes([NetworkNumberAssignmentPermissions]) # FIXME: Re-enable Auth
 def network_number_assignment(request):
     """
     Takes an install number, and assigns the install a network number,
@@ -271,6 +273,9 @@ def network_number_assignment(request):
         print(f"NN Request failed. Could not decode request: {e}")
         return Response({"Got incomplete request"}, status=status.HTTP_400_BAD_REQUEST)
 
+    if r.password != os.environ.get("NN_ASSIGN_PSK"):
+        return Response({"Authentication Failed."}, status=status.HTTP_401_UNAUTHORIZED)
+
     try:
         nn_install = Install.objects.get(install_number=r.install_number)
     except Exception as e:
@@ -279,9 +284,17 @@ def network_number_assignment(request):
 
     # Check if the install already has a network number
     if nn_install.network_number != None:
-        message = f"NN Request failed. This Install Number already has a Network Number associated with it! ({nn_install.network_number})"
+        message = f"This Install Number ({r.install_number}) already has a Network Number ({nn_install.network_number}) associated with it!"
         print(message)
-        return Response(message, status=status.HTTP_409_CONFLICT)
+        return Response(
+            {
+                "building_id": nn_install.building.id,
+                "install_number": nn_install.install_number,
+                "network_number": nn_install.network_number,
+                "created": False,
+            },
+            status=status.HTTP_200_OK
+        )
 
     nn_building = nn_install.building
 
@@ -314,6 +327,7 @@ def network_number_assignment(request):
             "building_id": nn_building.id,
             "install_number": nn_install.install_number,
             "network_number": nn_install.network_number,
+            "created": True,
         },
-        status=status.HTTP_200_OK,
+        status=status.HTTP_201_CREATED,
     )
