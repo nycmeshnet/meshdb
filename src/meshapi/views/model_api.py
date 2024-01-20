@@ -18,6 +18,7 @@ from rest_framework.response import Response
 
 # TODO: Do we need more routes for just getting a NN and stuff?
 
+
 # Home view
 @api_view(["GET"])
 def api_root(request, format=None):
@@ -70,4 +71,3 @@ class InstallDetail(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [InstallRetrieveUpdateDestroyPermissions]
     queryset = Install.objects.all()
     serializer_class = InstallSerializer
-

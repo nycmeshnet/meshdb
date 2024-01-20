@@ -17,12 +17,11 @@ from meshapi.permissions import (
     NetworkNumberAssignmentPermissions,
 )
 from meshapi.exceptions import AddressError, AddressAPIError
-from rest_framework.decorators import api_view 
+from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
 
 from meshapi.zips import NYCZipCodes
-
 
 
 # Join Form
