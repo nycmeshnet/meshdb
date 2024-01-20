@@ -26,6 +26,8 @@ from meshapi.serializers import BuildingSerializer, InstallSerializer, MemberSer
 from meshapi.validation import NYCAddressInfo, OSMAddressInfo, validate_email_address, validate_phone_number
 from meshdb.utils.spreadsheet_import.building.constants import AddressTruthSource
 
+from meshapi.zips import NYCZipCodes
+
 # TODO: Do we need more routes for just getting a NN and stuff?
 
 
@@ -114,64 +116,34 @@ def join_form(request):
     if not validate_phone_number(r.phone):
         return Response(f"{r.phone} is not a valid phone number", status=status.HTTP_400_BAD_REQUEST)
 
-    # Query the Open Street Map to validate and "standardize" the member's
-    # inputs. We're going to use this as the canonical address, and then
-    # supplement with NYC API information
-    osm_addr_info = None
+    # We only support the five boroughs of NYC at this time
+    if not NYCZipCodes.match_zip(r.zip):
+        return Response(
+            "Sorry, we don’t support non NYC registrations at this time, check back later or email support@nycmesh.net",
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    nyc_addr_info = None
     attempts_remaining = 2
     while attempts_remaining > 0:
         attempts_remaining -= 1
         try:
-            osm_addr_info = OSMAddressInfo(r.street_address, r.city, r.state, r.zip)
-            if not osm_addr_info.nyc:
-                print(
-                    f"(OSM) Address '{osm_addr_info.street_address}, {osm_addr_info.city}, {osm_addr_info.state} {osm_addr_info.zip}' is not in NYC"
-                )
+            nyc_addr_info = NYCAddressInfo(r.street_address, r.city, r.state, r.zip)
             break
-        # If the user has given us an invalid address, tell them to buzz off.
+        # If the user has given us an invalid address. Tell them to buzz
+        # off.
         except AddressError as e:
             print(e)
-            return Response(
-                f"(OSM) Address '{r.street_address}, {r.city}, {r.state} {r.zip}' not found",
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-        except AssertionError as e:
+            return Response(str(e), status=status.HTTP_400_BAD_REQUEST)
+        # If we get any other error, then there was probably an issue
+        # using the API, and we should wait a bit and re-try
+        except (AddressAPIError, Exception) as e:
             print(e)
-            return Response("Unexpected internal state", status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        # If the API gives us an error, then try again
-        except (GeocoderUnavailable, Exception) as e:
-            print(e)
-            print("(OSM) Something went wrong validating the address. Re-trying...")
+            print("(NYC) Something went wrong validating the address. Re-trying...")
             time.sleep(3)
-    # If we try multiple times without success, bail.
-    if osm_addr_info == None:
-        return Response("(OSM) Error validating address", status=status.HTTP_503_SERVICE_UNAVAILABLE)
-
-    # Only bother with the NYC APIs if we know the address is in NYC
-    nyc_addr_info = None
-    if osm_addr_info.nyc:
-        attempts_remaining = 2
-        while attempts_remaining > 0:
-            attempts_remaining -= 1
-            try:
-                nyc_addr_info = NYCAddressInfo(
-                    osm_addr_info.street_address, osm_addr_info.city, osm_addr_info.state, osm_addr_info.zip
-                )
-                break
-            # If the user has given us an invalid address. Tell them to buzz
-            # off.
-            except AddressError as e:
-                print(e)
-                return Response(str(e), status=status.HTTP_400_BAD_REQUEST)
-            # If we get any other error, then there was probably an issue
-            # using the API, and we should wait a bit and re-try
-            except (AddressAPIError, Exception) as e:
-                print(e)
-                print("(NYC) Something went wrong validating the address. Re-trying...")
-                time.sleep(3)
-        # If we run out of tries, bail.
-        if nyc_addr_info == None:
-            return Response("(NYC) Error validating address", status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    # If we run out of tries, bail.
+    if nyc_addr_info == None:
+        return Response("(NYC) Error validating address", status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     # Check if there's an existing member. Dedupe on email for now.
     # A member can have multiple install requests
@@ -191,16 +163,7 @@ def join_form(request):
 
     # If the address is in NYC, then try to look up by BIN, otherwise fallback
     # to address
-    existing_buildings = None
-    if nyc_addr_info is not None:
-        existing_buildings = Building.objects.filter(bin=nyc_addr_info.bin)
-    else:
-        existing_buildings = Building.objects.filter(
-            street_address=osm_addr_info.street_address,
-            city=osm_addr_info.city,
-            state=osm_addr_info.state,
-            zip_code=osm_addr_info.zip,
-        )
+    existing_buildings = Building.objects.filter(bin=nyc_addr_info.bin)
 
     join_form_building = (
         existing_buildings[0]
@@ -208,13 +171,13 @@ def join_form(request):
         else Building(
             bin=nyc_addr_info.bin if nyc_addr_info is not None else -1,
             building_status=Building.BuildingStatus.INACTIVE,
-            street_address=osm_addr_info.street_address,
-            city=osm_addr_info.city,
-            state=osm_addr_info.state,
-            zip_code=int(osm_addr_info.zip),
-            latitude=nyc_addr_info.latitude if nyc_addr_info is not None else osm_addr_info.latitude,
-            longitude=nyc_addr_info.longitude if nyc_addr_info is not None else osm_addr_info.longitude,
-            altitude=nyc_addr_info.altitude if nyc_addr_info is not None else osm_addr_info.altitude,
+            street_address=nyc_addr_info.street_address,
+            city=nyc_addr_info.city,
+            state=nyc_addr_info.state,
+            zip_code=int(nyc_addr_info.zip),
+            latitude=nyc_addr_info.latitude,
+            longitude=nyc_addr_info.longitude,
+            altitude=nyc_addr_info.altitude,
             address_truth_sources=[AddressTruthSource.NYCPlanningLabs],
             primary_nn=None,
         )

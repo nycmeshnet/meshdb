@@ -8,6 +8,7 @@ from geopy.geocoders import Nominatim
 from meshapi.exceptions import AddressError, AddressAPIError
 from meshapi.zips import NYCZipCodes
 
+
 def validate_email_address(email_address):
     return validate_email(
         email_address=email_address,
@@ -74,6 +75,41 @@ class OSMAddressInfo:
         # Actually, python _is_ a lot of drugs
         assert isinstance(self.zip, int), "Zip is not an int!?"
 
+    def validate(self):
+        pass
+        # Query the Open Street Map to validate and "standardize" the member's
+        # inputs. We're going to use this as the canonical address, and then
+        # supplement with NYC API information
+        #osm_addr_info = None
+        #attempts_remaining = 2
+        #while attempts_remaining > 0:
+        #    attempts_remaining -= 1
+        #    try:
+        #        osm_addr_info = OSMAddressInfo(r.street_address, r.city, r.state, r.zip)
+        #        if not osm_addr_info.nyc:
+        #            print(
+        #                f"(OSM) Address '{osm_addr_info.street_address}, {osm_addr_info.city}, {osm_addr_info.state} {osm_addr_info.zip}' is not in NYC"
+        #            )
+        #        break
+        #    # If the user has given us an invalid address, tell them to buzz off.
+        #    except AddressError as e:
+        #        print(e)
+        #        return Response(
+        #            f"(OSM) Address '{r.street_address}, {r.city}, {r.state} {r.zip}' not found",
+        #            status=status.HTTP_400_BAD_REQUEST,
+        #        )
+        #    except AssertionError as e:
+        #        print(e)
+        #        return Response("Unexpected internal state", status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        #    # If the API gives us an error, then try again
+        #    except (GeocoderUnavailable, Exception) as e:
+        #        print(e)
+        #        print("(OSM) Something went wrong validating the address. Re-trying...")
+        #        time.sleep(3)
+        ## If we try multiple times without success, bail.
+        #if osm_addr_info == None:
+        #    return Response("(OSM) Error validating address", status=status.HTTP_503_SERVICE_UNAVAILABLE)
+
 
 # Used to obtain info about addresses within NYC. Uses a pair of APIs
 # hosted by the city with all kinds of good info. Unfortunately, there's
@@ -81,7 +117,10 @@ class OSMAddressInfo:
 # is gated by OSMAddressInfo.
 @dataclass
 class NYCAddressInfo:
-    address: str
+    street_address: str
+    city: str
+    state: str
+    zip: int
     longitude: float
     latitude: float
     altitude: float
@@ -116,7 +155,17 @@ class NYCAddressInfo:
                 f"(NYC) Could not find address '{street_address}, {city}, {state} {zip}'. Zip code ({zip}) is probably not within city limits"
             )
 
-        self.bin = nyc_planning_resp["features"][0]["properties"]["addendum"]["pad"]["bin"]
+        addr_props = nyc_planning_resp["features"][0]["properties"]
+
+        # Get the rest of the address info
+        self.street_address = f"{addr_props['housenumber']} {addr_props['street']}"
+        self.city = addr_props["borough"]
+        self.state = addr_props["region_a"]
+        self.zip = addr_props["postalcode"]
+        
+        # TODO (willnilges): Bail if no BIN. Given that we're guaranteeing this is NYC, if
+        # there is no BIN, then we've really foweled something up
+        self.bin = addr_props["addendum"]["pad"]["bin"]
         self.longitude, self.latitude = nyc_planning_resp["features"][0]["geometry"]["coordinates"]
 
         # Now that we have the bin, we can definitively get the height from
