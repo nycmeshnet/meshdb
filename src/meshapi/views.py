@@ -255,11 +255,11 @@ def join_form(request):
 @dataclass
 class NetworkNumberAssignmentRequest:
     install_number: int
-    password: str # Pre-shared key
+    password: str  # Pre-shared key
 
 
 @api_view(["POST"])
-#@permission_classes([NetworkNumberAssignmentPermissions]) # FIXME: Re-enable Auth
+# @permission_classes([NetworkNumberAssignmentPermissions]) # FIXME: Re-enable Auth
 def network_number_assignment(request):
     """
     Takes an install number, and assigns the install a network number,
@@ -293,7 +293,7 @@ def network_number_assignment(request):
                 "network_number": nn_install.network_number,
                 "created": False,
             },
-            status=status.HTTP_200_OK
+            status=status.HTTP_200_OK,
         )
 
     nn_building = nn_install.building

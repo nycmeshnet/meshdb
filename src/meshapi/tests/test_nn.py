@@ -41,7 +41,9 @@ class TestNN(TestCase):
 
     def test_nn_valid_install_number(self):
         response = self.admin_c.post(
-            "/api/v1/nn-assign/", {"install_number": self.install_number, "password": os.environ.get("NN_ASSIGN_PSK")}, content_type="application/json"
+            "/api/v1/nn-assign/",
+            {"install_number": self.install_number, "password": os.environ.get("NN_ASSIGN_PSK")},
+            content_type="application/json",
         )
 
         code = 201
@@ -61,7 +63,9 @@ class TestNN(TestCase):
 
         # Now test to make sure that we get 200 for dupes
         response = self.admin_c.post(
-            "/api/v1/nn-assign/", {"install_number": self.install_number, "password": os.environ.get("NN_ASSIGN_PSK")}, content_type="application/json"
+            "/api/v1/nn-assign/",
+            {"install_number": self.install_number, "password": os.environ.get("NN_ASSIGN_PSK")},
+            content_type="application/json",
         )
 
         code = 200
@@ -81,7 +85,9 @@ class TestNN(TestCase):
 
     def test_nn_invalid_password(self):
         response = self.admin_c.post(
-            "/api/v1/nn-assign/", {"install_number": self.install_number, "password": "chom"}, content_type="application/json"
+            "/api/v1/nn-assign/",
+            {"install_number": self.install_number, "password": "chom"},
+            content_type="application/json",
         )
 
         code = 401
@@ -92,7 +98,11 @@ class TestNN(TestCase):
         )
 
     def test_nn_invalid_building_id(self):
-        response = self.admin_c.post("/api/v1/nn-assign/", {"install_number": 69420, "password": os.environ.get("NN_ASSIGN_PSK")}, content_type="application/json")
+        response = self.admin_c.post(
+            "/api/v1/nn-assign/",
+            {"install_number": 69420, "password": os.environ.get("NN_ASSIGN_PSK")},
+            content_type="application/json",
+        )
 
         code = 404
         self.assertEqual(
@@ -102,7 +112,11 @@ class TestNN(TestCase):
         )
 
     def test_nn_bad_request(self):
-        response = self.admin_c.post("/api/v1/nn-assign/", {"install_number": "chom", "password": os.environ.get("NN_ASSIGN_PSK")}, content_type="application/json")
+        response = self.admin_c.post(
+            "/api/v1/nn-assign/",
+            {"install_number": "chom", "password": os.environ.get("NN_ASSIGN_PSK")},
+            content_type="application/json",
+        )
 
         code = 404
         self.assertEqual(
@@ -197,7 +211,9 @@ class TestFindGaps(TestCase):
 
         for inst, nn in [(self.inst2, 111), (self.inst3, 112), (self.inst4, 130)]:
             response = self.admin_c.post(
-                "/api/v1/nn-assign/", {"install_number": inst["install_number"], "password": os.environ.get("NN_ASSIGN_PSK")}, content_type="application/json"
+                "/api/v1/nn-assign/",
+                {"install_number": inst["install_number"], "password": os.environ.get("NN_ASSIGN_PSK")},
+                content_type="application/json",
             )
             response.content.decode("utf-8")
 
