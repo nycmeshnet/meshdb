@@ -45,7 +45,14 @@ class Building(models.Model):
     latitude = models.FloatField()
     longitude = models.FloatField()
     altitude = models.FloatField(blank=True, null=True)
-    primary_nn = models.IntegerField(blank=True, null=True)
+    primary_nn = models.IntegerField(
+        blank=True,
+        null=True,
+        validators=[
+            MinValueValidator(NETWORK_NUMBER_MIN),
+            MaxValueValidator(NETWORK_NUMBER_MAX),
+        ],
+    )
     node_name = models.TextField(default=None, blank=True, null=True)
     notes = models.TextField(blank=True, null=True)
 
@@ -103,4 +110,64 @@ class Install(models.Model):
     # Relation to Member
     member = models.ForeignKey(Member, on_delete=models.PROTECT)
     referral = models.TextField(default=None, blank=True, null=True)
+    notes = models.TextField(default=None, blank=True, null=True)
+
+
+class Link(models.Model):
+    class LinkStatus(models.TextChoices):
+        DEAD = "Dead"
+        PLANNED = "Planned"
+        ACTIVE = "Active"
+
+    class LinkType(models.TextChoices):
+        STANDARD = "Standard"
+        VPN = "VPN"
+        MMWAVE = "MMWave"
+        FIBER = "Fiber"
+
+    from_building = models.ForeignKey(Building, on_delete=models.PROTECT, related_name="link_from")
+    to_building = models.ForeignKey(Building, on_delete=models.PROTECT, related_name="link_to")
+
+    status = models.TextField(choices=LinkStatus.choices)
+    type = models.TextField(choices=LinkType.choices)
+
+    install_date = models.DateField(default=None, blank=True, null=True)
+    abandon_date = models.DateField(default=None, blank=True, null=True)
+
+    description = models.TextField(default=None, blank=True, null=True)
+    notes = models.TextField(default=None, blank=True, null=True)
+
+
+class Sector(models.Model):
+    class SectorStatus(models.TextChoices):
+        ABANDONED = "Abandoned"
+        ACTIVE = "Active"
+
+    building = models.ForeignKey(Building, on_delete=models.PROTECT)
+    name = models.TextField()
+
+    radius = models.FloatField(
+        validators=[MinValueValidator(0)],
+    )
+    azimuth = models.IntegerField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(360),
+        ],
+    )
+    width = models.IntegerField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(360),
+        ],
+    )
+
+    status = models.TextField(choices=SectorStatus.choices)
+
+    install_date = models.DateField(default=None, blank=True, null=True)
+    abandon_date = models.DateField(default=None, blank=True, null=True)
+
+    device_name = models.TextField()
+    ssid = models.TextField(default=None, blank=True, null=True)
+
     notes = models.TextField(default=None, blank=True, null=True)
