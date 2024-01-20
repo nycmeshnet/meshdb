@@ -116,10 +116,10 @@ def main():
     logging.info(f"Loading links from '{links_path}'...")
     links = get_spreadsheet_links(links_path)
     for spreadsheet_link in links:
-        from_building = models.Building.objects.filter(
+        from_building = models.Building.objects.get(
             install__install_number=spreadsheet_link.from_install_num,
         )
-        to_building = models.Building.objects.filter(
+        to_building = models.Building.objects.get(
             install__install_number=spreadsheet_link.to_install_num,
         )
         if spreadsheet_link.status in [
@@ -161,7 +161,7 @@ def main():
     logging.info(f"Loading sectors from '{sectors_path}'...")
     sectors = get_spreadsheet_sectors(sectors_path)
     for spreadsheet_sector in sectors:
-        building = models.Building.objects.filter(
+        building = models.Building.objects.get(
             install__install_number=spreadsheet_sector.node_id,
         )
 
