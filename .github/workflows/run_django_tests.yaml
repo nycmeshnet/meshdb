@@ -21,6 +21,10 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
+      pelias:
+        image: pelias/parser:latest
+        ports:
+          - 6800:3000
     strategy:
       max-parallel: 4
       matrix:
@@ -40,4 +44,5 @@ jobs:
           DB_HOST: localhost
           DB_PORT: 5432
           DJANGO_SECRET_KEY: k7j&!u07c%%97s!^a_6%mh_wbzo*$hl4lj_6c2ee6dk)y9!k88
+          PELIAS_ADDRESS_PARSER_URL: http://localhost:6800/parser/parse
         run: python3 src/manage.py test meshapi
