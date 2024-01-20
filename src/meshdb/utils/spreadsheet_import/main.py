@@ -79,11 +79,7 @@ def main():
 
             building_status_for_current_row = (
                 models.Building.BuildingStatus.ACTIVE
-                if install.install_status
-                not in {
-                    models.Install.InstallStatus.INACTIVE,
-                    models.Install.InstallStatus.CLOSED,
-                }  # TODO: Should we restrict this to just ACTIVE? Building status is unclear
+                if install.install_status == models.Install.InstallStatus.ACTIVE
                 else models.Building.BuildingStatus.INACTIVE
             )
 
