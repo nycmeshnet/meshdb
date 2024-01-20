@@ -1,9 +1,11 @@
 import json
+
 from django.contrib.auth.models import User
-from django.test import TestCase, Client
+from django.test import Client, TestCase
+
 from meshapi.models import Building, Install, Member
 
-from .sample_data import sample_member, sample_building, sample_install
+from .sample_data import sample_building, sample_install, sample_member
 
 
 # Test basic NN form stuff (input validation, etc)
@@ -17,17 +19,24 @@ class TestNN(TestCase):
         self.admin_c.login(username="admin", password="admin_password")
 
         # Create sample data
-        self.admin_c.post("/api/v1/members/", sample_member)
+        member_obj = Member(**sample_member)
+        member_obj.save()
         building = sample_building.copy()
-        building["primary_nn"] = ""
-        self.admin_c.post("/api/v1/buildings/", building)
+        building["primary_nn"] = None
+        building_obj = Building(**building)
+        building_obj.save()
         inst = sample_install.copy()
-        inst["building_id"] = Building.objects.all()[0].id
-        inst["member_id"] = Member.objects.all()[0].id
-        inst["network_number"] = ""
-        self.admin_c.post("/api/v1/installs/", inst)
 
-        self.install_number = Install.objects.all()[0].install_number
+        if inst["abandon_date"] == "":
+            inst["abandon_date"] = None
+
+        inst["building"] = building_obj
+        inst["member"] = member_obj
+        inst["network_number"] = None
+        install_obj = Install(**inst)
+        install_obj.save()
+
+        self.install_number = install_obj.install_number
 
     def test_nn_valid_install_number(self):
         response = self.admin_c.post(
@@ -86,24 +95,33 @@ class TestFindGaps(TestCase):
 
     def add_data(self, b, m, i, index=101, nn=False):
         b["zip_code"] += index
+        b["address_truth_sources"] = ["NYCPlanningLabs"]
 
         if nn:
             b["primary_nn"] = index
             i["network_number"] = index
         else:
-            b["primary_nn"] = ""
-            i["network_number"] = ""
+            b["primary_nn"] = None
+            i["network_number"] = None
 
-        self.admin_c.post("/api/v1/buildings/", b)
+        if i["abandon_date"] == "":
+            i["abandon_date"] = None
+
+        if "install_number" in i:
+            i["install_number"] = None
+
+        building_obj = Building(**b)
+        building_obj.save()
+        i["building"] = building_obj
 
         m["email_address"] = f"john{index}@gmail.com"
-        self.admin_c.post("/api/v1/members/", m)
-
-        i["building_id"] = Building.objects.filter(zip_code=b["zip_code"])[0].id
-        i["member_id"] = Member.objects.filter(email_address=m["email_address"])[0].id
+        member_obj = Member(**m)
+        member_obj.save()
+        i["member"] = member_obj
         i["ticket_id"] = index
-        self.admin_c.post("/api/v1/installs/", i)
-        i["install_number"] = Install.objects.filter(ticket_id=i["ticket_id"])[0].install_number
+        install_obj = Install(**i)
+        install_obj.save()
+        i["install_number"] = install_obj.install_number
 
     def setUp(self):
         self.admin_user = User.objects.create_superuser(

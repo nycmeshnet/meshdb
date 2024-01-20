@@ -1,8 +1,9 @@
 import json
-from django.test import TestCase, Client
-from django.contrib.auth.models import User, Group
 
-from .sample_data import sample_member, sample_building, sample_install
+from django.contrib.auth.models import Group, User
+from django.test import Client, TestCase
+
+from .sample_data import sample_building, sample_install, sample_member
 
 
 def assert_correct_response(test, response, code):
@@ -74,10 +75,11 @@ class TestViewsPostDeleteInstaller(TestCase):
 
         member_id = get_first_id(self.c, "/api/v1/members/")
         building_id = get_first_id(self.c, "/api/v1/buildings/")
-        sample_install["member_id"] = member_id
-        sample_install["building_id"] = building_id
+        sample_install_copy = sample_install.copy()
+        sample_install_copy["member"] = member_id
+        sample_install_copy["building"] = building_id
 
-        response = self.c.post("/api/v1/installs/", sample_install)
+        response = self.c.post("/api/v1/installs/", sample_install_copy)
         assert_correct_response(self, response, 201)
 
     def test_views_delete_installer(self):
@@ -109,9 +111,10 @@ class TestViewsPostDeleteAdmin(TestCase):
         assert_correct_response(self, response, 201)
         building_id = get_first_id(self.c, "/api/v1/buildings/")
 
-        sample_install["member_id"] = member_id
-        sample_install["building_id"] = building_id
-        response = self.c.post("/api/v1/installs/", sample_install)
+        sample_install_copy = sample_install.copy()
+        sample_install_copy["member"] = member_id
+        sample_install_copy["building"] = building_id
+        response = self.c.post("/api/v1/installs/", sample_install_copy)
         assert_correct_response(self, response, 201)
         # XXX: This is how I know that getting the install number from the API is working
         install_id = get_first_id(self.c, "/api/v1/installs/", "install_number")

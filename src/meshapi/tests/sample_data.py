@@ -1,10 +1,9 @@
 from meshapi.models import Install
 
 sample_member = {
-    "first_name": "John",
-    "last_name": "Smith",
+    "name": "John Smith",
     "email_address": "john.smith@example.com",
-    "phone_numer": "555-555-5555",
+    "phone_number": "555-555-5555",
     "slack_handle": "@jsmith",
 }
 
@@ -19,6 +18,7 @@ sample_building = {
     "longitude": 0.0,
     "altitude": 0.0,
     "primary_nn": 2000,
+    "address_truth_sources": ["NYCPlanningLabs"],
 }
 
 sample_install = {
@@ -28,9 +28,9 @@ sample_install = {
     "request_date": "2022-02-27",
     "install_date": "2022-03-01",
     "abandon_date": "",
-    "building_id": 1,
+    "building": 1,
     "unit": 3,
     "roof_access": True,
-    "member_id": 1,
+    "member": 1,
     "notes": "Referral: Read about it on the internet",
 }
