@@ -41,6 +41,11 @@ ALLOWED_HOSTS = [
     "nginx",
 ]
 
+CORS_ALLOWED_ORIGINS = [
+    "http://127.0.0.1:3000",
+    "http://localhost:3000",
+]
+
 CSRF_TRUSTED_ORIGINS = [
     "https://meshdb.mesh",
     "https://meshdb.mesh.nycmesh.net",
@@ -61,10 +66,12 @@ INSTALLED_APPS = [
     "rest_framework",
     "rest_framework.authtoken",
     "meshapi",
+    "corsheaders",
 ]
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
