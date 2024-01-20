@@ -15,6 +15,7 @@ urlpatterns = [
     path("installs/<int:pk>/", views.InstallDetail.as_view(), name="meshapi-v1-install-detail"),
     path("join/", views.join_form, name="meshapi-v1-join"),
     path("nn-assign/", views.network_number_assignment, name="meshapi-v1-nn-assign"),
+    path("member/lookup/", views.LookupMember.as_view(), name="meshapi-v1-lookup-member"),
 ]
 
 urlpatterns = format_suffix_patterns(urlpatterns)
