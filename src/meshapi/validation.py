@@ -31,88 +31,6 @@ def validate_phone_number(phone_number):
     return True
 
 
-# Used to obtain information about addresses from the Open Street Map API.
-# This is our primiary source of information for addresses outside of NYC.
-@dataclass
-class OSMAddressInfo:
-    street_address: str
-    city: str
-    state: str
-    zip: int
-    longitude: float
-    latitude: float
-    altitude: float
-    nyc: bool
-
-    def __init__(self, street_address: str, city: str, state: str, zip: int):
-        geolocator = Nominatim(user_agent="address_lookup")
-        address = f"{street_address}, {city}, {state} {zip}"
-        location = geolocator.geocode(address, addressdetails=True)
-        if location is None:
-            raise AddressError(f"(OSM) Address not found for user input: '{address}'")
-
-        r_addr = location.raw["address"]
-
-        self.street_address = f"{r_addr['house_number']} {r_addr['road']}"
-        self.city = r_addr["city"]
-        self.state = r_addr["state"]
-        self.zip = int(r_addr["postcode"])
-        self.longitude = location.longitude
-        self.latitude = location.latitude
-        self.altitude = location.altitude  # Usually 0 because very few places have it
-
-        boroughs = ["New York County", "Kings County", "Queens County", "Bronx County", "Richmond County"]
-        if any(borough in r_addr["county"] for borough in boroughs):
-            # OSM defines the boroughs in a weird way. Where a sane person
-            # would write "City: Brooklyn", they write "City: City of New York"
-            # and "Suburb: Brooklyn"
-            # So the "suburb" field will give us the borough.
-            # FIXME: This adds "Manhattan" as a city which makes no sense
-            self.city = r_addr["suburb"]
-            self.nyc = True
-        else:
-            self.nyc = False
-
-        # Python is on a lot of drugs
-        # Actually, python _is_ a lot of drugs
-        assert isinstance(self.zip, int), "Zip is not an int!?"
-
-    def validate(self):
-        pass
-        # Query the Open Street Map to validate and "standardize" the member's
-        # inputs. We're going to use this as the canonical address, and then
-        # supplement with NYC API information
-        #osm_addr_info = None
-        #attempts_remaining = 2
-        #while attempts_remaining > 0:
-        #    attempts_remaining -= 1
-        #    try:
-        #        osm_addr_info = OSMAddressInfo(r.street_address, r.city, r.state, r.zip)
-        #        if not osm_addr_info.nyc:
-        #            print(
-        #                f"(OSM) Address '{osm_addr_info.street_address}, {osm_addr_info.city}, {osm_addr_info.state} {osm_addr_info.zip}' is not in NYC"
-        #            )
-        #        break
-        #    # If the user has given us an invalid address, tell them to buzz off.
-        #    except AddressError as e:
-        #        print(e)
-        #        return Response(
-        #            f"(OSM) Address '{r.street_address}, {r.city}, {r.state} {r.zip}' not found",
-        #            status=status.HTTP_400_BAD_REQUEST,
-        #        )
-        #    except AssertionError as e:
-        #        print(e)
-        #        return Response("Unexpected internal state", status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        #    # If the API gives us an error, then try again
-        #    except (GeocoderUnavailable, Exception) as e:
-        #        print(e)
-        #        print("(OSM) Something went wrong validating the address. Re-trying...")
-        #        time.sleep(3)
-        ## If we try multiple times without success, bail.
-        #if osm_addr_info == None:
-        #    return Response("(OSM) Error validating address", status=status.HTTP_503_SERVICE_UNAVAILABLE)
-
-
 # Used to obtain info about addresses within NYC. Uses a pair of APIs
 # hosted by the city with all kinds of good info. Unfortunately, there's
 # not a solid way to check if an address is actually _within_ NYC, so this
@@ -164,10 +82,10 @@ class NYCAddressInfo:
         self.street_address = f"{addr_props['housenumber']} {addr_props['street']}".title()
         self.city = addr_props["borough"]
         if self.city == "Manhattan":
-            self.city = "New York" # Fix computer silliness
+            self.city = "New York"  # Fix computer silliness
         self.state = addr_props["region_a"]
         self.zip = int(addr_props["postalcode"])
-        
+
         # TODO (willnilges): Bail if no BIN. Given that we're guaranteeing this is NYC, if
         # there is no BIN, then we've really foweled something up
         self.bin = addr_props["addendum"]["pad"]["bin"]
