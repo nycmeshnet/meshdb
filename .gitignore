@@ -173,3 +173,9 @@ loadenv.sh
 
 # Spreadsheet data
 spreadsheet_data
+
+# Don't submit secrets
+.env
+.env.prod
+.env.local
+.env.dev
