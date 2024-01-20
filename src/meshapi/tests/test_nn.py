@@ -1,4 +1,5 @@
 import json
+from django.conf import os
 
 from django.contrib.auth.models import User
 from django.test import Client, TestCase
@@ -40,10 +41,12 @@ class TestNN(TestCase):
 
     def test_nn_valid_install_number(self):
         response = self.admin_c.post(
-            "/api/v1/nn-assign/", {"install_number": self.install_number}, content_type="application/json"
+            "/api/v1/nn-assign/",
+            {"install_number": self.install_number, "password": os.environ.get("NN_ASSIGN_PSK")},
+            content_type="application/json",
         )
 
-        code = 200
+        code = 201
         self.assertEqual(
             code,
             response.status_code,
@@ -58,8 +61,48 @@ class TestNN(TestCase):
             f"status code incorrect for test_nn_valid_install_number. Should be {code}, but got {response.status_code}",
         )
 
+        # Now test to make sure that we get 200 for dupes
+        response = self.admin_c.post(
+            "/api/v1/nn-assign/",
+            {"install_number": self.install_number, "password": os.environ.get("NN_ASSIGN_PSK")},
+            content_type="application/json",
+        )
+
+        code = 200
+        self.assertEqual(
+            code,
+            response.status_code,
+            f"status code incorrect for test_nn_valid_install_number DUPLICATE. Should be {code}, but got {response.status_code}",
+        )
+
+        resp_nn = json.loads(response.content.decode("utf-8"))["network_number"]
+        expected_nn = 101
+        self.assertEqual(
+            expected_nn,
+            resp_nn,
+            f"status code incorrect for test_nn_valid_install_number. Should be {code}, but got {response.status_code}",
+        )
+
+    def test_nn_invalid_password(self):
+        response = self.admin_c.post(
+            "/api/v1/nn-assign/",
+            {"install_number": self.install_number, "password": "chom"},
+            content_type="application/json",
+        )
+
+        code = 401
+        self.assertEqual(
+            code,
+            response.status_code,
+            f"status code incorrect for test_nn_valid_install_number. Should be {code}, but got {response.status_code}",
+        )
+
     def test_nn_invalid_building_id(self):
-        response = self.admin_c.post("/api/v1/nn-assign/", {"install_number": 69420}, content_type="application/json")
+        response = self.admin_c.post(
+            "/api/v1/nn-assign/",
+            {"install_number": 69420, "password": os.environ.get("NN_ASSIGN_PSK")},
+            content_type="application/json",
+        )
 
         code = 404
         self.assertEqual(
@@ -69,7 +112,11 @@ class TestNN(TestCase):
         )
 
     def test_nn_bad_request(self):
-        response = self.admin_c.post("/api/v1/nn-assign/", {"install_number": "chom"}, content_type="application/json")
+        response = self.admin_c.post(
+            "/api/v1/nn-assign/",
+            {"install_number": "chom", "password": os.environ.get("NN_ASSIGN_PSK")},
+            content_type="application/json",
+        )
 
         code = 404
         self.assertEqual(
@@ -164,11 +211,13 @@ class TestFindGaps(TestCase):
 
         for inst, nn in [(self.inst2, 111), (self.inst3, 112), (self.inst4, 130)]:
             response = self.admin_c.post(
-                "/api/v1/nn-assign/", {"install_number": inst["install_number"]}, content_type="application/json"
+                "/api/v1/nn-assign/",
+                {"install_number": inst["install_number"], "password": os.environ.get("NN_ASSIGN_PSK")},
+                content_type="application/json",
             )
             response.content.decode("utf-8")
 
-            code = 200
+            code = 201
             self.assertEqual(
                 code,
                 response.status_code,
