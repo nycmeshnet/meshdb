@@ -49,7 +49,7 @@ queens_join_form_submission = {
     "email": "lcho@gmail.com",
     "phone": "+1585-758-3425",  # CSH's phone number :P
     "street_address": "36-01 35th Ave",
-    "parsed_street_address": "36-01 35 Avenue",  # TODO: s/35/35th/ when andrew's stuff is merged
+    "parsed_street_address": "36-01 35th Avenue",
     "city": "Queens",
     "state": "NY",
     "zip": 11106,

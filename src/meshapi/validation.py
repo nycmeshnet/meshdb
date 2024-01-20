@@ -7,6 +7,7 @@ import phonenumbers
 from geopy.geocoders import Nominatim
 from meshapi.exceptions import AddressError, AddressAPIError
 from meshapi.zips import NYCZipCodes
+from meshdb.utils.spreadsheet_import.building.pelias import humanify_street_address
 
 
 def validate_email_address(email_address):
@@ -80,11 +81,9 @@ class NYCAddressInfo:
         addr_props = nyc_planning_resp["features"][0]["properties"]
 
         # Get the rest of the address info
-        # TODO: Switch this to Andrew's "Humanify" function when his stuff is merged.
-        self.street_address = f"{addr_props['housenumber']} {addr_props['street']}".title()
-        self.city = addr_props["borough"]
-        if self.city == "Manhattan":
-            self.city = "New York"  # Fix computer silliness
+        self.street_address = humanify_street_address(f"{addr_props['housenumber']} {addr_props['street']}")
+
+        self.city = addr_props["borough"].replace("Manhattan", "New York")
         self.state = addr_props["region_a"]
         self.zip = int(addr_props["postalcode"])
 
