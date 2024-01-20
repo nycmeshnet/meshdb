@@ -115,8 +115,7 @@ def diff_new_member_against_existing(
             )
         )
         logging.debug(
-            f"Dropping changed name from install # {row_id} "
-            f"{repr(existing_member.name)} -> {repr(new_member.name)}"
+            f"Dropping changed name from install # {row_id} " f"{repr(existing_member.name)} -> {repr(new_member.name)}"
         )
         diff_notes += f"\nDropped name change from install #{row_id}: {new_member.name}"
 
@@ -135,9 +134,7 @@ def diff_new_member_against_existing(
             f"Dropping changed last name from install # {row_id} "
             f"{repr(existing_member.phone_number)} -> {repr(new_member.phone_number)}"
         )
-        diff_notes += (
-            f"\nDropped phone number change from install #{row_id}: {new_member.phone_number}"
-        )
+        diff_notes += f"\nDropped phone number change from install #{row_id}: {new_member.phone_number}"
 
     return diff_notes
 
@@ -216,9 +213,7 @@ def get_or_create_member(
                 if not existing_members[0].contact_notes:
                     existing_members[0].contact_notes = ""
 
-                existing_members[
-                    0
-                ].contact_notes += f"Spreadsheet Contact Notes:\n{row.contactNotes}\n\n"
+                existing_members[0].contact_notes += f"Spreadsheet Contact Notes:\n{row.contactNotes}\n\n"
 
             if diff_notes:
                 existing_members[0].contact_notes += diff_notes

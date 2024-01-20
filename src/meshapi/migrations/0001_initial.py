@@ -41,9 +41,7 @@ class Migration(migrations.Migration):
             fields=[
                 (
                     "id",
-                    models.BigAutoField(
-                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
-                    ),
+                    models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID"),
                 ),
                 ("bin", models.IntegerField(blank=True, null=True)),
                 ("building_status", models.IntegerField(choices=[(0, "Inactive"), (1, "Active")])),
@@ -87,9 +85,7 @@ class Migration(migrations.Migration):
             fields=[
                 (
                     "id",
-                    models.BigAutoField(
-                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
-                    ),
+                    models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID"),
                 ),
                 ("name", models.TextField()),
                 ("email_address", models.EmailField(max_length=254, null=True)),
@@ -168,15 +164,11 @@ class Migration(migrations.Migration):
                 ("notes", models.TextField(blank=True, default=None, null=True)),
                 (
                     "building",
-                    models.ForeignKey(
-                        on_delete=django.db.models.deletion.PROTECT, to="meshapi.building"
-                    ),
+                    models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, to="meshapi.building"),
                 ),
                 (
                     "member",
-                    models.ForeignKey(
-                        on_delete=django.db.models.deletion.PROTECT, to="meshapi.member"
-                    ),
+                    models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, to="meshapi.member"),
                 ),
             ],
         ),

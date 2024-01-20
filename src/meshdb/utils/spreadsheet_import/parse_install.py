@@ -7,7 +7,6 @@ from meshdb.utils.spreadsheet_import.csv_load import SpreadsheetRow, Spreadsheet
 def translate_spreadsheet_status_to_db_status(
     status: SpreadsheetStatus,
 ) -> models.Install.InstallStatus:
-
     if status in {
         SpreadsheetStatus.interested,
         SpreadsheetStatus.toBeScheduled,
@@ -37,9 +36,7 @@ def translate_spreadsheet_status_to_db_status(
     }:
         return models.Install.InstallStatus.CLOSED
 
-    raise ValueError(
-        f"Invalid spreadsheet status: {status} do you need to add another case to this function?"
-    )
+    raise ValueError(f"Invalid spreadsheet status: {status} do you need to add another case to this function?")
 
 
 def get_or_create_install(row: SpreadsheetRow) -> Optional[models.Install]:

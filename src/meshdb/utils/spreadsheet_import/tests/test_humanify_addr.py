@@ -13,15 +13,9 @@ def test_example_addresses():
     assert humanify_street_address("23 ST. MARK'S PLACE") == "23 St. Mark's Place"
 
     assert humanify_street_address("5 AVENUE AT 34 STREET") == "5th Avenue at 34th Street"
-    assert (
-        humanify_street_address("AMSTERDAM AVENUE AT 89 STREET")
-        == "Amsterdam Avenue at 89th Street"
-    )
+    assert humanify_street_address("AMSTERDAM AVENUE AT 89 STREET") == "Amsterdam Avenue at 89th Street"
 
-    assert (
-        humanify_street_address("30-02 WHITESTONE EXPRESSWAY WEST SR")
-        == "30-02 Whitestone Expressway West Sr"
-    )
+    assert humanify_street_address("30-02 WHITESTONE EXPRESSWAY WEST SR") == "30-02 Whitestone Expressway West Sr"
     assert humanify_street_address("88 PROSPECT PARK SOUTHWEST") == "88 Prospect Park Southwest"
     assert humanify_street_address("246 BAY RIDGE PARKWAY") == "246 Bay Ridge Parkway"
 

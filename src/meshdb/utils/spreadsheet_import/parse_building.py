@@ -18,9 +18,7 @@ SAME_BUILDING_MAX_SEPARATION_SQUARE_RADIUS = (
 )
 
 
-def get_existing_building(
-    bin_number: Optional[int], lat_lon: Tuple[float, float]
-) -> Optional[Building]:
+def get_existing_building(bin_number: Optional[int], lat_lon: Tuple[float, float]) -> Optional[Building]:
     if bin_number:
         existing_buildings = models.Building.objects.filter(bin=bin_number)
         if len(existing_buildings) > 0:
@@ -65,17 +63,12 @@ def diff_new_building_against_existing(
         )
         diff_notes += f"\nDropped BIN change from install #{row_id}: {new_building.bin}"
 
-    if (
-        existing_building.street_address != new_building.street_address
-        and new_building.street_address
-    ):
+    if existing_building.street_address != new_building.street_address and new_building.street_address:
         add_dropped_edit(
             DroppedModification(
                 list(install.install_number for install in existing_building.install_set.all()),
                 row_id,
-                str(existing_building.bin)
-                if existing_building.bin
-                else existing_building.street_address,
+                str(existing_building.bin) if existing_building.bin else existing_building.street_address,
                 "building.street_address",
                 existing_building.street_address if existing_building.street_address else "",
                 new_building.street_address,
@@ -85,18 +78,14 @@ def diff_new_building_against_existing(
             f"Dropping changed street address from install # {row_id} "
             f"{repr(existing_building.street_address)} -> {repr(new_building.street_address)}"
         )
-        diff_notes += (
-            f"\nDropped address change from install #{row_id}: {new_building.street_address}"
-        )
+        diff_notes += f"\nDropped address change from install #{row_id}: {new_building.street_address}"
 
     if existing_building.city != new_building.city and new_building.city:
         add_dropped_edit(
             DroppedModification(
                 list(install.install_number for install in existing_building.install_set.all()),
                 row_id,
-                str(existing_building.bin)
-                if existing_building.bin
-                else existing_building.street_address,
+                str(existing_building.bin) if existing_building.bin else existing_building.street_address,
                 "building.city",
                 existing_building.city if existing_building.city else "",
                 new_building.city,
@@ -113,9 +102,7 @@ def diff_new_building_against_existing(
             DroppedModification(
                 list(install.install_number for install in existing_building.install_set.all()),
                 row_id,
-                str(existing_building.bin)
-                if existing_building.bin
-                else existing_building.street_address,
+                str(existing_building.bin) if existing_building.bin else existing_building.street_address,
                 "building.state",
                 existing_building.state if existing_building.state else "",
                 new_building.state,
@@ -132,9 +119,7 @@ def diff_new_building_against_existing(
             DroppedModification(
                 list(install.install_number for install in existing_building.install_set.all()),
                 row_id,
-                str(existing_building.bin)
-                if existing_building.bin
-                else existing_building.street_address,
+                str(existing_building.bin) if existing_building.bin else existing_building.street_address,
                 "building.zip_code",
                 existing_building.zip_code if existing_building.zip_code else "",
                 new_building.zip_code,
@@ -157,9 +142,7 @@ def diff_new_building_against_existing(
                 DroppedModification(
                     list(install.install_number for install in existing_building.install_set.all()),
                     row_id,
-                    str(existing_building.bin)
-                    if existing_building.bin
-                    else existing_building.street_address,
+                    str(existing_building.bin) if existing_building.bin else existing_building.street_address,
                     "building.primary_nn",
                     str(existing_building.primary_nn) if existing_building.primary_nn else "",
                     str(new_building.primary_nn),
@@ -182,9 +165,7 @@ def diff_new_building_against_existing(
                 DroppedModification(
                     list(install.install_number for install in existing_building.install_set.all()),
                     row_id,
-                    str(existing_building.bin)
-                    if existing_building.bin
-                    else existing_building.street_address,
+                    str(existing_building.bin) if existing_building.bin else existing_building.street_address,
                     "building.node_name",
                     existing_building.node_name if existing_building.node_name else "",
                     new_building.node_name,
@@ -194,9 +175,7 @@ def diff_new_building_against_existing(
                 f"Dropping changed node name from install # {row_id} "
                 f"{repr(existing_building.node_name)} -> {repr(new_building.node_name)}"
             )
-            diff_notes += (
-                f"\nDropped node name change from install #{row_id}: {new_building.node_name}"
-            )
+            diff_notes += f"\nDropped node name change from install #{row_id}: {new_building.node_name}"
 
     return diff_notes
 
@@ -221,12 +200,8 @@ def get_or_create_building(
     except AddressError as e:
         return None
 
-    latitude = (
-        address_result.discovered_lat_lon[0] if address_result.discovered_lat_lon else row.latitude
-    )
-    longitude = (
-        address_result.discovered_lat_lon[1] if address_result.discovered_lat_lon else row.longitude
-    )
+    latitude = address_result.discovered_lat_lon[0] if address_result.discovered_lat_lon else row.latitude
+    longitude = address_result.discovered_lat_lon[1] if address_result.discovered_lat_lon else row.longitude
     altitude = (
         # TODO: Change this to match new DOB ID if changed from spreadsheet?
         #  Would require another API call

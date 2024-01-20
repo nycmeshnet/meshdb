@@ -128,15 +128,9 @@ def get_spreadsheet_rows(
                 id=node_id,
                 nn=nn,
                 bin=int(row["BIN"]) if row["BIN"] is not None and row["BIN"] != "" else None,
-                latitude=float(row["Latitude"])
-                if row["Latitude"] is not None and row["Latitude"] != ""
-                else None,
-                longitude=float(row["Longitude"])
-                if row["Longitude"] is not None and row["Longitude"] != ""
-                else None,
-                altitude=float(row["Altitude"])
-                if row["Altitude"] is not None and row["Altitude"] != ""
-                else None,
+                latitude=float(row["Latitude"]) if row["Latitude"] is not None and row["Latitude"] != "" else None,
+                longitude=float(row["Longitude"]) if row["Longitude"] is not None and row["Longitude"] != "" else None,
+                altitude=float(row["Altitude"]) if row["Altitude"] is not None and row["Altitude"] != "" else None,
             )
 
             if not node.latitude or not node.longitude:
@@ -152,9 +146,7 @@ def get_spreadsheet_rows(
         return nodes, skipped_rows
 
 
-def print_failure_report(
-    skipped_rows: Dict[int, str], original_input_file: str, fname_overide: str = None
-) -> None:
+def print_failure_report(skipped_rows: Dict[int, str], original_input_file: str, fname_overide: str = None) -> None:
     fname = fname_overide if fname_overide else "skipped_rows.csv"
     if len(skipped_rows) > 0:
         logging.warning(
@@ -212,9 +204,7 @@ def print_dropped_edit_report(
                 if i + 2 in dropped_edits_dict:
                     for edit in dropped_edits_dict[i + 2]:
                         new_fields = {}
-                        new_fields["OriginalRowID(s)"] = ", ".join(
-                            str(row_id) for row_id in edit.original_row_ids
-                        )
+                        new_fields["OriginalRowID(s)"] = ", ".join(str(row_id) for row_id in edit.original_row_ids)
                         new_fields["DroppedRowID"] = edit.new_row_id
                         new_fields["DeduplicationValue"] = edit.deduplication_value
                         new_fields["ModifiedProperty"] = edit.modified_property

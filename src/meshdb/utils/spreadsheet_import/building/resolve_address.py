@@ -63,9 +63,7 @@ def convert_osm_city_village_suburb_nonsense(osm_raw_addr: dict) -> Tuple[str, s
 
         return (
             city,
-            osm_raw_addr["ISO3166-2-lvl4"].split("-")[1]
-            if "ISO3166-2-lvl4" in osm_raw_addr
-            else None,
+            osm_raw_addr["ISO3166-2-lvl4"].split("-")[1] if "ISO3166-2-lvl4" in osm_raw_addr else None,
         )
 
     return (
@@ -83,10 +81,7 @@ def convert_osm_city_village_suburb_nonsense(osm_raw_addr: dict) -> Tuple[str, s
 def osm_location_is_in_nyc(osm_raw_addr: dict) -> bool:
     return osm_raw_addr["country_code"] == "us" and (
         ("city" in osm_raw_addr and osm_raw_addr["city"] == "City of New York")
-        or (
-            "county" in osm_raw_addr
-            and any(borough in osm_raw_addr["county"] for borough in NYC_COUNTIES)
-        )
+        or ("county" in osm_raw_addr and any(borough in osm_raw_addr["county"] for borough in NYC_COUNTIES))
     )
 
 
@@ -111,9 +106,7 @@ class AddressParser:
             if address.zip_code:
                 geo_res = self.geolocator.geocode(address.zip_code, addressdetails=True)
                 if geo_res:
-                    address.city, address.state = convert_osm_city_village_suburb_nonsense(
-                        geo_res.raw["address"]
-                    )
+                    address.city, address.state = convert_osm_city_village_suburb_nonsense(geo_res.raw["address"])
                     sources.append(AddressTruthSource.OSMNominatimZIPOnly)
 
         # The spreadsheet lat/lon isn't authoritative, but it's a good last resort. Essentially
@@ -124,9 +117,7 @@ class AddressParser:
             if reverse_res:
                 # In theory, we could pull street address out this way also,
                 # but this is so error-prone as to be misleading and nearly useless
-                address.city, address.state = convert_osm_city_village_suburb_nonsense(
-                    reverse_res.raw["address"]
-                )
+                address.city, address.state = convert_osm_city_village_suburb_nonsense(reverse_res.raw["address"])
                 if "postcode" in reverse_res.raw["address"]:
                     address.zip_code = reverse_res.raw["address"]["postcode"]
 
@@ -187,9 +178,7 @@ class AddressParser:
 
         # Empirically, the /autocomplete endpoint performs better than the /search endpoint
         # (don't ask me why)
-        nyc_planning_req = requests.get(
-            f"https://geosearch.planninglabs.nyc/v2/autocomplete", params=query_params
-        )
+        nyc_planning_req = requests.get(f"https://geosearch.planninglabs.nyc/v2/autocomplete", params=query_params)
         nyc_planning_resp = nyc_planning_req.json()
 
         closest_nyc_location = None
@@ -203,17 +192,11 @@ class AddressParser:
             ).m
 
             # Discard results with bad BIN values
-            if (
-                int(nyc_planning_location["properties"]["addendum"]["pad"]["bin"])
-                in INVALID_BIN_NUMBERS
-            ):
+            if int(nyc_planning_location["properties"]["addendum"]["pad"]["bin"]) in INVALID_BIN_NUMBERS:
                 continue
 
             # Look for an exact BIN match and use that if available
-            if (
-                int(nyc_planning_location["properties"]["addendum"]["pad"]["bin"])
-                == spreadsheet_bin
-            ):
+            if int(nyc_planning_location["properties"]["addendum"]["pad"]["bin"]) == spreadsheet_bin:
                 closest_distance = error_vs_google
                 closest_nyc_location = nyc_planning_location
                 break
@@ -228,11 +211,11 @@ class AddressParser:
 
         for prop in ["housenumber", "borough", "region", "postalcode"]:
             if prop not in closest_nyc_location["properties"]:
-                raise AddressError(
-                    f"Invalid address {normalized_nyc_addr} - {prop} not found in NYC Planning data"
-                )
+                raise AddressError(f"Invalid address {normalized_nyc_addr} - {prop} not found in NYC Planning data")
 
-        street_address = f"{closest_nyc_location['properties']['housenumber']} {closest_nyc_location['properties']['street']}"
+        street_address = (
+            f"{closest_nyc_location['properties']['housenumber']} {closest_nyc_location['properties']['street']}"
+        )
         street_address = humanify_street_address(street_address.replace("B'WAY", "BROADWAY"))
         city = closest_nyc_location["properties"]["borough"].replace("Manhattan", "New York")
         state = closest_nyc_location["properties"][
@@ -302,9 +285,7 @@ class AddressParser:
                 else ""
             )
             old_bin_zip = normalize_whitespace_and_case(
-                old_bin_lookup_response["PropertyDetails"]["Zip"]
-                if old_bin_lookup_response["PropertyDetails"]
-                else ""
+                old_bin_lookup_response["PropertyDetails"]["Zip"] if old_bin_lookup_response["PropertyDetails"] else ""
             )
 
             if str(new_bin) in old_alternate_bins or str(spreadsheet_bin) in new_alternate_bins:
@@ -314,10 +295,8 @@ class AddressParser:
                 # use that one
                 output_bin = new_bin
             elif (
-                old_bin_housenum
-                != normalize_whitespace_and_case(closest_nyc_location["properties"]["housenumber"])
-                or old_bin_street
-                != normalize_whitespace_and_case(closest_nyc_location["properties"]["street"])
+                old_bin_housenum != normalize_whitespace_and_case(closest_nyc_location["properties"]["housenumber"])
+                or old_bin_street != normalize_whitespace_and_case(closest_nyc_location["properties"]["street"])
                 or old_bin_zip != zip_code
             ):
                 # The old BIN doesn't look right, maybe the spreadsheet is incorrect or out of date?
@@ -364,8 +343,7 @@ class AddressParser:
         try:
             if pelias_response[0][0] < PELIAS_SCORE_WARNING_THRESHOLD:
                 logging.debug(
-                    f"Got low score of {pelias_response[0][0]} from "
-                    f"Pelias when parsing address '{row.address}'"
+                    f"Got low score of {pelias_response[0][0]} from " f"Pelias when parsing address '{row.address}'"
                 )
 
             required_components = ["housenumber", "street"]
@@ -381,13 +359,9 @@ class AddressParser:
             osm_db_addr = pelias_to_database_address_components(
                 row.address, pelias_response[0], NormalizedAddressVariant.OSMNominatim
             )
-            normalized_osm_addr = database_address_components_to_normalized_address_string(
-                osm_db_addr
-            )
+            normalized_osm_addr = database_address_components_to_normalized_address_string(osm_db_addr)
 
-            closest_osm_location = self._get_closest_osm_location(
-                normalized_osm_addr, (row.latitude, row.longitude)
-            )
+            closest_osm_location = self._get_closest_osm_location(normalized_osm_addr, (row.latitude, row.longitude))
 
             if not closest_osm_location:
                 raise AddressError(f"Unable to find '{row.address}' in OSM database")
@@ -395,8 +369,7 @@ class AddressParser:
             if closest_osm_location.raw["type"] in ["postcode", "administrative", "neighbourhood"]:
                 # Fall back to string parsing for vague place descriptions
                 raise AddressError(
-                    f"Address '{row.address}' is not substantial enough to resolve "
-                    f"to a specific place"
+                    f"Address '{row.address}' is not substantial enough to resolve " f"to a specific place"
                 )
 
             if osm_location_is_in_nyc(closest_osm_location.raw["address"]):
@@ -410,14 +383,10 @@ class AddressParser:
 
                 for prop in ["house_number", "road", "ISO3166-2-lvl4", "postcode"]:
                     if prop not in r_addr:
-                        raise AddressError(
-                            f"Invalid address '{row.address}' - {prop} not found in OSM data"
-                        )
+                        raise AddressError(f"Invalid address '{row.address}' - {prop} not found in OSM data")
 
                 if not any(prop in r_addr for prop in ["city", "town", "village"]):
-                    raise AddressError(
-                        f"Invalid address '{row.address}' - city/town/village not found in OSM data"
-                    )
+                    raise AddressError(f"Invalid address '{row.address}' - city/town/village not found in OSM data")
 
                 city, state = convert_osm_city_village_suburb_nonsense(r_addr)
 
@@ -447,17 +416,13 @@ class AddressParser:
                 spreadsheet_latlon=(row.latitude, row.longitude),
             )
 
-        error_vs_google = geopy.distance.geodesic(
-            result.discovered_lat_lon, (row.latitude, row.longitude)
-        ).m
+        error_vs_google = geopy.distance.geodesic(result.discovered_lat_lon, (row.latitude, row.longitude)).m
         if error_vs_google > 200:
             add_dropped_edit(
                 DroppedModification(
                     [row.id],
                     row.id,
-                    result.discovered_bin
-                    if result.discovered_bin
-                    else result.address.street_address,
+                    result.discovered_bin if result.discovered_bin else result.address.street_address,
                     "lat_long_discrepancy_vs_spreadsheet",
                     str(result.discovered_lat_lon),
                     str((row.latitude, row.longitude)),

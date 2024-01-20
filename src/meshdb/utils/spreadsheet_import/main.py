@@ -28,9 +28,7 @@ from meshdb.utils.spreadsheet_import.parse_member import get_or_create_member
 def main():
     logger.configure()
     if len(sys.argv) != 4:
-        print(
-            "Usage: meshdb-spreadsheet-import [Path to Form Responses CSV] [Path to Links CSV] [Path to Sectors CSV]"
-        )
+        print("Usage: meshdb-spreadsheet-import [Path to Form Responses CSV] [Path to Links CSV] [Path to Sectors CSV]")
         return
 
     if len(models.Member.objects.all()) != 0 or len(models.Building.objects.all()) != 0:
@@ -99,9 +97,7 @@ def main():
             install.save()
 
         logging.debug("Top 15 duplicate emails and submission counts:")
-        for email, count in sorted(
-            member_duplicate_counts.items(), key=lambda item: item[1], reverse=True
-        )[:15]:
+        for email, count in sorted(member_duplicate_counts.items(), key=lambda item: item[1], reverse=True)[:15]:
             logging.debug(f"{email}: {count}")
     except BaseException as e:
         if isinstance(e, KeyboardInterrupt):

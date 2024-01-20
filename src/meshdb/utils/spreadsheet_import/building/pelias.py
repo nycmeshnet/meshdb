@@ -134,10 +134,7 @@ def humanify_street_address(dob_address_str: str) -> str:
 
     solution_candidates = response.json()["solutions"]
     if any(
-        any(
-            classification["label"] == "housenumber"
-            for classification in candidate["classifications"]
-        )
+        any(classification["label"] == "housenumber" for classification in candidate["classifications"])
         for candidate in solution_candidates
     ):
         # If any of the candidates have a housenumber, then remove any candidates
@@ -146,10 +143,7 @@ def humanify_street_address(dob_address_str: str) -> str:
         solution_candidates = [
             candidate
             for candidate in solution_candidates
-            if any(
-                classification["label"] == "housenumber"
-                for classification in candidate["classifications"]
-            )
+            if any(classification["label"] == "housenumber" for classification in candidate["classifications"])
         ]
 
     for solution in solution_candidates:
@@ -183,9 +177,7 @@ def humanify_street_address(dob_address_str: str) -> str:
             last_touched_in_street = 0
             p = inflect.engine()
             for match in re.finditer(r"(\d+)\W", street_substr_title):
-                street_substr_ordinals += street_substr_title[
-                    last_touched_in_street : match.start(1)
-                ]
+                street_substr_ordinals += street_substr_title[last_touched_in_street : match.start(1)]
                 num = int(match[1])
                 street_substr_ordinals += p.ordinal(num)
                 last_touched_in_street = match.end(1)
@@ -193,8 +185,7 @@ def humanify_street_address(dob_address_str: str) -> str:
             street_substr_ordinals += street_substr_title[last_touched_in_street:]
 
             output_string += (
-                dob_address_str[last_touched_orig : street_character_range[0]].lower()
-                + street_substr_ordinals
+                dob_address_str[last_touched_orig : street_character_range[0]].lower() + street_substr_ordinals
             )
             last_touched_orig = street_character_range[1]
         if classification["label"] == "housenumber":
@@ -203,9 +194,7 @@ def humanify_street_address(dob_address_str: str) -> str:
             housenumber_character_range = (classification["start"], classification["end"])
             output_string += (
                 dob_address_str[last_touched_orig : housenumber_character_range[0]].lower()
-                + dob_address_str[
-                    housenumber_character_range[0] : housenumber_character_range[1]
-                ].upper()
+                + dob_address_str[housenumber_character_range[0] : housenumber_character_range[1]].upper()
             )
             last_touched_orig = housenumber_character_range[1]
 
