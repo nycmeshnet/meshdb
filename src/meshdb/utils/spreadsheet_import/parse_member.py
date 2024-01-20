@@ -51,7 +51,6 @@ def parse_emails(input_emails: str) -> List[str]:
     # an email address. This is a problem when de-duplicating using email
     # address, since we would end up consolidating all of "Brian's" entries
     # into a single member, losing name and phone number info in the process
-    # TODO: Should we also do this for ap@nycmesh.net ? (which has 18 rows)
     if "brian@nycmesh.net" in email_matches:
         email_matches.remove("brian@nycmesh.net")
 
@@ -103,36 +102,20 @@ def diff_new_member_against_existing(
     new_member: models.Member,
     add_dropped_edit: Callable[[DroppedModification], None],
 ) -> None:
-    if existing_member.first_name != new_member.first_name and new_member.first_name:
+    if existing_member.name != new_member.name and new_member.name:
         add_dropped_edit(
             DroppedModification(
                 list(install.install_number for install in existing_member.install_set.all()),
                 row_id,
                 existing_member.email_address,
-                "member.first_name",
-                existing_member.first_name if existing_member.first_name else "",
-                new_member.first_name,
+                "member.name",
+                existing_member.name if existing_member.name else "",
+                new_member.name,
             )
         )
         logging.debug(
-            f"Dropping changed first name from install # {row_id} "
-            f"{repr(existing_member.first_name)} -> {repr(new_member.first_name)}"
-        )
-
-    if existing_member.last_name != new_member.last_name and new_member.last_name:
-        add_dropped_edit(
-            DroppedModification(
-                list(install.install_number for install in existing_member.install_set.all()),
-                row_id,
-                existing_member.email_address,
-                "member.last_name",
-                existing_member.last_name if existing_member.last_name else "",
-                new_member.last_name,
-            )
-        )
-        logging.debug(
-            f"Dropping changed last name from install # {row_id} "
-            f"{repr(existing_member.last_name)} -> {repr(new_member.last_name)}"
+            f"Dropping changed name from install # {row_id} "
+            f"{repr(existing_member.name)} -> {repr(new_member.name)}"
         )
 
     if existing_member.phone_number != new_member.phone_number and new_member.phone_number:
@@ -165,8 +148,6 @@ def get_or_create_member(
     stripe_emails = parse_emails(row.stripeEmail)
     secondary_emails = parse_emails(row.secondEmail)
     emails = primary_emails + stripe_emails + secondary_emails
-
-    first_name, last_name = parse_name(row.name)
 
     parsed_phone = parse_phone(row.phone)
 
@@ -217,8 +198,7 @@ def get_or_create_member(
                 row.id,
                 existing_members[0],
                 models.Member(
-                    first_name=first_name,
-                    last_name=last_name,
+                    name=row.name,
                     phone_number=formatted_phone_number,
                 ),
                 add_dropped_edit,
@@ -237,8 +217,7 @@ def get_or_create_member(
 
     return (
         models.Member(
-            first_name=first_name,
-            last_name=last_name,
+            name=row.name,
             email_address=emails[0] if len(emails) > 0 else None,
             secondary_emails=emails[1:],
             phone_number=formatted_phone_number,

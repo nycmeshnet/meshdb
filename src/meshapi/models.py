@@ -51,8 +51,7 @@ class Building(models.Model):
 
 
 class Member(models.Model):
-    first_name = models.TextField()
-    last_name = models.TextField()
+    name = models.TextField()
     email_address = models.EmailField(null=True)
     secondary_emails = ArrayField(EmailField(), null=True)
     phone_number = models.TextField(default=None, blank=True, null=True)
