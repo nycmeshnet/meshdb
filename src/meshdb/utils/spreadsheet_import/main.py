@@ -108,6 +108,7 @@ def main():
             logging.error("Received keyboard interrupt, exiting early...")
         if not isinstance(e, KeyboardInterrupt):
             raise e
+        return
     finally:
         # Always print the failure report on our way out, even if we're interrupted
         print_failure_report(skipped, form_responses_path)
