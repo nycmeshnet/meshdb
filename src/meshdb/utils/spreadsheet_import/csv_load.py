@@ -34,6 +34,12 @@ class SpreadsheetLinkStatus(Enum):
     fiber = "fiber"
 
 
+class SpreadsheetSectorStatus(Enum):
+    active = "active"
+    abandoned = "abandoned"
+    potential = "potential"
+
+
 @dataclasses.dataclass
 class SpreadsheetRow:
     request_date: datetime.datetime
@@ -78,10 +84,10 @@ class SpreadsheetLink:
 @dataclasses.dataclass
 class SpreadsheetSector:
     node_id: int
-    radius: int
+    radius: float
     azimuth: int
     width: int
-    status: str
+    status: SpreadsheetSectorStatus
     install_date: Optional[datetime.date]
     abandon_date: Optional[datetime.date]
     device: str
@@ -274,8 +280,8 @@ def get_spreadsheet_links(links_path: str) -> List[SpreadsheetLink]:
 
             links.append(
                 SpreadsheetLink(
-                    from_install_num=row["from"],
-                    to_install_num=row["to"],
+                    from_install_num=int(row["from"]),
+                    to_install_num=int(row["to"]),
                     status=SpreadsheetLinkStatus(row["status"]),
                     install_date=install_date,
                     abandon_date=abandon_date,
@@ -286,3 +292,40 @@ def get_spreadsheet_links(links_path: str) -> List[SpreadsheetLink]:
             )
 
     return links
+
+
+def get_spreadsheet_sectors(sectors_path: str) -> List[SpreadsheetSector]:
+    with open(sectors_path, "r") as input_file:
+        csv_reader = csv.DictReader(input_file)
+
+        sectors: List[SpreadsheetSector] = []
+
+        for i, row in enumerate(csv_reader):
+            try:
+                install_date = datetime.datetime.strptime(row["installDate"], "%m/%d/%Y")
+            except ValueError:
+                install_date = None
+
+            try:
+                abandon_date = datetime.datetime.strptime(row["abandonDate"], "%m/%d/%Y")
+            except ValueError:
+                abandon_date = None
+
+            sectors.append(
+                SpreadsheetSector(
+                    node_id=int(row["nodeId"]),
+                    radius=float(row["radius"]),
+                    azimuth=int(row["azimuth"]),
+                    width=int(row["width"]),
+                    status=SpreadsheetSectorStatus(row["status"]),
+                    install_date=install_date,
+                    abandon_date=abandon_date,
+                    device=row["device"],
+                    names=row["names"],
+                    notes=row["notes"],
+                    ssid=row["SSID"],
+                    comments=row["comments"],
+                )
+            )
+
+    return sectors

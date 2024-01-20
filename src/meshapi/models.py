@@ -142,6 +142,7 @@ class Sector(models.Model):
     class SectorStatus(models.TextChoices):
         ABANDONED = "Abandoned"
         ACTIVE = "Active"
+        POTENTIAL = "Potential"
 
     building = models.ForeignKey(Building, on_delete=models.PROTECT)
     name = models.TextField()

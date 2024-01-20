@@ -17,8 +17,10 @@ from meshapi import models
 from meshdb.utils.spreadsheet_import.csv_load import (
     DroppedModification,
     SpreadsheetLinkStatus,
+    SpreadsheetSectorStatus,
     get_spreadsheet_links,
     get_spreadsheet_rows,
+    get_spreadsheet_sectors,
     print_dropped_edit_report,
     print_failure_report,
 )
@@ -111,7 +113,7 @@ def main():
         print_failure_report(skipped, form_responses_path)
         print_dropped_edit_report(dropped_modifications, form_responses_path)
 
-    logging.info(f"Loading links from '{links_path}'")
+    logging.info(f"Loading links from '{links_path}'...")
     links = get_spreadsheet_links(links_path)
     for spreadsheet_link in links:
         from_building = models.Building.objects.filter(
@@ -155,6 +157,37 @@ def main():
             notes="\n".join([spreadsheet_link.notes, spreadsheet_link.comments]),
         )
         link.save()
+
+    logging.info(f"Loading sectors from '{sectors_path}'...")
+    sectors = get_spreadsheet_sectors(sectors_path)
+    for spreadsheet_sector in sectors:
+        building = models.Building.objects.filter(
+            install__install_number=spreadsheet_sector.node_id,
+        )
+
+        if spreadsheet_sector.status in SpreadsheetSectorStatus.active:
+            status = models.Sector.SectorStatus.ACTIVE
+        elif spreadsheet_sector.status == SpreadsheetSectorStatus.abandoned:
+            status = models.Sector.SectorStatus.ABANDONED
+        elif spreadsheet_sector.status == SpreadsheetSectorStatus.potential:
+            status = models.Sector.SectorStatus.POTENTIAL
+        else:
+            raise ValueError(f"Invalid spreadsheet sector status {spreadsheet_sector.status}")
+
+        sector = models.Sector(
+            building=building,
+            radius=spreadsheet_sector.radius,
+            azimuth=spreadsheet_sector.azimuth,
+            width=spreadsheet_sector.width,
+            status=status,
+            install_date=spreadsheet_sector.install_date,
+            abandon_date=spreadsheet_sector.abandon_date,
+            device_name=spreadsheet_sector.device,
+            name=spreadsheet_sector.names,
+            ssid=spreadsheet_sector.ssid,
+            notes="\n".join([spreadsheet_sector.notes, spreadsheet_sector.comments]),
+        )
+        sector.save()
 
 
 if __name__ == "__main__":
