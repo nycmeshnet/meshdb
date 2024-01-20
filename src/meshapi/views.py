@@ -267,7 +267,9 @@ def join_form(request):
             join_form_building.delete()
         return Response("Could not save request", status=status.HTTP_400_BAD_REQUEST)
 
-    print(f"JoinForm submission success. building_id: {join_form_building.id}, member_id: {join_form_member.id}, install_number: {join_form_install.install_number}")
+    print(
+        f"JoinForm submission success. building_id: {join_form_building.id}, member_id: {join_form_member.id}, install_number: {join_form_install.install_number}"
+    )
     return Response(
         {
             "building_id": join_form_building.id,
