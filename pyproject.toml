@@ -13,6 +13,7 @@ dependencies = [
     "phonenumbers==8.13.*",
     "requests==2.31.*",
     "geopy==2.4.*",
+    "django-cors-headers==4.3.*",
 ]
 
 [project.optional-dependencies]
