@@ -129,7 +129,7 @@ class Link(models.Model):
     to_building = models.ForeignKey(Building, on_delete=models.PROTECT, related_name="link_to")
 
     status = models.TextField(choices=LinkStatus.choices)
-    type = models.TextField(choices=LinkType.choices)
+    type = models.TextField(choices=LinkType.choices, default=None, blank=True, null=True)
 
     install_date = models.DateField(default=None, blank=True, null=True)
     abandon_date = models.DateField(default=None, blank=True, null=True)

@@ -25,6 +25,15 @@ class SpreadsheetStatus(Enum):
     noStatus = ""
 
 
+class SpreadsheetLinkStatus(Enum):
+    active = "active"
+    dead = "dead"
+    sixty_ghz = "60GHz"
+    planned = "planned"
+    vpn = "vpn"
+    fiber = "fiber"
+
+
 @dataclasses.dataclass
 class SpreadsheetRow:
     request_date: datetime.datetime
@@ -52,6 +61,34 @@ class SpreadsheetRow:
     latitude: Optional[float]
     longitude: Optional[float]
     altitude: Optional[float]
+
+
+@dataclasses.dataclass
+class SpreadsheetLink:
+    from_install_num: int
+    to_install_num: int
+    status: SpreadsheetLinkStatus
+    install_date: Optional[datetime.date]
+    abandon_date: Optional[datetime.date]
+    where_to_where: Optional[str]
+    notes: Optional[str]
+    comments: Optional[str]
+
+
+@dataclasses.dataclass
+class SpreadsheetSector:
+    node_id: int
+    radius: int
+    azimuth: int
+    width: int
+    status: str
+    install_date: Optional[datetime.date]
+    abandon_date: Optional[datetime.date]
+    device: str
+    names: Optional[str]
+    notes: Optional[str]
+    ssid: Optional[str]
+    comments: Optional[str]
 
 
 @dataclasses.dataclass
@@ -216,3 +253,36 @@ def print_dropped_edit_report(
                                 # **row,
                             }
                         )
+
+
+def get_spreadsheet_links(links_path: str) -> List[SpreadsheetLink]:
+    with open(links_path, "r") as input_file:
+        csv_reader = csv.DictReader(input_file)
+
+        links: List[SpreadsheetLink] = []
+
+        for i, row in enumerate(csv_reader):
+            try:
+                install_date = datetime.datetime.strptime(row["installDate"], "%m/%d/%Y")
+            except ValueError:
+                install_date = None
+
+            try:
+                abandon_date = datetime.datetime.strptime(row["abandonDate"], "%m/%d/%Y")
+            except ValueError:
+                abandon_date = None
+
+            links.append(
+                SpreadsheetLink(
+                    from_install_num=row["from"],
+                    to_install_num=row["to"],
+                    status=SpreadsheetLinkStatus(row["status"]),
+                    install_date=install_date,
+                    abandon_date=abandon_date,
+                    where_to_where=row["where to where"],
+                    notes=row["Notes"],
+                    comments=row["Comments"],
+                )
+            )
+
+    return links

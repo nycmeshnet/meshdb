@@ -16,6 +16,8 @@ django.setup()
 from meshapi import models
 from meshdb.utils.spreadsheet_import.csv_load import (
     DroppedModification,
+    SpreadsheetLinkStatus,
+    get_spreadsheet_links,
     get_spreadsheet_rows,
     print_dropped_edit_report,
     print_failure_report,
@@ -108,6 +110,51 @@ def main():
         # Always print the failure report on our way out, even if we're interrupted
         print_failure_report(skipped, form_responses_path)
         print_dropped_edit_report(dropped_modifications, form_responses_path)
+
+    logging.info(f"Loading links from '{links_path}'")
+    links = get_spreadsheet_links(links_path)
+    for spreadsheet_link in links:
+        from_building = models.Building.objects.filter(
+            install__install_number=spreadsheet_link.from_install_num,
+        )
+        to_building = models.Building.objects.filter(
+            install__install_number=spreadsheet_link.to_install_num,
+        )
+        if spreadsheet_link.status in [
+            SpreadsheetLinkStatus.vpn,
+            SpreadsheetLinkStatus.active,
+            SpreadsheetLinkStatus.sixty_ghz,
+            SpreadsheetLinkStatus.fiber,
+        ]:
+            status = models.Link.LinkStatus.ACTIVE
+        elif spreadsheet_link.status == SpreadsheetLinkStatus.dead:
+            status = models.Link.LinkStatus.DEAD
+        elif spreadsheet_link.status == SpreadsheetLinkStatus.planned:
+            status = models.Link.LinkStatus.PLANNED
+        else:
+            raise ValueError(f"Invalid spreadsheet link status {spreadsheet_link.status}")
+
+        link_type = None
+        if spreadsheet_link.status in [
+            SpreadsheetLinkStatus.active,
+        ]:
+            link_type = models.Link.LinkType.STANDARD
+        elif spreadsheet_link.status == SpreadsheetLinkStatus.vpn:
+            link_type = models.Link.LinkType.VPN
+        elif spreadsheet_link.status == SpreadsheetLinkStatus.sixty_ghz:
+            link_type = models.Link.LinkType.MMWAVE
+
+        link = models.Link(
+            from_building=from_building,
+            to_building=to_building,
+            status=status,
+            type=link_type,
+            install_date=spreadsheet_link.install_date,
+            abandon_date=spreadsheet_link.abandon_date,
+            description=spreadsheet_link.where_to_where,
+            notes="\n".join([spreadsheet_link.notes, spreadsheet_link.comments]),
+        )
+        link.save()
 
 
 if __name__ == "__main__":
