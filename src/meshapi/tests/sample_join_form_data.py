@@ -11,6 +11,7 @@ valid_join_form_submission = {
     "apartment": "",
     "roof_access": True,
     "referral": "Googled it or something IDK",
+    "ncl": True,
 }
 
 richmond_join_form_submission = {
@@ -26,6 +27,7 @@ richmond_join_form_submission = {
     "apartment": "",
     "roof_access": True,
     "referral": "Googled it or something IDK",
+    "ncl": True,
 }
 
 kings_join_form_submission = {
@@ -41,6 +43,7 @@ kings_join_form_submission = {
     "apartment": "",
     "roof_access": True,
     "referral": "Googled it or something IDK",
+    "ncl": True,
 }
 
 queens_join_form_submission = {
@@ -56,6 +59,7 @@ queens_join_form_submission = {
     "apartment": "",
     "roof_access": True,
     "referral": "Googled it or something IDK",
+    "ncl": True,
 }
 
 bronx_join_form_submission = {
@@ -71,6 +75,7 @@ bronx_join_form_submission = {
     "apartment": "",
     "roof_access": True,
     "referral": "Googled it or something IDK",
+    "ncl": True,
 }
 
 non_nyc_join_form_submission = {
@@ -86,6 +91,7 @@ non_nyc_join_form_submission = {
     "apartment": "",
     "roof_access": True,
     "referral": "Googled it or something IDK",
+    "ncl": True,
 }
 
 invalid_join_form_submission = {
@@ -100,4 +106,5 @@ invalid_join_form_submission = {
     "zip": 11215,
     "apartment": 3,
     "roof_access": True,
+    "ncl": "a duck",
 }
