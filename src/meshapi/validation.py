@@ -52,19 +52,21 @@ class NYCAddressInfo:
 
         self.address = f"{street_address}, {city}, {state} {zip}"
 
-        # Look up BIN in NYC Planning's Authoritative Search
-        # This one always returns a "best effort" search
-        query_params = {
-            "text": self.address,
-            "size": 1,
-        }
-        nyc_planning_req = requests.get(f"https://geosearch.planninglabs.nyc/v2/search", params=query_params)
-        nyc_planning_resp = json.loads(nyc_planning_req.content.decode("utf-8"))
+        try:
+            # Look up BIN in NYC Planning's Authoritative Search
+            # This one always returns a "best effort" search
+            query_params = {
+                "text": self.address,
+                "size": 1,
+            }
+            nyc_planning_req = requests.get(f"https://geosearch.planninglabs.nyc/v2/search", params=query_params)
+            nyc_planning_resp = json.loads(nyc_planning_req.content.decode("utf-8"))
+        except Exception as e:
+            print(f"Got exception querying geosearch.planninglabs.nyc: {e}")
+            raise AddressAPIError
 
         if len(nyc_planning_resp["features"]) == 0:
-            raise AddressAPIError(
-                f"(NYC) Got bad API response when querying geosearch.planninglabs.nyc for  '{self.address}'."
-            )
+            raise AddressError(f"(NYC) Address '{self.address}' not found in geosearch.planninglabs.nyc.")
 
         # If we enter something not within NYC, the API will still give us
         # the closest matching street address it can find, so check that

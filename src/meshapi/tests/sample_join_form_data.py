@@ -49,7 +49,7 @@ queens_join_form_submission = {
     "email": "lcho@gmail.com",
     "phone": "+1585-758-3425",  # CSH's phone number :P
     "street_address": "36-01 35th Ave",
-    "parsed_street_address": "36-01 35th Avenue",
+    "parsed_street_address": "36-01 35 Avenue",  # TODO: s/35/35th/ when andrew's stuff is merged
     "city": "Queens",
     "state": "NY",
     "zip": 11106,
@@ -79,6 +79,7 @@ non_nyc_join_form_submission = {
     "email": "jdoe@gmail.com",
     "phone": "+1585-758-3425",
     "street_address": "480 E Broad St",
+    "parsed_street_address": "480 East Broad Street",
     "city": "Columbus",
     "state": "OH",
     "zip": 43215,
@@ -93,6 +94,7 @@ invalid_join_form_submission = {
     "email": 420,
     "phone": "eight",
     "street_address": False,
+    "parsed_street_address": False,
     "city": True,
     "state": "NY",
     "zip": 11215,
