@@ -4,6 +4,7 @@ valid_join_form_submission = {
     "email": "jsmith@gmail.com",
     "phone": "+1585-758-3425",  # CSH's phone number :P
     "street_address": "151 Broome St",  # Also covers New York County Test Case
+    "parsed_street_address": "151 Broome Street",
     "city": "New York",
     "state": "NY",
     "zip": 10002,
@@ -18,6 +19,7 @@ richmond_join_form_submission = {
     "email": "maya.viernes@gmail.com",
     "phone": "+1585-758-3425",  # CSH's phone number :P
     "street_address": "475 Seaview Ave",
+    "parsed_street_address": "475 Seaview Avenue",
     "city": "Staten Island",
     "state": "NY",
     "zip": 10305,
@@ -32,6 +34,7 @@ kings_join_form_submission = {
     "email": "aedwards@gmail.com",
     "phone": "+1585-758-3425",  # CSH's phone number :P
     "street_address": "188 Prospect Park W",
+    "parsed_street_address": "188 Prospect Park West",
     "city": "Brooklyn",
     "state": "NY",
     "zip": 11215,
@@ -46,6 +49,7 @@ queens_join_form_submission = {
     "email": "lcho@gmail.com",
     "phone": "+1585-758-3425",  # CSH's phone number :P
     "street_address": "36-01 35th Ave",
+    "parsed_street_address": "36-01 35th Avenue",
     "city": "Queens",
     "state": "NY",
     "zip": 11106,
@@ -60,6 +64,7 @@ bronx_join_form_submission = {
     "email": "rsmith@gmail.com",
     "phone": "+1585-758-3425",  # CSH's phone number :P
     "street_address": "250 Bedford Park Blvd W",
+    "parsed_street_address": "250 Bedford Park Boulevard West",
     "city": "Bronx",
     "state": "NY",
     "zip": 10468,

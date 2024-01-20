@@ -23,7 +23,9 @@ def validate_email_address(email_address):
 # Expects country code!!!!
 def validate_phone_number(phone_number):
     try:
-        phonenumbers.parse(phone_number, None)
+        parsed = phonenumbers.parse(phone_number, None)
+        if not phonenumbers.is_possible_number(parsed):
+            return False
     except phonenumbers.NumberParseException:
         return False
     return True
@@ -158,10 +160,13 @@ class NYCAddressInfo:
         addr_props = nyc_planning_resp["features"][0]["properties"]
 
         # Get the rest of the address info
-        self.street_address = f"{addr_props['housenumber']} {addr_props['street']}"
+        # TODO: Switch this to Andrew's "Humanify" function when his stuff is merged.
+        self.street_address = f"{addr_props['housenumber']} {addr_props['street']}".title()
         self.city = addr_props["borough"]
+        if self.city == "Manhattan":
+            self.city = "New York" # Fix computer silliness
         self.state = addr_props["region_a"]
-        self.zip = addr_props["postalcode"]
+        self.zip = int(addr_props["postalcode"])
         
         # TODO (willnilges): Bail if no BIN. Given that we're guaranteeing this is NYC, if
         # there is no BIN, then we've really foweled something up

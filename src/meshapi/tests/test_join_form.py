@@ -66,46 +66,47 @@ class TestJoinForm(TestCase):
         self.admin_c.login(username="admin", password="admin_password")
 
     def test_valid_join_form(self):
-        # Name, email, phone, location, apt, rooftop, referral
-        response = self.c.post("/api/v1/join/", valid_join_form_submission, content_type="application/json")
+        for submission in [
+            valid_join_form_submission,
+            richmond_join_form_submission,
+            kings_join_form_submission,
+            queens_join_form_submission,
+            bronx_join_form_submission,
+        ]:
+            submissio = submission.copy()
+            del submissio["parsed_street_address"]
+            # Name, email, phone, location, apt, rooftop, referral
+            response = self.c.post("/api/v1/join/", submissio, content_type="application/json")
 
-        code = 201
-        self.assertEqual(
-            code,
-            response.status_code,
-            f"status code incorrect for Valid Join Form. Should be {code}, but got {response.status_code}.\n Response is: {response.content.decode('utf-8')}",
-        )
+            code = 201
+            self.assertEqual(
+                code,
+                response.status_code,
+                f"status code incorrect for Valid Join Form. Should be {code}, but got {response.status_code}.\n Response is: {response.content.decode('utf-8')}",
+            )
 
-        # Make sure that we get the right stuff out of the database afterwards
-        s = JoinFormRequest(**valid_join_form_submission)
+            # Make sure that we get the right stuff out of the database afterwards
+            s = JoinFormRequest(**submissio)
 
-        # Match the format from OSM. I did this to see how OSM would mutate the
-        # raw request we get.
-        s.street_address = "151 Broome Street"
-        s.city = "Manhattan"
-        s.state = "New York"
+            # Match the format from OSM. I did this to see how OSM would mutate the
+            # raw request we get.
+            s.street_address = submission["parsed_street_address"]
+            s.city = submission["city"] 
+            s.state = submission["state"] 
 
-        validate_successful_join_form_submission(self, "Valid Join Form", s, response)
+            validate_successful_join_form_submission(self, "Valid Join Form", s, response)
 
     def test_non_nyc_join_form(self):
         # Name, email, phone, location, apt, rooftop, referral
         form = non_nyc_join_form_submission.copy()
         response = self.c.post("/api/v1/join/", form, content_type="application/json")
 
-        code = 201
+        code = 400
         self.assertEqual(
             code,
             response.status_code,
             f"status code incorrect for Non NYC Join Form. Should be {code}, but got {response.status_code}.\n Response is: {response.content.decode('utf-8')}",
         )
-
-        s = JoinFormRequest(**non_nyc_join_form_submission)
-
-        # Match the format from OSM
-        s.street_address = "480 East Broad Street"
-        s.state = "Ohio"
-
-        validate_successful_join_form_submission(self, "Non-NYC Join Form", s, response)
 
     def test_empty_join_form(self):
         # Name, email, phone, location, apt, rooftop, referral
