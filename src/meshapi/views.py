@@ -153,8 +153,6 @@ def join_form(request):
     if nyc_addr_info == None:
         return Response("(NYC) Error validating address", status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-    print(nyc_addr_info)
-
     # Check if there's an existing member. Dedupe on email for now.
     # A member can have multiple install requests
     existing_members = Member.objects.filter(
@@ -231,6 +229,10 @@ def join_form(request):
         if len(existing_buildings) == 0:
             join_form_building.delete()
         return Response("Could not save request", status=status.HTTP_400_BAD_REQUEST)
+
+    print(
+        f"JoinForm submission success. building_id: {join_form_building.id}, member_id: {join_form_member.id}, install_number: {join_form_install.install_number}"
+    )
 
     return Response(
         {
