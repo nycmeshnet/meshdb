@@ -42,9 +42,12 @@ ALLOWED_HOSTS = [
     "nginx",
 ]
 
+# FIXME: Shit works, but also doesn't(?) work with the ^ as the first character
+# r"^https://\w+\.nycmesh\.net$",
+# r"^http://\w+\.nycmesh\.net$",
 CORS_ALLOWED_ORIGINS = [
-    r"^https://\w+\.nycmesh\.net$",
-    r"^http://\w+\.nycmesh\.net$",
+    r"https://\w+\.nycmesh\.net$",
+    r"http://\w+\.nycmesh\.net$",
     "http://127.0.0.1:3000",
     "http://localhost:3000",
 ]
