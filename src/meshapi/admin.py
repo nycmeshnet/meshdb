@@ -110,13 +110,6 @@ class BuildingAdmin(admin.ModelAdmin):
 class MemberAdmin(admin.ModelAdmin):
     search_fields = ['name__icontains']
 
-    
-    def install_link(self, item):
-        url = resolve_url(admin_urlname(models.Install._meta, 'change'), item.install.id)
-        return format_html(
-            '<a href="{url}">{name}</a>'.format(url=url, name=str(item.bar))
-        )
-
 @admin.register(Install)
 class InstallAdmin(admin.ModelAdmin):
     list_filter = ["install_status"]
