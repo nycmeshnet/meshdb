@@ -6,10 +6,7 @@ from geopy import Nominatim
 from meshapi import models
 from meshapi.exceptions import AddressError
 from meshapi.models import Building
-from meshdb.utils.spreadsheet_import.building.constants import (
-    INVALID_BIN_NUMBERS,
-    AddressTruthSource,
-)
+from meshdb.utils.spreadsheet_import.building.constants import INVALID_BIN_NUMBERS, AddressTruthSource
 from meshdb.utils.spreadsheet_import.building.resolve_address import AddressParser
 from meshdb.utils.spreadsheet_import.csv_load import DroppedModification, SpreadsheetRow
 
@@ -235,7 +232,6 @@ def get_or_create_building(
 
     return Building(
         bin=address_result.discovered_bin,
-        building_status=Building.BuildingStatus.ACTIVE,
         street_address=address_result.address.street_address,
         city=address_result.address.city,
         state=address_result.address.state,
