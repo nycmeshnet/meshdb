@@ -161,6 +161,7 @@ def main():
         elif spreadsheet_link.status == SpreadsheetLinkStatus.sixty_ghz:
             link_type = models.Link.LinkType.MMWAVE
 
+        link_notes = "\n".join([spreadsheet_link.notes, spreadsheet_link.comments]).strip()
         link = models.Link(
             from_building=from_building,
             to_building=to_building,
@@ -168,8 +169,8 @@ def main():
             type=link_type,
             install_date=spreadsheet_link.install_date,
             abandon_date=spreadsheet_link.abandon_date,
-            description=spreadsheet_link.where_to_where,
-            notes="\n".join([spreadsheet_link.notes, spreadsheet_link.comments]).strip(),
+            description=spreadsheet_link.where_to_where if spreadsheet_link.where_to_where else None,
+            notes=link_notes if link_notes else None,
         )
         link.save()
 
@@ -196,6 +197,7 @@ def main():
         else:
             raise ValueError(f"Invalid spreadsheet sector status {spreadsheet_sector.status}")
 
+        sector_notes = "\n".join([spreadsheet_sector.notes, spreadsheet_sector.comments]).strip()
         sector = models.Sector(
             building=building,
             radius=spreadsheet_sector.radius,
@@ -206,8 +208,8 @@ def main():
             abandon_date=spreadsheet_sector.abandon_date,
             device_name=spreadsheet_sector.device,
             name=spreadsheet_sector.names,
-            ssid=spreadsheet_sector.ssid,
-            notes="\n".join([spreadsheet_sector.notes, spreadsheet_sector.comments]).strip(),
+            ssid=spreadsheet_sector.ssid if spreadsheet_sector.ssid else None,
+            notes=sector_notes if sector_notes else None,
         )
         sector.save()
 
