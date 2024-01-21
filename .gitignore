@@ -161,9 +161,11 @@ cython_debug/
 .DS_Store
 testobj.py
 
+# Don't push secrets
 .env
 .env.dev
 .env.local
+.env.prod
 
 #quincy's env loading script
 loadenv.sh

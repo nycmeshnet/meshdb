@@ -34,6 +34,7 @@ SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY")
 DEBUG = "DEBUG" in os.environ
 
 ALLOWED_HOSTS = [
+    "meshdb.meshsvc-grand.mesh.nycmesh.net",
     "meshdb.mesh",
     "meshdb.mesh.nycmesh.net",
     "127.0.0.1",
@@ -41,12 +42,19 @@ ALLOWED_HOSTS = [
     "nginx",
 ]
 
+# FIXME: Shit works, but also doesn't(?) work with the ^ as the first character
+# r"^https://\w+\.nycmesh\.net$",
+# r"^http://\w+\.nycmesh\.net$",
 CORS_ALLOWED_ORIGINS = [
+    r"https://\w+\.nycmesh\.net$",
+    r"http://\w+\.nycmesh\.net$",
     "http://127.0.0.1:3000",
     "http://localhost:3000",
 ]
 
 CSRF_TRUSTED_ORIGINS = [
+    "http://meshdb.meshsvc-grand.mesh.nycmesh.net",
+    "https://meshdb.meshsvc-grand.mesh.nycmesh.net",
     "https://meshdb.mesh",
     "https://meshdb.mesh.nycmesh.net",
     "http://127.0.0.1:8080",
