@@ -19,6 +19,11 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data/
 
+  pelias:
+    networks:
+      - api
+    image: pelias/parser
+
   meshdb:
     depends_on:
       postgres:
@@ -31,8 +36,6 @@ services:
       start_period: 2s
     networks:
       - api
-    #ports:
-    #  - 8081:8081
     build:
       context: .
       dockerfile: Dockerfile
@@ -47,21 +50,16 @@ services:
         condition: service_healthy
     networks:
       - api
-    ports:
-      - 8089:80
+    expose:
+      - 80
     image: nginx
-      #labels:
-      #- "traefik.http.routers.meshdb.rule=Host(`meshdb.meshsvc-grand.mesh.nycmesh.net`)"
-      #- traefik.enable=true
-      #- traefik.port=80
+    labels:
+      - "traefik.http.routers.meshdb.rule=Host(`meshdb.meshsvc-grand.mesh.nycmesh.net`)"
+      - traefik.enable=true
+      - traefik.port=80
     volumes:
       - ./nginx:/etc/nginx/conf.d
       - static_files:/var/www/html/static
-
-  pelias:
-    networks:
-      - api
-    image: pelias/parser
 
 volumes:
   postgres_data:
@@ -69,3 +67,5 @@ volumes:
 
 networks:
   api:
+    external: true
+    name: traefik-net
