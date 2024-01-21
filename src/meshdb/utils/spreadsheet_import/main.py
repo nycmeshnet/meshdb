@@ -118,13 +118,15 @@ def main():
     links = get_spreadsheet_links(links_path)
     for spreadsheet_link in links:
         try:
-            from_building = models.Building.objects.get(
-                install__install_number=spreadsheet_link.from_install_num,
-            )
-            to_building = models.Building.objects.get(
-                install__install_number=spreadsheet_link.to_install_num,
-            )
-        except models.Building.DoesNotExist:
+            from_building = models.Building.objects.filter(
+                Q(install__install_number=spreadsheet_link.from_install_num)
+                | Q(primary_nn=spreadsheet_link.from_install_num),
+            )[0]
+            to_building = models.Building.objects.filter(
+                Q(install__install_number=spreadsheet_link.to_install_num)
+                | Q(primary_nn=spreadsheet_link.to_install_num),
+            )[0]
+        except IndexError:
             message = (
                 f"Could not find building for install {spreadsheet_link.from_install_num} or "
                 f"{spreadsheet_link.to_install_num}"
@@ -167,7 +169,7 @@ def main():
             install_date=spreadsheet_link.install_date,
             abandon_date=spreadsheet_link.abandon_date,
             description=spreadsheet_link.where_to_where,
-            notes="\n".join([spreadsheet_link.notes, spreadsheet_link.comments]),
+            notes="\n".join([spreadsheet_link.notes, spreadsheet_link.comments]).strip(),
         )
         link.save()
 
@@ -205,7 +207,7 @@ def main():
             device_name=spreadsheet_sector.device,
             name=spreadsheet_sector.names,
             ssid=spreadsheet_sector.ssid,
-            notes="\n".join([spreadsheet_sector.notes, spreadsheet_sector.comments]),
+            notes="\n".join([spreadsheet_sector.notes, spreadsheet_sector.comments]).strip(),
         )
         sector.save()
 
