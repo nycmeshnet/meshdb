@@ -4,94 +4,24 @@ from dataclasses import dataclass
 from datetime import datetime
 from json.decoder import JSONDecodeError
 from django.conf import os
-
-from django.contrib.auth.models import User
 from django.db import IntegrityError
-from geopy.exc import GeocoderUnavailable
-from rest_framework import generics, permissions, status
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework.response import Response
-
 from meshapi.exceptions import AddressAPIError, AddressError
 from meshapi.models import NETWORK_NUMBER_MAX, NETWORK_NUMBER_MIN, Building, Install, Member
-from meshapi.permissions import (
-    BuildingListCreatePermissions,
-    BuildingRetrieveUpdateDestroyPermissions,
-    InstallListCreatePermissions,
-    InstallRetrieveUpdateDestroyPermissions,
-    MemberListCreatePermissions,
-    MemberRetrieveUpdateDestroyPermissions,
-    NetworkNumberAssignmentPermissions,
-)
-from meshapi.serializers import BuildingSerializer, InstallSerializer, MemberSerializer, UserSerializer
 from meshdb.utils.spreadsheet_import.building.constants import AddressTruthSource
 from meshapi.validation import (
     validate_phone_number,
     validate_email_address,
     NYCAddressInfo,
 )
+from meshapi.permissions import (
+    NetworkNumberAssignmentPermissions,
+)
 from meshapi.exceptions import AddressError, AddressAPIError
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
 
 from meshapi.zips import NYCZipCodes
-
-# TODO: Do we need more routes for just getting a NN and stuff?
-
-
-# Home view
-@api_view(["GET"])
-def api_root(request, format=None):
-    return Response("We're meshin'.")
-
-
-class UserList(generics.ListAPIView):
-    permission_classes = [permissions.IsAdminUser]
-    queryset = User.objects.all()
-    serializer_class = UserSerializer
-
-
-class UserDetail(generics.RetrieveAPIView):
-    permission_classes = [permissions.IsAdminUser]
-    queryset = User.objects.all()
-    serializer_class = UserSerializer
-
-
-class BuildingList(generics.ListCreateAPIView):
-    permission_classes = [BuildingListCreatePermissions]
-    queryset = Building.objects.all()
-    serializer_class = BuildingSerializer
-
-
-class BuildingDetail(generics.RetrieveUpdateDestroyAPIView):
-    permission_classes = [BuildingRetrieveUpdateDestroyPermissions]
-    queryset = Building.objects.all()
-    serializer_class = BuildingSerializer
-
-
-class MemberList(generics.ListCreateAPIView):
-    permission_classes = [MemberListCreatePermissions]
-    queryset = Member.objects.all()
-    serializer_class = MemberSerializer
-
-
-class MemberDetail(generics.RetrieveUpdateDestroyAPIView):
-    permission_classes = [MemberRetrieveUpdateDestroyPermissions]
-    queryset = Member.objects.all()
-    serializer_class = MemberSerializer
-
-
-class InstallList(generics.ListCreateAPIView):
-    permission_classes = [InstallListCreatePermissions]
-    queryset = Install.objects.all()
-    serializer_class = InstallSerializer
-
-
-class InstallDetail(generics.RetrieveUpdateDestroyAPIView):
-    permission_classes = [InstallRetrieveUpdateDestroyPermissions]
-    queryset = Install.objects.all()
-    serializer_class = InstallSerializer
 
 
 # Join Form
