@@ -58,8 +58,7 @@ class Building(models.Model):
 
     def __str__(self):
         node_name_str = f"{self.node_name} | " if self.node_name is not None else ""
-        nn_str = f" | NN{self.primary_nn}" if self.primary_nn is not None else ""
-        return f"{node_name_str}{self.street_address}{nn_str}"
+        return f"{node_name_str}{self.street_address}"
 
 
 class Member(models.Model):

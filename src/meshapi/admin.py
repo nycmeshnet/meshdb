@@ -62,7 +62,8 @@ class BuildingAdmin(admin.ModelAdmin):
         'primary_nn__iexact',
         'bin__iexact',
     ]
-    list_filter = ["building_status", BoroughFilter]
+    list_filter = ["building_status", ("primary_nn", admin.EmptyFieldListFilter), BoroughFilter]
+    list_display = ["street_address", "node_name", "primary_nn"]
     fieldsets = [
         (
             "Node Details",
@@ -106,20 +107,84 @@ class BuildingAdmin(admin.ModelAdmin):
         )
     ]
 
+class MemberAdminForm(forms.ModelForm):
+    class Meta:
+        model = Member
+        fields = '__all__' 
+        exclude = ['invalid']
+        widgets = {
+            'name': forms.TextInput(),
+            'phone_number': forms.TextInput(),
+            'slack_handle': forms.TextInput(),
+        }
+
 @admin.register(Member)
 class MemberAdmin(admin.ModelAdmin):
+    form = MemberAdminForm
     search_fields = ['name__icontains']
+    list_display = ['name', 'email_address', 'phone_number']
+
+class InstallAdminForm(forms.ModelForm):
+    class Meta:
+        model = Install
+        fields = '__all__' 
+        widgets = {
+            'unit': forms.TextInput(),
+        }
 
 @admin.register(Install)
 class InstallAdmin(admin.ModelAdmin):
+    form = InstallAdminForm
     list_filter = ["install_status"]
+    list_display = ["install_number", "network_number", "member", "building"]
     search_fields = ['install_number__icontains']
-    pass
+    fieldsets = [
+        (
+            "Details",
+            {
+                "fields": [
+                    "member",
+                    "install_status",
+                    # "install_number",
+                    "ticket_id",
+                    "network_number",
+                ]
+            }
+        ), 
+        (
+            "Building Details",
+            {
+                "fields": [
+                    "building",
+                    "unit",
+                    "roof_access",
+                ]
+            }
+        ),
+        (
+            "Dates",
+            {
+                "fields": [
+                    "request_date",
+                    "install_date",
+                    "abandon_date",
+                ],
+            }
+        ),
+        (
+            "Notes",
+            {
+                "fields": [
+                    "notes",
+                    "referral",
+                ]
+            }
+        )
+    ]
 
 @admin.register(Link)
 class LinkAdmin(admin.ModelAdmin):
     pass
-
     
 @admin.register(Sector)
 class SectorAdmin(admin.ModelAdmin):
