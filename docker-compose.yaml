@@ -41,7 +41,6 @@ services:
     volumes:
       - static_files:/opt/meshdb/static
 
-
   nginx:
     depends_on:
       meshdb:
@@ -49,17 +48,19 @@ services:
     networks:
       - api
     ports:
-      - 8080:8080
+      - 8089:80
     image: nginx
+      #labels:
+      #- "traefik.http.routers.meshdb.rule=Host(`meshdb.meshsvc-grand.mesh.nycmesh.net`)"
+      #- traefik.enable=true
+      #- traefik.port=80
     volumes:
-      - ./nginx.conf:/etc/nginx/conf.d/nginx.conf
+      - ./nginx:/etc/nginx/conf.d
       - static_files:/var/www/html/static
 
   pelias:
     networks:
       - api
-    ports:
-      - 6800:3000
     image: pelias/parser
 
 volumes:
