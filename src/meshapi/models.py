@@ -56,6 +56,11 @@ class Building(models.Model):
     node_name = models.TextField(default=None, blank=True, null=True)
     notes = models.TextField(blank=True, null=True)
 
+    def __str__(self):
+        node_name_str = f"{self.node_name} | " if self.node_name is not None else ""
+        nn_str = f" | NN{self.primary_nn}" if self.primary_nn is not None else ""
+        return f"{node_name_str}{self.street_address}{nn_str}"
+
 
 class Member(models.Model):
     name = models.TextField()
@@ -65,6 +70,9 @@ class Member(models.Model):
     slack_handle = models.TextField(default=None, blank=True, null=True)
     invalid = models.BooleanField(default=False)
     contact_notes = models.TextField(default=None, blank=True, null=True)
+    
+    def __str__(self):
+        return self.name
 
 
 class Install(models.Model):
@@ -111,6 +119,9 @@ class Install(models.Model):
     member = models.ForeignKey(Member, on_delete=models.PROTECT)
     referral = models.TextField(default=None, blank=True, null=True)
     notes = models.TextField(default=None, blank=True, null=True)
+    
+    def __str__(self):
+        return f"Install #{str(self.install_number)}"
 
 
 class Link(models.Model):

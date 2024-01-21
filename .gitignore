@@ -175,3 +175,6 @@ loadenv.sh
 
 # Spreadsheet data
 spreadsheet_data
+import_output_data.sh
+output_data/
+output_data/*
