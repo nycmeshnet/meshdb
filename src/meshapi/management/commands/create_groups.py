@@ -3,7 +3,7 @@ from django.core.management.base import BaseCommand
 
 
 class Command(BaseCommand):
-    help = "Creates basic groups"
+    help = "Creates basic MeshDB groups"
 
     def add_arguments(self, parser):
         pass

@@ -3,7 +3,7 @@ from rest_framework import permissions
 
 INSTALLER_GROUP = "Installer"
 ADMIN_GROUP = "Admin"
-READONLY_GROUP = "ReadOnly"
+READONLY_GROUP = "Read Only"
 
 
 def is_installer(user):
@@ -27,7 +27,7 @@ class BuildingListCreatePermissions(permissions.BasePermission):
         if request.method == "GET":
             return True
         else:
-            if not request.user.is_superuser or is_admin(request.user):
+            if not (request.user.is_superuser or is_admin(request.user)):
                 raise PermissionDenied(perm_denied_generic_msg)
             return True
 
@@ -43,7 +43,7 @@ class BuildingRetrieveUpdateDestroyPermissions(permissions.BasePermission):
                 raise PermissionDenied(perm_denied_generic_msg)
             return True
         else:
-            if not request.user.is_superuser or is_admin(request.user):
+            if not (request.user.is_superuser or is_admin(request.user)):
                 raise PermissionDenied(perm_denied_generic_msg)
             return True
 
@@ -61,7 +61,7 @@ class MemberListCreatePermissions(permissions.BasePermission):
                 raise PermissionDenied(perm_denied_generic_msg)
             return True
         else:
-            if not request.user.is_superuser or is_admin(request.user):
+            if not (request.user.is_superuser or is_admin(request.user)):
                 raise PermissionDenied(perm_denied_generic_msg)
             return True
 
@@ -79,7 +79,7 @@ class MemberRetrieveUpdateDestroyPermissions(permissions.BasePermission):
                 raise PermissionDenied(perm_denied_generic_msg)
             return True
         else:
-            if not request.user.is_superuser or is_admin(request.user):
+            if not (request.user.is_superuser or is_admin(request.user)):
                 raise PermissionDenied(perm_denied_generic_msg)
             return True
 
@@ -106,7 +106,7 @@ class InstallRetrieveUpdateDestroyPermissions(permissions.BasePermission):
                 raise PermissionDenied(perm_denied_generic_msg)
             return True
         else:
-            if not request.user.is_superuser or is_admin(request.user):
+            if not (request.user.is_superuser or is_admin(request.user)):
                 raise PermissionDenied(perm_denied_generic_msg)
             return True
 
