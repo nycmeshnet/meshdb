@@ -7,19 +7,19 @@ from django.db.models.fields import EmailField
 NETWORK_NUMBER_MIN = 101
 NETWORK_NUMBER_MAX = 8192
 
-#def create_groups():
+# def create_groups():
 #    models = ['building', 'member', 'install', 'link', 'sector',]
 #    all_permissions = Permission.objects.all()
-#    
+#
 #    admin, _ = Group.objects.get_or_create(name="Admin")
 #    installer, _ = Group.objects.get_or_create(name="Installer")
-#    
+#
 #    read_only, _ = Group.objects.get_or_create(name="Read Only")
 #    for p in all_permissions:
 #        code = p.codename
 #        print(code)
 #
-#create_groups()
+# create_groups()
 
 
 class Building(models.Model):
