@@ -1,4 +1,4 @@
-from django.contrib.auth.models import Group
+from django.contrib.auth.models import Group, Permission
 from django.contrib.postgres.fields import ArrayField
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
@@ -7,8 +7,20 @@ from django.db.models.fields import EmailField
 NETWORK_NUMBER_MIN = 101
 NETWORK_NUMBER_MAX = 8192
 
-installer = Group.objects.get_or_create(name="Installer")
-read_only = Group.objects.get_or_create(name="Read Only")
+#def create_groups():
+#    models = ['building', 'member', 'install', 'link', 'sector',]
+#    all_permissions = Permission.objects.all()
+#    
+#    admin, _ = Group.objects.get_or_create(name="Admin")
+#    installer, _ = Group.objects.get_or_create(name="Installer")
+#    
+#    read_only, _ = Group.objects.get_or_create(name="Read Only")
+#    for p in all_permissions:
+#        code = p.codename
+#        print(code)
+#
+#create_groups()
+
 
 class Building(models.Model):
     class BuildingStatus(models.IntegerChoices):
@@ -50,7 +62,7 @@ class Member(models.Model):
     slack_handle = models.TextField(default=None, blank=True, null=True)
     invalid = models.BooleanField(default=False)
     contact_notes = models.TextField(default=None, blank=True, null=True)
-    
+
     def __str__(self):
         return self.name
 
@@ -99,7 +111,7 @@ class Install(models.Model):
     member = models.ForeignKey(Member, on_delete=models.PROTECT)
     referral = models.TextField(default=None, blank=True, null=True)
     notes = models.TextField(default=None, blank=True, null=True)
-    
+
     def __str__(self):
         return f"Install #{str(self.install_number)}"
 
