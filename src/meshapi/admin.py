@@ -64,7 +64,12 @@ class BuildingAdmin(admin.ModelAdmin):
         "primary_nn__iexact",
         "bin__iexact",
     ]
-    list_filter = ["building_status", ("primary_nn", admin.EmptyFieldListFilter), BoroughFilter]
+    list_filter = [
+        "building_status",
+        ("primary_nn", admin.EmptyFieldListFilter),
+        ("node_name", admin.EmptyFieldListFilter),
+        BoroughFilter,
+    ]
     list_display = ["street_address", "node_name", "primary_nn"]
     fieldsets = [
         (
@@ -125,7 +130,10 @@ class MemberAdminForm(forms.ModelForm):
 @admin.register(Member)
 class MemberAdmin(admin.ModelAdmin):
     form = MemberAdminForm
-    search_fields = ["name__icontains"]
+    search_fields = [
+        "name__icontains",
+        "email_address__icontains",
+    ]
     list_display = ["name", "email_address", "phone_number"]
 
 
@@ -141,9 +149,19 @@ class InstallAdminForm(forms.ModelForm):
 @admin.register(Install)
 class InstallAdmin(admin.ModelAdmin):
     form = InstallAdminForm
-    list_filter = ["install_status"]
+    list_filter = [
+        "install_status",
+        "request_date",
+        "install_date",
+        "abandon_date",
+    ]
     list_display = ["install_number", "network_number", "member", "building"]
-    search_fields = ["install_number__icontains"]
+    search_fields = [
+        "install_number__icontains",
+        "network_number__icontains",
+        "building__street_address__icontains",
+        "member__name__icontains",
+    ]
     fieldsets = [
         (
             "Details",
@@ -189,11 +207,45 @@ class InstallAdmin(admin.ModelAdmin):
     ]
 
 
+class LinkAdminForm(forms.ModelForm):
+    class Meta:
+        model = Link
+        fields = "__all__"
+        widgets = {
+            "description": forms.TextInput(),
+        }
+
+
 @admin.register(Link)
 class LinkAdmin(admin.ModelAdmin):
-    pass
+    form = LinkAdminForm
+    search_fields = [
+        "from_building__icontains",
+        "to_building__icontains",
+    ]
+    list_display = ["id", "from_building", "to_building"]
+    list_filter = ["status", "type"]
+
+
+class SectorAdminForm(forms.ModelForm):
+    class Meta:
+        model = Link
+        fields = "__all__"
+        widgets = {
+            "name": forms.TextInput(),
+            "device_name": forms.TextInput(),
+            "ssid": forms.TextInput(),
+        }
 
 
 @admin.register(Sector)
 class SectorAdmin(admin.ModelAdmin):
-    pass
+    form = SectorAdminForm
+    search_fields = ["name__icontains", "device_name__icontains", "ssid__icontains"]
+    list_display = [
+        "id",
+        "name",
+        "ssid",
+        "device_name",
+    ]
+    list_filter = ["device_name", "install_date"]
