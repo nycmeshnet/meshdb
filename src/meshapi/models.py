@@ -7,27 +7,8 @@ from django.db.models.fields import EmailField
 NETWORK_NUMBER_MIN = 101
 NETWORK_NUMBER_MAX = 8192
 
-
-class Installer(Group):
-    description = models.TextField(max_length=100, blank=True)
-
-    def __str__(self):
-        return self.name
-
-
-class Admin(Group):
-    description = models.TextField(max_length=100, blank=True)
-
-    def __str__(self):
-        return self.name
-
-
-class ReadOnly(Group):
-    description = models.TextField(max_length=100, blank=True)
-
-    def __str__(self):
-        return self.name
-
+installer = Group.objects.get_or_create(name="Installer")
+read_only = Group.objects.get_or_create(name="Read Only")
 
 class Building(models.Model):
     class BuildingStatus(models.IntegerChoices):
