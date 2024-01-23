@@ -50,7 +50,7 @@ def get_or_create_install(row: SpreadsheetRow) -> Optional[models.Install]:
         abandon_date=row.abandonDate,
         unit=row.apartment,
         roof_access=row.roofAccess,
-        referral=row.referral,
+        referral=row.referral if row.referral else None,
         notes=f"Spreadsheet Notes:\n"
         f"{row.notes if row.notes else None}\n\n"
         f"Spreadsheet Notes2:\n"
