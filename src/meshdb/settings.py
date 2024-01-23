@@ -46,10 +46,12 @@ ALLOWED_HOSTS = [
 # r"^https://\w+\.nycmesh\.net$",
 # r"^http://\w+\.nycmesh\.net$",
 CORS_ALLOWED_ORIGINS = [
-    r"https://\w+\.nycmesh\.net$",
-    r"http://\w+\.nycmesh\.net$",
+    "http://meshforms.meshsvc-grand.mesh.nycmesh.net",
+    "https://meshforms.meshsvc-grand.mesh.nycmesh.net",
     "http://127.0.0.1:3000",
     "http://localhost:3000",
+    "http://127.0.0.1:80",
+    "http://localhost:80",
 ]
 
 CSRF_TRUSTED_ORIGINS = [
