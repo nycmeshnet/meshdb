@@ -5,6 +5,7 @@ from datetime import datetime
 from json.decoder import JSONDecodeError
 from django.conf import os
 from django.db import IntegrityError
+from validate_email import email_address
 from meshapi.exceptions import AddressAPIError, AddressError
 from meshapi.models import NETWORK_NUMBER_MAX, NETWORK_NUMBER_MIN, Building, Install, Member
 from meshdb.utils.spreadsheet_import.building.constants import AddressTruthSource
@@ -261,3 +262,106 @@ def network_number_assignment(request):
         },
         status=status.HTTP_201_CREATED,
     )
+
+@dataclass
+class QueryRequest:
+    address: str | None
+    email: str | None
+    nn: str | None
+    install_number: int | None
+    bin: str | None
+    password: str  # Pre-shared key
+
+@dataclass
+class QueryResponse:
+    install_number: int
+    street_address: str
+    city: str
+    state: str
+    zip: int
+    unit: str
+    name: str
+    email: str
+    notes: str
+    network_number: int
+    install_status: str
+
+
+@api_view(["POST"])
+# @permission_classes([QueryPermissions]) # FIXME: Re-enable Auth
+def query(request):
+    """
+    Re-implements https://docs.nycmesh.net/installs/query/
+    Search by address, email, nn, install_number, or bin
+    Guarded by PSK
+
+    Returns:
+    <Query>:<Query Data>
+    <Install Number>, <Addy>, <Unit #>, <Name>, <Email>, <Notes>, <NN>, <Install Status>
+
+    Line 2 is the same no matter what(tm)
+    """
+
+    try:
+        request_json = json.loads(request.body)
+        r = QueryRequest(**request_json)
+    except (TypeError, JSONDecodeError) as e:
+        print(f"Query Request failed. Could not decode request: {e}")
+        return Response({"Got incomplete request"}, status=status.HTTP_400_BAD_REQUEST)
+
+    if r.password != os.environ.get("QUERY_PSK"):
+        return Response({"Authentication Failed."}, status=status.HTTP_401_UNAUTHORIZED)
+
+    response = {}
+
+    if r.address or r.bin:
+        # This is more of a "search-y" option
+        if r.address:
+            building = Building.objects.get(
+                street_address__icontains=r.address
+            )
+        else:
+            building = Building.objects.filter(bin=r.bin)
+        install = Install.objects.get(building=building.id)
+        member = install.member
+    elif r.email:
+        member = Member.objects.filter(
+            email_address=r.email
+        )
+        install = Install.objects.get(member=member.id)
+        building = install.building
+    elif r.nn or r.install_number:
+        if r.nn:
+            install = Install.objects.filter(network_number=r.nn)
+        else:
+            install = Install.objects.filter(install_number=r.install_number)
+        member = install.member
+        building = install.building
+
+    if building and member and install:
+        response = QueryResponse(
+            install_number=install.install_number,
+            street_address=building.street_address,
+            city=building.city,
+            state=building.state,
+            zip=building.zip,
+            unit=install.unit,
+            name=member.name,
+            email=member.email_address,
+            notes=install.notes + building.notes + member.contact_notes,
+            network_number=install.network_number,
+            install_status=install.install_status
+        )
+
+        return Response(
+            response,
+            status=status.HTTP_200_OK,
+        )
+
+    return Response(
+        {"Not found"},
+        status=status.HTTP_404_NOT_FOUND,
+    )
+
+
+
