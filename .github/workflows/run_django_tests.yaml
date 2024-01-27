@@ -25,6 +25,10 @@ jobs:
         image: pelias/parser:latest
         ports:
           - 6800:3000
+      redis:
+        image: redis
+        ports:
+          - 6379:6379
     strategy:
       max-parallel: 4
       matrix:
