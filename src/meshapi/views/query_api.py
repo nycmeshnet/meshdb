@@ -90,25 +90,11 @@ class QueryBuilding(QueryView):
             status=status.HTTP_200_OK,
         )
 
-    def get_building(self):
-        query_dict = {k: v for k, v in self.request.query_params.items() if v}
-        filter_args = {}
-        for k, v in query_dict.items():
-            if k == "street_address":
-                filter_args[f"{k}__icontains"] = v
-            elif k == "bin":
-                filter_args[f"{k}__iexact"] = v
-        return Building.objects.filter(**filter_args)
-
 class QueryMember(QueryView):
     def get(self, request, format=None):
-        # TODO: Make sure we're getting the "email_address"
-        # TODO: Add password
-
-        # First, get the member. That will tell us the install(s), and from the
-        # install(s) we can get the building(s).
-        email_address = self.request.query_params["email_address"]
-        members = Member.objects.filter(email_address=email_address)
+        members = self.filter_on(Member, {
+            "email_address": None, 
+        })
 
         responses = []
         for member in members:
@@ -120,30 +106,19 @@ class QueryMember(QueryView):
             status=status.HTTP_200_OK,
         )
 
-# Getting installs works a little differently.
-# If it's an install number, it's going to resolve a single member and a single
-# building (probably, hopefully)
-
-# If it's a Network Number, then it could resolve multiple members. Maybe in
-# multiple buildings.
 class QueryInstall(QueryView):
     def get(self, request, format=None):
-        query = Q()
-        for field, value in self.request.query_params.items():
-            if value and field in ["network_number", "install_number"]:
-                query &= Q(**{field: value})
-
-        installs = Install.objects.filter(query)
+        installs = self.filter_on(Install, {
+            "network_number": None,
+            "install_number": None,
+        })
 
         responses = []
-        try:
-            for install in installs:
-                responses.append(asdict(QueryResponse.from_install(install)))
-        except TypeError:
-            # Oops only one?
-            responses.append(asdict(QueryResponse.from_install(installs)))
+        for install in installs:
+            responses.append(asdict(QueryResponse.from_install(install)))
 
         return Response(
             responses,
             status=status.HTTP_200_OK,
         )
+
