@@ -29,13 +29,13 @@ jobs:
         image: redis
         ports:
           - 6379:6379
-    strategy:
-      max-parallel: 4
-      matrix:
-        python-version: [3.11]
 
     steps:
       - uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
       - name: "Upgrade pip"
         run: "pip install --upgrade pip"
       - name: "Install package"
