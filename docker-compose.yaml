@@ -67,5 +67,5 @@ volumes:
 
 networks:
   api:
-    external: true
-    name: traefik-net
+#    external: true
+#    name: traefik-net
