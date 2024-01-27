@@ -28,7 +28,8 @@ dev = [
     "black == 23.7.*",
     "isort == 5.12.*",
     "coverage == 7.3.*",
-    "mypy == 1.5.*"
+    "mypy == 1.5.*",
+    "flask == 3.0.*",
 ]
 
 [project.scripts]
