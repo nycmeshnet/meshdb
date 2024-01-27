@@ -263,14 +263,15 @@ def network_number_assignment(request):
         status=status.HTTP_201_CREATED,
     )
 
+
 @dataclass
 class QueryRequest:
-    address: str | None
-    email: str | None
-    nn: str | None
-    install_number: int | None
-    bin: str | None
-    password: str  # Pre-shared key
+   address: str | None
+   email: str | None
+   nn: str | None
+   install_number: int | None
+   bin: str | None
+   password: str  # Pre-shared key
 
 @dataclass
 class QueryResponse:
