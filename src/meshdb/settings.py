@@ -10,8 +10,8 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
-from pathlib import Path
 import os
+from pathlib import Path
 
 from dotenv import load_dotenv
 
@@ -73,6 +73,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "django_webhook",
     "rest_framework",
     "rest_framework.authtoken",
     "meshapi",
@@ -178,3 +179,14 @@ REST_FRAMEWORK = {
         "rest_framework.authentication.TokenAuthentication",
     ],
 }
+
+# Allow-list models which the admin can select to send webhooks for
+DJANGO_WEBHOOK = dict(
+    MODELS=[
+        "meshapi.Building",
+        "meshapi.Member",
+        "meshapi.Install",
+        "meshapi.Link",
+        "meshapi.Sector",
+    ]
+)

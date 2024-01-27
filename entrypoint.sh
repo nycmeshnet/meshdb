@@ -8,6 +8,12 @@ done
 
 echo 'DB started'
 
+# It's okay to start Celery in the background and continue without waiting, even though "migrate"
+# might make DB changes we want to notify for since tasks are queued by Django Webhook and
+# are executed as soon as celery starts
+echo 'Staring Celery Worker...'
+celery -A meshdb worker -l INFO &
+
 echo 'Running Migrations...'
 python manage.py migrate
 
