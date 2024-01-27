@@ -44,4 +44,3 @@ class LookupInstall(generics.ListAPIView):
                 filter_keyword_arguments_dict[f"{k}__exact"] = v
         queryset = Install.objects.filter(**filter_keyword_arguments_dict)
         return queryset
-

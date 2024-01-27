@@ -266,12 +266,13 @@ def network_number_assignment(request):
 
 @dataclass
 class QueryRequest:
-   address: str | None
-   email: str | None
-   nn: str | None
-   install_number: int | None
-   bin: str | None
-   password: str  # Pre-shared key
+    address: str | None
+    email: str | None
+    nn: str | None
+    install_number: int | None
+    bin: str | None
+    password: str  # Pre-shared key
+
 
 @dataclass
 class QueryResponse:
@@ -318,17 +319,13 @@ def query(request):
     if r.address or r.bin:
         # This is more of a "search-y" option
         if r.address:
-            building = Building.objects.get(
-                street_address__icontains=r.address
-            )
+            building = Building.objects.get(street_address__icontains=r.address)
         else:
             building = Building.objects.filter(bin=r.bin)
         install = Install.objects.get(building=building.id)
         member = install.member
     elif r.email:
-        member = Member.objects.filter(
-            email_address=r.email
-        )
+        member = Member.objects.filter(email_address=r.email)
         install = Install.objects.get(member=member.id)
         building = install.building
     elif r.nn or r.install_number:
@@ -351,7 +348,7 @@ def query(request):
             email=member.email_address,
             notes=install.notes + building.notes + member.contact_notes,
             network_number=install.network_number,
-            install_status=install.install_status
+            install_status=install.install_status,
         )
 
         return Response(
@@ -363,6 +360,3 @@ def query(request):
         {"Not found"},
         status=status.HTTP_404_NOT_FOUND,
     )
-
-
-
