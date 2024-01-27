@@ -5,6 +5,9 @@ on: [pull_request]
 jobs:
   is-debug-off:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [ 3.11 ]
     steps:
       - uses: actions/checkout@v3
       - name: "Upgrade pip"

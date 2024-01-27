@@ -5,10 +5,15 @@ on: [pull_request]
 jobs:
   black:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [ 3.11 ]
     steps:
       - uses: actions/checkout@v3
       - name: "Upgrade pip"
         run: "pip install --upgrade pip"
+      - name: "Print python version"
+        run: "python --version"
       - name: "Install package"
         run: pip install ".[dev]"
       - name: "Run lint checks"
