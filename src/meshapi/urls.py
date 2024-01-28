@@ -1,5 +1,6 @@
-from django.urls import path, include
+from django.urls import include, path
 from rest_framework.urlpatterns import format_suffix_patterns
+
 from meshapi import views
 
 urlpatterns = [
@@ -20,6 +21,9 @@ urlpatterns = [
     path("query/building/", views.QueryBuilding.as_view(), name="meshapi-v1-query-building"),
     path("query/member/", views.QueryMember.as_view(), name="meshapi-v1-query-member"),
     path("query/install/", views.QueryInstall.as_view(), name="meshapi-v1-query-install"),
+    path("mapdata/installs/", views.MapDataInstallList.as_view(), name="meshapi-v1-map-data-installs"),
+    path("mapdata/links/", views.MapDataLinkList.as_view(), name="meshapi-v1-map-data-links"),
+    path("mapdata/sectors/", views.MapDataSectorlList.as_view(), name="meshapi-v1-map-data-sectors"),
 ]
 
 urlpatterns = format_suffix_patterns(urlpatterns)

@@ -1,6 +1,7 @@
 from django.contrib.auth.models import User
 from rest_framework import serializers
-from meshapi.models import Building, Member, Install
+
+from meshapi.models import Building, Install, Member
 
 
 class UserSerializer(serializers.ModelSerializer):

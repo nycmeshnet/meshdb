@@ -96,12 +96,21 @@ class MemberRetrieveUpdateDestroyPermissions(permissions.BasePermission):
 # Anyone can list installs, but only installers or admins can create them
 class InstallListCreatePermissions(permissions.BasePermission):
     def has_permission(self, request, view):
-        if request.method == "GET":
+        if request.method in ["GET", "OPTIONS"]:
             return True
         else:
             if not (request.user.is_superuser or is_admin(request.user) or is_installer(request.user)):
                 raise PermissionDenied(perm_denied_generic_msg)
             return True
+
+
+# Anyone can list links and sectors
+class LinkSectorListPermissions(permissions.BasePermission):
+    def has_permission(self, request, view):
+        if request.method in ["GET", "OPTIONS"]:
+            return True
+        else:
+            raise PermissionDenied(perm_denied_generic_msg)
 
 
 # Anyone can retrieve installs, installers can update them, only
