@@ -1,10 +1,9 @@
-
 name: Check docker network configuration
 
 on: [pull_request]
 
 jobs:
-  is-debug-off:
+  check-docker-net-cfg:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
