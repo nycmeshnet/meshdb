@@ -52,13 +52,13 @@ class QueryResponse:
 
 
 class QueryView(APIView):
-    def filter_on(self, model: type[models.Model], filters: Dict[str, str]):
+    def filter_on(self, model: type[models.Model], permitted_filters: Dict[str, str]):
         query_dict = {k: v for k, v in self.request.query_params.items() if v}
         filter_args = {}
         for k, v in query_dict.items():
-            if k in filters.keys():
-                if filters[k]:
-                    filter_args[f"{k}__{filters[k]}"] = v
+            if k in permitted_filters.keys():
+                if permitted_filters[k]:
+                    filter_args[f"{k}__{permitted_filters[k]}"] = v
                 else:
                     filter_args[f"{k}"] = v
 
