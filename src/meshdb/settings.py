@@ -188,5 +188,9 @@ DJANGO_WEBHOOK = dict(
         "meshapi.Install",
         "meshapi.Link",
         "meshapi.Sector",
-    ]
+    ],
+    # This breaks tests, and our write volumes are so low that this performance
+    # impact should be negligible (it's an extra DB call on any model change)
+    # If this is a problem in the future, look into setting this only during testing
+    USE_CACHE=False,
 )
