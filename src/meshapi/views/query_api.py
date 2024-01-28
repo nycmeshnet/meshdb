@@ -74,6 +74,9 @@ class QueryBuilding(QueryView):
             Building,
             {
                 "street_address": "icontains",
+                "zip_code": "iexact",
+                "city": "icontains",
+                "state": "icontains",
                 "bin": "iexact",
             },
         )
