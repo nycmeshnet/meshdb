@@ -9,12 +9,12 @@ NETWORK_NUMBER_MAX = 8192
 
 
 class Building(models.Model):
-    class BuildingStatus(models.IntegerChoices):
-        INACTIVE = 0
-        ACTIVE = 1
+    class BuildingStatus(models.TextChoices):
+        INACTIVE = "Inactive"
+        ACTIVE = "Active"
 
     bin = models.IntegerField(blank=True, null=True)
-    building_status = models.IntegerField(choices=BuildingStatus.choices)
+    building_status = models.TextField(choices=BuildingStatus.choices)
     street_address = models.TextField(blank=True, null=True)
     city = models.TextField(blank=True, null=True)
     state = models.TextField(blank=True, null=True)
@@ -54,14 +54,14 @@ class Member(models.Model):
 
 
 class Install(models.Model):
-    class InstallStatus(models.IntegerChoices):
-        OPEN = 0
-        SCHEDULED = 1
-        NN_ASSIGNED = 2
-        BLOCKED = 3
-        ACTIVE = 4
-        INACTIVE = 5
-        CLOSED = 6
+    class InstallStatus(models.TextChoices):
+        OPEN = "Open"
+        SCHEDULED = "Scheduled"
+        NN_ASSIGNED = "NN Assigned"
+        BLOCKED = "Blocked"
+        ACTIVE = "Active"
+        INACTIVE = "Inactive"
+        CLOSED = "Closed"
 
     # Install Number (generated when form is submitted)
     install_number = models.AutoField(
@@ -78,7 +78,7 @@ class Install(models.Model):
     )
 
     # Summary status of install
-    install_status = models.IntegerField(choices=InstallStatus.choices)
+    install_status = models.TextField(choices=InstallStatus.choices)
 
     # OSTicket ID
     ticket_id = models.IntegerField(blank=True, null=True)

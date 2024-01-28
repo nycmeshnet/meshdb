@@ -9,7 +9,7 @@ sample_member = {
 
 sample_building = {
     "bin": 8888,
-    "building_status": 1,
+    "building_status": "Active",
     "street_address": "3333 Chom St",
     "city": "Brooklyn",
     "state": "NY",
