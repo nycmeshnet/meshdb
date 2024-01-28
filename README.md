@@ -1,11 +1,12 @@
 # meshdb
 
+<p align="center">
+  <img height="300px" src="https://github.com/andybaumgar/meshdb/assets/42927786/0f715a4e-99e3-402d-bc39-66f50eb0a94b" alt="MeshDB Logo">
+</p>
+
 ## A Database for Tracking NYCMesh Member Installs
 
 [![Python 3.11](https://img.shields.io/badge/python-3.11-blue.svg?logo=python)](https://www.python.org/downloads/release/python-3115/)
-[![Django Rest Framework](https://img.shields.io/badge/django-rest_framework-red)](https://www.django-rest-framework.org/)
-[![Nginx](https://img.shields.io/badge/nginx-green?logo=nginx)](https://hub.docker.com/_/nginx)
-[![Runs on Docker](https://img.shields.io/badge/runs_on-Docker-blue?logo=docker)](https://docs.docker.com/compose/)
 
 Welcome to the `nth` attempt at making an API! This was started out of hatred
 for the **New Node Form**.
@@ -72,12 +73,6 @@ You might have to run the migrations. This will set up the DB for you.
 python src/manage.py makemigrations
 python src/manage.py migrate
 ```
-
-> [!WARNING]
-> If you are modifying the migrations and want to squash, be aware that there
-> are hand-written migrations in `0016_create_default_groups.py` that will need
-> to be dealt with manually. Recommended practice is to leave this migration
-> separate and change the dependency to the new squashed file.
 
 You'll probably want an admin account
 ```
