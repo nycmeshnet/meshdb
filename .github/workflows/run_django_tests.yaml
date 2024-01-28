@@ -45,4 +45,6 @@ jobs:
           DB_PORT: 5432
           DJANGO_SECRET_KEY: k7j&!u07c%%97s!^a_6%mh_wbzo*$hl4lj_6c2ee6dk)y9!k88
           PELIAS_ADDRESS_PARSER_URL: http://localhost:6800/parser/parse
+          QUERY_PSK: localdev
+          NN_ASSIGN_PSK: localdev
         run: python3 src/manage.py test meshapi
