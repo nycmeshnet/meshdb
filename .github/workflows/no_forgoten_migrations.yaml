@@ -1,0 +1,44 @@
+name: Make sure to run manage.py makemigrations if you change models
+
+on: [pull_request]
+
+jobs:
+  is-migration-diff-clean:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:latest
+        env:
+          POSTGRES_DB: nycmesh-dev
+          POSTGRES_USER: nycmesh
+          POSTGRES_PASSWORD: abcd1234
+          POSTGRES_PORT: 5432
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      - name: "Upgrade pip"
+        run: "pip install --upgrade pip"
+      - name: "Install package"
+        run: pip install ".[dev]"
+      - name: "You forgot to run manage.py makemigrations for model changes"
+        env:
+          DB_NAME: nycmesh-dev
+          DB_USER: nycmesh
+          DB_PASSWORD: abcd1234
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DJANGO_SECRET_KEY: k7j&!u07c%%97s!^a_6%mh_wbzo*$hl4lj_6c2ee6dk)y9!k88
+        run: |
+          python src/manage.py makemigrations meshapi --dry-run # Run extra time for debug output
+          python src/manage.py makemigrations meshapi --dry-run | grep "No changes detected in app 'meshapi'"
+          
