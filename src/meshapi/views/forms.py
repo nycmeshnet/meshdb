@@ -262,4 +262,3 @@ def network_number_assignment(request):
         },
         status=status.HTTP_201_CREATED,
     )
-
