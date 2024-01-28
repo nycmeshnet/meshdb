@@ -1,7 +1,8 @@
 from dataclasses import asdict, dataclass
 from typing import Dict
-from django.conf import os
+from rest_framework.decorators import permission_classes
 from rest_framework.views import APIView, Response, models, status
+from meshapi import permissions
 from meshapi.models import Building, Install, Member
 
 """
@@ -64,19 +65,10 @@ class QueryView(APIView):
 
         return model.objects.filter(**filter_args)
 
-    def check_password(self):
-        print(self.request.query_params["password"])
-        if self.request.query_params["password"] != os.environ.get("QUERY_PSK"):
-            return Response({"Authentication Failed."}, status=status.HTTP_401_UNAUTHORIZED)
-        return None
-
-
 class QueryBuilding(QueryView):
-    def get(self, request, format=None):
-        pword = self.check_password()
-        if pword is not None:
-            return pword
+    permission_classes = [permissions.LegacyMeshQueryPassword]
 
+    def get(self, request, format=None):
         buildings = self.filter_on(
             Building,
             {
@@ -97,11 +89,9 @@ class QueryBuilding(QueryView):
 
 
 class QueryMember(QueryView):
-    def get(self, request, format=None):
-        pword = self.check_password()
-        if pword is not None:
-            return pword
+    permission_classes = [permissions.LegacyMeshQueryPassword]
 
+    def get(self, request, format=None):
         members = self.filter_on(
             Member,
             {
@@ -121,11 +111,9 @@ class QueryMember(QueryView):
 
 
 class QueryInstall(QueryView):
-    def get(self, request, format=None):
-        pword = self.check_password()
-        if pword is not None:
-            return pword
+    permission_classes = [permissions.LegacyMeshQueryPassword]
 
+    def get(self, request, format=None):
         installs = self.filter_on(
             Install,
             {

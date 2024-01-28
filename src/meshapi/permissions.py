@@ -1,3 +1,4 @@
+from django.conf import os
 from django.contrib.auth import PermissionDenied
 from rest_framework import permissions
 
@@ -20,6 +21,12 @@ def is_readonly(user):
 
 perm_denied_generic_msg = "You do not have access to this resource."
 
+# Janky
+class LegacyMeshQueryPassword(permissions.BasePermission):
+    def has_permission(self, request, view):
+        if request.query_params["password"] != os.environ.get("QUERY_PSK"):
+            raise PermissionDenied("Authentication Failed.")
+        return True
 
 # Anyone can list buildings, but only Admins can create them
 class BuildingListCreatePermissions(permissions.BasePermission):

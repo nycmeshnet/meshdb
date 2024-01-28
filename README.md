@@ -62,7 +62,7 @@ If you have a database, great, go nuts. If you don't, you can use
 > You will need to remove the traefik config from the network block.
 
 ```sh
-docker-compose up -d postgres pelias
+docker-compose up -d postgres pelias redis
 ```
 
 You might have to run the migrations. This will set up the DB for you.
