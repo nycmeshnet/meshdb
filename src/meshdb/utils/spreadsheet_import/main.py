@@ -162,6 +162,8 @@ def main():
             link_type = models.Link.LinkType.VPN
         elif spreadsheet_link.status == SpreadsheetLinkStatus.sixty_ghz:
             link_type = models.Link.LinkType.MMWAVE
+        elif spreadsheet_link.status == SpreadsheetLinkStatus.fiber:
+            link_type = models.Link.LinkType.FIBER
 
         link_notes = "\n".join([spreadsheet_link.notes, spreadsheet_link.comments]).strip()
         link = models.Link(
