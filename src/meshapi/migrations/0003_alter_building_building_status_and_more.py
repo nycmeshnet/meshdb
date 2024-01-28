@@ -52,6 +52,11 @@ class Migration(migrations.Migration):
             model_name="building",
             name="building_status_old",
         ),
+        migrations.AlterField(
+            model_name="building",
+            name="building_status",
+            field=models.TextField(choices=[("Inactive", "Inactive"), ("Active", "Active")]),
+        ),
         migrations.RenameField(
             model_name="install",
             old_name="install_status",
@@ -77,5 +82,20 @@ class Migration(migrations.Migration):
         migrations.RemoveField(
             model_name="install",
             name="install_status_old",
+        ),
+        migrations.AlterField(
+            model_name="install",
+            name="install_status",
+            field=models.TextField(
+                choices=[
+                    ("Open", "Open"),
+                    ("Scheduled", "Scheduled"),
+                    ("NN Assigned", "Nn Assigned"),
+                    ("Blocked", "Blocked"),
+                    ("Active", "Active"),
+                    ("Inactive", "Inactive"),
+                    ("Closed", "Closed"),
+                ]
+            ),
         ),
     ]
