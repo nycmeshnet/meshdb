@@ -65,6 +65,7 @@ class QueryView(APIView):
 
         return model.objects.filter(**filter_args)
 
+
 class QueryBuilding(QueryView):
     permission_classes = [permissions.LegacyMeshQueryPassword]
 

@@ -8,6 +8,7 @@ from meshapi.models import Building, Install, Member
 
 from .sample_data import sample_building, sample_install, sample_member
 
+
 class TestQueryForm(TestCase):
     c = Client()
 
@@ -19,14 +20,14 @@ class TestQueryForm(TestCase):
 
         member = Member(**sample_member)
         member.save()
-        sample_install_copy["member"] = member 
+        sample_install_copy["member"] = member
 
         self.install = Install(**sample_install_copy)
         self.install.save()
 
     def query(self, route, field, data):
         code = 200
-        password=os.environ.get("QUERY_PSK")
+        password = os.environ.get("QUERY_PSK")
         route = f"/api/v1/query/{route}/?{field}={data}&password={password}"
         response = self.c.get(route)
         self.assertEqual(
