@@ -8,11 +8,14 @@ from typing import List
 import django
 from django.db.models import Q
 
+from meshdb.utils.spreadsheet_import import logger
+
+logger.configure()
+
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "meshdb.settings")
 django.setup()
 
 from meshapi import models
-from meshdb.utils.spreadsheet_import import logger
 from meshdb.utils.spreadsheet_import.building.resolve_address import AddressParser
 from meshdb.utils.spreadsheet_import.csv_load import (
     DroppedModification,
@@ -30,7 +33,6 @@ from meshdb.utils.spreadsheet_import.parse_member import get_or_create_member
 
 
 def main():
-    logger.configure()
     if len(sys.argv) != 4:
         print("Usage: meshdb-spreadsheet-import [Path to Form Responses CSV] [Path to Links CSV] [Path to Sectors CSV]")
         return
