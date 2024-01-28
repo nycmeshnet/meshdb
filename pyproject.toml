@@ -2,8 +2,10 @@
 name = "nycmesh-meshdb"
 version = "0.1"
 dependencies = [
+    "celery[redis]==5.3.*",
     "django==4.2.*",
     "djangorestframework==3.14.*",
+    "django-webhook>=0.0.7,<0.1.0",
     "psycopg2-binary==2.9.*",
     "gunicorn==21.2.*",
     "python-dotenv==1.0.*",
@@ -26,7 +28,8 @@ dev = [
     "black == 23.7.*",
     "isort == 5.12.*",
     "coverage == 7.3.*",
-    "mypy == 1.5.*"
+    "mypy == 1.5.*",
+    "flask == 3.0.*",
 ]
 
 [project.scripts]
