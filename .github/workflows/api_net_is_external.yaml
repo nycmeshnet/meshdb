@@ -1,0 +1,13 @@
+name: Check docker network configuration
+
+on: [pull_request]
+
+jobs:
+  check-docker-net-cfg:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: "Your PR has not commented out traefik"
+        run: ! $(cat docker-compose.yaml | grep 'external: true' | grep '#')
+      - name: "Your PR has not commented out traefik part II"
+        run: ! $(cat docker-compose.yaml | grep 'name: traefik-net' | grep '#')

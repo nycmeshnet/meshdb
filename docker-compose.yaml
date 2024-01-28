@@ -79,5 +79,5 @@ volumes:
 
 networks:
   api:
-    external: true
-    name: traefik-net
+    external: $COMPOSE_EXTERNAL_NETWORK
+    name: $COMPOSE_NETWORK_NAME 

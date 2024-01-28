@@ -1,10 +1,12 @@
+from dataclasses import dataclass
 from rest_framework import generics
 from rest_framework import generics, filters
-from meshapi.models import Install, Member
-from meshapi.serializers import InstallSerializer, MemberSerializer
-
+from meshapi.models import Building, Install, Member
+from meshapi.serializers import BuildingSerializer, InstallSerializer, MemberSerializer
 
 # https://medium.com/geekculture/make-an-api-search-endpoint-with-django-rest-framework-111f307747b8
+
+
 class LookupMember(generics.ListAPIView):
     search_fields = ["name", "email_address", "phone_number"]
     filter_backends = (filters.SearchFilter, filters.OrderingFilter)
@@ -26,7 +28,6 @@ class LookupMember(generics.ListAPIView):
         return queryset
 
 
-# https://medium.com/geekculture/make-an-api-search-endpoint-with-django-rest-framework-111f307747b8
 class LookupInstall(generics.ListAPIView):
     # TODO: Add more search fields later
     search_fields = ["install_number", "network_number", "member_id", "building_id"]

@@ -5,6 +5,7 @@ from datetime import datetime
 from json.decoder import JSONDecodeError
 from django.conf import os
 from django.db import IntegrityError
+from validate_email import email_address
 from meshapi.exceptions import AddressAPIError, AddressError
 from meshapi.models import NETWORK_NUMBER_MAX, NETWORK_NUMBER_MIN, Building, Install, Member
 from meshdb.utils.spreadsheet_import.building.constants import AddressTruthSource
