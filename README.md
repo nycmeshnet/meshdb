@@ -59,11 +59,10 @@ If you have a database, great, go nuts. If you don't, you can use
 `docker-compose`.
 
 > [!WARNING]
-> If you have an old build, you might have to re-build the container
-> by adding `--build` to the below command.
+> You will need to remove the traefik config from the network block.
 
 ```sh
-docker-compose up -d postgres
+docker-compose up -d postgres pelias
 ```
 
 You might have to run the migrations. This will set up the DB for you.
