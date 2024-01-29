@@ -3,25 +3,6 @@ from django.contrib.auth import PermissionDenied
 from rest_framework import permissions
 from rest_framework.permissions import BasePermission
 
-INSTALLER_GROUP = "Installer"
-ADMIN_GROUP = "Admin"
-READONLY_GROUP = "Read Only"
-
-
-def is_installer(user):
-    return user.groups.filter(name=INSTALLER_GROUP).exists()
-
-
-def is_admin(user):
-    return user.groups.filter(name=ADMIN_GROUP).exists()
-
-
-def is_readonly(user):
-    return user.groups.filter(name=READONLY_GROUP).exists()
-
-
-perm_denied_generic_msg = "You do not have access to this resource."
-
 
 class IsReadOnly(BasePermission):
     """
