@@ -3,26 +3,19 @@ import time
 from dataclasses import dataclass
 from datetime import datetime
 from json.decoder import JSONDecodeError
+
 from django.conf import os
 from django.db import IntegrityError
-from validate_email import email_address
+from rest_framework import permissions, status
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.response import Response
+
 from meshapi.exceptions import AddressAPIError, AddressError
 from meshapi.models import NETWORK_NUMBER_MAX, NETWORK_NUMBER_MIN, Building, Install, Member
-from meshdb.utils.spreadsheet_import.building.constants import AddressTruthSource
-from meshapi.validation import (
-    validate_phone_number,
-    validate_email_address,
-    NYCAddressInfo,
-)
-from meshapi.permissions import (
-    NetworkNumberAssignmentPermissions,
-)
-from meshapi.exceptions import AddressError, AddressAPIError
-from rest_framework.decorators import api_view
-from rest_framework.response import Response
-from rest_framework import status
-
+from meshapi.permissions import HasNNAssignPermission
+from meshapi.validation import NYCAddressInfo, validate_email_address, validate_phone_number
 from meshapi.zips import NYCZipCodes
+from meshdb.utils.spreadsheet_import.building.constants import AddressTruthSource
 
 
 # Join Form
@@ -43,6 +36,7 @@ class JoinFormRequest:
 
 
 @api_view(["POST"])
+@permission_classes([permissions.AllowAny])
 def join_form(request):
     request_json = json.loads(request.body)
     try:
@@ -190,7 +184,7 @@ class NetworkNumberAssignmentRequest:
 
 
 @api_view(["POST"])
-# @permission_classes([NetworkNumberAssignmentPermissions]) # FIXME: Re-enable Auth
+@permission_classes([HasNNAssignPermission])
 def network_number_assignment(request):
     """
     Takes an install number, and assigns the install a network number,

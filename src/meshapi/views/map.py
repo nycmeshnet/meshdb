@@ -1,13 +1,12 @@
 from django.db.models import Q
-from rest_framework import generics
+from rest_framework import generics, permissions
 
 from meshapi.models import Building, Install, Link, Sector
-from meshapi.permissions import InstallListCreatePermissions, LinkSectorListPermissions
 from meshapi.serializers import MapDataInstallSerializer, MapDataLinkSerializer, MapDataSectorSerializer
 
 
 class MapDataInstallList(generics.ListAPIView):
-    permission_classes = [InstallListCreatePermissions]
+    permission_classes = [permissions.AllowAny]
     serializer_class = MapDataInstallSerializer
     pagination_class = None
 
@@ -36,14 +35,14 @@ class MapDataInstallList(generics.ListAPIView):
 
 
 class MapDataLinkList(generics.ListAPIView):
-    permission_classes = [LinkSectorListPermissions]
+    permission_classes = [permissions.AllowAny]
     serializer_class = MapDataLinkSerializer
     pagination_class = None
     queryset = Link.objects.filter(~Q(status__in=[Link.LinkStatus.DEAD]))
 
 
 class MapDataSectorlList(generics.ListAPIView):
-    permission_classes = [LinkSectorListPermissions]
+    permission_classes = [permissions.AllowAny]
     serializer_class = MapDataSectorSerializer
     pagination_class = None
     queryset = Sector.objects.all()

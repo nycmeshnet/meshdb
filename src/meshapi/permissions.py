@@ -1,6 +1,7 @@
 from django.conf import os
 from django.contrib.auth import PermissionDenied
 from rest_framework import permissions
+from rest_framework.permissions import BasePermission
 
 INSTALLER_GROUP = "Installer"
 ADMIN_GROUP = "Admin"
@@ -22,115 +23,35 @@ def is_readonly(user):
 perm_denied_generic_msg = "You do not have access to this resource."
 
 
+class IsReadOnly(BasePermission):
+    """
+    The request is a read-only request. Add this to any View that needs to be accessible to
+    unauthenticated users. Be sure to keep the Django authenticator also (e.g.):
+        permission_classes = [permissions.DjangoModelPermissions | IsReadOnly]
+    """
+
+    def has_permission(self, request, view):
+        return bool(request.method in permissions.SAFE_METHODS)
+
+
+class HasDjangoPermission(BasePermission):
+    django_permission = None
+
+    def has_permission(self, request, view):
+        if not self.django_permission:
+            raise NotImplementedError(
+                "You must subclass HasDjangoPermission and specify the django_permission attribute"
+            )
+        return request.user and request.user.has_perm(self.django_permission)
+
+
+class HasNNAssignPermission(HasDjangoPermission):
+    django_permission = "meshapi.assign_nn"
+
+
 # Janky
 class LegacyMeshQueryPassword(permissions.BasePermission):
     def has_permission(self, request, view):
         if request.query_params["password"] != os.environ.get("QUERY_PSK"):
             raise PermissionDenied("Authentication Failed.")
-        return True
-
-
-# Anyone can list buildings, but only Admins can create them
-class BuildingListCreatePermissions(permissions.BasePermission):
-    def has_permission(self, request, view):
-        if request.method == "GET":
-            return True
-        else:
-            if not (request.user.is_superuser or is_admin(request.user)):
-                raise PermissionDenied(perm_denied_generic_msg)
-            return True
-
-
-# Anyone can retrieve buildings, installers can update them, but only
-# Admins can add or delete them.
-class BuildingRetrieveUpdateDestroyPermissions(permissions.BasePermission):
-    def has_permission(self, request, view):
-        if request.method == "GET":
-            return True
-        elif request.method == "PATCH":
-            if not (request.user.is_superuser or is_admin(request.user) or is_installer(request.user)):
-                raise PermissionDenied(perm_denied_generic_msg)
-            return True
-        else:
-            if not (request.user.is_superuser or is_admin(request.user)):
-                raise PermissionDenied(perm_denied_generic_msg)
-            return True
-
-
-# Anyone can list, but only admins can create
-class MemberListCreatePermissions(permissions.BasePermission):
-    def has_permission(self, request, view):
-        if request.method == "GET":
-            if not (
-                request.user.is_superuser
-                or is_admin(request.user)
-                or is_installer(request.user)
-                or is_readonly(request.user)
-            ):
-                raise PermissionDenied(perm_denied_generic_msg)
-            return True
-        else:
-            if not (request.user.is_superuser or is_admin(request.user)):
-                raise PermissionDenied(perm_denied_generic_msg)
-            return True
-
-
-# Installers can retrieve, but only admins can mutate
-class MemberRetrieveUpdateDestroyPermissions(permissions.BasePermission):
-    def has_permission(self, request, view):
-        if request.method == "GET":
-            if not (
-                request.user.is_superuser
-                or is_admin(request.user)
-                or is_installer(request.user)
-                or is_readonly(request.user)
-            ):
-                raise PermissionDenied(perm_denied_generic_msg)
-            return True
-        else:
-            if not (request.user.is_superuser or is_admin(request.user)):
-                raise PermissionDenied(perm_denied_generic_msg)
-            return True
-
-
-# Anyone can list installs, but only installers or admins can create them
-class InstallListCreatePermissions(permissions.BasePermission):
-    def has_permission(self, request, view):
-        if request.method in ["GET", "OPTIONS"]:
-            return True
-        else:
-            if not (request.user.is_superuser or is_admin(request.user) or is_installer(request.user)):
-                raise PermissionDenied(perm_denied_generic_msg)
-            return True
-
-
-# Anyone can list links and sectors
-class LinkSectorListPermissions(permissions.BasePermission):
-    def has_permission(self, request, view):
-        if request.method in ["GET", "OPTIONS"]:
-            return True
-        else:
-            raise PermissionDenied(perm_denied_generic_msg)
-
-
-# Anyone can retrieve installs, installers can update them, only
-# admins can delete them
-class InstallRetrieveUpdateDestroyPermissions(permissions.BasePermission):
-    def has_permission(self, request, view):
-        if request.method == "GET":
-            return True
-        elif request.method == "PATCH":
-            if not (request.user.is_superuser or is_admin(request.user) or is_installer(request.user)):
-                raise PermissionDenied(perm_denied_generic_msg)
-            return True
-        else:
-            if not (request.user.is_superuser or is_admin(request.user)):
-                raise PermissionDenied(perm_denied_generic_msg)
-            return True
-
-
-class NetworkNumberAssignmentPermissions(permissions.BasePermission):
-    def has_permission(self, request, view):
-        if not (request.user.is_superuser or is_admin(request.user) or is_installer(request.user)):
-            raise PermissionDenied(perm_denied_generic_msg)
         return True

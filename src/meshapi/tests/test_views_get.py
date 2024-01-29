@@ -1,6 +1,8 @@
-from django.test import TestCase, Client
-from django.contrib.auth.models import User, Group
+from django.contrib.auth.models import User
+from django.test import Client, TestCase
 from rest_framework.authtoken.models import Token
+
+from meshapi.tests.group_helpers import create_installer_group
 
 
 class TestViewsGetUnauthenticated(TestCase):
@@ -11,7 +13,7 @@ class TestViewsGetUnauthenticated(TestCase):
             ("/api/v1/", 200),
             ("/api/v1", 301),
             ("/api/v1/buildings/", 200),
-            ("/api/v1/members/", 403),
+            ("/api/v1/members/", 401),
             ("/api/v1/installs/", 200),
         ]
 
@@ -31,7 +33,7 @@ class TestViewsGetInstaller(TestCase):
         self.installer_user = User.objects.create_user(
             username="installer", password="installer_password", email="installer@example.com"
         )
-        installer_group, _ = Group.objects.get_or_create(name="Installer")
+        installer_group = create_installer_group()
         self.installer_user.groups.add(installer_group)
 
     def test_views_get_installer(self):
