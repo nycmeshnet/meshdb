@@ -12,7 +12,7 @@ class TestViewsGetUnauthenticated(TestCase):
         routes = [
             ("/api/v1/", 200),
             ("/api/v1", 301),
-            ("/api/v1/buildings/", 200),
+            ("/api/v1/buildings/", 401),
             ("/api/v1/members/", 401),
             ("/api/v1/installs/", 200),
         ]

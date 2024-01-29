@@ -28,13 +28,11 @@ class UserDetail(generics.RetrieveAPIView):
 
 
 class BuildingList(generics.ListCreateAPIView):
-    permission_classes = [permissions.DjangoModelPermissions | IsReadOnly]
     queryset = Building.objects.all()
     serializer_class = BuildingSerializer
 
 
 class BuildingDetail(generics.RetrieveUpdateDestroyAPIView):
-    permission_classes = [permissions.DjangoModelPermissions | IsReadOnly]
     queryset = Building.objects.all()
     serializer_class = BuildingSerializer
 
