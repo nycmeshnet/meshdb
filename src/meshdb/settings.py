@@ -40,6 +40,7 @@ ALLOWED_HOSTS = [
     "127.0.0.1",
     "meshdb",
     "nginx",
+    "host.docker.internal",
 ]
 
 # FIXME: Shit works, but also doesn't(?) work with the ^ as the first character
