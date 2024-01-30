@@ -1,12 +1,15 @@
 import os
 
 from celery import Celery
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Set the default Django settings module for the 'celery' program.
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "meshdb.settings")
 
 # Use the docker-hosted Redis container as the backend for Celery
-app = Celery("meshdb", broker="redis://localhost:6379/0")
+app = Celery("meshdb", broker=os.environ.get("CELERY_BROKER", "redis://localhost:6379/0"))
 
 # Using a string here means the worker doesn't have to serialize
 # the configuration object to child processes.
