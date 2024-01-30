@@ -48,12 +48,10 @@ class MemberDetail(generics.RetrieveUpdateDestroyAPIView):
 
 
 class InstallList(generics.ListCreateAPIView):
-    permission_classes = [permissions.DjangoModelPermissions | IsReadOnly]
     queryset = Install.objects.all()
     serializer_class = InstallSerializer
 
 
 class InstallDetail(generics.RetrieveUpdateDestroyAPIView):
-    permission_classes = [permissions.DjangoModelPermissions | IsReadOnly]
     queryset = Install.objects.all()
     serializer_class = InstallSerializer

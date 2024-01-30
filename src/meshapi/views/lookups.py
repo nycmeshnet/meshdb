@@ -29,7 +29,6 @@ class LookupMember(generics.ListAPIView):
 
 
 class LookupInstall(generics.ListAPIView):
-    permission_classes = [permissions.DjangoModelPermissions | IsReadOnly]
     # TODO: Add more search fields later
     search_fields = ["install_number", "network_number", "member_id", "building_id"]
     filter_backends = (filters.SearchFilter, filters.OrderingFilter)
