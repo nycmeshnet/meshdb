@@ -98,6 +98,11 @@ class Install(models.Model):
     referral = models.TextField(default=None, blank=True, null=True)
     notes = models.TextField(default=None, blank=True, null=True)
 
+    class Meta:
+        permissions = [
+            ("assign_nn", "Can assign an NN to install"),
+        ]
+
     def __str__(self):
         return f"Install #{str(self.install_number)}"
 

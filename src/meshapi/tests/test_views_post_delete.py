@@ -1,8 +1,10 @@
 import json
 
-from django.contrib.auth.models import Group, User
+from django.contrib.auth.models import User
 from django.test import Client, TestCase
 
+from ..models import Building, Install, Member
+from .group_helpers import create_groups
 from .sample_data import sample_building, sample_install, sample_member
 
 
@@ -26,23 +28,23 @@ class TestViewsPostDeleteUnauthenticated(TestCase):
 
     def test_views_post_unauthenticated(self):
         response = self.c.post("/api/v1/members/", sample_member)
-        assert_correct_response(self, response, 403)
+        assert_correct_response(self, response, 401)
 
         response = self.c.post("/api/v1/buildings/", sample_building)
-        assert_correct_response(self, response, 403)
+        assert_correct_response(self, response, 401)
 
         response = self.c.post("/api/v1/installs/", sample_install)
-        assert_correct_response(self, response, 403)
+        assert_correct_response(self, response, 401)
 
     def test_views_delete_unauthenticated(self):
         response = self.c.delete(f"/api/v1/installs/1/")
-        assert_correct_response(self, response, 403)
+        assert_correct_response(self, response, 401)
 
         response = self.c.delete(f"/api/v1/members/1/")
-        assert_correct_response(self, response, 403)
+        assert_correct_response(self, response, 401)
 
         response = self.c.delete(f"/api/v1/buildings/1/")
-        assert_correct_response(self, response, 403)
+        assert_correct_response(self, response, 401)
 
 
 class TestViewsPostDeleteInstaller(TestCase):
@@ -53,7 +55,7 @@ class TestViewsPostDeleteInstaller(TestCase):
         self.installer_user = User.objects.create_user(
             username="installer", password="installer_password", email="installer@example.com"
         )
-        installer_group, _ = Group.objects.get_or_create(name="Installer")
+        _, installer_group, _ = create_groups()
         self.installer_user.groups.add(installer_group)
         self.c.login(username="installer", password="installer_password")
 
@@ -62,25 +64,62 @@ class TestViewsPostDeleteInstaller(TestCase):
         )
         self.admin_c.login(username="admin", password="admin_password")
 
-    def test_views_post_installer(self):
-        response = self.c.post("/api/v1/members/", sample_member)
-        assert_correct_response(self, response, 403)
-
-        response = self.c.post("/api/v1/buildings/", sample_building)
-        assert_correct_response(self, response, 403)
-
-        # Add those resources as admin to make sure the rest of the routes work
-        self.admin_c.post("/api/v1/members/", sample_member)
-        self.admin_c.post("/api/v1/buildings/", sample_building)
-
-        member_id = get_first_id(self.c, "/api/v1/members/")
-        building_id = get_first_id(self.c, "/api/v1/buildings/")
+    def test_views_post_put_installer(self):
+        # Add those resources without HTTP, so we have something to PUT against
+        member = Member(**sample_member)
+        member.save()
+        building = Building(**sample_building)
+        building.save()
         sample_install_copy = sample_install.copy()
-        sample_install_copy["member"] = member_id
-        sample_install_copy["building"] = building_id
+        sample_install_copy["building"] = building
+        sample_install_copy["member"] = member
+        install = Install(**sample_install_copy)
+        install.save()
 
-        response = self.c.post("/api/v1/installs/", sample_install_copy)
-        assert_correct_response(self, response, 201)
+        sample_member_changed = sample_member.copy()
+        sample_member_changed["name"] = "Chom2"
+        response = self.c.post("/api/v1/members/", sample_member_changed)
+        assert_correct_response(self, response, 403)
+        response = self.c.put(
+            f"/api/v1/members/{member.id}/",
+            sample_member_changed,
+            content_type="application/json",
+        )
+        assert_correct_response(self, response, 200)
+
+        # Make sure the member was actually changed
+        member.refresh_from_db()
+        assert member.name == "Chom2"
+
+        sample_building_changed = sample_member.copy()
+        sample_building_changed["node_name"] = "Chom2"
+        response = self.c.post("/api/v1/buildings/", sample_building_changed)
+        assert_correct_response(self, response, 403)
+        response = self.c.put(
+            f"/api/v1/buildings/{building.id}/",
+            sample_building_changed,
+            content_type="application/json",
+        )
+        assert_correct_response(self, response, 403)
+
+        sample_install_changed = sample_install.copy()
+        sample_install_changed["install_number"] = install.install_number
+        sample_install_changed["notes"] += "\n abcdef"  # Change something
+        sample_install_changed["member"] = member.id
+        sample_install_changed["building"] = building.id
+
+        response = self.c.post("/api/v1/installs/", sample_install_changed)
+        assert_correct_response(self, response, 403)
+        response = self.c.put(
+            f"/api/v1/installs/{install.install_number}/",
+            sample_install_changed,
+            content_type="application/json",
+        )
+        assert_correct_response(self, response, 200)
+
+        # Make sure the install was actually changed
+        install.refresh_from_db()
+        assert install.notes.endswith("\n abcdef")
 
     def test_views_delete_installer(self):
         response = self.c.delete(f"/api/v1/installs/1/")

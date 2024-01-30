@@ -32,7 +32,11 @@ class Command(BaseCommand):
                 read_only.permissions.add(p)
 
             # installer
-            if act == "change" and (obj == "install" or obj == "member") or (act == "view" and obj in models):
+            if (
+                (act == "change" and (obj == "install" or obj == "member"))
+                or (act == "view" and obj in models)
+                or code == "assign_nn"
+            ):
                 installer.permissions.add(p)
 
             # admin

@@ -4,7 +4,12 @@ version = "0.1"
 dependencies = [
     "celery[redis]==5.3.*",
     "django==4.2.*",
-    "djangorestframework==3.14.*",
+    # We need djangorestframework features that are coming in 3.15.*
+    # but that release hasn't shipped yet, so grab the commit that is likely to ship.
+    # This will likely have a small diff with the final 3.15.* release, but is much better
+    # then pulling their master branch (which changes constantly)
+    # FIXME: Go back to PyPI once https://github.com/encode/django-rest-framework/pull/8794 is merged
+    "djangorestframework@git+https://github.com/encode/django-rest-framework.git@4bbfa8d4556b5847e91ba95f457cc862b7a0f027",
     # FIXME: Go back to PyPI once https://github.com/danihodovic/django-webhook/pull/22 is merged
     "django-webhook@git+https://github.com/Andrew-Dickinson/django-webhook.git",
     "psycopg2-binary==2.9.*",

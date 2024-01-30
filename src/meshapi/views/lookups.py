@@ -1,8 +1,8 @@
-from dataclasses import dataclass
-from rest_framework import generics
-from rest_framework import generics, filters
-from meshapi.models import Building, Install, Member
-from meshapi.serializers import BuildingSerializer, InstallSerializer, MemberSerializer
+from rest_framework import filters, generics, permissions
+
+from meshapi.models import Install, Member
+from meshapi.permissions import IsReadOnly
+from meshapi.serializers import InstallSerializer, MemberSerializer
 
 # https://medium.com/geekculture/make-an-api-search-endpoint-with-django-rest-framework-111f307747b8
 
