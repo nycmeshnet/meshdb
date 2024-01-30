@@ -9,7 +9,7 @@ load_dotenv()
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "meshdb.settings")
 
 # Use the docker-hosted Redis container as the backend for Celery
-app = Celery("meshdb", broker=os.environ.get("CELERY_BROKER"))
+app = Celery("meshdb", broker=os.environ.get("CELERY_BROKER", "redis://localhost:6379/0"))
 
 # Using a string here means the worker doesn't have to serialize
 # the configuration object to child processes.
