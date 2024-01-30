@@ -66,7 +66,8 @@ services:
       - 80
     image: nginx
     labels:
-      - "traefik.http.routers.meshdb.rule=Host(`meshdb.meshsvc-grand.mesh.nycmesh.net`)"
+      - "traefik.http.routers.meshdb.rule=Host(`db.grandsvc.mesh.nycmesh.net`)"
+      - "traefik.http.routers.meshdb-mesh.rule=Host(`db.grandsvc.mesh`)"
       - traefik.enable=true
       - traefik.port=80
     volumes:
