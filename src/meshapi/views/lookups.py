@@ -2,7 +2,7 @@ from rest_framework import filters, generics, permissions
 
 from meshapi.models import Building, Install, Member
 from meshapi.permissions import IsReadOnly
-from meshapi.serializers import InstallSerializer, MemberSerializer
+from meshapi.serializers import BuildingSerializer, InstallSerializer, MemberSerializer
 
 # https://medium.com/geekculture/make-an-api-search-endpoint-with-django-rest-framework-111f307747b8
 
@@ -58,7 +58,7 @@ class LookupBuilding(generics.ListAPIView):
         "primary_nn",
     ]
     filter_backends = (filters.SearchFilter, filters.OrderingFilter)
-    serializer_class = InstallSerializer
+    serializer_class = BuildingSerializer
 
     def get_queryset(self):
         # TODO: Validate Parameters?
