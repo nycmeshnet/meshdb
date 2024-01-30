@@ -16,6 +16,7 @@ urlpatterns = [
     path("installs/<int:pk>/", views.InstallDetail.as_view(), name="meshapi-v1-install-detail"),
     path("join/", views.join_form, name="meshapi-v1-join"),
     path("nn-assign/", views.network_number_assignment, name="meshapi-v1-nn-assign"),
+    path("building/lookup/", views.LookupBuilding.as_view(), name="meshapi-v1-lookup-building"),
     path("member/lookup/", views.LookupMember.as_view(), name="meshapi-v1-lookup-member"),
     path("install/lookup/", views.LookupInstall.as_view(), name="meshapi-v1-lookup-install"),
     path("query/building/", views.QueryBuilding.as_view(), name="meshapi-v1-query-building"),
