@@ -1,11 +1,12 @@
 import json
-from django.conf import os
 
+from django.conf import os
 from django.contrib.auth.models import User
 from django.test import Client, TestCase
 
 from meshapi.models import Building, Install, Member
 
+from .group_helpers import create_groups
 from .sample_data import sample_building, sample_install, sample_member
 
 
@@ -84,13 +85,50 @@ class TestNN(TestCase):
         )
 
     def test_nn_invalid_password(self):
-        response = self.admin_c.post(
+        unauth_client = Client()
+        response = unauth_client.post(
             "/api/v1/nn-assign/",
             {"install_number": self.install_number, "password": "chom"},
             content_type="application/json",
         )
 
-        code = 401
+        code = 403
+        self.assertEqual(
+            code,
+            response.status_code,
+            f"status code incorrect for test_nn_valid_install_number. Should be {code}, but got {response.status_code}",
+        )
+
+    def test_nn_no_password_admin(self):
+        installer_client = Client()
+        installer = User.objects.create_superuser(
+            username="installer", password="installer_password", email="admin@example.com"
+        )
+        _, installer_group, _ = create_groups()
+        installer.groups.add(installer_group)
+        installer_client.login(username="installer", password="installer_password")
+
+        response = installer_client.post(
+            "/api/v1/nn-assign/",
+            {"install_number": self.install_number},
+            content_type="application/json",
+        )
+
+        code = 201
+        self.assertEqual(
+            code,
+            response.status_code,
+            f"status code incorrect for test_nn_valid_install_number. Should be {code}, but got {response.status_code}",
+        )
+
+    def test_nn_no_password_installer(self):
+        response = self.admin_c.post(
+            "/api/v1/nn-assign/",
+            {"install_number": self.install_number},
+            content_type="application/json",
+        )
+
+        code = 201
         self.assertEqual(
             code,
             response.status_code,
