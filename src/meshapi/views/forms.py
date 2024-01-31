@@ -12,7 +12,7 @@ from rest_framework.response import Response
 
 from meshapi.exceptions import AddressAPIError, AddressError
 from meshapi.models import NETWORK_NUMBER_MAX, NETWORK_NUMBER_MIN, Building, Install, Member
-from meshapi.permissions import HasNNAssignPermission
+from meshapi.permissions import HasNNAssignPermission, LegacyNNAssignmentPassword
 from meshapi.validation import NYCAddressInfo, validate_email_address, validate_phone_number
 from meshapi.zips import NYCZipCodes
 from meshdb.utils.spreadsheet_import.building.constants import AddressTruthSource
@@ -180,11 +180,10 @@ def join_form(request):
 @dataclass
 class NetworkNumberAssignmentRequest:
     install_number: int
-    password: str  # Pre-shared key
 
 
 @api_view(["POST"])
-@permission_classes([HasNNAssignPermission])
+@permission_classes([HasNNAssignPermission | LegacyNNAssignmentPassword])
 def network_number_assignment(request):
     """
     Takes an install number, and assigns the install a network number,
@@ -193,13 +192,13 @@ def network_number_assignment(request):
 
     try:
         request_json = json.loads(request.body)
+        if "password" in request_json:
+            del request_json["password"]
+
         r = NetworkNumberAssignmentRequest(**request_json)
     except (TypeError, JSONDecodeError) as e:
         print(f"NN Request failed. Could not decode request: {e}")
         return Response({"Got incomplete request"}, status=status.HTTP_400_BAD_REQUEST)
-
-    if r.password != os.environ.get("NN_ASSIGN_PSK"):
-        return Response({"Authentication Failed."}, status=status.HTTP_401_UNAUTHORIZED)
 
     try:
         nn_install = Install.objects.get(install_number=r.install_number)
