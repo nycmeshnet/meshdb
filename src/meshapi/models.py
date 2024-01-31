@@ -55,9 +55,8 @@ class Member(models.Model):
 
 class Install(models.Model):
     class InstallStatus(models.TextChoices):
-        OPEN = "Open"
-        SCHEDULED = "Scheduled"
-        NN_ASSIGNED = "NN Assigned"
+        REQUEST_RECEIVED = "Request Received"
+        PENDING = "Pending"
         BLOCKED = "Blocked"
         ACTIVE = "Active"
         INACTIVE = "Inactive"

@@ -76,10 +76,10 @@ class MapDataInstallSerializer(serializers.ModelSerializer):
         return None
 
     def convert_status_to_spreadsheet_status(self, install):
-        if install.install_status == Install.InstallStatus.OPEN:
+        if install.install_status == Install.InstallStatus.REQUEST_RECEIVED:
             return None
-        elif install.install_status == Install.InstallStatus.NN_ASSIGNED:
-            return "NN assigned"
+        elif install.install_status == Install.InstallStatus.PENDING:
+            return "Interested"
         elif install.install_status == Install.InstallStatus.BLOCKED:
             return "No Los"
         elif install.install_status == Install.InstallStatus.ACTIVE:

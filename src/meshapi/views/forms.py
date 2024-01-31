@@ -123,7 +123,7 @@ def join_form(request):
 
     join_form_install = Install(
         network_number=None,
-        install_status=Install.InstallStatus.OPEN,
+        install_status=Install.InstallStatus.REQUEST_RECEIVED,
         ticket_id=None,
         request_date=datetime.today(),
         install_date=None,
@@ -237,7 +237,7 @@ def network_number_assignment(request):
         nn_install.network_number = free_nn
         nn_building.primary_nn = free_nn
 
-    nn_install.install_status = Install.InstallStatus.NN_ASSIGNED
+    nn_install.install_status = Install.InstallStatus.ACTIVE
 
     try:
         nn_building.save()

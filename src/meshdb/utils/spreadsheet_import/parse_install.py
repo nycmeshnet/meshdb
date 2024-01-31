@@ -7,24 +7,23 @@ from meshdb.utils.spreadsheet_import.csv_load import SpreadsheetRow, Spreadsheet
 def translate_spreadsheet_status_to_db_status(
     status: SpreadsheetStatus,
 ) -> models.Install.InstallStatus:
-    if status in {
+    if status in {SpreadsheetStatus.noStatus}:
+        return models.Install.InstallStatus.REQUEST_RECEIVED
+    elif status in {
         SpreadsheetStatus.interested,
         SpreadsheetStatus.toBeScheduled,
         SpreadsheetStatus.notContactedYet,
-        SpreadsheetStatus.noStatus,
-        # TODO: Is this right? There are a lot of old "no status" rows
-        #  & maybe we don't want these to show as OPEN?
+        SpreadsheetStatus.scheduled,
     }:
-        return models.Install.InstallStatus.OPEN
-    elif status in {SpreadsheetStatus.scheduled}:
-        return models.Install.InstallStatus.SCHEDULED
-    elif status in {SpreadsheetStatus.nnAssigned}:
-        return models.Install.InstallStatus.NN_ASSIGNED
+        return models.Install.InstallStatus.PENDING
     elif status in {SpreadsheetStatus.noLos}:
         return models.Install.InstallStatus.BLOCKED
     elif status in {SpreadsheetStatus.installed}:
         return models.Install.InstallStatus.ACTIVE
-    elif status in {SpreadsheetStatus.poweredOff}:
+    elif status in {
+        SpreadsheetStatus.poweredOff,
+        SpreadsheetStatus.nnAssigned,
+    }:
         return models.Install.InstallStatus.INACTIVE
     elif status in {
         SpreadsheetStatus.abandoned,
