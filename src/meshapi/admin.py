@@ -64,20 +64,24 @@ class BuildingAdmin(admin.ModelAdmin):
     search_fields = [
         # Sometimes they have an actual name
         "node_name__icontains",
+
         # Address info
         "street_address__icontains",
         "city__icontains",
         "state__icontains",
         "zip_code__iexact",
         "bin__iexact",
+
         # Search by NN
         "primary_nn__iexact",
-        "install__network_number__icontains",
+        "install__network_number__iexact",
+        "install__install_number__iexact",
+
         # Search by Member info
         "install__member__name__icontains",
         "install__member__email_address__icontains",
-        "install__member__phone_number__icontains",
-        "install__member__slack_handle__icontains",
+        "install__member__phone_number__iexact",
+        "install__member__slack_handle__iexact",
     ]
     inlines = [InstallInline]
     list_filter = [
@@ -152,15 +156,17 @@ class MemberAdmin(admin.ModelAdmin):
         "email_address__icontains",
         "phone_number__icontains",
         "slack_handle__icontains",
+
         # Search by building details
-        "install__building__street_address",
-        "install__building__city",
-        "install__building__state",
-        "install__building__zip_code",
-        "install__building__bin",
+        "install__building__street_address__icontains",
+        "install__building__city__iexact",
+        "install__building__state__iexact",
+        "install__building__zip_code__iexact",
+        "install__building__bin__iexact",
+
         # Search by network number
-        "install__network_number__icontains",
-        "install__install_number__icontains",
+        "install__network_number__iexact",
+        "install__install_number__iexact",
     ]
     inlines = [InstallInline]
     list_display = [
@@ -192,21 +198,21 @@ class InstallAdmin(admin.ModelAdmin):
     list_display = ["install_number", "network_number", "member", "building"]
     search_fields = [
         # Install number
-        "install_number__icontains",
-        "network_number__icontains",
+        "install_number__iexact",
+        "network_number__iexact",
 
         # Search by building details
-        "building__street_address",
-        "building__city",
-        "building__state",
-        "building__zip_code",
-        "building__bin",
+        "building__street_address__icontains",
+        "building__city__iexact",
+        "building__state__iexact",
+        "building__zip_code__iexact",
+        "building__bin__iexact",
 
         # Search by member details
         "member__name__icontains",
         "member__email_address__icontains",
-        "member__phone_number__icontains",
-        "member__slack_handle__icontains",
+        "member__phone_number__iexact",
+        "member__slack_handle__iexact",
     ]
     autocomplete_fields = ["building", "member"]
     fieldsets = [
