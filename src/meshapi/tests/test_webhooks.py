@@ -12,8 +12,8 @@ from django_webhook.models import Webhook, WebhookTopic
 
 from meshdb.celery import app as celery_app
 
-from ..models import Building, Member
-from .sample_data import sample_building, sample_member
+from ..models import Building, Install, Member
+from .sample_data import sample_building, sample_install, sample_member
 
 HTTP_CALL_WAITING_TIME = 2  # Seconds
 
@@ -43,6 +43,13 @@ class TestMemberWebhook(TransactionTestCase):
         cls.celery_worker.__exit__(None, None, None)
 
     def setUp(self):
+        # Pre-create some example models to use later,
+        # before we activate the webhook listener
+        self.member_obj = Member(**sample_member)
+        self.member_obj.save()
+        self.building_obj = Building(**sample_building)
+        self.building_obj.save()
+
         # Create a simple HTTP listener using flask
         self.http_requests_queue = multiprocessing.Queue()
         self.app_process = multiprocessing.Process(
@@ -60,6 +67,7 @@ class TestMemberWebhook(TransactionTestCase):
         webhook = Webhook(url="http://localhost:8089/webhook")
         topics = [
             WebhookTopic.objects.get(name="meshapi.Member/create"),
+            WebhookTopic.objects.get(name="meshapi.Install/create"),
         ]
         webhook.save()
         webhook.topics.set(topics)
@@ -82,6 +90,26 @@ class TestMemberWebhook(TransactionTestCase):
         for key, value in sample_member.items():
             assert flask_request["object"][key] == value
         assert flask_request["object_type"] == "meshapi.Member"
+        assert flask_request["webhook_uuid"]
+
+    def test_install(self):
+        # Create new install triggers webhook
+        sample_install_copy = sample_install.copy()
+        sample_install_copy["building"] = self.building_obj
+        sample_install_copy["member"] = self.member_obj
+        install_obj = Install(**sample_install_copy)
+        install_obj.save()
+
+        try:
+            flask_request = self.http_requests_queue.get(timeout=HTTP_CALL_WAITING_TIME)
+        except queue.Empty as e:
+            raise RuntimeError("HTTP server not called...") from e
+
+        assert flask_request["topic"] == "meshapi.Install/create"
+        for key, value in sample_install_copy.items():
+            if key not in ["building", "member"]:
+                assert flask_request["object"][key] == value
+        assert flask_request["object_type"] == "meshapi.Install"
         assert flask_request["webhook_uuid"]
 
     def test_building(self):
