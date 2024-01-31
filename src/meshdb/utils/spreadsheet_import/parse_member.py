@@ -151,7 +151,15 @@ def get_or_create_member(
     primary_emails = parse_emails(row.email)
     stripe_emails = parse_emails(row.stripeEmail)
     secondary_emails = parse_emails(row.secondEmail)
-    emails = primary_emails + stripe_emails + secondary_emails
+
+    stripe_email = stripe_emails[0] if stripe_emails else None
+    other_emails = primary_emails + secondary_emails + stripe_emails[1:]
+
+    # Don't normally include the primary stripe email in the list of all emails,
+    # however if it's the only email we've got, use it instead of making this
+    # member invalid
+    if stripe_email and not other_emails:
+        other_emails = [stripe_email]
 
     parsed_phone = parse_phone(row.phone)
 
@@ -186,15 +194,15 @@ def get_or_create_member(
         else None
     )
 
-    if len(emails) > 0:
+    if len(other_emails) > 0:
         existing_members = Member.objects.filter(
-            email_address=emails[0],
+            email_address=other_emails[0],
         )
 
         if existing_members:
             if len(existing_members) > 1:
                 logging.error(
-                    f"Duplicate entries detected for {emails[0]} at install # {row.id} "
+                    f"Duplicate entries detected for {other_emails[0]} at install # {row.id} "
                     f"This should not happen, these should be consolidated by a previous iteration."
                 )
 
@@ -226,11 +234,12 @@ def get_or_create_member(
     return (
         models.Member(
             name=row.name,
-            email_address=emails[0] if len(emails) > 0 else None,
-            secondary_emails=emails[1:],
+            email_address=other_emails[0] if len(other_emails) > 0 else None,
+            secondary_emails=other_emails[1:],
+            stripe_email_address=stripe_email,
             phone_number=formatted_phone_number,
             slack_handle=None,
-            invalid=len(emails) == 0,
+            invalid=len(other_emails) == 0,
             # TODO: Is this column useful if this is all it means?
             #  should we include invalid content in the email fields but mark it here instead of making it NULL?
             contact_notes=notes if notes else None,
