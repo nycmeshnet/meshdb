@@ -101,7 +101,7 @@ class TestViewsGetUnauthenticated(TestCase):
         installs.append(
             Install(
                 install_number=190,
-                install_status=Install.InstallStatus.NN_ASSIGNED,
+                install_status=Install.InstallStatus.REQUEST_RECEIVED,
                 request_date=datetime.date(2015, 9, 30),
                 roof_access=False,
                 building=buildings[-1],
@@ -121,7 +121,7 @@ class TestViewsGetUnauthenticated(TestCase):
         installs.append(
             Install(
                 install_number=14956,
-                install_status=Install.InstallStatus.OPEN,
+                install_status=Install.InstallStatus.PENDING,
                 request_date=datetime.date(2024, 1, 27),
                 roof_access=True,
                 building=buildings[-1],
@@ -175,15 +175,15 @@ class TestViewsGetUnauthenticated(TestCase):
                 },
                 {
                     "id": 190,
-                    "status": "NN assigned",
-                    "coordinates": [-73.921184, 40.660073, 16],
+                    "coordinates": [-73.921184, 40.660073, 16.0],
                     "requestDate": 1443571200000,
                     "roofAccess": False,
                     "panoramas": [],
                 },
                 {
                     "id": 14956,
-                    "coordinates": [-73.9917741, 40.6962265, 66],
+                    "status": "Interested",
+                    "coordinates": [-73.9917741, 40.6962265, 66.0],
                     "requestDate": 1706313600000,
                     "roofAccess": True,
                     "panoramas": [],
