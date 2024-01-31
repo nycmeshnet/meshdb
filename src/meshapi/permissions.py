@@ -1,3 +1,5 @@
+import json
+
 from django.conf import os
 from django.contrib.auth import PermissionDenied
 from rest_framework import permissions
@@ -36,3 +38,12 @@ class LegacyMeshQueryPassword(permissions.BasePermission):
         if request.query_params["password"] != os.environ.get("QUERY_PSK"):
             raise PermissionDenied("Authentication Failed.")
         return True
+
+
+class LegacyNNAssignmentPassword(permissions.BasePermission):
+    def has_permission(self, request, view):
+        request_json = json.loads(request.body)
+        if "password" in request_json and request_json["password"] == os.environ.get("NN_ASSIGN_PSK"):
+            return True
+
+        raise PermissionDenied("Authentication Failed.")
