@@ -36,8 +36,13 @@ class Building(models.Model):
     notes = models.TextField(blank=True, null=True)
 
     def __str__(self):
-        node_name_str = f"{self.node_name} | " if self.node_name is not None else ""
-        return f"{node_name_str}{self.street_address}"
+        if self.node_name:
+            return str(self.node_name)
+        if self.street_address:
+            return str(self.street_address)
+        if self.bin:
+            return f"BIN {self.bin}"
+        return f"MeshDB Building ID {self.id}"
 
 
 class Member(models.Model):
@@ -50,7 +55,9 @@ class Member(models.Model):
     contact_notes = models.TextField(default=None, blank=True, null=True)
 
     def __str__(self):
-        return self.name
+        if self.name:
+            return self.name
+        return f"MeshDB Member ID {self.id}"
 
 
 class Install(models.Model):

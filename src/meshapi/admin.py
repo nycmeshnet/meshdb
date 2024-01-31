@@ -12,6 +12,11 @@ admin.site.index_title = "Welcome to MeshDB Admin Portal"
 # Register your models here.
 
 
+class InstallInline(admin.TabularInline):
+    model = Install
+    extra = 1  # Number of empty forms to display
+
+
 class BuildingAdminForm(forms.ModelForm):
     class Meta:
         model = Building
@@ -57,13 +62,25 @@ class BoroughFilter(admin.SimpleListFilter):
 class BuildingAdmin(admin.ModelAdmin):
     form = BuildingAdminForm
     search_fields = [
+        # Sometimes they have an actual name
+        "node_name__icontains",
+        # Address info
         "street_address__icontains",
         "city__icontains",
-        "node_name__icontains",
+        "state__icontains",
         "zip_code__iexact",
-        "primary_nn__iexact",
         "bin__iexact",
+        # Search by NN
+        "primary_nn__iexact",
+        "install__network_number__iexact",
+        "install__install_number__iexact",
+        # Search by Member info
+        "install__member__name__icontains",
+        "install__member__email_address__icontains",
+        "install__member__phone_number__iexact",
+        "install__member__slack_handle__iexact",
     ]
+    inlines = [InstallInline]
     list_filter = [
         "building_status",
         ("primary_nn", admin.EmptyFieldListFilter),
@@ -131,10 +148,27 @@ class MemberAdminForm(forms.ModelForm):
 class MemberAdmin(admin.ModelAdmin):
     form = MemberAdminForm
     search_fields = [
+        # Search by name
         "name__icontains",
         "email_address__icontains",
+        "phone_number__icontains",
+        "slack_handle__icontains",
+        # Search by building details
+        "install__building__street_address__icontains",
+        "install__building__city__iexact",
+        "install__building__state__iexact",
+        "install__building__zip_code__iexact",
+        "install__building__bin__iexact",
+        # Search by network number
+        "install__network_number__iexact",
+        "install__install_number__iexact",
     ]
-    list_display = ["name", "email_address", "phone_number"]
+    inlines = [InstallInline]
+    list_display = [
+        "name",
+        "email_address",
+        "phone_number",
+    ]
 
 
 class InstallAdminForm(forms.ModelForm):
@@ -150,6 +184,7 @@ class InstallAdminForm(forms.ModelForm):
 class InstallAdmin(admin.ModelAdmin):
     form = InstallAdminForm
     list_filter = [
+        ("network_number", admin.EmptyFieldListFilter),
         "install_status",
         "request_date",
         "install_date",
@@ -157,11 +192,22 @@ class InstallAdmin(admin.ModelAdmin):
     ]
     list_display = ["install_number", "network_number", "member", "building"]
     search_fields = [
-        "install_number__icontains",
-        "network_number__icontains",
+        # Install number
+        "install_number__iexact",
+        "network_number__iexact",
+        # Search by building details
         "building__street_address__icontains",
+        "building__city__iexact",
+        "building__state__iexact",
+        "building__zip_code__iexact",
+        "building__bin__iexact",
+        # Search by member details
         "member__name__icontains",
+        "member__email_address__icontains",
+        "member__phone_number__iexact",
+        "member__slack_handle__iexact",
     ]
+    autocomplete_fields = ["building", "member"]
     fieldsets = [
         (
             "Details",
@@ -244,8 +290,8 @@ class SectorAdmin(admin.ModelAdmin):
     search_fields = ["name__icontains", "device_name__icontains", "ssid__icontains"]
     list_display = [
         "id",
-        "name",
         "ssid",
+        "name",
         "device_name",
     ]
     list_filter = ["device_name", "install_date"]
