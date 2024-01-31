@@ -62,14 +62,22 @@ class BoroughFilter(admin.SimpleListFilter):
 class BuildingAdmin(admin.ModelAdmin):
     form = BuildingAdminForm
     search_fields = [
+        # Sometimes they have an actual name
+        "node_name__icontains",
+        # Address info
         "street_address__icontains",
         "city__icontains",
-        "node_name__icontains",
+        "state__icontains",
         "zip_code__iexact",
-        "primary_nn__iexact",
         "bin__iexact",
-        "install__member__name__icontains",
+        # Search by NN
+        "primary_nn__iexact",
         "install__network_number__icontains",
+        # Search by Member info
+        "install__member__name__icontains",
+        "install__member__email_address__icontains",
+        "install__member__phone_number__icontains",
+        "install__member__slack_handle__icontains",
     ]
     inlines = [InstallInline]
     list_filter = [
@@ -139,11 +147,20 @@ class MemberAdminForm(forms.ModelForm):
 class MemberAdmin(admin.ModelAdmin):
     form = MemberAdminForm
     search_fields = [
+        # Search by name
         "name__icontains",
         "email_address__icontains",
+        "phone_number__icontains",
+        "slack_handle__icontains",
+        # Search by building details
         "install__building__street_address",
+        "install__building__city",
+        "install__building__state",
+        "install__building__zip_code",
         "install__building__bin",
+        # Search by network number
         "install__network_number__icontains",
+        "install__install_number__icontains",
     ]
     inlines = [InstallInline]
     list_display = [
@@ -174,11 +191,22 @@ class InstallAdmin(admin.ModelAdmin):
     ]
     list_display = ["install_number", "network_number", "member", "building"]
     search_fields = [
+        # Install number
         "install_number__icontains",
         "network_number__icontains",
-        "building__street_address__icontains",
-        "building__node_name__icontains",
+
+        # Search by building details
+        "building__street_address",
+        "building__city",
+        "building__state",
+        "building__zip_code",
+        "building__bin",
+
+        # Search by member details
         "member__name__icontains",
+        "member__email_address__icontains",
+        "member__phone_number__icontains",
+        "member__slack_handle__icontains",
     ]
     autocomplete_fields = ["building", "member"]
     fieldsets = [
