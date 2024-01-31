@@ -12,11 +12,6 @@ admin.site.index_title = "Welcome to MeshDB Admin Portal"
 # Register your models here.
 
 
-class InstallInline(admin.TabularInline):
-    model = Install
-    extra = 1  # Number of empty forms to display
-
-
 class BuildingAdminForm(forms.ModelForm):
     class Meta:
         model = Building
@@ -68,10 +63,7 @@ class BuildingAdmin(admin.ModelAdmin):
         "zip_code__iexact",
         "primary_nn__iexact",
         "bin__iexact",
-        "install__member__name__icontains",
-        "install__network_number__icontains",
     ]
-    inlines = [InstallInline]
     list_filter = [
         "building_status",
         ("primary_nn", admin.EmptyFieldListFilter),
@@ -141,16 +133,8 @@ class MemberAdmin(admin.ModelAdmin):
     search_fields = [
         "name__icontains",
         "email_address__icontains",
-        "install__building__street_address",
-        "install__building__bin",
-        "install__network_number__icontains",
     ]
-    inlines = [InstallInline]
-    list_display = [
-        "name",
-        "email_address",
-        "phone_number",
-    ]
+    list_display = ["name", "email_address", "phone_number"]
 
 
 class InstallAdminForm(forms.ModelForm):
@@ -166,7 +150,6 @@ class InstallAdminForm(forms.ModelForm):
 class InstallAdmin(admin.ModelAdmin):
     form = InstallAdminForm
     list_filter = [
-        ("network_number", admin.EmptyFieldListFilter),
         "install_status",
         "request_date",
         "install_date",
@@ -180,7 +163,7 @@ class InstallAdmin(admin.ModelAdmin):
         "building__node_name__icontains",
         "member__name__icontains",
     ]
-    autocomplete_fields = ["building", "member"]
+        autocomplete_fields = ['question']
     fieldsets = [
         (
             "Details",

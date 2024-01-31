@@ -36,8 +36,7 @@ class Building(models.Model):
     notes = models.TextField(blank=True, null=True)
 
     def __str__(self):
-        node_name_str = f"{self.node_name} | " if self.node_name is not None else ""
-        return f"{node_name_str}{self.street_address}"
+        return str(self.node_name) if self.node_name else str(self.street_address)
 
 
 class Member(models.Model):
