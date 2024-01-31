@@ -34,9 +34,11 @@ SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY")
 DEBUG = "DEBUG" in os.environ
 
 ALLOWED_HOSTS = [
-    "meshdb.meshsvc-grand.mesh.nycmesh.net",
-    "meshdb.mesh",
-    "meshdb.mesh.nycmesh.net",
+    "db.grandsvc.mesh.nycmesh.net",
+    "db.grandsvc.mesh",
+    "db.mesh.nycmesh.net",
+    "db.mesh",
+    "db.nycmesh.net",
     "127.0.0.1",
     "meshdb",
     "nginx",
@@ -47,8 +49,8 @@ ALLOWED_HOSTS = [
 # r"^https://\w+\.nycmesh\.net$",
 # r"^http://\w+\.nycmesh\.net$",
 CORS_ALLOWED_ORIGINS = [
-    "http://meshforms.meshsvc-grand.mesh.nycmesh.net",
-    "https://meshforms.meshsvc-grand.mesh.nycmesh.net",
+    "http://forms.grandsvc.mesh.nycmesh.net",
+    "https://forms.grandsvc.mesh.nycmesh.net",
     "http://127.0.0.1:3000",
     "http://localhost:3000",
     "http://127.0.0.1:80",
@@ -56,10 +58,16 @@ CORS_ALLOWED_ORIGINS = [
 ]
 
 CSRF_TRUSTED_ORIGINS = [
-    "http://meshdb.meshsvc-grand.mesh.nycmesh.net",
-    "https://meshdb.meshsvc-grand.mesh.nycmesh.net",
-    "https://meshdb.mesh",
-    "https://meshdb.mesh.nycmesh.net",
+    "http://db.grandsvc.mesh.nycmesh.net",
+    "https://db.grandsvc.mesh.nycmesh.net",
+    "http://db.grandsvc.mesh",
+    "https://db.grandsvc.mesh",
+    "http://db.mesh.nycmesh.net",
+    "https://db.mesh.nycmesh.net",
+    "http://db.mesh",
+    "https://db.mesh",
+    "http://db.nycmesh.net",
+    "https://db.nycmesh.net",
     "http://127.0.0.1:8080",
     "http://meshdb:8081",
     "http://nginx:8080",
