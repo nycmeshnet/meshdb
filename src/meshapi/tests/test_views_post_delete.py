@@ -28,23 +28,23 @@ class TestViewsPostDeleteUnauthenticated(TestCase):
 
     def test_views_post_unauthenticated(self):
         response = self.c.post("/api/v1/members/", sample_member)
-        assert_correct_response(self, response, 401)
+        assert_correct_response(self, response, 403)
 
         response = self.c.post("/api/v1/buildings/", sample_building)
-        assert_correct_response(self, response, 401)
+        assert_correct_response(self, response, 403)
 
         response = self.c.post("/api/v1/installs/", sample_install)
-        assert_correct_response(self, response, 401)
+        assert_correct_response(self, response, 403)
 
     def test_views_delete_unauthenticated(self):
         response = self.c.delete(f"/api/v1/installs/1/")
-        assert_correct_response(self, response, 401)
+        assert_correct_response(self, response, 403)
 
         response = self.c.delete(f"/api/v1/members/1/")
-        assert_correct_response(self, response, 401)
+        assert_correct_response(self, response, 403)
 
         response = self.c.delete(f"/api/v1/buildings/1/")
-        assert_correct_response(self, response, 401)
+        assert_correct_response(self, response, 403)
 
 
 class TestViewsPostDeleteInstaller(TestCase):
