@@ -212,13 +212,13 @@ def network_number_assignment(request):
         r = NetworkNumberAssignmentRequest(**request_json)
     except (TypeError, JSONDecodeError) as e:
         print(f"NN Request failed. Could not decode request: {e}")
-        return Response({"Got incomplete request"}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"message": "Got incomplete request"}, status=status.HTTP_400_BAD_REQUEST)
 
     try:
         nn_install = Install.objects.get(install_number=r.install_number)
     except Exception as e:
         print(f'NN Request failed. Could not get Install w/ Install Number "{r.install_number}": {e}')
-        return Response({"Install Number not found"}, status=status.HTTP_404_NOT_FOUND)
+        return Response({"message": "Install Number not found"}, status=status.HTTP_404_NOT_FOUND)
 
     # Check if the install already has a network number
     if nn_install.network_number != None:
@@ -226,6 +226,7 @@ def network_number_assignment(request):
         print(message)
         return Response(
             {
+                "message": message,
                 "building_id": nn_install.building.id,
                 "install_number": nn_install.install_number,
                 "network_number": nn_install.network_number,
@@ -253,7 +254,7 @@ def network_number_assignment(request):
 
         # Sanity check to make sure we don't assign something crazy
         if free_nn <= 100 or free_nn >= 8000:
-            return Response(f"NN Request failed. Invalid NN: {free_nn}", status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({"message": f"NN Request failed. Invalid NN: {free_nn}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         # Set the NN on both the install and the Building
         nn_install.network_number = free_nn
@@ -266,10 +267,11 @@ def network_number_assignment(request):
         nn_install.save()
     except IntegrityError as e:
         print(e)
-        return Response("NN Request failed. Could not save node number.", status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        return Response({"message": "NN Request failed. Could not save node number."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     return Response(
         {
+            "message": "Network Number has been assigned!",
             "building_id": nn_building.id,
             "install_number": nn_install.install_number,
             "network_number": nn_install.network_number,
