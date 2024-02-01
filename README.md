@@ -75,6 +75,18 @@ You'll probably want an admin account
 python src/manage.py createsuperuser
 ```
 
+And if you have access to it, you can use `import_spreadsheet_dump.sh` to populate
+your database.
+
+> [!WARN]
+> This is _real member data_. DO NOT share this database with anyone under any
+> circumstances.
+
+```
+cp -R <path_to_data_dump> ./spreadsheet_data/
+./import_spreadsheet_dump.sh
+```
+
 Then, you can get crackin'
 
 ```sh
