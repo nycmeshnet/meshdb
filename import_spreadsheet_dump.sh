@@ -2,6 +2,7 @@
 
 DOCKER_PG_COMMAND="docker exec -i meshdb-postgres-1 psql -U meshdb"
 DATA_DIR="./spreadsheet_data/"
+tables=("meshapi_member" "meshapi_building" "meshapi_install" "meshapi_link" "meshapi_sector")
 
 set -ex
 
@@ -18,8 +19,6 @@ do
 		exit 1
 	fi
 done
-
-tables=("meshapi_member" "meshapi_building" "meshapi_install" "meshapi_link" "meshapi_sector")
 
 # Don't need to create them.
 # XXX (willnilges): Do we want to have an option to dump the tables?
