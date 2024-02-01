@@ -73,6 +73,11 @@ class NYCAddressInfo:
         # If we enter something not within NYC, the API will still give us
         # the closest matching street address it can find, so check that
         # the ZIP of what we entered matches what we got.
+
+        # FIXME (willnilges): Found an edge case where if you enter an address
+        # that's not in the Zip code, it will print the "not within city limits"
+        # error. Either the error message needs to be re-worked, or additional
+        # validation is required to figure out exactly what is wrong.
         found_zip = int(nyc_planning_resp["features"][0]["properties"]["postalcode"])
         if found_zip != zip:
             raise AddressError(

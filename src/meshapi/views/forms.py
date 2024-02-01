@@ -60,7 +60,7 @@ def join_form(request):
     if not NYCZipCodes.match_zip(r.zip):
         return Response(
             {
-                "message": "Non-NYC registrations are not supported at this time. Check back later, or email support@nycmesh.net"
+                "detail": "Non-NYC registrations are not supported at this time. Check back later, or email support@nycmesh.net"
             },
             status=status.HTTP_400_BAD_REQUEST,
         )
@@ -179,7 +179,7 @@ def join_form(request):
 
     return Response(
         {
-            "message": "Thanks! A volunteer will email you shortly",
+            "detail": "Thanks! A volunteer will email you shortly",
             "building_id": join_form_building.id,
             "member_id": join_form_member.id,
             "install_number": join_form_install.install_number,
@@ -226,7 +226,7 @@ def network_number_assignment(request):
         print(message)
         return Response(
             {
-                "message": message,
+                "detail": message,
                 "building_id": nn_install.building.id,
                 "install_number": nn_install.install_number,
                 "network_number": nn_install.network_number,
@@ -275,7 +275,7 @@ def network_number_assignment(request):
 
     return Response(
         {
-            "message": "Network Number has been assigned!",
+            "detail": "Network Number has been assigned!",
             "building_id": nn_building.id,
             "install_number": nn_install.install_number,
             "network_number": nn_install.network_number,
