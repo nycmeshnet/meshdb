@@ -169,8 +169,10 @@ class TestJoinForm(TestCase):
             f"status code incorrect for Bad Phone Join Form. Should be {code}, but got {response.status_code}.\n Response is: {response.content.decode('utf-8')}",
         )
 
+        con = json.loads(response.content.decode("utf-8"))
+
         self.assertEqual(
-            '"555-555-5555 is not a valid phone number"', response.content.decode("utf-8"), f"Content is wrong"
+            "555-555-5555 is not a valid phone number", con["message"], f"Content is wrong"
         )
 
     def test_bad_email_join_form(self):
@@ -186,9 +188,11 @@ class TestJoinForm(TestCase):
             f"status code incorrect for Bad Email Join Form. Should be {code}, but got {response.status_code}.\n Response is: {response.content.decode('utf-8')}",
         )
 
+        con = json.loads(response.content.decode("utf-8"))
+
         self.assertEqual(
-            '"notareal@email.meshmeshmeshmeshmesh is not a valid email"',
-            response.content.decode("utf-8"),
+            "notareal@email.meshmeshmeshmeshmesh is not a valid email",
+            con["message"],
             "Content is wrong",
         )
 
@@ -205,9 +209,11 @@ class TestJoinForm(TestCase):
             f"status code incorrect for Bad Address Join Form. Should be {code}, but got {response.status_code}.\n Response is: {response.content.decode('utf-8')}",
         )
 
+        con = json.loads(response.content.decode("utf-8"))
+
         self.assertEqual(
-            f"\"(NYC) Address '{form['street_address']}, {form['city']}, {form['state']} {form['zip']}' not found in geosearch.planninglabs.nyc.\"",
-            response.content.decode("utf-8"),
+            f"(NYC) Address '{form['street_address']}, {form['city']}, {form['state']} {form['zip']}' not found in geosearch.planninglabs.nyc.",
+            con["message"],
             f"Did not get correct response content for bad address join form: {response.content.decode('utf-8')}",
         )
 

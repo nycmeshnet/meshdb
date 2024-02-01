@@ -76,7 +76,7 @@ def join_form(request):
         # off.
         except AddressError as e:
             print(e)
-            return Response(str(e), status=status.HTTP_400_BAD_REQUEST)
+            return Response({"message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         # If we get any other error, then there was probably an issue
         # using the API, and we should wait a bit and re-try
         except (AddressAPIError, Exception) as e:
