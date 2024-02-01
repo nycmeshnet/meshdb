@@ -3,7 +3,7 @@ services:
   postgres:
     healthcheck:
       test: pg_isready -U ${DB_USER}
-      interval: 5s 
+      interval: 5s
       timeout: 3s
       retries: 3
       start_period: 5s
@@ -14,7 +14,7 @@ services:
     image: docker.io/postgres:latest
     environment:
       POSTGRES_DB: ${DB_NAME}
-      POSTGRES_USER: ${DB_USER} 
+      POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
     volumes:
       - postgres_data:/var/lib/postgresql/data/
@@ -66,10 +66,21 @@ services:
       - 80
     image: nginx
     labels:
+      - "traefik.enable=true"
+      - "traefik.port=80"
+        # .nycmesh.net URL (with HTTPS)
       - "traefik.http.routers.meshdb.rule=Host(`db.grandsvc.mesh.nycmesh.net`)"
+      - "traefik.http.routers.meshdb.entrypoints=websecure"
+      - "traefik.http.routers.meshdb.tls=true"
+      - "traefik.http.routers.meshdb.tls.certresolver=grandsvcresolver"
+        # .nycmesh.net Redirect insecure traffic
+      - "traefik.http.routers.meshdb-insecure.rule=Host(`db.grandsvc.mesh.nycmesh.net`)"
+      - "traefik.http.routers.meshdb-insecure.entrypoints=web"
+      - "traefik.http.middlewares.meshdb-https.redirectscheme.scheme=https"
+      - "traefik.http.routers.meshdb-insecure.middlewares=meshdb-https@docker"
+        # .mesh URL
       - "traefik.http.routers.meshdb-mesh.rule=Host(`db.grandsvc.mesh`)"
-      - traefik.enable=true
-      - traefik.port=80
+      - "traefik.http.routers.meshdb-mesh.entrypoints=web"
     volumes:
       - ./nginx:/etc/nginx/conf.d
       - static_files:/var/www/html/static
@@ -81,4 +92,4 @@ volumes:
 networks:
   api:
     external: $COMPOSE_EXTERNAL_NETWORK
-    name: $COMPOSE_NETWORK_NAME 
+    name: $COMPOSE_NETWORK_NAME
