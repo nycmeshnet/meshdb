@@ -48,7 +48,8 @@ class Building(models.Model):
 class Member(models.Model):
     name = models.TextField()
     email_address = models.EmailField(null=True)
-    secondary_emails = ArrayField(EmailField(), null=True)
+    stripe_email_address = models.EmailField(null=True, blank=True, default=None)
+    secondary_emails = ArrayField(EmailField(), null=True, blank=True, default=list)
     phone_number = models.TextField(default=None, blank=True, null=True)
     slack_handle = models.TextField(default=None, blank=True, null=True)
     invalid = models.BooleanField(default=False)
