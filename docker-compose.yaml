@@ -66,12 +66,21 @@ services:
       - 80
     image: nginx
     labels:
+      - "traefik.enable=true"
+      - "traefik.port=80"
+        # .nycmesh.net URL (with HTTPS)
       - "traefik.http.routers.meshdb.rule=Host(`db.grandsvc.mesh.nycmesh.net`)"
       - "traefik.http.routers.meshdb.entrypoints=websecure"
+      - "traefik.http.routers.meshdb.tls=true"
       - "traefik.http.routers.meshdb.tls.certresolver=grandsvcresolver"
+        # .nycmesh.net Redirect insecure traffic
+      - "traefik.http.routers.meshdb-insecure.rule=Host(`db.grandsvc.mesh.nycmesh.net`)"
+      - "traefik.http.routers.meshdb-insecure.entrypoints=web"
+      - "traefik.http.middlewares.meshdb-https.redirectscheme.scheme=https"
+      - "traefik.http.routers.meshdb-insecure.middlewares=meshdb-https@docker"
+        # .mesh URL
       - "traefik.http.routers.meshdb-mesh.rule=Host(`db.grandsvc.mesh`)"
-      - traefik.enable=true
-      - traefik.port=80
+      - "traefik.http.routers.meshdb-mesh.entrypoints=web"
     volumes:
       - ./nginx:/etc/nginx/conf.d
       - static_files:/var/www/html/static
