@@ -42,22 +42,22 @@ def join_form(request):
     try:
         r = JoinFormRequest(**request_json)
     except TypeError as e:
-        return Response({"Got incomplete request"}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"message": "Got incomplete form request"}, status=status.HTTP_400_BAD_REQUEST)
 
     if not r.ncl:
-        return Response("You must agree to the Network Commons License!", status=status.HTTP_400_BAD_REQUEST)
+        return Response({"message": "You must agree to the Network Commons License!"}, status=status.HTTP_400_BAD_REQUEST)
 
     if not validate_email_address(r.email):
-        return Response(f"{r.email} is not a valid email", status=status.HTTP_400_BAD_REQUEST)
+        return Response({"message": f"{r.email} is not a valid email"}, status=status.HTTP_400_BAD_REQUEST)
 
     # Expects country code!!!!
     if not validate_phone_number(r.phone):
-        return Response(f"{r.phone} is not a valid phone number", status=status.HTTP_400_BAD_REQUEST)
+        return Response({"message": f"{r.phone} is not a valid phone number"}, status=status.HTTP_400_BAD_REQUEST)
 
     # We only support the five boroughs of NYC at this time
     if not NYCZipCodes.match_zip(r.zip):
         return Response(
-            "Sorry, we don’t support non NYC registrations at this time, check back later or email support@nycmesh.net",
+            {"message": "Non-NYC registrations are not supported at this time. Check back later, or email support@nycmesh.net"},
             status=status.HTTP_400_BAD_REQUEST,
         )
 
@@ -81,7 +81,7 @@ def join_form(request):
             time.sleep(3)
     # If we run out of tries, bail.
     if nyc_addr_info == None:
-        return Response("(NYC) Error validating address", status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        return Response({"message": "Your address could not be validated."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     # Check if there's an existing member. Dedupe on email for now.
     # A member can have multiple install requests
@@ -140,7 +140,7 @@ def join_form(request):
         join_form_member.save()
     except IntegrityError as e:
         print(e)
-        return Response("Could not save member.", status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        return Response({"message": "There was a problem saving your Member information"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     try:
         join_form_building.save()
@@ -148,7 +148,7 @@ def join_form(request):
         print(e)
         # Delete the member and bail
         join_form_member.delete()
-        return Response("Could not save building", status=status.HTTP_400_BAD_REQUEST)
+        return Response({"message": "There was a problem saving your Building information"}, status=status.HTTP_400_BAD_REQUEST)
 
     try:
         join_form_install.save()
@@ -158,7 +158,7 @@ def join_form(request):
         join_form_member.delete()
         if len(existing_buildings) == 0:
             join_form_building.delete()
-        return Response("Could not save request", status=status.HTTP_400_BAD_REQUEST)
+        return Response({"message": "There was a problem saving your Install information"}, status=status.HTTP_400_BAD_REQUEST)
 
     print(
         f"JoinForm submission success. building_id: {join_form_building.id}, member_id: {join_form_member.id}, install_number: {join_form_install.install_number}"
@@ -166,6 +166,7 @@ def join_form(request):
 
     return Response(
         {
+            "message": "Thanks! A volunteer will email you shortly",
             "building_id": join_form_building.id,
             "member_id": join_form_member.id,
             "install_number": join_form_install.install_number,
