@@ -238,8 +238,8 @@ def network_number_assignment(request):
         free_nn = next(i for i in range(NETWORK_NUMBER_MIN, NETWORK_NUMBER_MAX + 1) if i not in defined_nns)
 
         # Sanity check to make sure we don't assign something crazy
-        assert free_nn > 100
-        assert free_nn < 8000
+        if free_nn <= 100 or free_nn >= 8000:
+            return Response(f"NN Request failed. Invalid NN: {free_nn}", status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         # Set the NN on both the install and the Building
         nn_install.network_number = free_nn
