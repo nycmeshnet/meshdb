@@ -59,9 +59,6 @@ python -c 'from django.core.management.utils import get_random_secret_key; print
 If you have a database, great, go nuts. If you don't, you can use
 `docker-compose`.
 
-> [!WARNING]
-> You will need to remove the traefik config from the network block.
-
 ```sh
 docker-compose up -d postgres pelias redis
 ```
@@ -76,6 +73,18 @@ python src/manage.py migrate
 You'll probably want an admin account
 ```
 python src/manage.py createsuperuser
+```
+
+And if you have access to it, you can use `import_spreadsheet_dump.sh` to populate
+your database.
+
+> [!WARNING]
+> This is _real member data_. DO NOT share this database with anyone under any
+> circumstances.
+
+```
+cp -R <path_to_data_dump> ./spreadsheet_data/
+./import_spreadsheet_dump.sh
 ```
 
 Then, you can get crackin'
