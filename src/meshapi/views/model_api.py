@@ -7,8 +7,6 @@ from meshapi.models import Building, Install, Member
 from meshapi.permissions import IsReadOnly
 from meshapi.serializers import BuildingSerializer, InstallSerializer, MemberSerializer, UserSerializer
 
-# TODO: Do we need more routes for just getting a NN and stuff?
-
 
 # Home view
 @api_view(["GET"])
