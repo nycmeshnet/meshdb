@@ -228,10 +228,18 @@ def network_number_assignment(request):
     else:
         free_nn = None
 
-        defined_nns = set(Install.objects.values_list("network_number", flat=True))
+        defined_nns = set(
+            Install.objects.exclude(install_status=Install.InstallStatus.REQUEST_RECEIVED, network_number__isnull=True)
+            .order_by("install_number")
+            .values_list("install_number", flat=True)
+        ).union(set(Install.objects.values_list("network_number", flat=True)))
 
         # Find the first valid NN that isn't in use
         free_nn = next(i for i in range(NETWORK_NUMBER_MIN, NETWORK_NUMBER_MAX + 1) if i not in defined_nns)
+
+        # Sanity check to make sure we don't assign something crazy
+        if free_nn <= 100 or free_nn >= 8000:
+            return Response(f"NN Request failed. Invalid NN: {free_nn}", status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         # Set the NN on both the install and the Building
         nn_install.network_number = free_nn

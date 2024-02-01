@@ -179,6 +179,7 @@ class TestFindGaps(TestCase):
     admin_c = Client()
 
     def add_data(self, b, m, i, index=101, nn=False):
+        i = i.copy()
         b["zip_code"] += index
         b["address_truth_sources"] = ["NYCPlanningLabs"]
 
@@ -192,9 +193,6 @@ class TestFindGaps(TestCase):
         if i["abandon_date"] == "":
             i["abandon_date"] = None
 
-        if "install_number" in i:
-            i["install_number"] = None
-
         building_obj = Building(**b)
         building_obj.save()
         i["building"] = building_obj
@@ -207,6 +205,7 @@ class TestFindGaps(TestCase):
         install_obj = Install(**i)
         install_obj.save()
         i["install_number"] = install_obj.install_number
+        return i
 
     def setUp(self):
         self.admin_user = User.objects.create_superuser(
@@ -226,28 +225,39 @@ class TestFindGaps(TestCase):
         for i in range(113, 130):
             self.add_data(build, memb, inst, index=i, nn=True)
 
+        # Inactive install, reserves the install number as an NN even though
+        # no NN is technically assigned
+        inst["install_number"] = 130
+        inst["install_status"] = Install.InstallStatus.INACTIVE
+        self.add_data(build, memb, inst, index=130, nn=False)
+
+        # Old join request, doesn't reserve the NN
+        inst["install_number"] = 131
+        inst["install_status"] = Install.InstallStatus.REQUEST_RECEIVED
+        self.add_data(build, memb, inst, index=131, nn=False)
+
         # Then create another couple installs
         # These will get numbers assigned next
         b2 = sample_building.copy()
         m2 = sample_member.copy()
         self.inst2 = sample_install.copy()
-        self.add_data(b2, m2, self.inst2, index=5002, nn=False)
+        self.inst2 = self.add_data(b2, m2, self.inst2, index=5002, nn=False)
 
         b3 = sample_building.copy()
         m3 = sample_member.copy()
         self.inst3 = sample_install.copy()
-        self.add_data(b3, m3, self.inst3, index=5003, nn=False)
+        self.inst3 = self.add_data(b3, m3, self.inst3, index=5003, nn=False)
 
         b4 = sample_building.copy()
         m4 = sample_member.copy()
         self.inst4 = sample_install.copy()
-        self.add_data(b4, m4, self.inst4, index=5004, nn=False)
+        self.inst4 = self.add_data(b4, m4, self.inst4, index=5004, nn=False)
 
     def test_nn_search_for_new_number(self):
         # Try to give NNs to all the installs. Should end up with two right
         # next to each other and then one at the end.
 
-        for inst, nn in [(self.inst2, 111), (self.inst3, 112), (self.inst4, 130)]:
+        for inst, nn in [(self.inst2, 111), (self.inst3, 112), (self.inst4, 131)]:
             response = self.admin_c.post(
                 "/api/v1/nn-assign/",
                 {"install_number": inst["install_number"], "password": os.environ.get("NN_ASSIGN_PSK")},
@@ -275,5 +285,5 @@ class TestFindGaps(TestCase):
         self.assertIsNotNone(Install.objects.filter(network_number=129)[0].install_number)
         self.assertIsNotNone(Building.objects.filter(primary_nn=129)[0].id)
 
-        self.assertIsNotNone(Install.objects.filter(network_number=130)[0].install_number)
-        self.assertIsNotNone(Building.objects.filter(primary_nn=130)[0].id)
+        self.assertIsNotNone(Install.objects.filter(network_number=131)[0].install_number)
+        self.assertIsNotNone(Building.objects.filter(primary_nn=131)[0].id)
