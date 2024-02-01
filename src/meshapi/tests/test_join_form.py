@@ -171,7 +171,7 @@ class TestJoinForm(TestCase):
 
         con = json.loads(response.content.decode("utf-8"))
 
-        self.assertEqual("555-555-5555 is not a valid phone number", con["message"], f"Content is wrong")
+        self.assertEqual("555-555-5555 is not a valid phone number", con["detail"], f"Content is wrong")
 
     def test_bad_email_join_form(self):
         # Name, email, phone, location, apt, rooftop, referral
@@ -190,7 +190,7 @@ class TestJoinForm(TestCase):
 
         self.assertEqual(
             "notareal@email.meshmeshmeshmeshmesh is not a valid email",
-            con["message"],
+            con["detail"],
             "Content is wrong",
         )
 
@@ -211,7 +211,7 @@ class TestJoinForm(TestCase):
 
         self.assertEqual(
             f"(NYC) Address '{form['street_address']}, {form['city']}, {form['state']} {form['zip']}' not found in geosearch.planninglabs.nyc.",
-            con["message"],
+            con["detail"],
             f"Did not get correct response content for bad address join form: {response.content.decode('utf-8')}",
         )
 
