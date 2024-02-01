@@ -59,9 +59,6 @@ python -c 'from django.core.management.utils import get_random_secret_key; print
 If you have a database, great, go nuts. If you don't, you can use
 `docker-compose`.
 
-> [!WARNING]
-> You will need to remove the traefik config from the network block.
-
 ```sh
 docker-compose up -d postgres pelias redis
 ```
