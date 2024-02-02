@@ -42,22 +42,26 @@ def join_form(request):
     try:
         r = JoinFormRequest(**request_json)
     except TypeError as e:
-        return Response({"Got incomplete request"}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"detail": "Got incomplete form request"}, status=status.HTTP_400_BAD_REQUEST)
 
     if not r.ncl:
-        return Response("You must agree to the Network Commons License!", status=status.HTTP_400_BAD_REQUEST)
+        return Response(
+            {"detail": "You must agree to the Network Commons License!"}, status=status.HTTP_400_BAD_REQUEST
+        )
 
     if not validate_email_address(r.email):
-        return Response(f"{r.email} is not a valid email", status=status.HTTP_400_BAD_REQUEST)
+        return Response({"detail": f"{r.email} is not a valid email"}, status=status.HTTP_400_BAD_REQUEST)
 
     # Expects country code!!!!
     if not validate_phone_number(r.phone):
-        return Response(f"{r.phone} is not a valid phone number", status=status.HTTP_400_BAD_REQUEST)
+        return Response({"detail": f"{r.phone} is not a valid phone number"}, status=status.HTTP_400_BAD_REQUEST)
 
     # We only support the five boroughs of NYC at this time
     if not NYCZipCodes.match_zip(r.zip):
         return Response(
-            "Sorry, we don’t support non NYC registrations at this time, check back later or email support@nycmesh.net",
+            {
+                "detail": "Non-NYC registrations are not supported at this time. Check back later, or email support@nycmesh.net"
+            },
             status=status.HTTP_400_BAD_REQUEST,
         )
 
@@ -72,7 +76,7 @@ def join_form(request):
         # off.
         except AddressError as e:
             print(e)
-            return Response(str(e), status=status.HTTP_400_BAD_REQUEST)
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         # If we get any other error, then there was probably an issue
         # using the API, and we should wait a bit and re-try
         except (AddressAPIError, Exception) as e:
@@ -81,7 +85,9 @@ def join_form(request):
             time.sleep(3)
     # If we run out of tries, bail.
     if nyc_addr_info == None:
-        return Response("(NYC) Error validating address", status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        return Response(
+            {"detail": "Your address could not be validated."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
 
     # Check if there's an existing member. Dedupe on email for now.
     # A member can have multiple install requests
@@ -140,7 +146,10 @@ def join_form(request):
         join_form_member.save()
     except IntegrityError as e:
         print(e)
-        return Response("Could not save member.", status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        return Response(
+            {"detail": "There was a problem saving your Member information"},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
 
     try:
         join_form_building.save()
@@ -148,7 +157,9 @@ def join_form(request):
         print(e)
         # Delete the member and bail
         join_form_member.delete()
-        return Response("Could not save building", status=status.HTTP_400_BAD_REQUEST)
+        return Response(
+            {"detail": "There was a problem saving your Building information"}, status=status.HTTP_400_BAD_REQUEST
+        )
 
     try:
         join_form_install.save()
@@ -158,7 +169,9 @@ def join_form(request):
         join_form_member.delete()
         if len(existing_buildings) == 0:
             join_form_building.delete()
-        return Response("Could not save request", status=status.HTTP_400_BAD_REQUEST)
+        return Response(
+            {"detail": "There was a problem saving your Install information"}, status=status.HTTP_400_BAD_REQUEST
+        )
 
     print(
         f"JoinForm submission success. building_id: {join_form_building.id}, member_id: {join_form_member.id}, install_number: {join_form_install.install_number}"
@@ -166,6 +179,7 @@ def join_form(request):
 
     return Response(
         {
+            "detail": "Thanks! A volunteer will email you shortly",
             "building_id": join_form_building.id,
             "member_id": join_form_member.id,
             "install_number": join_form_install.install_number,
@@ -198,13 +212,13 @@ def network_number_assignment(request):
         r = NetworkNumberAssignmentRequest(**request_json)
     except (TypeError, JSONDecodeError) as e:
         print(f"NN Request failed. Could not decode request: {e}")
-        return Response({"Got incomplete request"}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"detail": "Got incomplete request"}, status=status.HTTP_400_BAD_REQUEST)
 
     try:
         nn_install = Install.objects.get(install_number=r.install_number)
     except Exception as e:
         print(f'NN Request failed. Could not get Install w/ Install Number "{r.install_number}": {e}')
-        return Response({"Install Number not found"}, status=status.HTTP_404_NOT_FOUND)
+        return Response({"detail": "Install Number not found"}, status=status.HTTP_404_NOT_FOUND)
 
     # Check if the install already has a network number
     if nn_install.network_number != None:
@@ -212,6 +226,7 @@ def network_number_assignment(request):
         print(message)
         return Response(
             {
+                "detail": message,
                 "building_id": nn_install.building.id,
                 "install_number": nn_install.install_number,
                 "network_number": nn_install.network_number,
@@ -239,7 +254,9 @@ def network_number_assignment(request):
 
         # Sanity check to make sure we don't assign something crazy
         if free_nn <= 100 or free_nn >= 8000:
-            return Response(f"NN Request failed. Invalid NN: {free_nn}", status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response(
+                {"detail": f"NN Request failed. Invalid NN: {free_nn}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
         # Set the NN on both the install and the Building
         nn_install.network_number = free_nn
@@ -252,10 +269,13 @@ def network_number_assignment(request):
         nn_install.save()
     except IntegrityError as e:
         print(e)
-        return Response("NN Request failed. Could not save node number.", status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        return Response(
+            {"detail": "NN Request failed. Could not save node number."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
 
     return Response(
         {
+            "detail": "Network Number has been assigned!",
             "building_id": nn_building.id,
             "install_number": nn_install.install_number,
             "network_number": nn_install.network_number,
