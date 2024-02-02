@@ -25,12 +25,14 @@ Line 2 is the same no matter what(tm)
 class QueryResponse:
     install_number: int
     street_address: str
+    unit: str
     city: str
     state: str
     zip_code: int
-    unit: str
     name: str
     email_address: str
+    stripe_email_address: str
+    secondary_emails: list[str]
     notes: str
     network_number: int
     install_status: str
@@ -46,6 +48,8 @@ class QueryResponse:
             unit=install.unit,
             name=install.member.name,
             email_address=install.member.email_address,
+            stripe_email_address=install.member.stripe_email_address,
+            secondary_emails=install.member.secondary_emails,
             notes=f"Install Notes: '{install.notes}', Building Notes: '{install.building.notes}', Contact Notes: '{install.member.contact_notes}'",
             network_number=install.network_number,
             install_status=install.install_status,
