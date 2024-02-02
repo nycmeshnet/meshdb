@@ -86,6 +86,7 @@ INSTALLED_APPS = [
     "rest_framework",
     "rest_framework.authtoken",
     "meshapi",
+    "meshweb",
     "corsheaders",
 ]
 
@@ -173,6 +174,11 @@ USE_TZ = True
 STATIC_URL = "static/"
 
 STATIC_ROOT = BASE_DIR / "static"
+
+STATICFILES_DIRS = [
+    # BASE_DIR / "static", # The STATICFILES_DIRS setting should not contain the STATIC_ROOT setting
+    "/var/www/static/",
+]
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
