@@ -50,7 +50,7 @@ class QueryResponse:
             email_address=install.member.email_address,
             stripe_email_address=install.member.stripe_email_address,
             secondary_emails=install.member.secondary_emails,
-            notes=f"Install Notes: '{install.notes}', Building Notes: '{install.building.notes}', Contact Notes: '{install.member.contact_notes}'",
+            notes=f"{install.notes}\n{install.building.notes}\n{install.member.contact_notes}",
             network_number=install.network_number,
             install_status=install.install_status,
         )
