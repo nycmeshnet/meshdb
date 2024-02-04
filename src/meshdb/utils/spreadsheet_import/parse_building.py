@@ -46,7 +46,7 @@ def diff_new_building_against_existing(
     if existing_building.bin != new_building.bin and new_building.bin:
         add_dropped_edit(
             DroppedModification(
-                list(install.install_number for install in existing_building.install_set.all()),
+                list(install.install_number for install in existing_building.installs.all()),
                 row_id,
                 existing_building.street_address,
                 "building.bin",
@@ -63,7 +63,7 @@ def diff_new_building_against_existing(
     if existing_building.street_address != new_building.street_address and new_building.street_address:
         add_dropped_edit(
             DroppedModification(
-                list(install.install_number for install in existing_building.install_set.all()),
+                list(install.install_number for install in existing_building.installs.all()),
                 row_id,
                 str(existing_building.bin) if existing_building.bin else existing_building.street_address,
                 "building.street_address",
@@ -80,7 +80,7 @@ def diff_new_building_against_existing(
     if existing_building.city != new_building.city and new_building.city:
         add_dropped_edit(
             DroppedModification(
-                list(install.install_number for install in existing_building.install_set.all()),
+                list(install.install_number for install in existing_building.installs.all()),
                 row_id,
                 str(existing_building.bin) if existing_building.bin else existing_building.street_address,
                 "building.city",
@@ -97,7 +97,7 @@ def diff_new_building_against_existing(
     if existing_building.state != new_building.state and new_building.state:
         add_dropped_edit(
             DroppedModification(
-                list(install.install_number for install in existing_building.install_set.all()),
+                list(install.install_number for install in existing_building.installs.all()),
                 row_id,
                 str(existing_building.bin) if existing_building.bin else existing_building.street_address,
                 "building.state",
@@ -114,7 +114,7 @@ def diff_new_building_against_existing(
     if existing_building.zip_code != new_building.zip_code and new_building.zip_code:
         add_dropped_edit(
             DroppedModification(
-                list(install.install_number for install in existing_building.install_set.all()),
+                list(install.install_number for install in existing_building.installs.all()),
                 row_id,
                 str(existing_building.bin) if existing_building.bin else existing_building.street_address,
                 "building.zip_code",
@@ -137,7 +137,7 @@ def diff_new_building_against_existing(
         else:
             add_dropped_edit(
                 DroppedModification(
-                    list(install.install_number for install in existing_building.install_set.all()),
+                    list(install.install_number for install in existing_building.installs.all()),
                     row_id,
                     str(existing_building.bin) if existing_building.bin else existing_building.street_address,
                     "building.primary_nn",
@@ -160,7 +160,7 @@ def diff_new_building_against_existing(
         else:
             add_dropped_edit(
                 DroppedModification(
-                    list(install.install_number for install in existing_building.install_set.all()),
+                    list(install.install_number for install in existing_building.installs.all()),
                     row_id,
                     str(existing_building.bin) if existing_building.bin else existing_building.street_address,
                     "building.node_name",

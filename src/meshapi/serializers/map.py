@@ -27,7 +27,7 @@ class JavascriptDateField(serializers.IntegerField):
 
 
 def get_install_number_from_building(building):
-    installs = building.install_set.all()
+    installs = building.installs.all()
     if len(installs) == 0:
         if building.primary_nn:
             return building.primary_nn
