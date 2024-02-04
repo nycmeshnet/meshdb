@@ -109,6 +109,12 @@ class TestMemberWebhook(TransactionTestCase):
         for key, value in sample_install_copy.items():
             if key not in ["building", "member"]:
                 assert flask_request["object"][key] == value
+
+        assert flask_request["object"]["building"]["id"] == self.building_obj.id
+        assert flask_request["object"]["building"]["bin"] == self.building_obj.bin
+        assert flask_request["object"]["member"]["id"] == self.member_obj.id
+        assert flask_request["object"]["member"]["email_address"] == self.member_obj.email_address
+
         assert flask_request["object_type"] == "meshapi.Install"
         assert flask_request["webhook_uuid"]
 
