@@ -1,7 +1,10 @@
 import json
+from typing import Optional
 
 from django.conf import os
 from django.contrib.auth import PermissionDenied
+from django.contrib.auth.models import User
+from django.db.models import Model
 from rest_framework import permissions
 from rest_framework.permissions import BasePermission
 
@@ -47,3 +50,11 @@ class LegacyNNAssignmentPassword(permissions.BasePermission):
             return True
 
         raise PermissionDenied("Authentication Failed.")
+
+
+def check_has_model_view_permission(user: Optional[User], model: Model):
+    if not user:
+        # Unauthenticated requests do not have permission by default
+        return False
+
+    return user.has_perm(f"{__package__}.view_{model._meta.model_name}")
