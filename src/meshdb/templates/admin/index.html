@@ -1,0 +1,6 @@
+{% extends "admin/index.html" %}
+
+{% block header %}
+    {{ block.super }}
+    {% include "admin/read_only_warning_box.html" %}
+{% endblock %}

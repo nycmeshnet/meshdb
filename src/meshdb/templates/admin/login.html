@@ -1,0 +1,15 @@
+{% extends "admin/login.html" %}
+
+{% load static %}
+
+{% block branding %}
+<h1 id="site-name"><a href="{% url 'admin:index' %}"><img src="{% static 'meshweb/logo.svg' %}" height="20px" class="header-logo"/>{{ site_header|default:_('Django administration') }}</a></h1>
+{% if user.is_anonymous %}
+  {% include "admin/color_theme_toggle.html" %}
+{% endif %}
+{% endblock %}
+
+{% block header %}
+    {{ block.super }}
+    {% include "admin/read_only_warning_box.html" %}
+{% endblock %}
