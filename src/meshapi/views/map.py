@@ -19,7 +19,7 @@ class MapDataInstallList(generics.ListAPIView):
             all_installs.append(install)
 
         for building in Building.objects.filter(primary_nn__isnull=False):
-            representative_install = building.install_set.all()[0]
+            representative_install = building.installs.all()[0]
             all_installs.append(
                 Install(
                     install_number=building.primary_nn,

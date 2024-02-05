@@ -106,7 +106,7 @@ def diff_new_member_against_existing(
     if existing_member.name != new_member.name and new_member.name:
         add_dropped_edit(
             DroppedModification(
-                list(install.install_number for install in existing_member.install_set.all()),
+                list(install.install_number for install in existing_member.installs.all()),
                 row_id,
                 existing_member.email_address,
                 "member.name",
@@ -122,7 +122,7 @@ def diff_new_member_against_existing(
     if existing_member.phone_number != new_member.phone_number and new_member.phone_number:
         add_dropped_edit(
             DroppedModification(
-                list(install.install_number for install in existing_member.install_set.all()),
+                list(install.install_number for install in existing_member.installs.all()),
                 row_id,
                 existing_member.email_address,
                 "member.phone_number",

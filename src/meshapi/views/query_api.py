@@ -1,7 +1,8 @@
 from dataclasses import asdict, dataclass
 from typing import Dict
-from rest_framework.decorators import permission_classes
+
 from rest_framework.views import APIView, Response, models, status
+
 from meshapi import permissions
 from meshapi.models import Building, Install, Member
 
@@ -87,7 +88,7 @@ class QueryBuilding(QueryView):
 
         responses = []
         for building in buildings:
-            for install in building.install_set.all():
+            for install in building.installs.all():
                 responses.append(asdict(QueryResponse.from_install(install)))
 
         return Response(
@@ -109,7 +110,7 @@ class QueryMember(QueryView):
 
         responses = []
         for member in members:
-            for install in member.install_set.all():
+            for install in member.installs.all():
                 responses.append(asdict(QueryResponse.from_install(install)))
 
         return Response(

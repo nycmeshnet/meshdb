@@ -96,12 +96,12 @@ class Install(models.Model):
     abandon_date = models.DateField(default=None, blank=True, null=True)
 
     # Relation to Building
-    building = models.ForeignKey(Building, on_delete=models.PROTECT)
+    building = models.ForeignKey(Building, on_delete=models.PROTECT, related_name="installs")
     unit = models.TextField(default=None, blank=True, null=True)
     roof_access = models.BooleanField(default=False)
 
     # Relation to Member
-    member = models.ForeignKey(Member, on_delete=models.PROTECT)
+    member = models.ForeignKey(Member, on_delete=models.PROTECT, related_name="installs")
     referral = models.TextField(default=None, blank=True, null=True)
     notes = models.TextField(default=None, blank=True, null=True)
 
