@@ -76,16 +76,17 @@ CSRF_TRUSTED_ORIGINS = [
 # Application definition
 
 INSTALLED_APPS = [
-    "django.contrib.admin",
+    "meshdb.apps.MeshDBAdminConfig",
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    "django_webhook",
+    "drf_hooks",
     "rest_framework",
     "rest_framework.authtoken",
     "meshapi",
+    "meshapi_hooks",
     "meshweb",
     "corsheaders",
 ]
@@ -197,17 +198,22 @@ REST_FRAMEWORK = {
     ],
 }
 
-# Allow-list models which the admin can select to send webhooks for
-DJANGO_WEBHOOK = dict(
-    MODELS=[
-        "meshapi.Building",
-        "meshapi.Member",
-        "meshapi.Install",
-        "meshapi.Link",
-        "meshapi.Sector",
-    ],
-    # This breaks tests, and our write volumes are so low that this performance
-    # impact should be negligible (it's an extra DB call on any model change)
-    # If this is a problem in the future, look into setting this only during testing
-    USE_CACHE=False,
-)
+HOOK_EVENTS = {
+    "building.created": "meshapi.Building.created+",
+    "member.created": "meshapi.Member.created+",
+    "install.created": "meshapi.Install.created+",
+    "building.updated": "meshapi.Building.updated+",
+    "member.updated": "meshapi.Member.updated+",
+    "install.updated": "meshapi.Install.updated+",
+    "building.deleted": "meshapi.Building.deleted+",
+    "member.deleted": "meshapi.Member.deleted+",
+    "install.deleted": "meshapi.Install.deleted+",
+}
+
+HOOK_SERIALIZERS = {
+    "meshapi.Building": "meshapi.serializers.model_api.BuildingSerializer",
+    "meshapi.Member": "meshapi.serializers.model_api.MemberSerializer",
+    "meshapi.Install": "meshapi.serializers.model_api.InstallSerializer",
+}
+
+HOOK_CUSTOM_MODEL = "meshapi_hooks.CeleryRecursiveSerializerHook"

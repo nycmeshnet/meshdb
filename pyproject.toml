@@ -10,7 +10,7 @@ dependencies = [
     # then pulling their master branch (which changes constantly)
     # FIXME: Go back to PyPI once https://github.com/encode/django-rest-framework/pull/8794 is merged
     "djangorestframework@git+https://github.com/encode/django-rest-framework.git@4bbfa8d4556b5847e91ba95f457cc862b7a0f027",
-    "django-webhook==0.0.8",
+    "drf-hooks==0.1.3",
     "psycopg2-binary==2.9.*",
     "gunicorn==21.2.*",
     "python-dotenv==1.0.*",
