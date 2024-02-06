@@ -218,6 +218,8 @@ def get_or_create_building(
                 city=address_result.address.city,
                 state=address_result.address.state,
                 zip_code=address_result.address.zip_code,
+                primary_nn=row.nn if row.nn else None,
+                node_name=row.nodeName if row.nodeName else None,
             ),
             add_dropped_edit,
         )
