@@ -1,9 +1,7 @@
 from django.contrib import admin
 from django.contrib.admin.options import forms
-from meshapi.models import Building, Member, Install, Link, Sector
 
-from django.shortcuts import resolve_url
-from django.contrib.admin.templatetags.admin_urls import admin_urlname
+from meshapi.models import Building, Install, Link, Member, Sector
 
 admin.site.site_header = "MeshDB Admin"
 admin.site.site_title = "MeshDB Admin Portal"
@@ -72,13 +70,13 @@ class BuildingAdmin(admin.ModelAdmin):
         "bin__iexact",
         # Search by NN
         "primary_nn__iexact",
-        "install__network_number__iexact",
-        "install__install_number__iexact",
+        "installs__network_number__iexact",
+        "installs__install_number__iexact",
         # Search by Member info
-        "install__member__name__icontains",
-        "install__member__email_address__icontains",
-        "install__member__phone_number__iexact",
-        "install__member__slack_handle__iexact",
+        "installs__member__name__icontains",
+        "installs__member__email_address__icontains",
+        "installs__member__phone_number__iexact",
+        "installs__member__slack_handle__iexact",
     ]
     inlines = [InstallInline]
     list_filter = [
@@ -154,14 +152,14 @@ class MemberAdmin(admin.ModelAdmin):
         "phone_number__icontains",
         "slack_handle__icontains",
         # Search by building details
-        "install__building__street_address__icontains",
-        "install__building__city__iexact",
-        "install__building__state__iexact",
-        "install__building__zip_code__iexact",
-        "install__building__bin__iexact",
+        "installs__building__street_address__icontains",
+        "installs__building__city__iexact",
+        "installs__building__state__iexact",
+        "installs__building__zip_code__iexact",
+        "installs__building__bin__iexact",
         # Search by network number
-        "install__network_number__iexact",
-        "install__install_number__iexact",
+        "installs__network_number__iexact",
+        "installs__install_number__iexact",
     ]
     inlines = [InstallInline]
     list_display = [
