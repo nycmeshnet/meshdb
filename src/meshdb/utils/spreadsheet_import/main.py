@@ -122,10 +122,12 @@ def main():
         try:
             from_building = models.Building.objects.filter(
                 Q(installs__install_number=spreadsheet_link.from_install_num)
+                | Q(installs__network_number=spreadsheet_link.from_install_num)
                 | Q(primary_nn=spreadsheet_link.from_install_num),
             )[0]
             to_building = models.Building.objects.filter(
                 Q(installs__install_number=spreadsheet_link.to_install_num)
+                | Q(installs__network_number=spreadsheet_link.to_install_num)
                 | Q(primary_nn=spreadsheet_link.to_install_num),
             )[0]
         except IndexError:
@@ -183,7 +185,9 @@ def main():
     for spreadsheet_sector in sectors:
         try:
             building = models.Building.objects.filter(
-                Q(installs__install_number=spreadsheet_sector.node_id) | Q(primary_nn=spreadsheet_sector.node_id),
+                Q(installs__install_number=spreadsheet_sector.node_id)
+                | Q(installs__network_number=spreadsheet_sector.node_id)
+                | Q(primary_nn=spreadsheet_sector.node_id),
             )[0]
         except IndexError:
             message = f"Could not find building for install {spreadsheet_sector.node_id}"
