@@ -191,7 +191,6 @@ def join_form(request):
 
 
 def get_next_free_nn() -> int:
-
     defined_nns = set(
         Install.objects.exclude(install_status=Install.InstallStatus.REQUEST_RECEIVED, network_number__isnull=True)
         .order_by("install_number")
