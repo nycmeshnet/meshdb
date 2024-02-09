@@ -1,0 +1,8 @@
+<NetworkLink>
+  <name>NYCMesh (from MeshDB)</name>
+  <flyToView>0</flyToView>
+  <Link>
+    <href>http://127.0.0.1:8000/api/v1/geography/whole-mesh.kml</href>
+    <viewRefreshMode>onRequest</viewRefreshMode>
+  </Link>
+</NetworkLink>
