@@ -3,7 +3,9 @@ import time
 from dataclasses import dataclass
 from datetime import datetime
 from json.decoder import JSONDecodeError
+from typing import Type
 
+import django.db.models
 from django.db import IntegrityError, transaction
 from rest_framework import permissions, status
 from rest_framework.decorators import api_view, permission_classes
@@ -34,8 +36,23 @@ class JoinFormRequest:
     ncl: bool
 
 
+def acquire_lock_for_all_objects(model_cls: Type[django.db.models.Model]):
+    # This code may look useless but is extremely important. Here we use select_for_update()
+    # to acquire locks on every single row in the given table. This is a bit hacky, but based
+    # on how our NN assignment and join form logic works, we kind of need it. There's nothing
+    # else we can lock to prevent the same NN from being assigned to multiple installs or duplicate
+    # buildings / members created when requested concurrently
+    # We order by the table's primary key to prevent deadlocks due to out-of-order locking, and we
+    # call len() to make sure the queryset is traversed (which is what actually acquires the lock)
+    # This must be called in the context of a transaction.atomic block, which also automatically
+    # handles the release of the lock for us
+    lock_qs = model_cls.objects.select_for_update().all().order_by(model_cls._meta.pk.name)
+    len(lock_qs)
+
+
 @api_view(["POST"])
 @permission_classes([permissions.AllowAny])
+@transaction.atomic
 def join_form(request):
     request_json = json.loads(request.body)
     try:
@@ -87,6 +104,9 @@ def join_form(request):
         return Response(
             {"detail": "Your address could not be validated."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
+
+    acquire_lock_for_all_objects(Member)
+    acquire_lock_for_all_objects(Building)
 
     # Check if there's an existing member. Dedupe on email for now.
     # A member can have multiple install requests
@@ -207,19 +227,6 @@ def get_next_free_nn() -> int:
     return free_nn
 
 
-def acquire_lock_for_all_installs():
-    # This code may look useless but is extremely important. Here we use select_for_update()
-    # to acquire locks on every single row in the Install table. This is a bit hacky, but based
-    # on how our NN assignment logic works, we kind of need it. There's nothing else we can lock
-    # to prevent the same NN from being assigned to multiple installs when requested concurrently.
-    # We order by the table's primary key to prevent deadlocks due to out-of-order locking, and we
-    # call len() to make sure the queryset is traversed (which is what actually acquires the lock)
-    # This must be called in the context of a transaction.atomic block, which also automatically
-    # handles the release of the lock for us
-    lock_qs = Install.objects.select_for_update().all().order_by("install_number")
-    len(lock_qs)
-
-
 @dataclass
 class NetworkNumberAssignmentRequest:
     install_number: int
@@ -244,7 +251,7 @@ def network_number_assignment(request):
         print(f"NN Request failed. Could not decode request: {e}")
         return Response({"detail": "Got incomplete request"}, status=status.HTTP_400_BAD_REQUEST)
 
-    acquire_lock_for_all_installs()
+    acquire_lock_for_all_objects(Install)
 
     try:
         # We don't need select_for_update here because our call above acquires a lock on every row,

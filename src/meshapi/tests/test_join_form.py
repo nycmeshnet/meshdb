@@ -1,12 +1,19 @@
 import json
+import threading
+import time
+from unittest import mock
 
 from django.contrib.auth.models import User
-from django.test import Client, TestCase
+from django.test import Client, TestCase, TransactionTestCase
 
 from meshapi.models import Building, Install, Member
 from meshapi.views import JoinFormRequest
 
 from .sample_join_form_data import *
+
+# Grab a reference to the original Install.__init__ function, so that when it gets mocked
+# we can still use it when we need it
+original_install_init = Install.__init__
 
 
 def validate_successful_join_form_submission(test_case, test_name, s, response):
@@ -246,3 +253,60 @@ class TestJoinForm(TestCase):
         )
 
         validate_successful_join_form_submission(self, "Valid Join Form", s, response)
+
+
+def slow_install_init(*args, **kwargs):
+    result = original_install_init(*args, **kwargs)
+    time.sleep(0.5)
+    return result
+
+
+class TestJoinFormRaceCondition(TransactionTestCase):
+    c = Client()
+    admin_c = Client()
+
+    def setUp(self):
+        self.admin_user = User.objects.create_superuser(
+            username="admin", password="admin_password", email="admin@example.com"
+        )
+        self.admin_c.login(username="admin", password="admin_password")
+
+    def test_valid_join_form(self):
+        results = []
+
+        member1_submission = valid_join_form_submission.copy()
+        member1_submission["email"] = "member1@xyz.com"
+        member2_submission = valid_join_form_submission.copy()
+        member2_submission["email"] = "member2@xyz.com"
+
+        def invoke_join_form(submission, results):
+            # Slow down the creation of the Install object to force a race condition
+            with mock.patch("meshapi.views.forms.Install.__init__", slow_install_init):
+                request, s = pull_apart_join_form_submission(submission)
+                response = self.c.post("/api/v1/join/", request, content_type="application/json")
+                results.append(response)
+
+        t1 = threading.Thread(target=invoke_join_form, args=(member1_submission, results))
+        time.sleep(0.1)  # Sleep to give the first thread a head start
+        t2 = threading.Thread(target=invoke_join_form, args=(member2_submission, results))
+
+        t1.start()
+        t2.start()
+
+        t1.join()
+        t2.join()
+
+        response1 = results[0]
+        response2 = results[1]
+
+        code = 201
+        self.assertEqual(
+            code,
+            response1.status_code,
+            f"status code incorrect for Valid Join Form. Should be {code}, but got {response1.status_code}.\n Response is: {response1.content.decode('utf-8')}",
+        )
+
+        # Make sure that duplicate buildings were not created
+        assert response1.data["building_id"] == response2.data["building_id"]
+        assert response1.data["member_id"] != response2.data["member_id"]
+        assert response1.data["install_number"] != response2.data["install_number"]

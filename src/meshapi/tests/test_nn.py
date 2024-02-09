@@ -354,7 +354,7 @@ class TestNNRaceCondition(TransactionTestCase):
                 outputs_dict[install_num] = result
 
         t1 = threading.Thread(target=invoke_nn_form, args=(self.install_number1, outputs_dict))
-        time.sleep(0.5)  # Sleep to give the first thread a head start
+        time.sleep(0.1)  # Sleep to give the first thread a head start
         t2 = threading.Thread(target=invoke_nn_form, args=(self.install_number2, outputs_dict))
 
         t1.start()
