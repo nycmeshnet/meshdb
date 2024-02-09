@@ -124,6 +124,7 @@ class TestViewsGetLimitedPermissions(TestCase):
                     "roof_access": True,
                     "referral": None,
                     "notes": "Referral: Read about it on the internet",
+                    "diy": None,
                 }
             ],
         )
@@ -230,6 +231,7 @@ class TestViewsGetAdmin(TestCase):
                     "roof_access": True,
                     "referral": None,
                     "notes": "Referral: Read about it on the internet",
+                    "diy": None,
                 }
             ],
         )
@@ -265,6 +267,7 @@ class TestViewsGetAdmin(TestCase):
                     "roof_access": True,
                     "referral": None,
                     "notes": "Referral: Read about it on the internet",
+                    "diy": None,
                 }
             ],
         )
