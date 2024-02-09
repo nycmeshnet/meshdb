@@ -4,8 +4,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from json.decoder import JSONDecodeError
 
-from django.conf import os
-from django.db import IntegrityError
+from django.db import IntegrityError, transaction
 from rest_framework import permissions, status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
@@ -191,6 +190,37 @@ def join_form(request):
     )
 
 
+def get_next_free_nn() -> int:
+
+    defined_nns = set(
+        Install.objects.exclude(install_status=Install.InstallStatus.REQUEST_RECEIVED, network_number__isnull=True)
+        .order_by("install_number")
+        .values_list("install_number", flat=True)
+    ).union(set(Install.objects.values_list("network_number", flat=True)))
+
+    # Find the first valid NN that isn't in use
+    free_nn = next(i for i in range(NETWORK_NUMBER_MIN, NETWORK_NUMBER_MAX + 1) if i not in defined_nns)
+
+    # Sanity check to make sure we don't assign something crazy
+    if free_nn < NETWORK_NUMBER_MIN or free_nn > NETWORK_NUMBER_MAX:
+        raise ValueError(f"Invalid NN: {free_nn}")
+
+    return free_nn
+
+
+def acquire_lock_for_all_installs():
+    # This code may look useless but is extremely important. Here we use select_for_update()
+    # to acquire locks on every single row in the Install table. This is a bit hacky, but based
+    # on how our NN assignment logic works, we kind of need it. There's nothing else we can lock
+    # to prevent the same NN from being assigned to multiple installs when requested concurrently
+    # we order by the table's primary key to prevent deadlocks due to out-of-order locking, and we
+    # call len() to make sure the queryset is traversed (which is what actually acquires the lock)
+    # this must be called in the context of a transaction.atomic block, which also automatically
+    # handles the release of the lock for us
+    lock_qs = Install.objects.select_for_update().all().order_by("install_number")
+    len(lock_qs)
+
+
 @dataclass
 class NetworkNumberAssignmentRequest:
     install_number: int
@@ -198,6 +228,7 @@ class NetworkNumberAssignmentRequest:
 
 @api_view(["POST"])
 @permission_classes([HasNNAssignPermission | LegacyNNAssignmentPassword])
+@transaction.atomic
 def network_number_assignment(request):
     """
     Takes an install number, and assigns the install a network number,
@@ -214,7 +245,11 @@ def network_number_assignment(request):
         print(f"NN Request failed. Could not decode request: {e}")
         return Response({"detail": "Got incomplete request"}, status=status.HTTP_400_BAD_REQUEST)
 
+    acquire_lock_for_all_installs()
+
     try:
+        # We don't need select_for_update here because our call above acquires a lock on every row,
+        # including this one. If that is changed, this needs to be updated
         nn_install = Install.objects.get(install_number=r.install_number)
     except Exception as e:
         print(f'NN Request failed. Could not get Install w/ Install Number "{r.install_number}": {e}')
@@ -241,22 +276,10 @@ def network_number_assignment(request):
     if nn_building.primary_nn is not None:
         nn_install.network_number = nn_building.primary_nn
     else:
-        free_nn = None
-
-        defined_nns = set(
-            Install.objects.exclude(install_status=Install.InstallStatus.REQUEST_RECEIVED, network_number__isnull=True)
-            .order_by("install_number")
-            .values_list("install_number", flat=True)
-        ).union(set(Install.objects.values_list("network_number", flat=True)))
-
-        # Find the first valid NN that isn't in use
-        free_nn = next(i for i in range(NETWORK_NUMBER_MIN, NETWORK_NUMBER_MAX + 1) if i not in defined_nns)
-
-        # Sanity check to make sure we don't assign something crazy
-        if free_nn <= 100 or free_nn >= 8000:
-            return Response(
-                {"detail": f"NN Request failed. Invalid NN: {free_nn}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
+        try:
+            free_nn = get_next_free_nn()
+        except ValueError as e:
+            return Response({"detail": f"NN Request failed. {e}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         # Set the NN on both the install and the Building
         nn_install.network_number = free_nn
