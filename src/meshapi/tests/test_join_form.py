@@ -9,6 +9,7 @@ from django.test import Client, TestCase, TransactionTestCase
 from meshapi.models import Building, Install, Member
 from meshapi.views import JoinFormRequest
 
+from .sample_data import sample_building
 from .sample_join_form_data import *
 
 # Grab a reference to the original Install.__init__ function, so that when it gets mocked
@@ -257,7 +258,7 @@ class TestJoinForm(TestCase):
 
 def slow_install_init(*args, **kwargs):
     result = original_install_init(*args, **kwargs)
-    time.sleep(0.5)
+    time.sleep(2)
     return result
 
 
@@ -270,6 +271,12 @@ class TestJoinFormRaceCondition(TransactionTestCase):
             username="admin", password="admin_password", email="admin@example.com"
         )
         self.admin_c.login(username="admin", password="admin_password")
+
+        # This isn't used by the test cases here, but because of the slightly hacky way
+        # we lock the DB, there needs to be at least one Member or Building object in order
+        # for locking to work correctly
+        building = Building(**sample_building)
+        building.save()
 
     def test_valid_join_form(self):
         results = []
@@ -287,7 +294,7 @@ class TestJoinFormRaceCondition(TransactionTestCase):
                 results.append(response)
 
         t1 = threading.Thread(target=invoke_join_form, args=(member1_submission, results))
-        time.sleep(0.1)  # Sleep to give the first thread a head start
+        time.sleep(0.5)  # Sleep to give the first thread a head start
         t2 = threading.Thread(target=invoke_join_form, args=(member2_submission, results))
 
         t1.start()
@@ -304,6 +311,13 @@ class TestJoinFormRaceCondition(TransactionTestCase):
             code,
             response1.status_code,
             f"status code incorrect for Valid Join Form. Should be {code}, but got {response1.status_code}.\n Response is: {response1.content.decode('utf-8')}",
+        )
+
+        code = 201
+        self.assertEqual(
+            code,
+            response2.status_code,
+            f"status code incorrect for Valid Join Form. Should be {code}, but got {response2.status_code}.\n Response is: {response2.content.decode('utf-8')}",
         )
 
         # Make sure that duplicate buildings were not created

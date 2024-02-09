@@ -295,7 +295,7 @@ class TestFindGaps(TestCase):
 
 def mocked_slow_nn_lookup():
     answer = get_next_free_nn()
-    time.sleep(0.5)
+    time.sleep(1)
     return answer
 
 
@@ -320,6 +320,9 @@ class TestNNRaceCondition(TransactionTestCase):
         building_obj2 = Building(**building)
         building_obj2.save()
 
+        building_obj3 = Building(**building)
+        building_obj3.save()
+
         inst = sample_install.copy()
 
         if inst["abandon_date"] == "":
@@ -336,6 +339,11 @@ class TestNNRaceCondition(TransactionTestCase):
 
         install_obj2 = Install(**inst)
         install_obj2.save()
+
+        # Unused, just to add something else to the DB to check edge cases
+        inst["building"] = building_obj3
+        install_obj3 = Install(**inst)
+        install_obj3.save()
 
         self.install_number1 = install_obj1.install_number
         self.install_number2 = install_obj2.install_number
@@ -354,7 +362,6 @@ class TestNNRaceCondition(TransactionTestCase):
                 outputs_dict[install_num] = result
 
         t1 = threading.Thread(target=invoke_nn_form, args=(self.install_number1, outputs_dict))
-        time.sleep(0.1)  # Sleep to give the first thread a head start
         t2 = threading.Thread(target=invoke_nn_form, args=(self.install_number2, outputs_dict))
 
         t1.start()
@@ -373,12 +380,15 @@ class TestNNRaceCondition(TransactionTestCase):
             f"status code incorrect for test_nn_valid_install_number. Should be {code}, but got {response1.status_code}",
         )
 
-        resp_nn = json.loads(response1.content.decode("utf-8"))["network_number"]
-        expected_nn = 101
+        resp_nns = {
+            json.loads(response1.content.decode("utf-8"))["network_number"],
+            json.loads(response2.content.decode("utf-8"))["network_number"],
+        }
+        expected_nns = {101, 102}
         self.assertEqual(
-            expected_nn,
-            resp_nn,
-            f"nn incorrect for test_nn_valid_install_number. Should be {expected_nn}, but got {resp_nn}",
+            expected_nns,
+            resp_nns,
+            f"NNs incorrect for test_nn_valid_install_number. Should be {expected_nns}, but got {resp_nns}",
         )
 
         code = 201
@@ -386,14 +396,6 @@ class TestNNRaceCondition(TransactionTestCase):
             code,
             response2.status_code,
             f"status code incorrect for test_nn_valid_install_number. Should be {code}, but got {response2.status_code}",
-        )
-
-        resp_nn = json.loads(response2.content.decode("utf-8"))["network_number"]
-        expected_nn = 102
-        self.assertEqual(
-            expected_nn,
-            resp_nn,
-            f"nn incorrect for test_nn_valid_install_number. Should be {expected_nn}, but got {resp_nn}",
         )
 
     def test_same_install_race_condition(self):
@@ -410,7 +412,6 @@ class TestNNRaceCondition(TransactionTestCase):
                 outputs.append(result)
 
         t1 = threading.Thread(target=invoke_nn_form, args=(self.install_number1, outputs))
-        time.sleep(0.1)  # Sleep to give the first thread a head start
         t2 = threading.Thread(target=invoke_nn_form, args=(self.install_number1, outputs))
 
         t1.start()
@@ -422,11 +423,12 @@ class TestNNRaceCondition(TransactionTestCase):
         response1 = outputs[0]
         response2 = outputs[1]
 
-        code = 201
+        expected_codes = {201, 200}
+        received_codes = {response1.status_code, response2.status_code}
         self.assertEqual(
-            code,
-            response1.status_code,
-            f"status code incorrect for test_nn_valid_install_number. Should be {code}, but got {response1.status_code}",
+            expected_codes,
+            received_codes,
+            f"status codes incorrect for test_nn_valid_install_number. Should be {expected_codes}, but got {received_codes}",
         )
 
         resp_nn = json.loads(response1.content.decode("utf-8"))["network_number"]
@@ -435,13 +437,6 @@ class TestNNRaceCondition(TransactionTestCase):
             expected_nn,
             resp_nn,
             f"nn incorrect for test_nn_valid_install_number. Should be {expected_nn}, but got {resp_nn}",
-        )
-
-        code = 200
-        self.assertEqual(
-            code,
-            response2.status_code,
-            f"status code incorrect for test_nn_valid_install_number. Should be {code}, but got {response2.status_code}",
         )
 
         resp_nn = json.loads(response2.content.decode("utf-8"))["network_number"]

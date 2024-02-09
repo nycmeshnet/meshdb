@@ -7,6 +7,7 @@ from typing import Type
 
 import django.db.models
 from django.db import IntegrityError, transaction
+from django.db.models import QuerySet
 from rest_framework import permissions, status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
@@ -36,7 +37,7 @@ class JoinFormRequest:
     ncl: bool
 
 
-def acquire_lock_for_all_objects(model_cls: Type[django.db.models.Model]):
+def acquire_lock_for_queryset(queryset: QuerySet, object_count=None):
     # This code may look useless but is extremely important. Here we use select_for_update()
     # to acquire locks on every single row in the given table. This is a bit hacky, but based
     # on how our NN assignment and join form logic works, we kind of need it. There's nothing
@@ -46,7 +47,9 @@ def acquire_lock_for_all_objects(model_cls: Type[django.db.models.Model]):
     # call len() to make sure the queryset is traversed (which is what actually acquires the lock)
     # This must be called in the context of a transaction.atomic block, which also automatically
     # handles the release of the lock for us
-    lock_qs = model_cls.objects.select_for_update().all().order_by(model_cls._meta.pk.name)
+    lock_qs = queryset.select_for_update().order_by(queryset.model._meta.pk.name)
+    if object_count:
+        lock_qs = lock_qs[:object_count]
     len(lock_qs)
 
 
@@ -105,8 +108,10 @@ def join_form(request):
             {"detail": "Your address could not be validated."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
 
-    acquire_lock_for_all_objects(Member)
-    acquire_lock_for_all_objects(Building)
+    # No need to lock all DB objects since we don't modify these tables,
+    # just lock the first one to ensure atomicity
+    acquire_lock_for_queryset(Member.objects, 1)
+    acquire_lock_for_queryset(Building.objects, 1)
 
     # Check if there's an existing member. Dedupe on email for now.
     # A member can have multiple install requests
@@ -211,6 +216,12 @@ def join_form(request):
 
 
 def get_next_free_nn() -> int:
+    # We don't need to lock all the DB objects, just the ones that impact the free NN calculations
+    acquire_lock_for_queryset(
+        Install.objects.filter(network_number__isnull=False)
+        | Install.objects.exclude(install_status=Install.InstallStatus.REQUEST_RECEIVED, network_number__isnull=True)
+    )
+
     defined_nns = set(
         Install.objects.exclude(install_status=Install.InstallStatus.REQUEST_RECEIVED, network_number__isnull=True)
         .order_by("install_number")
@@ -251,12 +262,14 @@ def network_number_assignment(request):
         print(f"NN Request failed. Could not decode request: {e}")
         return Response({"detail": "Got incomplete request"}, status=status.HTTP_400_BAD_REQUEST)
 
-    acquire_lock_for_all_objects(Install)
+    # This call is a bit out of order, but we need to do this here so that we acquire the lock
+    # before we call Install.objects.select_for_update().get() below in order to prevent deadlocks
+    free_nn = get_next_free_nn()
 
     try:
         # We don't need select_for_update here because our call above acquires a lock on every row,
         # including this one. If that is changed, this needs to be updated
-        nn_install = Install.objects.get(install_number=r.install_number)
+        nn_install = Install.objects.select_for_update().get(install_number=r.install_number)
     except Exception as e:
         print(f'NN Request failed. Could not get Install w/ Install Number "{r.install_number}": {e}')
         return Response({"detail": "Install Number not found"}, status=status.HTTP_404_NOT_FOUND)
@@ -282,12 +295,7 @@ def network_number_assignment(request):
     if nn_building.primary_nn is not None:
         nn_install.network_number = nn_building.primary_nn
     else:
-        try:
-            free_nn = get_next_free_nn()
-        except ValueError as e:
-            return Response({"detail": f"NN Request failed. {e}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-        # Set the NN on both the install and the Building
+        # Set the next free NN on both the install and the Building
         nn_install.network_number = free_nn
         nn_building.primary_nn = free_nn
 
