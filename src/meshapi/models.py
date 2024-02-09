@@ -104,6 +104,7 @@ class Install(models.Model):
     member = models.ForeignKey(Member, on_delete=models.PROTECT, related_name="installs")
     referral = models.TextField(default=None, blank=True, null=True)
     notes = models.TextField(default=None, blank=True, null=True)
+    diy = models.BooleanField(default=None, blank=True, null=True)
 
     class Meta:
         permissions = [

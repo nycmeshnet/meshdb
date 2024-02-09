@@ -39,7 +39,7 @@ def translate_spreadsheet_status_to_db_status(
 
 
 def get_or_create_install(row: SpreadsheetRow) -> Optional[models.Install]:
-    return models.Install(
+    install = models.Install(
         install_number=row.id,
         network_number=row.nn,
         install_status=translate_spreadsheet_status_to_db_status(row.status),
@@ -60,3 +60,10 @@ def get_or_create_install(row: SpreadsheetRow) -> Optional[models.Install]:
         f"{row.contactNotes if row.contactNotes else None}\n\n"
         f"-------\n",
     )
+    if install.install_status in [
+        models.Install.InstallStatus.ACTIVE,
+        models.Install.InstallStatus.INACTIVE,
+    ]:
+        install.diy = "diy" in install.notes.lower()
+
+    return install
