@@ -211,10 +211,10 @@ def acquire_lock_for_all_installs():
     # This code may look useless but is extremely important. Here we use select_for_update()
     # to acquire locks on every single row in the Install table. This is a bit hacky, but based
     # on how our NN assignment logic works, we kind of need it. There's nothing else we can lock
-    # to prevent the same NN from being assigned to multiple installs when requested concurrently
-    # we order by the table's primary key to prevent deadlocks due to out-of-order locking, and we
+    # to prevent the same NN from being assigned to multiple installs when requested concurrently.
+    # We order by the table's primary key to prevent deadlocks due to out-of-order locking, and we
     # call len() to make sure the queryset is traversed (which is what actually acquires the lock)
-    # this must be called in the context of a transaction.atomic block, which also automatically
+    # This must be called in the context of a transaction.atomic block, which also automatically
     # handles the release of the lock for us
     lock_qs = Install.objects.select_for_update().all().order_by("install_number")
     len(lock_qs)
