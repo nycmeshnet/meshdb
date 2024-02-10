@@ -11,7 +11,6 @@ from zlib import crc32
 
 @contextmanager
 def advisory_lock(lock_id, shared=False, wait=True, using=None):
-
     import six
     from django.db import DEFAULT_DB_ALIAS, connections, transaction
 
