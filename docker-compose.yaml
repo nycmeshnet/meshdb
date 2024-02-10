@@ -54,7 +54,7 @@ services:
       - .env
     volumes:
       - static_files:/opt/meshdb/static
-    image: willnilges/meshdb
+    image: willnilges/meshdb:main
 
   nginx:
     depends_on:
