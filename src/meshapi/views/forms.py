@@ -267,7 +267,10 @@ def network_number_assignment(request):
     if nn_building.primary_nn is not None:
         nn_install.network_number = nn_building.primary_nn
     else:
-        free_nn = get_next_free_nn()
+        try:
+            free_nn = get_next_free_nn()
+        except ValueError as exception:
+            return Response({"detail": f"NN Request failed. {exception}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         # Set the next free NN on both the install and the Building
         nn_install.network_number = free_nn
