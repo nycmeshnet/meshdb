@@ -50,13 +50,11 @@ services:
       start_period: 2s
     networks:
       - api
-    build:
-      context: .
-      dockerfile: Dockerfile
     env_file:
       - .env
     volumes:
       - static_files:/opt/meshdb/static
+    image: willnilges/meshdb
 
   nginx:
     depends_on:

@@ -7,6 +7,7 @@
 ## A Database for Tracking NYCMesh Member Installs
 
 [![Python 3.11](https://img.shields.io/badge/python-3.11-blue.svg?logo=python)](https://www.python.org/downloads/release/python-3115/)
+[![Deployment Status](https://github.com/WillNilges/meshdb/actions/workflows/publish-and-deploy.yaml/badge.svg)](https://github.com/WillNilges/meshdb/actions/workflows/publish-and-deploy.yaml)
 
 Welcome to the `nth` attempt at making an API! This was started out of hatred
 for the **New Node Form**.
