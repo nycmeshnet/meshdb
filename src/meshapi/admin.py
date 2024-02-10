@@ -1,9 +1,7 @@
 from django.contrib import admin
 from django.contrib.admin.options import forms
-from meshapi.models import Building, Member, Install, Link, Sector
 
-from django.shortcuts import resolve_url
-from django.contrib.admin.templatetags.admin_urls import admin_urlname
+from meshapi.models import Building, Install, Link, Member, Sector
 
 admin.site.site_header = "MeshDB Admin"
 admin.site.site_title = "MeshDB Admin Portal"
@@ -245,6 +243,7 @@ class InstallAdmin(admin.ModelAdmin):
             "Notes",
             {
                 "fields": [
+                    "diy",
                     "notes",
                     "referral",
                 ]
