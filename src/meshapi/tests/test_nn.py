@@ -1,11 +1,15 @@
 import json
+import threading
+import time
+from unittest import mock
 
 from django.conf import os
 from django.contrib.auth.models import User
-from django.test import Client, TestCase
+from django.test import Client, TestCase, TransactionTestCase
 
 from meshapi.models import Building, Install, Member
 
+from ..views import get_next_free_nn
 from .group_helpers import create_groups
 from .sample_data import sample_building, sample_install, sample_member
 
@@ -59,7 +63,7 @@ class TestNN(TestCase):
         self.assertEqual(
             expected_nn,
             resp_nn,
-            f"status code incorrect for test_nn_valid_install_number. Should be {code}, but got {response.status_code}",
+            f"nn incorrect for test_nn_valid_install_number. Should be {expected_nn}, but got {resp_nn}",
         )
 
         # Now test to make sure that we get 200 for dupes
@@ -81,7 +85,7 @@ class TestNN(TestCase):
         self.assertEqual(
             expected_nn,
             resp_nn,
-            f"status code incorrect for test_nn_valid_install_number. Should be {code}, but got {response.status_code}",
+            f"nn incorrect for test_nn_valid_install_number. Should be {expected_nn}, but got {resp_nn}",
         )
 
     def test_nn_invalid_password(self):
@@ -287,3 +291,158 @@ class TestFindGaps(TestCase):
 
         self.assertIsNotNone(Install.objects.filter(network_number=131)[0].install_number)
         self.assertIsNotNone(Building.objects.filter(primary_nn=131)[0].id)
+
+
+def mocked_slow_nn_lookup():
+    answer = get_next_free_nn()
+    time.sleep(1)
+    return answer
+
+
+class TestNNRaceCondition(TransactionTestCase):
+    admin_c = Client()
+
+    def setUp(self):
+        self.admin_user = User.objects.create_superuser(
+            username="admin", password="admin_password", email="admin@example.com"
+        )
+        self.admin_c.login(username="admin", password="admin_password")
+
+        # Create sample data
+        member_obj = Member(**sample_member)
+        member_obj.save()
+
+        building = sample_building.copy()
+        building["primary_nn"] = None
+        building_obj1 = Building(**building)
+        building_obj1.save()
+
+        building_obj2 = Building(**building)
+        building_obj2.save()
+
+        building_obj3 = Building(**building)
+        building_obj3.save()
+
+        inst = sample_install.copy()
+
+        if inst["abandon_date"] == "":
+            inst["abandon_date"] = None
+
+        inst["building"] = building_obj1
+        inst["member"] = member_obj
+        inst["network_number"] = None
+
+        install_obj1 = Install(**inst)
+        install_obj1.save()
+
+        inst["building"] = building_obj2
+
+        install_obj2 = Install(**inst)
+        install_obj2.save()
+
+        # Unused, just to add something else to the DB to check edge cases
+        inst["building"] = building_obj3
+        install_obj3 = Install(**inst)
+        install_obj3.save()
+
+        self.install_number1 = install_obj1.install_number
+        self.install_number2 = install_obj2.install_number
+
+    def test_different_installs_race_condition(self):
+        outputs_dict = {}
+
+        def invoke_nn_form(install_num: int, outputs_dict: dict):
+            # Slow down the call which looks up the NN to force the race condition
+            with mock.patch("meshapi.views.forms.get_next_free_nn", mocked_slow_nn_lookup):
+                result = self.admin_c.post(
+                    "/api/v1/nn-assign/",
+                    {"install_number": install_num, "password": os.environ.get("NN_ASSIGN_PSK")},
+                    content_type="application/json",
+                )
+                outputs_dict[install_num] = result
+
+        t1 = threading.Thread(target=invoke_nn_form, args=(self.install_number1, outputs_dict))
+        t2 = threading.Thread(target=invoke_nn_form, args=(self.install_number2, outputs_dict))
+
+        t1.start()
+        t2.start()
+
+        t1.join()
+        t2.join()
+
+        response1 = outputs_dict[self.install_number1]
+        response2 = outputs_dict[self.install_number2]
+
+        code = 201
+        self.assertEqual(
+            code,
+            response1.status_code,
+            f"status code incorrect for test_nn_valid_install_number. Should be {code}, but got {response1.status_code}",
+        )
+
+        resp_nns = {
+            json.loads(response1.content.decode("utf-8"))["network_number"],
+            json.loads(response2.content.decode("utf-8"))["network_number"],
+        }
+        expected_nns = {101, 102}
+        self.assertEqual(
+            expected_nns,
+            resp_nns,
+            f"NNs incorrect for test_nn_valid_install_number. Should be {expected_nns}, but got {resp_nns}",
+        )
+
+        code = 201
+        self.assertEqual(
+            code,
+            response2.status_code,
+            f"status code incorrect for test_nn_valid_install_number. Should be {code}, but got {response2.status_code}",
+        )
+
+    def test_same_install_race_condition(self):
+        outputs = []
+
+        def invoke_nn_form(install_num: int, outputs: list):
+            # Slow down the call which looks up the NN to force the race condition
+            with mock.patch("meshapi.views.forms.get_next_free_nn", mocked_slow_nn_lookup):
+                result = self.admin_c.post(
+                    "/api/v1/nn-assign/",
+                    {"install_number": install_num, "password": os.environ.get("NN_ASSIGN_PSK")},
+                    content_type="application/json",
+                )
+                outputs.append(result)
+
+        t1 = threading.Thread(target=invoke_nn_form, args=(self.install_number1, outputs))
+        t2 = threading.Thread(target=invoke_nn_form, args=(self.install_number1, outputs))
+
+        t1.start()
+        t2.start()
+
+        t1.join()
+        t2.join()
+
+        response1 = outputs[0]
+        response2 = outputs[1]
+
+        expected_codes = {201, 200}
+        received_codes = {response1.status_code, response2.status_code}
+        self.assertEqual(
+            expected_codes,
+            received_codes,
+            f"status codes incorrect for test_nn_valid_install_number. Should be {expected_codes}, but got {received_codes}",
+        )
+
+        resp_nn = json.loads(response1.content.decode("utf-8"))["network_number"]
+        expected_nn = 101
+        self.assertEqual(
+            expected_nn,
+            resp_nn,
+            f"nn incorrect for test_nn_valid_install_number. Should be {expected_nn}, but got {resp_nn}",
+        )
+
+        resp_nn = json.loads(response2.content.decode("utf-8"))["network_number"]
+        expected_nn = 101
+        self.assertEqual(
+            expected_nn,
+            resp_nn,
+            f"nn incorrect for test_nn_valid_install_number. Should be {expected_nn}, but got {resp_nn}",
+        )

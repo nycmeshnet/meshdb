@@ -3,9 +3,11 @@ import time
 from dataclasses import dataclass
 from datetime import datetime
 from json.decoder import JSONDecodeError
+from typing import Type
 
-from django.conf import os
-from django.db import IntegrityError
+import django.db.models
+from django.db import IntegrityError, transaction
+from django.db.models import QuerySet
 from rest_framework import permissions, status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
@@ -13,6 +15,7 @@ from rest_framework.response import Response
 from meshapi.exceptions import AddressAPIError, AddressError
 from meshapi.models import NETWORK_NUMBER_MAX, NETWORK_NUMBER_MIN, Building, Install, Member
 from meshapi.permissions import HasNNAssignPermission, LegacyNNAssignmentPassword
+from meshapi.util.django_pglocks import advisory_lock
 from meshapi.validation import NYCAddressInfo, validate_email_address, validate_phone_number
 from meshapi.zips import NYCZipCodes
 from meshdb.utils.spreadsheet_import.building.constants import AddressTruthSource
@@ -37,6 +40,7 @@ class JoinFormRequest:
 
 @api_view(["POST"])
 @permission_classes([permissions.AllowAny])
+@advisory_lock("join_form_lock")
 def join_form(request):
     request_json = json.loads(request.body)
     try:
@@ -191,6 +195,23 @@ def join_form(request):
     )
 
 
+def get_next_free_nn() -> int:
+    defined_nns = set(
+        Install.objects.exclude(install_status=Install.InstallStatus.REQUEST_RECEIVED, network_number__isnull=True)
+        .order_by("install_number")
+        .values_list("install_number", flat=True)
+    ).union(set(Install.objects.values_list("network_number", flat=True)))
+
+    # Find the first valid NN that isn't in use
+    free_nn = next(i for i in range(NETWORK_NUMBER_MIN, NETWORK_NUMBER_MAX + 1) if i not in defined_nns)
+
+    # Sanity check to make sure we don't assign something crazy
+    if free_nn < NETWORK_NUMBER_MIN or free_nn > NETWORK_NUMBER_MAX:
+        raise ValueError(f"Invalid NN: {free_nn}")
+
+    return free_nn
+
+
 @dataclass
 class NetworkNumberAssignmentRequest:
     install_number: int
@@ -198,6 +219,8 @@ class NetworkNumberAssignmentRequest:
 
 @api_view(["POST"])
 @permission_classes([HasNNAssignPermission | LegacyNNAssignmentPassword])
+@transaction.atomic
+@advisory_lock("nn_assignment_lock")
 def network_number_assignment(request):
     """
     Takes an install number, and assigns the install a network number,
@@ -215,7 +238,10 @@ def network_number_assignment(request):
         return Response({"detail": "Got incomplete request"}, status=status.HTTP_400_BAD_REQUEST)
 
     try:
-        nn_install = Install.objects.get(install_number=r.install_number)
+        # Here we use select_for_update() and select_related() to ensure we acquire a lock on all
+        # rows related to the Install object at hand, so that for example, the attached building
+        # isn't changed underneath us
+        nn_install = Install.objects.select_for_update().select_related().get(install_number=r.install_number)
     except Exception as e:
         print(f'NN Request failed. Could not get Install w/ Install Number "{r.install_number}": {e}')
         return Response({"detail": "Install Number not found"}, status=status.HTTP_404_NOT_FOUND)
@@ -241,24 +267,12 @@ def network_number_assignment(request):
     if nn_building.primary_nn is not None:
         nn_install.network_number = nn_building.primary_nn
     else:
-        free_nn = None
+        try:
+            free_nn = get_next_free_nn()
+        except ValueError as exception:
+            return Response({"detail": f"NN Request failed. {exception}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-        defined_nns = set(
-            Install.objects.exclude(install_status=Install.InstallStatus.REQUEST_RECEIVED, network_number__isnull=True)
-            .order_by("install_number")
-            .values_list("install_number", flat=True)
-        ).union(set(Install.objects.values_list("network_number", flat=True)))
-
-        # Find the first valid NN that isn't in use
-        free_nn = next(i for i in range(NETWORK_NUMBER_MIN, NETWORK_NUMBER_MAX + 1) if i not in defined_nns)
-
-        # Sanity check to make sure we don't assign something crazy
-        if free_nn <= 100 or free_nn >= 8000:
-            return Response(
-                {"detail": f"NN Request failed. Invalid NN: {free_nn}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
-
-        # Set the NN on both the install and the Building
+        # Set the next free NN on both the install and the Building
         nn_install.network_number = free_nn
         nn_building.primary_nn = free_nn
 
