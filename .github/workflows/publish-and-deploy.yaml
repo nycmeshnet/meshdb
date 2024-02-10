@@ -3,7 +3,7 @@ name: Publish and Deploy
 
 on:
   push:
-    branches: [ willnilges/docker ] # TODO: Replace with main
+    branches: [ main ]
 
 jobs:
   push_to_registry:
