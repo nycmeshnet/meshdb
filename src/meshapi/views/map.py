@@ -13,22 +13,37 @@ class MapDataInstallList(generics.ListAPIView):
     def get_queryset(self):
         all_installs = []
 
-        queryset = Install.objects.filter(~Q(install_status__in=[Install.InstallStatus.CLOSED]))
+        queryset = Install.objects.filter(
+            ~Q(
+                install_status__in=[
+                    Install.InstallStatus.CLOSED,
+                    Install.InstallStatus.NN_ASSIGNED,
+                ]
+            )
+        )
 
         for install in queryset:
             all_installs.append(install)
 
+        # We need to make sure there is an entry on the map for every NN, and since we excluded the
+        # NN assigned rows in the query above, we need to go through the building objects and
+        # include the nns we haven't already covered via install num
+        covered_nns = {
+            install.network_number for install in all_installs if install.install_number == install.network_number
+        }
         for building in Building.objects.filter(primary_nn__isnull=False):
-            representative_install = building.installs.all()[0]
-            all_installs.append(
-                Install(
-                    install_number=building.primary_nn,
-                    install_status=Install.InstallStatus.NN_REASSIGNED,
-                    building=building,
-                    request_date=representative_install.request_date,
-                    roof_access=representative_install.roof_access,
-                ),
-            )
+            if building.primary_nn not in covered_nns:
+                representative_install = building.installs.all()[0]
+                all_installs.append(
+                    Install(
+                        install_number=building.primary_nn,
+                        install_status=Install.InstallStatus.NN_REASSIGNED,
+                        building=building,
+                        request_date=representative_install.request_date,
+                        roof_access=representative_install.roof_access,
+                    ),
+                )
+                covered_nns.add(building.primary_nn)
 
         all_installs.sort(key=lambda i: i.install_number)
         return all_installs

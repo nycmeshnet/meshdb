@@ -74,11 +74,13 @@ class TestViewsGetUnauthenticated(TestCase):
                 longitude=-73.987881,
                 altitude=27,
                 node_name="Brian",
+                primary_nn=3,
             )
         )
         installs.append(
             Install(
                 install_number=3,
+                network_number=3,
                 install_status=Install.InstallStatus.ACTIVE,
                 request_date=datetime.date(2015, 3, 15),
                 install_date=datetime.date(2014, 10, 14),
@@ -122,6 +124,48 @@ class TestViewsGetUnauthenticated(TestCase):
             Install(
                 install_number=14956,
                 install_status=Install.InstallStatus.PENDING,
+                request_date=datetime.date(2024, 1, 27),
+                roof_access=True,
+                building=buildings[-1],
+                member=member,
+            )
+        )
+
+        buildings.append(
+            Building(
+                building_status=Building.BuildingStatus.ACTIVE,
+                address_truth_sources="",
+                latitude=40.6962265,
+                longitude=-73.9917741,
+                altitude=66,
+            )
+        )
+        installs.append(
+            Install(
+                install_number=245,
+                install_status=Install.InstallStatus.NN_ASSIGNED,
+                request_date=datetime.date(2024, 1, 27),
+                roof_access=True,
+                building=buildings[-1],
+                member=member,
+            )
+        )
+
+        buildings.append(
+            Building(
+                building_status=Building.BuildingStatus.ACTIVE,
+                address_truth_sources="",
+                latitude=40.6962265,
+                longitude=-73.9917741,
+                altitude=66,
+                primary_nn=567,
+            )
+        )
+        installs.append(
+            Install(
+                install_number=15657,
+                network_number=567,
+                install_status=Install.InstallStatus.ACTIVE,
                 request_date=datetime.date(2024, 1, 27),
                 roof_access=True,
                 building=buildings[-1],
@@ -181,8 +225,24 @@ class TestViewsGetUnauthenticated(TestCase):
                     "panoramas": [],
                 },
                 {
+                    "id": 567,
+                    "status": "NN Assigned",
+                    "coordinates": [-73.9917741, 40.6962265, 66.0],
+                    "requestDate": 1706313600000,
+                    "roofAccess": True,
+                    "panoramas": [],
+                },
+                {
                     "id": 14956,
                     "status": "Interested",
+                    "coordinates": [-73.9917741, 40.6962265, 66.0],
+                    "requestDate": 1706313600000,
+                    "roofAccess": True,
+                    "panoramas": [],
+                },
+                {
+                    "id": 15657,
+                    "status": "Installed",
                     "coordinates": [-73.9917741, 40.6962265, 66.0],
                     "requestDate": 1706313600000,
                     "roofAccess": True,
