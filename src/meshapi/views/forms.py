@@ -3,7 +3,7 @@ import time
 from dataclasses import dataclass
 from datetime import datetime
 from json.decoder import JSONDecodeError
-from typing import Type
+from typing import Optional
 
 import django.db.models
 from django.db import IntegrityError, transaction
@@ -195,7 +195,7 @@ def join_form(request):
     )
 
 
-def get_next_free_nn() -> int:
+def get_next_free_nn_from_old_installs() -> int:
     defined_nns = set(
         Install.objects.exclude(install_status=Install.InstallStatus.REQUEST_RECEIVED, network_number__isnull=True)
         .order_by("install_number")
@@ -208,6 +208,34 @@ def get_next_free_nn() -> int:
     # Sanity check to make sure we don't assign something crazy
     if free_nn < NETWORK_NUMBER_MIN or free_nn > NETWORK_NUMBER_MAX:
         raise ValueError(f"Invalid NN: {free_nn}")
+
+    # The number we are about to assign should not be connected to any existing installs as
+    # an NN. Again, the above logic should do this, but we REALLY care about this not happening
+    already_in_use_nn_qs = Install.objects.filter(network_number=free_nn)
+    if len(already_in_use_nn_qs):
+        raise ValueError(
+            f"Invalid NN: {free_nn} is already in use for "
+            f"install number {already_in_use_nn_qs.first().install_number}"
+        )
+
+    # If we are re-assigning a number from another install, mark it with NN Assigned to indicate
+    # that this has happened
+    nn_donor_install: Optional[Install] = Install.objects.select_for_update().filter(install_number=free_nn).first()
+    if nn_donor_install:
+        # Double check that if we are re-assigning something that has been used before that it is
+        # definitely unused. The logic above should do that, but this is so important that for
+        # safety that we should double-check
+        if (
+            nn_donor_install.install_status != Install.InstallStatus.REQUEST_RECEIVED
+            or nn_donor_install.network_number is not None
+        ):
+            raise ValueError(
+                f"Invalid NN: {free_nn} has an install associated that "
+                f"looks active (#{nn_donor_install.install_number})"
+            )
+
+        nn_donor_install.install_status = Install.InstallStatus.NN_ASSIGNED
+        nn_donor_install.save()
 
     return free_nn
 
@@ -268,7 +296,7 @@ def network_number_assignment(request):
         nn_install.network_number = nn_building.primary_nn
     else:
         try:
-            free_nn = get_next_free_nn()
+            free_nn = get_next_free_nn_from_old_installs()
         except ValueError as exception:
             return Response({"detail": f"NN Request failed. {exception}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
