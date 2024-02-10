@@ -35,15 +35,16 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
 
   deploy_to_grandsvc:
-      runs-on: ubuntu-latest
-      steps:
-      - name: Install SSH key
-        uses: shimataro/ssh-key-action@v2
-        with:
-          key: ${{ secrets.GRANDSVC_KEY }}
-          name: id_ed25519 # optional
-          known_hosts: ${{ secrets.GRANDSVC_KNOWN_HOSTS }}
-          #config: ${{ secrets.CONFIG }} # ssh_config; optional
-          if_key_exists: fail # replace / ignore / fail; optional (defaults to fail)
-      - name: Pull new Docker image
-        run: ssh ${{ secrets.GRANDSVC_SSH_TARGET }} "cd ${{ secrets.GRANDSVC_PROJECT_PATH }} && git pull && docker compose pull && docker compose up -d"
+    needs: push_to_registry
+    runs-on: ubuntu-latest
+    steps:
+    - name: Install SSH key
+      uses: shimataro/ssh-key-action@v2
+      with:
+        key: ${{ secrets.GRANDSVC_KEY }}
+        name: id_ed25519 # optional
+        known_hosts: ${{ secrets.GRANDSVC_KNOWN_HOSTS }}
+        #config: ${{ secrets.CONFIG }} # ssh_config; optional
+        if_key_exists: fail # replace / ignore / fail; optional (defaults to fail)
+    - name: Pull new Docker image
+      run: ssh ${{ secrets.GRANDSVC_SSH_TARGET }} "cd ${{ secrets.GRANDSVC_PROJECT_PATH }} && git pull && docker compose pull && docker compose up -d"
