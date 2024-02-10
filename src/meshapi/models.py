@@ -69,6 +69,7 @@ class Install(models.Model):
         ACTIVE = "Active"
         INACTIVE = "Inactive"
         CLOSED = "Closed"
+        NN_REASSIGNED = "NN Reassigned"
 
     # Install Number (generated when form is submitted)
     install_number = models.AutoField(

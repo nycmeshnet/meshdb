@@ -23,7 +23,7 @@ class MapDataInstallList(generics.ListAPIView):
             all_installs.append(
                 Install(
                     install_number=building.primary_nn,
-                    install_status=Install.InstallStatus.NN_ASSIGNED,
+                    install_status=Install.InstallStatus.NN_REASSIGNED,
                     building=building,
                     request_date=representative_install.request_date,
                     roof_access=representative_install.roof_access,

@@ -9,7 +9,7 @@ from django.test import Client, TestCase, TransactionTestCase
 
 from meshapi.models import Building, Install, Member
 
-from ..views import get_next_free_nn
+from ..views import get_next_available_network_number
 from .group_helpers import create_groups
 from .sample_data import sample_building, sample_install, sample_member
 
@@ -294,7 +294,7 @@ class TestFindGaps(TestCase):
 
 
 def mocked_slow_nn_lookup():
-    answer = get_next_free_nn()
+    answer = get_next_available_network_number()
     time.sleep(1)
     return answer
 
@@ -353,7 +353,7 @@ class TestNNRaceCondition(TransactionTestCase):
 
         def invoke_nn_form(install_num: int, outputs_dict: dict):
             # Slow down the call which looks up the NN to force the race condition
-            with mock.patch("meshapi.views.forms.get_next_free_nn", mocked_slow_nn_lookup):
+            with mock.patch("meshapi.views.forms.get_next_available_network_number", mocked_slow_nn_lookup):
                 result = self.admin_c.post(
                     "/api/v1/nn-assign/",
                     {"install_number": install_num, "password": os.environ.get("NN_ASSIGN_PSK")},
@@ -403,7 +403,7 @@ class TestNNRaceCondition(TransactionTestCase):
 
         def invoke_nn_form(install_num: int, outputs: list):
             # Slow down the call which looks up the NN to force the race condition
-            with mock.patch("meshapi.views.forms.get_next_free_nn", mocked_slow_nn_lookup):
+            with mock.patch("meshapi.views.forms.get_next_available_network_number", mocked_slow_nn_lookup):
                 result = self.admin_c.post(
                     "/api/v1/nn-assign/",
                     {"install_number": install_num, "password": os.environ.get("NN_ASSIGN_PSK")},

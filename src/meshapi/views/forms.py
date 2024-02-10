@@ -3,7 +3,7 @@ import time
 from dataclasses import dataclass
 from datetime import datetime
 from json.decoder import JSONDecodeError
-from typing import Type
+from typing import Optional
 
 import django.db.models
 from django.db import IntegrityError, transaction
@@ -195,7 +195,15 @@ def join_form(request):
     )
 
 
-def get_next_free_nn() -> int:
+def get_next_available_network_number() -> int:
+    """
+    This function finds, and marks as re-assigned, the next install whose number can be re-assigned
+    for use as a network number. This is non-trivial becuause we need to exclude installs that
+    have non "REQUEST RECIEVED" statuses, as well as the set of all NNs that have been assigned
+    to any other installs for any reason
+    :return: the integer for the next available network number
+    """
+
     defined_nns = set(
         Install.objects.exclude(install_status=Install.InstallStatus.REQUEST_RECEIVED, network_number__isnull=True)
         .order_by("install_number")
@@ -205,9 +213,38 @@ def get_next_free_nn() -> int:
     # Find the first valid NN that isn't in use
     free_nn = next(i for i in range(NETWORK_NUMBER_MIN, NETWORK_NUMBER_MAX + 1) if i not in defined_nns)
 
-    # Sanity check to make sure we don't assign something crazy
+    # Sanity check to make sure we don't assign something crazy. This is done by the query above,
+    # but we want to be super sure we don't violate these constraints so we check it here
     if free_nn < NETWORK_NUMBER_MIN or free_nn > NETWORK_NUMBER_MAX:
         raise ValueError(f"Invalid NN: {free_nn}")
+
+    # The number we are about to assign should not be connected to any existing installs as
+    # an NN. Again, the above logic should do this, but we REALLY care about this not happening
+    already_in_use_nn_qs = Install.objects.filter(network_number=free_nn)
+    if len(already_in_use_nn_qs):
+        raise ValueError(
+            f"Invalid NN: {free_nn} is already in use for "
+            f"install number {already_in_use_nn_qs.first().install_number}"
+        )
+
+    # If we are re-assigning a number from another install, mark it with NN Assigned to indicate
+    # that this has happened
+    nn_donor_install: Optional[Install] = Install.objects.select_for_update().filter(install_number=free_nn).first()
+    if nn_donor_install:
+        # Double check that if we are re-assigning something that has been used before that it is
+        # definitely unused. The logic above should do that, but this is so important that for
+        # safety that we should double-check
+        if (
+            nn_donor_install.install_status != Install.InstallStatus.REQUEST_RECEIVED
+            or nn_donor_install.network_number is not None
+        ):
+            raise ValueError(
+                f"Invalid NN: {free_nn} has an install associated that "
+                f"looks active (#{nn_donor_install.install_number})"
+            )
+
+        nn_donor_install.install_status = Install.InstallStatus.NN_REASSIGNED
+        nn_donor_install.save()
 
     return free_nn
 
@@ -268,7 +305,7 @@ def network_number_assignment(request):
         nn_install.network_number = nn_building.primary_nn
     else:
         try:
-            free_nn = get_next_free_nn()
+            free_nn = get_next_available_network_number()
         except ValueError as exception:
             return Response({"detail": f"NN Request failed. {exception}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
