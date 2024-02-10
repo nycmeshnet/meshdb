@@ -15,6 +15,7 @@ from rest_framework.response import Response
 from meshapi.exceptions import AddressAPIError, AddressError
 from meshapi.models import NETWORK_NUMBER_MAX, NETWORK_NUMBER_MIN, Building, Install, Member
 from meshapi.permissions import HasNNAssignPermission, LegacyNNAssignmentPassword
+from meshapi.util.django_pglocks import advisory_lock
 from meshapi.validation import NYCAddressInfo, validate_email_address, validate_phone_number
 from meshapi.zips import NYCZipCodes
 from meshdb.utils.spreadsheet_import.building.constants import AddressTruthSource
@@ -37,25 +38,9 @@ class JoinFormRequest:
     ncl: bool
 
 
-def acquire_lock_for_queryset(queryset: QuerySet, object_count=None):
-    # This code may look useless but is extremely important. Here we use select_for_update()
-    # to acquire locks on every single row in the given table. This is a bit hacky, but based
-    # on how our NN assignment and join form logic works, we kind of need it. There's nothing
-    # else we can lock to prevent the same NN from being assigned to multiple installs or duplicate
-    # buildings / members created when requested concurrently
-    # We order by the table's primary key to prevent deadlocks due to out-of-order locking, and we
-    # call len() to make sure the queryset is traversed (which is what actually acquires the lock)
-    # This must be called in the context of a transaction.atomic block, which also automatically
-    # handles the release of the lock for us
-    lock_qs = queryset.select_for_update().order_by(queryset.model._meta.pk.name)
-    if object_count:
-        lock_qs = lock_qs[:object_count]
-    len(lock_qs)
-
-
 @api_view(["POST"])
 @permission_classes([permissions.AllowAny])
-@transaction.atomic
+@advisory_lock("join_form_lock")
 def join_form(request):
     request_json = json.loads(request.body)
     try:
@@ -107,11 +92,6 @@ def join_form(request):
         return Response(
             {"detail": "Your address could not be validated."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
-
-    # No need to lock all DB objects since we don't modify these tables,
-    # just lock the first one to ensure atomicity
-    acquire_lock_for_queryset(Member.objects, 1)
-    acquire_lock_for_queryset(Building.objects, 1)
 
     # Check if there's an existing member. Dedupe on email for now.
     # A member can have multiple install requests
@@ -216,12 +196,6 @@ def join_form(request):
 
 
 def get_next_free_nn() -> int:
-    # We don't need to lock all the DB objects, just the ones that impact the free NN calculations
-    acquire_lock_for_queryset(
-        Install.objects.filter(network_number__isnull=False)
-        | Install.objects.exclude(install_status=Install.InstallStatus.REQUEST_RECEIVED, network_number__isnull=True)
-    )
-
     defined_nns = set(
         Install.objects.exclude(install_status=Install.InstallStatus.REQUEST_RECEIVED, network_number__isnull=True)
         .order_by("install_number")
@@ -246,6 +220,7 @@ class NetworkNumberAssignmentRequest:
 @api_view(["POST"])
 @permission_classes([HasNNAssignPermission | LegacyNNAssignmentPassword])
 @transaction.atomic
+@advisory_lock("nn_assignment_lock")
 def network_number_assignment(request):
     """
     Takes an install number, and assigns the install a network number,
@@ -262,14 +237,11 @@ def network_number_assignment(request):
         print(f"NN Request failed. Could not decode request: {e}")
         return Response({"detail": "Got incomplete request"}, status=status.HTTP_400_BAD_REQUEST)
 
-    # This call is a bit out of order, but we need to do this here so that we acquire the lock
-    # before we call Install.objects.select_for_update().get() below in order to prevent deadlocks
-    free_nn = get_next_free_nn()
-
     try:
-        # We don't need select_for_update here because our call above acquires a lock on every row,
-        # including this one. If that is changed, this needs to be updated
-        nn_install = Install.objects.select_for_update().get(install_number=r.install_number)
+        # Here we use select_for_update() and select_related() to ensure we acquire a lock on all
+        # rows related to the Install object at hand, so that for example, the attached building
+        # isn't changed underneath us
+        nn_install = Install.objects.select_for_update().select_related().get(install_number=r.install_number)
     except Exception as e:
         print(f'NN Request failed. Could not get Install w/ Install Number "{r.install_number}": {e}')
         return Response({"detail": "Install Number not found"}, status=status.HTTP_404_NOT_FOUND)
@@ -295,6 +267,8 @@ def network_number_assignment(request):
     if nn_building.primary_nn is not None:
         nn_install.network_number = nn_building.primary_nn
     else:
+        free_nn = get_next_free_nn()
+
         # Set the next free NN on both the install and the Building
         nn_install.network_number = free_nn
         nn_building.primary_nn = free_nn
