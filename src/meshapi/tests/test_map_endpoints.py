@@ -292,14 +292,6 @@ class TestViewsGetUnauthenticated(TestCase):
                     "installDate": 1616284800000,
                 },
                 {
-                    "nodeId": 227,
-                    "radius": 0.75,
-                    "azimuth": 300,
-                    "width": 90,
-                    "status": "abandoned",
-                    "device": "SN1Sector2",
-                },
-                {
                     "nodeId": 1126,
                     "radius": 0.3,
                     "azimuth": 0,

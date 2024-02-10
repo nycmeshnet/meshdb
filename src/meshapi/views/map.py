@@ -45,4 +45,4 @@ class MapDataSectorlList(generics.ListAPIView):
     permission_classes = [permissions.AllowAny]
     serializer_class = MapDataSectorSerializer
     pagination_class = None
-    queryset = Sector.objects.all()
+    queryset = Sector.objects.filter(~Q(status__in=[Sector.SectorStatus.ABANDONED]))
