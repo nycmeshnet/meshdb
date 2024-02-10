@@ -46,4 +46,4 @@ jobs:
           #config: ${{ secrets.CONFIG }} # ssh_config; optional
           if_key_exists: fail # replace / ignore / fail; optional (defaults to fail)
       - name: Pull new Docker image
-        run: ssh ${{ secrets.GRANDSVC_SSH_TARGET }} "cd /root/meshforms && git pull && docker compose pull && docker compose up -d"
+        run: ssh ${{ secrets.GRANDSVC_SSH_TARGET }} "cd ${{ secrets.GRANDSVC_PROJECT_PATH }} && git pull && docker compose pull && docker compose up -d"
