@@ -13,14 +13,12 @@ class MapDataInstallList(generics.ListAPIView):
     def get_queryset(self):
         all_installs = []
 
-        queryset = Install.objects.filter(
-            ~Q(
-                install_status__in=[
-                    Install.InstallStatus.CLOSED,
-                    Install.InstallStatus.NN_ASSIGNED,
-                ]
-            )
-        )
+        excluded_statuses = {
+            Install.InstallStatus.CLOSED,
+            Install.InstallStatus.NN_ASSIGNED,
+        }
+
+        queryset = Install.objects.filter(~Q(install_status__in=excluded_statuses))
 
         for install in queryset:
             all_installs.append(install)
@@ -31,7 +29,13 @@ class MapDataInstallList(generics.ListAPIView):
         covered_nns = {
             install.network_number for install in all_installs if install.install_number == install.network_number
         }
-        for building in Building.objects.filter(primary_nn__isnull=False):
+        for building in Building.objects.filter(
+            Q(
+                primary_nn__isnull=False,
+                building_status=Building.BuildingStatus.ACTIVE,
+            )
+            & Q(installs__install_status__in=set(Install.InstallStatus.values) - excluded_statuses)
+        ):
             if building.primary_nn not in covered_nns:
                 representative_install = building.installs.all()[0]
                 all_installs.append(
