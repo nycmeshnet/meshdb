@@ -70,13 +70,13 @@ class BuildingAdmin(admin.ModelAdmin):
         "bin__iexact",
         # Search by NN
         "primary_nn__iexact",
-        "install__network_number__iexact",
-        "install__install_number__iexact",
+        "installs__network_number__iexact",
+        "installs__install_number__iexact",
         # Search by Member info
-        "install__member__name__icontains",
-        "install__member__email_address__icontains",
-        "install__member__phone_number__iexact",
-        "install__member__slack_handle__iexact",
+        "installs__member__name__icontains",
+        "installs__member__email_address__icontains",
+        "installs__member__phone_number__iexact",
+        "installs__member__slack_handle__iexact",
     ]
     inlines = [InstallInline]
     list_filter = [
