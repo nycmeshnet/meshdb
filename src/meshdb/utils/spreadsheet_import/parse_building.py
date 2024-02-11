@@ -1,7 +1,7 @@
 import logging
 from typing import Callable, Optional, Tuple
 
-from geopy import Nominatim
+import geopy.distance
 
 from meshapi import models
 from meshapi.exceptions import AddressError
@@ -197,6 +197,31 @@ def get_or_create_building(
     except AddressError as e:
         return None
 
+    distance_warning = ""
+    error_vs_google = geopy.distance.geodesic(address_result.discovered_lat_lon, (row.latitude, row.longitude)).m
+    if error_vs_google > 200:
+        add_dropped_edit(
+            DroppedModification(
+                [row.id],
+                row.id,
+                address_result.discovered_bin
+                if address_result.discovered_bin
+                else address_result.address.street_address,
+                "lat_long_discrepancy_vs_spreadsheet",
+                str(address_result.discovered_lat_lon),
+                str((row.latitude, row.longitude)),
+            )
+        )
+        distance_warning = (
+            f"WARNING: Mismatch vs spreadsheet lat/lon {str((row.latitude, row.longitude))} "
+            f"of {error_vs_google} meters\n"
+        )
+        logging.debug(
+            f"Mismatch vs spreadsheet of {error_vs_google} meters for address '{row.address}'"
+            f" for install # {row.id}. Wrong borough or city? We think this address is in "
+            f"{address_result.address.city}, {address_result.address.state}"
+        )
+
     latitude = address_result.discovered_lat_lon[0] if address_result.discovered_lat_lon else row.latitude
     longitude = address_result.discovered_lat_lon[1] if address_result.discovered_lat_lon else row.longitude
     altitude = (
@@ -260,5 +285,6 @@ def get_or_create_building(
         notes=f"Spreadsheet Address: {row.address}\n"
         f"Spreadsheet Neighborhood: {row.neighborhood}\n"
         f"Spreadsheet BIN: {dob_bin}\n"
-        f"Spreadsheet Coordinates: {row.latitude}, {row.longitude}, {row.altitude}\n",
+        f"Spreadsheet Coordinates: {row.latitude}, {row.longitude}, {row.altitude}\n"
+        f"{distance_warning}",
     )

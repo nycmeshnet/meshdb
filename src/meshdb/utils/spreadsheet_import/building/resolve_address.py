@@ -416,22 +416,4 @@ class AddressParser:
                 spreadsheet_latlon=(row.latitude, row.longitude),
             )
 
-        error_vs_google = geopy.distance.geodesic(result.discovered_lat_lon, (row.latitude, row.longitude)).m
-        if error_vs_google > 200:
-            add_dropped_edit(
-                DroppedModification(
-                    [row.id],
-                    row.id,
-                    result.discovered_bin if result.discovered_bin else result.address.street_address,
-                    "lat_long_discrepancy_vs_spreadsheet",
-                    str(result.discovered_lat_lon),
-                    str((row.latitude, row.longitude)),
-                )
-            )
-            logging.debug(
-                f"Mismatch vs spreadsheet of {error_vs_google} meters for address '{row.address}'"
-                f" for install # {row.id}. Wrong borough or city? We think this address is in "
-                f"{result.address.city}, {result.address.state}"
-            )
-
         return result
