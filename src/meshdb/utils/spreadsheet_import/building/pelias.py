@@ -1,23 +1,37 @@
 import logging
 import re
-from typing import List, Optional, Tuple
-
-from django.conf import os
+from typing import List, Tuple
 
 import inflect
 import requests
+from django.conf import os
 
-from meshdb.utils.spreadsheet_import.building.constants import (
-    DatabaseAddress,
-    NormalizedAddressVariant,
-)
+from meshdb.utils.spreadsheet_import.building.constants import DatabaseAddress, NormalizedAddressVariant
 from meshdb.utils.spreadsheet_import.building.us_state_codes import convert_state_name_to_code
 
 PELIAS_ADDRESS_PARSER_URL = os.environ.get("PELIAS_ADDRESS_PARSER_URL")
 
 
+def adjust_index_down(index_val: int, start_val: int, shift_amount: int):
+    if index_val >= start_val:
+        return index_val - shift_amount
+    else:
+        return index_val
+
+
 def call_pelias_parser(address_str: str) -> List[Tuple[float, dict, dict]]:
-    response = requests.get(PELIAS_ADDRESS_PARSER_URL, params={"text": address_str})
+    # "Bowery" is a weird street that Pelias doesn't handle well. Here we
+    # (incorrectly) add "Street" for  pelias parsing, which we will look for and
+    # remove in the results
+    pattern = re.compile("bowery", re.IGNORECASE)
+    modified_addr = pattern.sub("Bowery Street", address_str)
+
+    bowery_detected = modified_addr != address_str
+    bowery_word_end = None
+    if bowery_detected:
+        bowery_word_end = re.search(pattern, address_str).end()
+
+    response = requests.get(PELIAS_ADDRESS_PARSER_URL, params={"text": modified_addr})
     output = []
 
     for solution in response.json()["solutions"]:
@@ -44,8 +58,19 @@ def call_pelias_parser(address_str: str) -> List[Tuple[float, dict, dict]]:
             ]:
                 continue
 
+            if label == "street" and bowery_detected:
+                # Remove our "Bowery Street" hack from above
+                classification["value"] = classification["value"].replace("Bowery Street", "Bowery")
+
             components[label] = classification["value"]
-            indices[label] = (classification["start"], classification["end"])
+
+            if bowery_detected:
+                indices[label] = (
+                    adjust_index_down(classification["start"], bowery_word_end, 7),
+                    adjust_index_down(classification["end"], bowery_word_end, 7),
+                )
+            else:
+                indices[label] = (classification["start"], classification["end"])
 
         output.append((solution["score"], components, indices))
 

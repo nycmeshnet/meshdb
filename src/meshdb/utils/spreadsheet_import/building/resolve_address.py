@@ -1,5 +1,5 @@
-import dataclasses
 import logging
+import re
 from typing import Callable, List, Optional, Tuple
 
 import geopy.distance
@@ -83,6 +83,55 @@ def osm_location_is_in_nyc(osm_raw_addr: dict) -> bool:
         ("city" in osm_raw_addr and osm_raw_addr["city"] == "City of New York")
         or ("county" in osm_raw_addr and any(borough in osm_raw_addr["county"] for borough in NYC_COUNTIES))
     )
+
+
+def fixup_bad_address(bad_address: str) -> str:
+    modified_addr = " ".join(bad_address.split())  # Multiple spaces between sections can confuse Pelias
+    st_no_space_match = re.search(r"(\d+)[Ss][Tt]", modified_addr)
+    if st_no_space_match:
+        modified_addr = (
+            modified_addr[: st_no_space_match.start(0)]
+            + st_no_space_match[1]
+            + " St"
+            + modified_addr[st_no_space_match.end(0) :]
+        )
+
+    ave_no_space_match = re.search(r"(\d+)[Aa][Vv][Ee]", modified_addr)
+    if ave_no_space_match:
+        modified_addr = (
+            modified_addr[: ave_no_space_match.start(0)]
+            + ave_no_space_match[1]
+            + " Ave"
+            + modified_addr[ave_no_space_match.end(0) :]
+        )
+
+    east_west_no_space_match = re.search(r"([EeWw])(\d+)", modified_addr)
+    if east_west_no_space_match:
+        modified_addr = (
+            modified_addr[: east_west_no_space_match.start(0)]
+            + east_west_no_space_match[1]
+            + " "
+            + east_west_no_space_match[2]
+            + modified_addr[east_west_no_space_match.end(0) :]
+        )
+
+    simple_typo_substitutions = {
+        "steet": "Street",
+        "avue": "Avenue",
+        "concoourse": "Concourse",
+        ";": ",",
+        "Aveune": "Avenue",
+        "nlvd": "Boulevard",
+        "410 Grand": "410 Grand Street",
+        "460 Grand": "460 Grand Street",
+        "131 Broome": "131 Broome Street",
+    }
+
+    for typo, fix in simple_typo_substitutions.items():
+        pattern = re.compile(typo, re.IGNORECASE)
+        modified_addr = pattern.sub(fix, modified_addr)
+
+    return modified_addr
 
 
 class AddressParser:
@@ -331,19 +380,25 @@ class AddressParser:
             # for dropped edits, to avoid runtime errors
             add_dropped_edit = lambda x: None
 
-        row.address = row.address.strip(
+        input_address = row.address.strip(
             "., "  # Leading / trailing whitespace and punctuation can cause issues
             # and should never be semantically meaningful
         )
 
-        pelias_response = call_pelias_parser(row.address)
+        pelias_response = call_pelias_parser(input_address)
         if not pelias_response:
-            raise AddressError(f"Invalid address: '{row.address}'. No components detected")
+            logging.warning(f"Detected invalid address '{input_address}'. Trying some common substitutions to fix it")
+            input_address = fixup_bad_address(input_address)
+            pelias_response = call_pelias_parser(input_address)
+            if not pelias_response:
+                raise AddressError(
+                    f"Invalid address: '{input_address}'. No components detected, even after attempting fixes"
+                )
 
         try:
             if pelias_response[0][0] < PELIAS_SCORE_WARNING_THRESHOLD:
                 logging.debug(
-                    f"Got low score of {pelias_response[0][0]} from " f"Pelias when parsing address '{row.address}'"
+                    f"Got low score of {pelias_response[0][0]} from " f"Pelias when parsing address '{input_address}'"
                 )
 
             required_components = ["housenumber", "street"]
@@ -352,30 +407,30 @@ class AddressParser:
                 # to parse into a specific building with OSM or the NYC Planning API,
                 # Fall back to string parsing
                 raise AddressError(
-                    f"Invalid address: '{row.address}'. All of "
+                    f"Invalid address: '{input_address}'. All of "
                     f"{required_components} are required and at least one is missing"
                 )
 
             osm_db_addr = pelias_to_database_address_components(
-                row.address, pelias_response[0], NormalizedAddressVariant.OSMNominatim
+                input_address, pelias_response[0], NormalizedAddressVariant.OSMNominatim
             )
             normalized_osm_addr = database_address_components_to_normalized_address_string(osm_db_addr)
 
             closest_osm_location = self._get_closest_osm_location(normalized_osm_addr, (row.latitude, row.longitude))
 
             if not closest_osm_location:
-                raise AddressError(f"Unable to find '{row.address}' in OSM database")
+                raise AddressError(f"Unable to find '{input_address}' in OSM database")
 
             if closest_osm_location.raw["type"] in ["postcode", "administrative", "neighbourhood"]:
                 # Fall back to string parsing for vague place descriptions
                 raise AddressError(
-                    f"Address '{row.address}' is not substantial enough to resolve " f"to a specific place"
+                    f"Address '{input_address}' is not substantial enough to resolve to a specific place"
                 )
 
             if osm_location_is_in_nyc(closest_osm_location.raw["address"]):
                 # We are in NYC, call the city planning API
                 result = self._find_nyc_building(
-                    row.address, pelias_response[0], (row.latitude, row.longitude), row.bin
+                    input_address, pelias_response[0], (row.latitude, row.longitude), row.bin
                 )
             else:
                 # We are not in NYC, the best we can do is the OSM geolocation
@@ -383,10 +438,10 @@ class AddressParser:
 
                 for prop in ["house_number", "road", "ISO3166-2-lvl4", "postcode"]:
                     if prop not in r_addr:
-                        raise AddressError(f"Invalid address '{row.address}' - {prop} not found in OSM data")
+                        raise AddressError(f"Invalid address '{input_address}' - {prop} not found in OSM data")
 
                 if not any(prop in r_addr for prop in ["city", "town", "village"]):
-                    raise AddressError(f"Invalid address '{row.address}' - city/town/village not found in OSM data")
+                    raise AddressError(f"Invalid address '{input_address}' - city/town/village not found in OSM data")
 
                 city, state = convert_osm_city_village_suburb_nonsense(r_addr)
 
@@ -406,32 +461,14 @@ class AddressParser:
                 )
         except AddressError:
             logging.debug(
-                f"Error locating '{row.address}'. Falling back to string parsing. "
+                f"Error locating '{input_address}'. Falling back to string parsing. "
                 f"Is this address valid and located in the NYC metro area?"
             )
             return self._parse_pelias_result_to_answer_and_fill_gaps_with_geocode(
-                row.address,
+                input_address,
                 pelias_response[0],
                 sources=[AddressTruthSource.PeliasStringParsing],
                 spreadsheet_latlon=(row.latitude, row.longitude),
-            )
-
-        error_vs_google = geopy.distance.geodesic(result.discovered_lat_lon, (row.latitude, row.longitude)).m
-        if error_vs_google > 200:
-            add_dropped_edit(
-                DroppedModification(
-                    [row.id],
-                    row.id,
-                    result.discovered_bin if result.discovered_bin else result.address.street_address,
-                    "lat_long_discrepancy_vs_spreadsheet",
-                    str(result.discovered_lat_lon),
-                    str((row.latitude, row.longitude)),
-                )
-            )
-            logging.debug(
-                f"Mismatch vs spreadsheet of {error_vs_google} meters for address '{row.address}'"
-                f" for install # {row.id}. Wrong borough or city? We think this address is in "
-                f"{result.address.city}, {result.address.state}"
             )
 
         return result

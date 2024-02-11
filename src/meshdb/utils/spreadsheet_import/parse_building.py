@@ -1,7 +1,7 @@
 import logging
 from typing import Callable, Optional, Tuple
 
-from geopy import Nominatim
+import geopy.distance
 
 from meshapi import models
 from meshapi.exceptions import AddressError
@@ -197,8 +197,36 @@ def get_or_create_building(
     except AddressError as e:
         return None
 
-    latitude = address_result.discovered_lat_lon[0] if address_result.discovered_lat_lon else row.latitude
-    longitude = address_result.discovered_lat_lon[1] if address_result.discovered_lat_lon else row.longitude
+    distance_warning = ""
+    error_vs_google = geopy.distance.geodesic(address_result.discovered_lat_lon, (row.latitude, row.longitude)).m
+    if error_vs_google > 100:
+        add_dropped_edit(
+            DroppedModification(
+                [row.id],
+                row.id,
+                address_result.discovered_bin
+                if address_result.discovered_bin
+                else address_result.address.street_address,
+                "lat_long_discrepancy_vs_spreadsheet",
+                str(address_result.discovered_lat_lon),
+                str((row.latitude, row.longitude)),
+            )
+        )
+        distance_warning = (
+            f"WARNING: Mismatch vs spreadsheet lat/lon {str((row.latitude, row.longitude))} "
+            f"of {error_vs_google} meters\n"
+        )
+        logging.debug(
+            f"Mismatch vs spreadsheet of {error_vs_google} meters for address '{row.address}'"
+            f" for install # {row.id}. Wrong borough or city? We think this address is in "
+            f"{address_result.address.city}, {address_result.address.state}"
+        )
+
+    addr_latitude = address_result.discovered_lat_lon[0] if address_result.discovered_lat_lon else None
+    addr_longitude = address_result.discovered_lat_lon[1] if address_result.discovered_lat_lon else None
+
+    latitude = row.latitude
+    longitude = row.longitude
     altitude = (
         # TODO: Change this to match new DOB ID if changed from spreadsheet?
         #  Would require another API call
@@ -232,6 +260,11 @@ def get_or_create_building(
 
         return existing_building
 
+    addr_truth_sources = (
+        ",".join(source.value for source in address_result.truth_sources)
+        if address_result.truth_sources
+        else None  # This is so we throw an exception and notice when we are missing sources
+    )
     return Building(
         bin=address_result.discovered_bin,
         street_address=address_result.address.street_address,
@@ -250,15 +283,14 @@ def get_or_create_building(
                 for source in [AddressTruthSource.NYCPlanningLabs, AddressTruthSource.OSMNominatim]
             )
         ),
-        address_truth_sources=",".join(source.value for source in address_result.truth_sources)
-        if address_result.truth_sources
-        else None,  # This is so we throw an exception and notice when we are missing sources
+        address_truth_sources=addr_truth_sources,
         primary_nn=row.nn if row.nn else None,
         node_name=row.nodeName if row.nodeName else None,
         # Let's not throw away the spreadsheet location information, just case it's useful in
         # chasing down a mis-parsed address in the future
         notes=f"Spreadsheet Address: {row.address}\n"
         f"Spreadsheet Neighborhood: {row.neighborhood}\n"
-        f"Spreadsheet BIN: {dob_bin}\n"
-        f"Spreadsheet Coordinates: {row.latitude}, {row.longitude}, {row.altitude}\n",
+        f"Spreadsheet BIN: {dob_bin}\n\n"
+        f"Our Expected Coordinates (from {addr_truth_sources}): {addr_latitude}, {addr_longitude}\n"
+        f"{distance_warning}",
     )
