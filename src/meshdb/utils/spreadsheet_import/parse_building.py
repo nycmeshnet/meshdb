@@ -199,7 +199,7 @@ def get_or_create_building(
 
     distance_warning = ""
     error_vs_google = geopy.distance.geodesic(address_result.discovered_lat_lon, (row.latitude, row.longitude)).m
-    if error_vs_google > 200:
+    if error_vs_google > 100:
         add_dropped_edit(
             DroppedModification(
                 [row.id],
