@@ -4,22 +4,20 @@ from typing import Optional
 from django.db.models import Q
 
 from meshapi import models
+from meshdb.utils.spreadsheet_import.building.lookup import get_building_from_node_id
 from meshdb.utils.spreadsheet_import.csv_load import SpreadsheetSector, SpreadsheetSectorStatus
 
 
 def create_sector(spreadsheet_sector: SpreadsheetSector) -> Optional[models.Sector]:
     try:
-        building = models.Building.objects.filter(
-            Q(installs__install_number=spreadsheet_sector.node_id)
-            | Q(installs__network_number=spreadsheet_sector.node_id)
-            | Q(primary_nn=spreadsheet_sector.node_id),
-        )[0]
-    except IndexError:
-        message = f"Could not find building for install {spreadsheet_sector.node_id}"
+        building = get_building_from_node_id(spreadsheet_sector.node_id)
+    except ValueError as e:
         if spreadsheet_sector.status != SpreadsheetSectorStatus.abandoned:
-            raise ValueError(message)
+            raise e
         else:
-            logging.warning(message + ". But this sector is abandoned, skipping this spreadsheet row")
+            logging.warning(
+                f"Error while parsing sectors: {e}. But this sector is abandoned, skipping this spreadsheet row"
+            )
             return None
 
     if spreadsheet_sector.status == SpreadsheetSectorStatus.active:

@@ -6,11 +6,8 @@ from collections import defaultdict
 from typing import List
 
 import django
-from django.db.models import Q
 
 from meshdb.utils.spreadsheet_import import logger
-from meshdb.utils.spreadsheet_import.parse_link import create_link
-from meshdb.utils.spreadsheet_import.parse_sector import create_sector
 
 logger.configure()
 
@@ -31,7 +28,9 @@ from meshdb.utils.spreadsheet_import.csv_load import (
 )
 from meshdb.utils.spreadsheet_import.parse_building import get_or_create_building
 from meshdb.utils.spreadsheet_import.parse_install import get_or_create_install
+from meshdb.utils.spreadsheet_import.parse_link import create_link
 from meshdb.utils.spreadsheet_import.parse_member import get_or_create_member
+from meshdb.utils.spreadsheet_import.parse_sector import create_sector
 
 
 def main():
