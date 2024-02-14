@@ -88,6 +88,8 @@ class MapDataInstallSerializer(serializers.ModelSerializer):
             return "Powered Off"
         elif install.install_status == Install.InstallStatus.CLOSED:
             return "Abandoned"
+        elif install.install_status == Install.InstallStatus.NN_REASSIGNED:
+            return "NN Assigned"
 
         return install.install_status
 

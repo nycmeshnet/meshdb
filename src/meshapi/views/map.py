@@ -15,7 +15,7 @@ class MapDataInstallList(generics.ListAPIView):
 
         excluded_statuses = {
             Install.InstallStatus.CLOSED,
-            Install.InstallStatus.NN_ASSIGNED,
+            Install.InstallStatus.NN_REASSIGNED,
         }
 
         queryset = Install.objects.filter(~Q(install_status__in=excluded_statuses))

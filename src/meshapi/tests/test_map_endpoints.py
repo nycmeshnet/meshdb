@@ -143,7 +143,7 @@ class TestViewsGetUnauthenticated(TestCase):
         installs.append(
             Install(
                 install_number=245,
-                install_status=Install.InstallStatus.NN_ASSIGNED,
+                install_status=Install.InstallStatus.NN_REASSIGNED,
                 request_date=datetime.date(2024, 1, 27),
                 roof_access=True,
                 building=buildings[-1],
