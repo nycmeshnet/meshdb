@@ -234,7 +234,7 @@ def get_next_free_nn_from_old_installs() -> int:
                 f"looks active (#{nn_donor_install.install_number})"
             )
 
-        nn_donor_install.install_status = Install.InstallStatus.NN_ASSIGNED
+        nn_donor_install.install_status = Install.InstallStatus.NN_REASSIGNED
         nn_donor_install.save()
 
     return free_nn
