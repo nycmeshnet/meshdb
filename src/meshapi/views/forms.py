@@ -195,7 +195,15 @@ def join_form(request):
     )
 
 
-def get_next_free_nn_from_old_installs() -> int:
+def get_next_available_network_number() -> int:
+    """
+    This function finds, and marks as re-assigned, the next install whose number can be re-assigned
+    for use as a network number. This is non-trivial becuause we need to exclude installs that
+    have non "REQUEST RECIEVED" statuses, as well as the set of all NNs that have been assigned
+    to any other installs for any reason
+    :return: the integer for the next available network number
+    """
+
     defined_nns = set(
         Install.objects.exclude(install_status=Install.InstallStatus.REQUEST_RECEIVED, network_number__isnull=True)
         .order_by("install_number")
@@ -205,7 +213,8 @@ def get_next_free_nn_from_old_installs() -> int:
     # Find the first valid NN that isn't in use
     free_nn = next(i for i in range(NETWORK_NUMBER_MIN, NETWORK_NUMBER_MAX + 1) if i not in defined_nns)
 
-    # Sanity check to make sure we don't assign something crazy
+    # Sanity check to make sure we don't assign something crazy. This is done by the query above,
+    # but we want to be super sure we don't violate these constraints so we check it here
     if free_nn < NETWORK_NUMBER_MIN or free_nn > NETWORK_NUMBER_MAX:
         raise ValueError(f"Invalid NN: {free_nn}")
 
@@ -296,7 +305,7 @@ def network_number_assignment(request):
         nn_install.network_number = nn_building.primary_nn
     else:
         try:
-            free_nn = get_next_free_nn_from_old_installs()
+            free_nn = get_next_available_network_number()
         except ValueError as exception:
             return Response({"detail": f"NN Request failed. {exception}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 

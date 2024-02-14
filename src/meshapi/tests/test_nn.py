@@ -9,7 +9,7 @@ from django.test import Client, TestCase, TransactionTestCase
 
 from meshapi.models import Building, Install, Member
 
-from ..views import get_next_free_nn_from_old_installs
+from ..views import get_next_available_network_number
 from .group_helpers import create_groups
 from .sample_data import sample_building, sample_install, sample_member
 
@@ -294,7 +294,7 @@ class TestFindGaps(TestCase):
 
 
 def mocked_slow_nn_lookup():
-    answer = get_next_free_nn_from_old_installs()
+    answer = get_next_available_network_number()
     time.sleep(1)
     return answer
 
