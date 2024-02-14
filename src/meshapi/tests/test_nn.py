@@ -353,7 +353,7 @@ class TestNNRaceCondition(TransactionTestCase):
 
         def invoke_nn_form(install_num: int, outputs_dict: dict):
             # Slow down the call which looks up the NN to force the race condition
-            with mock.patch("meshapi.views.forms.get_next_free_nn_from_old_installs", mocked_slow_nn_lookup):
+            with mock.patch("meshapi.views.forms.get_next_available_network_number", mocked_slow_nn_lookup):
                 result = self.admin_c.post(
                     "/api/v1/nn-assign/",
                     {"install_number": install_num, "password": os.environ.get("NN_ASSIGN_PSK")},
@@ -403,7 +403,7 @@ class TestNNRaceCondition(TransactionTestCase):
 
         def invoke_nn_form(install_num: int, outputs: list):
             # Slow down the call which looks up the NN to force the race condition
-            with mock.patch("meshapi.views.forms.get_next_free_nn_from_old_installs", mocked_slow_nn_lookup):
+            with mock.patch("meshapi.views.forms.get_next_available_network_number", mocked_slow_nn_lookup):
                 result = self.admin_c.post(
                     "/api/v1/nn-assign/",
                     {"install_number": install_num, "password": os.environ.get("NN_ASSIGN_PSK")},
