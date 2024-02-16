@@ -5,6 +5,12 @@ from rest_framework import serializers
 
 from meshapi.models import Install, Link, Sector
 
+EXCLUDED_INSTALL_STATUSES = {
+    Install.InstallStatus.CLOSED,
+    Install.InstallStatus.NN_REASSIGNED,
+}
+ALLOWED_INSTALL_STATUSES = set(Install.InstallStatus.values) - EXCLUDED_INSTALL_STATUSES
+
 
 class JavascriptDateField(serializers.IntegerField):
     def to_internal_value(self, date_int_val: int):
@@ -27,17 +33,21 @@ class JavascriptDateField(serializers.IntegerField):
 
 
 def get_install_number_from_building(building):
-    installs = building.installs.all()
+    installs = building.installs.exclude(install_status__in=EXCLUDED_INSTALL_STATUSES).order_by("install_number")
+    active_installs = [install for install in installs if install.install_status == Install.InstallStatus.ACTIVE]
+    if len(active_installs):
+        return active_installs[0].install_number
+
     if len(installs) == 0:
         if building.primary_nn:
             return building.primary_nn
         else:
             raise ValueError(
-                f"Building with ID {building} is invalid for install "
-                f"number conversion, no attached installs or NN assigned"
+                f"Building {building} with ID {building.id} is invalid for install "
+                f"number conversion, no attached installs with or NN assigned to building"
             )
     else:
-        return min(install.install_number for install in installs)
+        return installs.first().install_number
 
 
 class MapDataInstallSerializer(serializers.ModelSerializer):
