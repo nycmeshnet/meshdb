@@ -91,7 +91,7 @@ class TestViewsGetLimitedPermissions(TestCase):
         self.c.login(username="limited_member", password="password")
 
         response = self.c.get("/api/v1/members/1/").json()
-        self.assertEqual(response["email_address"], "john.smith@example.com")
+        self.assertEqual(response["primary_email_address"], "john.smith@example.com")
         self.assertEqual(
             response["installs"],
             [
@@ -164,9 +164,10 @@ class TestViewsGetAdmin(TestCase):
             {
                 "id": 1,
                 "name": "John Smith",
-                "email_address": "john.smith@example.com",
+                "primary_email_address": "john.smith@example.com",
+                "all_email_addresses": ["john.smith@example.com"],
                 "stripe_email_address": None,
-                "secondary_emails": [],
+                "additional_email_addresses": [],
                 "phone_number": "555-555-5555",
                 "slack_handle": "@jsmith",
                 "invalid": False,
@@ -198,7 +199,8 @@ class TestViewsGetAdmin(TestCase):
         self.c.login(username="admin", password="admin_password")
 
         response = self.c.get("/api/v1/members/1/").json()
-        self.assertEqual(response["email_address"], "john.smith@example.com")
+        self.assertEqual(response["primary_email_address"], "john.smith@example.com")
+        self.assertEqual(response["all_email_addresses"], ["john.smith@example.com"])
         self.assertEqual(
             response["installs"],
             [
@@ -249,9 +251,10 @@ class TestViewsGetAdmin(TestCase):
                     "member": {
                         "id": 1,
                         "name": "John Smith",
-                        "email_address": "john.smith@example.com",
+                        "primary_email_address": "john.smith@example.com",
+                        "all_email_addresses": ["john.smith@example.com"],
                         "stripe_email_address": None,
-                        "secondary_emails": [],
+                        "additional_email_addresses": [],
                         "phone_number": "555-555-5555",
                         "slack_handle": "@jsmith",
                         "invalid": False,
@@ -301,7 +304,7 @@ class TestViewsPutAdmin(TestCase):
 
         install = Install.objects.get(install_number=response.json()["install_number"])
         self.assertEqual(install.member.id, 1)
-        self.assertEqual(install.member.email_address, "john.smith@example.com")
+        self.assertEqual(install.member.primary_email_address, "john.smith@example.com")
         self.assertEqual(install.building.id, 1)
         self.assertEqual(install.building.bin, 8888)
 

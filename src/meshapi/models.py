@@ -1,3 +1,5 @@
+from typing import List
+
 from django.contrib.auth.models import Group, Permission
 from django.contrib.postgres.fields import ArrayField
 from django.core.validators import MaxValueValidator, MinValueValidator
@@ -47,9 +49,9 @@ class Building(models.Model):
 
 class Member(models.Model):
     name = models.TextField()
-    email_address = models.EmailField(null=True)
+    primary_email_address = models.EmailField(null=True)
     stripe_email_address = models.EmailField(null=True, blank=True, default=None)
-    secondary_emails = ArrayField(EmailField(), null=True, blank=True, default=list)
+    additional_email_addresses = ArrayField(EmailField(), null=True, blank=True, default=list)
     phone_number = models.TextField(default=None, blank=True, null=True)
     slack_handle = models.TextField(default=None, blank=True, null=True)
     invalid = models.BooleanField(default=False)
@@ -59,6 +61,22 @@ class Member(models.Model):
         if self.name:
             return self.name
         return f"MeshDB Member ID {self.id}"
+
+    @property
+    def all_email_addresses(self) -> List[str]:
+        all_emails = []
+        if self.primary_email_address and self.primary_email_address not in all_emails:
+            all_emails.append(self.primary_email_address)
+
+        if self.stripe_email_address and self.stripe_email_address not in all_emails:
+            all_emails.append(self.stripe_email_address)
+
+        if self.additional_email_addresses:
+            for email in self.additional_email_addresses:
+                if email not in all_emails:
+                    all_emails.append(email)
+
+        return all_emails
 
 
 class Install(models.Model):

@@ -233,7 +233,7 @@ class TestMeshAPIWebhooks(TransactionTestCase):
         # They do have access to the details of the member,
         # so they should be able to see the email, etc
         assert flask_request["data"]["member"]["id"] == self.member_obj.id
-        assert flask_request["data"]["member"]["email_address"] == self.member_obj.email_address
+        assert flask_request["data"]["member"]["primary_email_address"] == self.member_obj.primary_email_address
         assert flask_request["data"]["member"]["name"] == self.member_obj.name
 
         assert flask_request["hook"]["event"] == "install.created"

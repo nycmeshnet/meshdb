@@ -3,6 +3,7 @@ import time
 from unittest import mock
 
 from django.contrib.auth.models import User
+from django.db.models import Q
 from django.test import Client, TestCase, TransactionTestCase
 
 from meshapi.models import Building, Install, Member
@@ -23,9 +24,15 @@ def validate_successful_join_form_submission(test_case, test_name, s, response):
     # Check if the member was created and that we see it when we
     # filter for it.
     existing_members = Member.objects.filter(
-        name=s.first_name + " " + s.last_name,
-        email_address=s.email,
-        phone_number=s.phone,
+        Q(
+            name=s.first_name + " " + s.last_name,
+            phone_number=s.phone,
+        )
+        & (
+            Q(primary_email_address=s.email)
+            | Q(stripe_email_address=s.email)
+            | Q(additional_email_addresses__contains=[s.email])
+        )
     )
 
     length = 1
@@ -226,34 +233,118 @@ class TestJoinForm(TestCase):
     def test_member_moved_join_form(self):
         # Name, email, phone, location, apt, rooftop, referral
         form, s = pull_apart_join_form_submission(valid_join_form_submission)
-        response = self.c.post("/api/v1/join/", form, content_type="application/json")
+        response1 = self.c.post("/api/v1/join/", form, content_type="application/json")
 
         code = 201
         self.assertEqual(
             code,
-            response.status_code,
-            f"status code incorrect for Valid Join Form. Should be {code}, but got {response.status_code}.\n Response is: {response.content.decode('utf-8')}",
+            response1.status_code,
+            f"status code incorrect for Valid Join Form. Should be {code}, but got {response1.status_code}.\n Response is: {response1.content.decode('utf-8')}",
         )
 
-        validate_successful_join_form_submission(self, "Valid Join Form", s, response)
+        validate_successful_join_form_submission(self, "Valid Join Form", s, response1)
 
-        # Now test that the member can "move" and still access the jon form
+        # Now test that the member can "move" and still access the join form
         v_sub_2 = valid_join_form_submission.copy()
         v_sub_2["street_address"] = "152 Broome Street"
 
         form, s = pull_apart_join_form_submission(v_sub_2)
 
         # Name, email, phone, location, apt, rooftop, referral
-        response = self.c.post("/api/v1/join/", form, content_type="application/json")
+        response2 = self.c.post("/api/v1/join/", form, content_type="application/json")
 
         code = 201
         self.assertEqual(
             code,
-            response.status_code,
-            f"status code incorrect for Valid Join Form. Should be {code}, but got {response.status_code}.\n Response is: {response.content.decode('utf-8')}",
+            response2.status_code,
+            f"status code incorrect for Valid Join Form. Should be {code}, but got {response2.status_code}.\n Response is: {response2.content.decode('utf-8')}",
         )
 
-        validate_successful_join_form_submission(self, "Valid Join Form", s, response)
+        validate_successful_join_form_submission(self, "Valid Join Form", s, response2)
+
+        self.assertEqual(
+            json.loads(
+                response1.content.decode("utf-8"),
+            )["member_id"],
+            json.loads(
+                response2.content.decode("utf-8"),
+            )["member_id"],
+        )
+
+    def test_member_moved_and_used_stripe_email_join_form(self):
+        # Name, email, phone, location, apt, rooftop, referral
+        form, s = pull_apart_join_form_submission(valid_join_form_submission)
+        response1 = self.c.post("/api/v1/join/", form, content_type="application/json")
+
+        code = 201
+        self.assertEqual(
+            code,
+            response1.status_code,
+            f"status code incorrect for Valid Join Form. Should be {code}, but got {response1.status_code}.\n Response is: {response1.content.decode('utf-8')}",
+        )
+
+        validate_successful_join_form_submission(self, "Valid Join Form", s, response1)
+
+        member_object = Member.objects.get(id=json.loads(response1.content.decode("utf-8"))["member_id"])
+        member_object.stripe_email_address = "jsmith+stripe@gmail.com"
+        member_object.additional_email_addresses = ["jsmith+other@gmail.com"]
+        member_object.save()
+
+        # Now test that the member can "move", use the stripe email address,
+        # and we will connect it to their old registration
+        v_sub_2 = valid_join_form_submission.copy()
+        v_sub_2["email"] = "jsmith+stripe@gmail.com"
+        v_sub_2["street_address"] = "152 Broome Street"
+
+        form, s = pull_apart_join_form_submission(v_sub_2)
+
+        # Name, email, phone, location, apt, rooftop, referral
+        response2 = self.c.post("/api/v1/join/", form, content_type="application/json")
+
+        code = 201
+        self.assertEqual(
+            code,
+            response2.status_code,
+            f"status code incorrect for Valid Join Form. Should be {code}, "
+            f"but got {response2.status_code}.\n Response is: {response2.content.decode('utf-8')}",
+        )
+
+        validate_successful_join_form_submission(self, "Valid Join Form", s, response2)
+
+        self.assertEqual(
+            member_object.id,
+            json.loads(
+                response2.content.decode("utf-8"),
+            )["member_id"],
+        )
+
+        # Now test that the member can "move" again, use an additional email address,
+        # and we will connect it to their old registration
+        v_sub_3 = valid_join_form_submission.copy()
+        v_sub_3["email"] = "jsmith+other@gmail.com"
+        v_sub_3["street_address"] = "153 Broome Street"
+
+        form, s = pull_apart_join_form_submission(v_sub_3)
+
+        # Name, email, phone, location, apt, rooftop, referral
+        response3 = self.c.post("/api/v1/join/", form, content_type="application/json")
+
+        code = 201
+        self.assertEqual(
+            code,
+            response3.status_code,
+            f"status code incorrect for Valid Join Form. Should be {code}, "
+            f"but got {response3.status_code}.\n Response is: {response3.content.decode('utf-8')}",
+        )
+
+        validate_successful_join_form_submission(self, "Valid Join Form", s, response3)
+
+        self.assertEqual(
+            member_object.id,
+            json.loads(
+                response3.content.decode("utf-8"),
+            )["member_id"],
+        )
 
 
 def slow_install_init(*args, **kwargs):

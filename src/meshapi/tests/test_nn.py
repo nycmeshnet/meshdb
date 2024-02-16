@@ -201,7 +201,7 @@ class TestFindGaps(TestCase):
         building_obj.save()
         i["building"] = building_obj
 
-        m["email_address"] = f"john{index}@gmail.com"
+        m["primary_email_address"] = f"john{index}@gmail.com"
         member_obj = Member(**m)
         member_obj.save()
         i["member"] = member_obj

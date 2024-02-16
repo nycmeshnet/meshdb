@@ -2,7 +2,7 @@ from meshapi.models import Install
 
 sample_member = {
     "name": "John Smith",
-    "email_address": "john.smith@example.com",
+    "primary_email_address": "john.smith@example.com",
     "phone_number": "555-555-5555",
     "slack_handle": "@jsmith",
 }

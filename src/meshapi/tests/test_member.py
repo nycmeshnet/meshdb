@@ -1,6 +1,9 @@
-from django.test import TestCase, Client
-from django.contrib.auth.models import User
+import json
 
+from django.contrib.auth.models import User
+from django.test import Client, TestCase
+
+from ..models import Member
 from .sample_data import sample_member
 
 
@@ -22,12 +25,39 @@ class TestMember(TestCase):
             f"status code incorrect. Should be {code}, but got {response.status_code}",
         )
 
+    def test_member_all_emails_field(self):
+        test_member = Member(
+            name="Stacy Fakename",
+            primary_email_address="foo@example.com",
+            additional_email_addresses=["bar@example.com", "baz@example.com"],
+            stripe_email_address="stripe@example.com",
+        )
+        test_member.save()
+
+        response = self.c.get(f"/api/v1/members/{test_member.id}/")
+        code = 200
+        self.assertEqual(
+            code,
+            response.status_code,
+            f"status code incorrect. Should be {code}, but got {response.status_code}",
+        )
+
+        response_obj = json.loads(response.content)
+        self.assertEqual(response_obj["name"], "Stacy Fakename")
+        self.assertEqual(response_obj["primary_email_address"], "foo@example.com")
+        self.assertEqual(response_obj["stripe_email_address"], "stripe@example.com")
+        self.assertEqual(response_obj["additional_email_addresses"], ["bar@example.com", "baz@example.com"])
+        self.assertEqual(
+            response_obj["all_email_addresses"],
+            ["foo@example.com", "stripe@example.com", "bar@example.com", "baz@example.com"],
+        )
+
     def test_broken_member(self):
         err_member = {
             "id": "Error",
             "first_name": "",
             "last_name": "",
-            "email_address": "",
+            "primary_email_address": "",
             "phone_numer": "",
             "slack_handle": "",
         }

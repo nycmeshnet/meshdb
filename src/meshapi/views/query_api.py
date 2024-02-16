@@ -31,9 +31,9 @@ class QueryResponse:
     state: str
     zip_code: int
     name: str
-    email_address: str
+    primary_email_address: str
     stripe_email_address: str
-    secondary_emails: list[str]
+    additional_email_addresses: list[str]
     notes: str
     network_number: int
     install_status: str
@@ -48,9 +48,9 @@ class QueryResponse:
             zip_code=install.building.zip_code,
             unit=install.unit,
             name=install.member.name,
-            email_address=install.member.email_address,
+            primary_email_address=install.member.primary_email_address,
             stripe_email_address=install.member.stripe_email_address,
-            secondary_emails=install.member.secondary_emails,
+            additional_email_addresses=install.member.additional_email_addresses,
             notes=f"{install.notes}\n{install.building.notes}\n{install.member.contact_notes}",
             network_number=install.network_number,
             install_status=install.install_status,
@@ -58,8 +58,20 @@ class QueryResponse:
 
 
 class QueryView(APIView):
-    def filter_on(self, model: type[models.Model], permitted_filters: Dict[str, str]):
-        query_dict = {k: v for k, v in self.request.query_params.items() if v}
+    def filter_on(
+        self,
+        model: type[models.Model],
+        permitted_filters: Dict[str, str],
+        subsitutions: Dict[str, str] = None,
+    ):
+        query_dict = {}
+        for k, v in self.request.query_params.items():
+            if v:
+                if subsitutions and k in subsitutions:
+                    query_dict[subsitutions[k]] = v
+                else:
+                    query_dict[k] = v
+
         filter_args = {}
         for k, v in query_dict.items():
             if k in permitted_filters.keys():
@@ -105,6 +117,9 @@ class QueryMember(QueryView):
             Member,
             {
                 "email_address": None,
+            },
+            {
+                "email_address": "primary_email_address",
             },
         )
 

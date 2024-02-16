@@ -1,7 +1,6 @@
 import json
-from django.conf import os
 
-from django.contrib.auth.models import Group, User
+from django.conf import os
 from django.test import Client, TestCase
 
 from meshapi.models import Building, Install, Member
@@ -43,7 +42,7 @@ class TestQueryForm(TestCase):
         self.query("building", "street_address", self.install.building.street_address)
 
     def test_query_email(self):
-        self.query("member", "email_address", self.install.member.email_address)
+        self.query("member", "email_address", self.install.member.primary_email_address)
 
     def test_query_nn(self):
         self.query("install", "network_number", self.install.network_number)
