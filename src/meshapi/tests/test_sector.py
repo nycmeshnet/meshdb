@@ -16,6 +16,7 @@ class TestSector(TestCase):
         self.c.login(username="admin", password="admin_password")
 
         self.building_1 = Building(
+            id=1,
             building_status=Building.BuildingStatus.ACTIVE,
             address_truth_sources="",
             latitude=0,
@@ -67,6 +68,7 @@ class TestSector(TestCase):
 
     def test_recursive_get(self):
         sector = Sector(
+            id=1,
             name="Vernon",
             device_name="LAP-120",
             building=self.building_1,
@@ -96,7 +98,7 @@ class TestSector(TestCase):
                 "bin": None,
                 "building_status": "Active",
                 "city": None,
-                "id": 76,
+                "id": 1,
                 "installs": [],
                 "invalid": True,
                 "latitude": 0.0,

@@ -350,6 +350,7 @@ class TestMonsterQuery(TestCase):
         )
 
     def test_views_get_link(self):
+        self.maxDiff = None
         self.c.login(username="admin", password="admin_password")
 
         response = self.c.get(f"/api/v1/links/1/")
@@ -373,9 +374,10 @@ class TestMonsterQuery(TestCase):
                         "member": {
                             "id": 1,
                             "name": "John Smith",
-                            "email_address": "john.smith@example.com",
+                            "primary_email_address": "john.smith@example.com",
                             "stripe_email_address": None,
-                            "secondary_emails": [],
+                            "additional_email_addresses": [],
+                            "all_email_addresses": ["john.smith@example.com"],
                             "phone_number": "555-555-5555",
                             "slack_handle": "@jsmith",
                             "invalid": False,
@@ -435,9 +437,10 @@ class TestMonsterQuery(TestCase):
                         "member": {
                             "id": 2,
                             "name": "Donald Smith",
-                            "email_address": "john.smith@example.com",
+                            "primary_email_address": "john.smith@example.com",
                             "stripe_email_address": None,
-                            "secondary_emails": [],
+                            "additional_email_addresses": [],
+                            "all_email_addresses": ["john.smith@example.com"],
                             "phone_number": "555-555-5555",
                             "slack_handle": "@jsmith",
                             "invalid": False,
