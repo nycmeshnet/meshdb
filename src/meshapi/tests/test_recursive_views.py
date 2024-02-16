@@ -165,6 +165,7 @@ class TestViewsGetAdmin(TestCase):
                 "id": 1,
                 "name": "John Smith",
                 "primary_email_address": "john.smith@example.com",
+                "all_email_addresses": ["john.smith@example.com"],
                 "stripe_email_address": None,
                 "additional_email_addresses": [],
                 "phone_number": "555-555-5555",
@@ -199,6 +200,7 @@ class TestViewsGetAdmin(TestCase):
 
         response = self.c.get("/api/v1/members/1/").json()
         self.assertEqual(response["primary_email_address"], "john.smith@example.com")
+        self.assertEqual(response["all_email_addresses"], ["john.smith@example.com"])
         self.assertEqual(
             response["installs"],
             [
@@ -250,6 +252,7 @@ class TestViewsGetAdmin(TestCase):
                         "id": 1,
                         "name": "John Smith",
                         "primary_email_address": "john.smith@example.com",
+                        "all_email_addresses": ["john.smith@example.com"],
                         "stripe_email_address": None,
                         "additional_email_addresses": [],
                         "phone_number": "555-555-5555",

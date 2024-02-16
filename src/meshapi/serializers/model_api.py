@@ -134,6 +134,8 @@ class MemberSerializer(RecursiveSerializer):
         model = Member
         fields = "__all__"
 
+    all_email_addresses = serializers.ReadOnlyField()
+
     # installs has been added below, scroll down to InstallSerializer to see it
 
 

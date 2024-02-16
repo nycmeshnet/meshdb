@@ -1,3 +1,5 @@
+from typing import List
+
 from django.contrib.auth.models import Group, Permission
 from django.contrib.postgres.fields import ArrayField
 from django.core.validators import MaxValueValidator, MinValueValidator
@@ -59,6 +61,22 @@ class Member(models.Model):
         if self.name:
             return self.name
         return f"MeshDB Member ID {self.id}"
+
+    @property
+    def all_email_addresses(self) -> List[str]:
+        all_emails = []
+        if self.primary_email_address and self.primary_email_address not in all_emails:
+            all_emails.append(self.primary_email_address)
+
+        if self.stripe_email_address and self.stripe_email_address not in all_emails:
+            all_emails.append(self.stripe_email_address)
+
+        if self.additional_email_addresses:
+            for email in self.additional_email_addresses:
+                if email not in all_emails:
+                    all_emails.append(email)
+
+        return all_emails
 
 
 class Install(models.Model):
