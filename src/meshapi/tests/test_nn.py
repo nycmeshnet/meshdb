@@ -1,5 +1,4 @@
 import json
-import threading
 import time
 from unittest import mock
 
@@ -12,6 +11,7 @@ from meshapi.models import Building, Install, Member
 from ..views import get_next_available_network_number
 from .group_helpers import create_groups
 from .sample_data import sample_building, sample_install, sample_member
+from .util import TestThread
 
 
 # Test basic NN form stuff (input validation, etc)
@@ -361,8 +361,8 @@ class TestNNRaceCondition(TransactionTestCase):
                 )
                 outputs_dict[install_num] = result
 
-        t1 = threading.Thread(target=invoke_nn_form, args=(self.install_number1, outputs_dict))
-        t2 = threading.Thread(target=invoke_nn_form, args=(self.install_number2, outputs_dict))
+        t1 = TestThread(target=invoke_nn_form, args=(self.install_number1, outputs_dict))
+        t2 = TestThread(target=invoke_nn_form, args=(self.install_number2, outputs_dict))
 
         t1.start()
         t2.start()
@@ -411,8 +411,8 @@ class TestNNRaceCondition(TransactionTestCase):
                 )
                 outputs.append(result)
 
-        t1 = threading.Thread(target=invoke_nn_form, args=(self.install_number1, outputs))
-        t2 = threading.Thread(target=invoke_nn_form, args=(self.install_number1, outputs))
+        t1 = TestThread(target=invoke_nn_form, args=(self.install_number1, outputs))
+        t2 = TestThread(target=invoke_nn_form, args=(self.install_number1, outputs))
 
         t1.start()
         t2.start()
