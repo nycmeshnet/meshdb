@@ -9,16 +9,17 @@ from meshapi.serializers import RecursiveSerializer
 
 class MockRequestForWebhookSerializer:
     """
-    An object which defines a .user attribute that we can pass to our serializers in place of an
-    actual DRF Request object. These are complex to construct, and since we only need to access
-    the user attribute inside the serializer, this mock performs just fine.
+    An object which defines .user and .query_params attributes that we can pass to our serializers
+    in place of an actual DRF Request object. These are complex to construct, and since we only need
+    to access these attributes inside the serializer, this mock performs just fine.
     """
 
     def __init__(self, user: User):
         self.user = user
+        self.query_params = {}
 
     def __getattribute__(self, item):
-        if item == "user":
+        if item in ["user", "query_params"]:
             return super().__getattribute__(item)
         else:
             raise AttributeError(

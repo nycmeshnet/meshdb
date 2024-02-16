@@ -5,7 +5,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 from rest_framework.fields import empty
-from rest_framework.serializers import raise_errors_on_nested_writes
+from rest_framework.serializers import ListSerializer, raise_errors_on_nested_writes
 
 from meshapi.models import Building, Install, Link, Member, Sector
 from meshapi.permissions import check_has_model_view_permission
@@ -47,7 +47,7 @@ class RecursiveSerializer(serializers.ModelSerializer):
 
         self.excluded_fields = exclude_fields
 
-    def _field_is_excluded(self, field_name: str, user: Optional[User] = None):
+    def _field_is_excluded(self, field_name: str, user: Optional[User] = None, depth_limit: int = -1):
         # Remove explicitly excluded fields, this is primarily to prevent infinite recursive loops,
         # though this logic could probably be generalized into an ExcludedFieldSerializer class
         # if needed for other applications in the future
@@ -60,17 +60,40 @@ class RecursiveSerializer(serializers.ModelSerializer):
         # Install model, it should look very empty:
         #    "member": { "id": 1 }
         # so that we do not leak data they do not have access to
-        if not check_has_model_view_permission(user, self.Meta.model):
+        if not check_has_model_view_permission(user, self.Meta.model) or (
+            depth_limit != -1 and self._current_recursive_depth > depth_limit
+        ):
             if field_name != self.Meta.model._meta.pk.name:
                 return True
 
         return False
 
+    @property
+    def _current_recursive_depth(self):
+        if not self.parent:
+            return 0
+        else:
+            if isinstance(self.parent, RecursiveSerializer):
+                return self.parent._current_recursive_depth + 1
+            elif isinstance(self.parent, ListSerializer):
+                # "Skip over" the automatically added ListSerializers,
+                # so we don't double count them or hit an error because they don't
+                # implement RecursiveSerializer
+                return self.parent.parent._current_recursive_depth + 1
+            else:
+                raise RuntimeError(
+                    f"RecursiveSerializer cannot be used as a field on Serializers that"
+                    f"do not themselves inherit from RecursiveSerializer. Our parent {self.parent} "
+                    f"appears to be of type {self.parent.__class__.__name__}"
+                )
+
     def get_fields(self):
         user = None
+        depth_limit = -1
         request = self.context.get("request", None)
         if request:
             user = request.user
+            depth_limit = int(request.query_params.get("max_recursion_depth", -1))
 
         output_fields = {}
         for field_key, serializer in super().get_fields().items():
@@ -79,7 +102,7 @@ class RecursiveSerializer(serializers.ModelSerializer):
         return {
             field_key: serializer
             for field_key, serializer in super().get_fields().items()
-            if not self._field_is_excluded(field_key, user)
+            if not self._field_is_excluded(field_key, user, depth_limit)
         }
 
     def get_value(self, dictionary):
