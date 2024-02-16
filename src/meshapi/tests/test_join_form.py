@@ -1,5 +1,4 @@
 import json
-import threading
 import time
 from unittest import mock
 
@@ -11,6 +10,7 @@ from meshapi.views import JoinFormRequest
 
 from .sample_data import sample_building
 from .sample_join_form_data import *
+from .util import TestThread
 
 # Grab a reference to the original Install.__init__ function, so that when it gets mocked
 # we can still use it when we need it
@@ -293,9 +293,9 @@ class TestJoinFormRaceCondition(TransactionTestCase):
                 response = self.c.post("/api/v1/join/", request, content_type="application/json")
                 results.append(response)
 
-        t1 = threading.Thread(target=invoke_join_form, args=(member1_submission, results))
+        t1 = TestThread(target=invoke_join_form, args=(member1_submission, results))
         time.sleep(0.5)  # Sleep to give the first thread a head start
-        t2 = threading.Thread(target=invoke_join_form, args=(member2_submission, results))
+        t2 = TestThread(target=invoke_join_form, args=(member2_submission, results))
 
         t1.start()
         t2.start()
