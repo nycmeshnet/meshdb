@@ -70,7 +70,7 @@ def main():
 
             member, new = get_or_create_member(row, dropped_modifications.append)
             if not new:
-                member_duplicate_counts[member.email_address] += 1
+                member_duplicate_counts[member.primary_email_address] += 1
 
             building = get_or_create_building(row, addr_parser, dropped_modifications.append)
             if not building:

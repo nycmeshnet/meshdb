@@ -1,5 +1,5 @@
-from django.test import TestCase, Client
 from django.contrib.auth.models import User
+from django.test import Client, TestCase
 
 from .sample_data import sample_member
 
@@ -27,7 +27,7 @@ class TestMember(TestCase):
             "id": "Error",
             "first_name": "",
             "last_name": "",
-            "email_address": "",
+            "primary_email_address": "",
             "phone_numer": "",
             "slack_handle": "",
         }

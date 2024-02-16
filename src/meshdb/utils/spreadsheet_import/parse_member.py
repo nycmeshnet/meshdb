@@ -65,7 +65,7 @@ def parse_emails(input_emails: str) -> List[str]:
         # to filter out valid emails (for example one that contains á)
         #
         # if validate_email(
-        #     email_address=email,
+        #     primary_email_address=email,
         #     check_format=True,
         #     check_blacklist=False,  # "Evil" emails are still "valid" historical data
         #     check_dns=False,  # This is too slow
@@ -108,7 +108,7 @@ def diff_new_member_against_existing(
             DroppedModification(
                 list(install.install_number for install in existing_member.installs.all()),
                 row_id,
-                existing_member.email_address,
+                existing_member.primary_email_address,
                 "member.name",
                 existing_member.name if existing_member.name else "",
                 new_member.name,
@@ -124,7 +124,7 @@ def diff_new_member_against_existing(
             DroppedModification(
                 list(install.install_number for install in existing_member.installs.all()),
                 row_id,
-                existing_member.email_address,
+                existing_member.primary_email_address,
                 "member.phone_number",
                 existing_member.phone_number if existing_member.phone_number else "",
                 new_member.phone_number,
@@ -234,9 +234,9 @@ def get_or_create_member(
     return (
         models.Member(
             name=row.name,
-            email_address=other_emails[0] if len(other_emails) > 0 else None,
-            secondary_emails=other_emails[1:],
+            primary_email_address=other_emails[0] if len(other_emails) > 0 else None,
             stripe_email_address=stripe_email,
+            additional_email_addresses=other_emails[1:],
             phone_number=formatted_phone_number,
             slack_handle=None,
             invalid=len(other_emails) == 0,

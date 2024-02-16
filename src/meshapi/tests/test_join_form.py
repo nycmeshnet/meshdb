@@ -24,7 +24,7 @@ def validate_successful_join_form_submission(test_case, test_name, s, response):
     # filter for it.
     existing_members = Member.objects.filter(
         name=s.first_name + " " + s.last_name,
-        email_address=s.email,
+        primary_email_address=s.email,
         phone_number=s.phone,
     )
 

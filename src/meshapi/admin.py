@@ -164,7 +164,7 @@ class MemberAdmin(admin.ModelAdmin):
     inlines = [InstallInline]
     list_display = [
         "name",
-        "email_address",
+        "primary_email_address",
         "phone_number",
     ]
 

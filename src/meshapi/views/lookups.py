@@ -1,14 +1,12 @@
-from rest_framework import filters, generics, permissions
+from rest_framework import filters, generics
 
 from meshapi.models import Building, Install, Member
-from meshapi.permissions import IsReadOnly
 from meshapi.serializers import BuildingSerializer, InstallSerializer, MemberSerializer
 
 # https://medium.com/geekculture/make-an-api-search-endpoint-with-django-rest-framework-111f307747b8
 
 
 class LookupMember(generics.ListAPIView):
-    search_fields = ["name", "email_address", "phone_number"]
     filter_backends = (filters.SearchFilter, filters.OrderingFilter)
     serializer_class = MemberSerializer
 
@@ -21,7 +19,7 @@ class LookupMember(generics.ListAPIView):
             if k == "name":
                 filter_keyword_arguments_dict["name__icontains"] = v
             if k == "email_address":
-                filter_keyword_arguments_dict["email_address__icontains"] = v
+                filter_keyword_arguments_dict["primary_email_address__icontains"] = v
             if k == "phone_number":
                 filter_keyword_arguments_dict["phone_number__icontains"] = v
         queryset = Member.objects.filter(**filter_keyword_arguments_dict)
