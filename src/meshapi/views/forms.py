@@ -5,9 +5,8 @@ from datetime import datetime
 from json.decoder import JSONDecodeError
 from typing import Optional
 
-import django.db.models
 from django.db import IntegrityError, transaction
-from django.db.models import QuerySet
+from django.db.models import Q
 from rest_framework import permissions, status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
@@ -96,7 +95,9 @@ def join_form(request):
     # Check if there's an existing member. Dedupe on email for now.
     # A member can have multiple install requests
     existing_members = Member.objects.filter(
-        primary_email_address=r.email,
+        Q(primary_email_address=r.email)
+        | Q(stripe_email_address=r.email)
+        | Q(additional_email_addresses__contains=[r.email])
     )
     join_form_member = (
         existing_members[0]

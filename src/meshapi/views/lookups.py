@@ -1,3 +1,4 @@
+from django.db.models import Q
 from rest_framework import filters, generics
 
 from meshapi.models import Building, Install, Member
@@ -13,16 +14,21 @@ class LookupMember(generics.ListAPIView):
     def get_queryset(self):
         # TODO: Validate Parameters?
 
+        queries = Q()
         query_dict = {k: v for k, v in self.request.query_params.items() if v}
-        filter_keyword_arguments_dict = {}
         for k, v in query_dict.items():
             if k == "name":
-                filter_keyword_arguments_dict["name__icontains"] = v
+                queries = queries & Q(name__icontains=v)
             if k == "email_address":
-                filter_keyword_arguments_dict["primary_email_address__icontains"] = v
+                queries = queries & (
+                    Q(primary_email_address__icontains=v)
+                    | Q(stripe_email_address__icontains=v)
+                    | Q(additional_email_addresses__icontains=v)
+                )
             if k == "phone_number":
-                filter_keyword_arguments_dict["phone_number__icontains"] = v
-        queryset = Member.objects.filter(**filter_keyword_arguments_dict)
+                queries = queries & Q(phone_number__icontains=v)
+
+        queryset = Member.objects.filter(queries)
         return queryset
 
 

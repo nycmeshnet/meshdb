@@ -3,6 +3,7 @@ import re
 from typing import Callable, List, Optional, Tuple
 
 import phonenumbers
+from django.db.models import Q
 from nameparser import HumanName
 from validate_email import validate_email
 
@@ -196,7 +197,9 @@ def get_or_create_member(
 
     if len(other_emails) > 0:
         existing_members = Member.objects.filter(
-            email_address=other_emails[0],
+            Q(primary_email_address=other_emails[0])
+            | Q(stripe_email_address=other_emails[0])
+            | Q(additional_email_addresses__contains=[other_emails[0]])
         )
 
         if existing_members:
