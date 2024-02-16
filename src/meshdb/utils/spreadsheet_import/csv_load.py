@@ -71,8 +71,8 @@ class SpreadsheetRow:
 
 @dataclasses.dataclass
 class SpreadsheetLink:
-    from_install_num: int
-    to_install_num: int
+    from_node_id: int
+    to_node_id: int
     status: SpreadsheetLinkStatus
     install_date: Optional[datetime.date]
     abandon_date: Optional[datetime.date]
@@ -280,8 +280,8 @@ def get_spreadsheet_links(links_path: str) -> List[SpreadsheetLink]:
 
             links.append(
                 SpreadsheetLink(
-                    from_install_num=int(row["from"]),
-                    to_install_num=int(row["to"]),
+                    from_node_id=int(row["from"]),
+                    to_node_id=int(row["to"]),
                     status=SpreadsheetLinkStatus(row["status"]),
                     install_date=install_date,
                     abandon_date=abandon_date,
