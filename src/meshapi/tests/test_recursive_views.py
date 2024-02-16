@@ -3,7 +3,7 @@ import json
 from django.contrib.auth.models import Permission, User
 from django.test import Client, TestCase
 
-from meshapi.models import Building, Install, Member
+from meshapi.models import Building, Install, Link, Member, Sector
 from meshapi.tests.sample_data import sample_building, sample_install, sample_member
 
 
@@ -24,6 +24,8 @@ def setup_objects():
     inst["install_number"] = 2000
     install_obj = Install(**inst)
     install_obj.save()
+
+    return member_obj, building_obj, install_obj
 
 
 class TestViewsGetLimitedPermissions(TestCase):
@@ -282,6 +284,208 @@ class TestViewsGetAdmin(TestCase):
                     "diy": None,
                 }
             ],
+        )
+
+
+class TestMonsterQuery(TestCase):
+    c = Client()
+
+    def setUp(self):
+        # Create sample data
+        member_obj_1, building_obj_1, install_obj_1 = setup_objects()
+
+        member_obj_2 = Member(id=2, **sample_member)
+        member_obj_2.name = "Donald Smith"
+        member_obj_2.save()
+
+        building = sample_building.copy()
+        building["primary_nn"] = None
+        building_obj_2 = Building(id=2, **building)
+        building_obj_2.save()
+        inst = sample_install.copy()
+
+        if inst["abandon_date"] == "":
+            inst["abandon_date"] = None
+
+        inst["building"] = building_obj_2
+        inst["member"] = member_obj_2
+        inst["install_number"] = 2001
+        install_obj_2 = Install(**inst)
+        install_obj_2.save()
+
+        sector_1 = Sector(
+            id=1,
+            name="Vernon",
+            device_name="LAP-120",
+            building=building_obj_1,
+            status="Active",
+            azimuth=0,
+            width=120,
+            radius=0.3,
+        )
+        sector_1.save()
+
+        sector_2 = Sector(
+            id=2,
+            name="Vernon",
+            device_name="LAP-120",
+            building=building_obj_2,
+            status="Active",
+            azimuth=0,
+            width=120,
+            radius=0.3,
+        )
+        sector_2.save()
+
+        link = Link(
+            id=1,
+            from_building=building_obj_1,
+            to_building=building_obj_2,
+            status=Link.LinkStatus.ACTIVE,
+        )
+        link.save()
+
+        self.admin_user = User.objects.create_superuser(
+            username="admin", password="admin_password", email="admin@example.com"
+        )
+
+    def test_views_get_link(self):
+        self.c.login(username="admin", password="admin_password")
+
+        response = self.c.get(f"/api/v1/links/1/")
+
+        code = 200
+        self.assertEqual(
+            code,
+            response.status_code,
+            f"status code incorrect. Should be {code}, but got {response.status_code}",
+        )
+
+        response_obj = json.loads(response.content)
+        self.assertEqual(response_obj["status"], "Active")
+        self.assertEqual(
+            response_obj["from_building"],
+            {
+                "id": 1,
+                "installs": [
+                    {
+                        "install_number": 2000,
+                        "member": {
+                            "id": 1,
+                            "name": "John Smith",
+                            "email_address": "john.smith@example.com",
+                            "stripe_email_address": None,
+                            "secondary_emails": [],
+                            "phone_number": "555-555-5555",
+                            "slack_handle": "@jsmith",
+                            "invalid": False,
+                            "contact_notes": None,
+                        },
+                        "network_number": 2000,
+                        "install_status": "Active",
+                        "ticket_id": 69,
+                        "request_date": "2022-02-27",
+                        "install_date": "2022-03-01",
+                        "abandon_date": "9999-01-01",
+                        "unit": "3",
+                        "roof_access": True,
+                        "referral": None,
+                        "notes": "Referral: Read about it on the internet",
+                        "diy": None,
+                    }
+                ],
+                "sectors": [
+                    {
+                        "id": 1,
+                        "name": "Vernon",
+                        "radius": 0.3,
+                        "azimuth": 0,
+                        "width": 120,
+                        "status": "Active",
+                        "install_date": None,
+                        "abandon_date": None,
+                        "device_name": "LAP-120",
+                        "ssid": None,
+                        "notes": None,
+                    }
+                ],
+                "bin": 8888,
+                "building_status": "Active",
+                "street_address": "3333 Chom St",
+                "city": "Brooklyn",
+                "state": "NY",
+                "zip_code": "11111",
+                "invalid": False,
+                "address_truth_sources": "['NYCPlanningLabs']",
+                "latitude": 0.0,
+                "longitude": 0.0,
+                "altitude": 0.0,
+                "primary_nn": None,
+                "node_name": None,
+                "notes": None,
+            },
+        )
+        self.assertEqual(
+            response_obj["to_building"],
+            {
+                "id": 2,
+                "installs": [
+                    {
+                        "install_number": 2001,
+                        "member": {
+                            "id": 2,
+                            "name": "Donald Smith",
+                            "email_address": "john.smith@example.com",
+                            "stripe_email_address": None,
+                            "secondary_emails": [],
+                            "phone_number": "555-555-5555",
+                            "slack_handle": "@jsmith",
+                            "invalid": False,
+                            "contact_notes": None,
+                        },
+                        "network_number": 2000,
+                        "install_status": "Active",
+                        "ticket_id": 69,
+                        "request_date": "2022-02-27",
+                        "install_date": "2022-03-01",
+                        "abandon_date": "9999-01-01",
+                        "unit": "3",
+                        "roof_access": True,
+                        "referral": None,
+                        "notes": "Referral: Read about it on the internet",
+                        "diy": None,
+                    }
+                ],
+                "sectors": [
+                    {
+                        "id": 2,
+                        "name": "Vernon",
+                        "radius": 0.3,
+                        "azimuth": 0,
+                        "width": 120,
+                        "status": "Active",
+                        "install_date": None,
+                        "abandon_date": None,
+                        "device_name": "LAP-120",
+                        "ssid": None,
+                        "notes": None,
+                    }
+                ],
+                "bin": 8888,
+                "building_status": "Active",
+                "street_address": "3333 Chom St",
+                "city": "Brooklyn",
+                "state": "NY",
+                "zip_code": "11111",
+                "invalid": False,
+                "address_truth_sources": "['NYCPlanningLabs']",
+                "latitude": 0.0,
+                "longitude": 0.0,
+                "altitude": 0.0,
+                "primary_nn": None,
+                "node_name": None,
+                "notes": None,
+            },
         )
 
 
