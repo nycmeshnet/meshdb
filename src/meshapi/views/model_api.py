@@ -3,9 +3,16 @@ from rest_framework import generics, permissions
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 
-from meshapi.models import Building, Install, Member
+from meshapi.models import Building, Install, Link, Member, Sector
 from meshapi.permissions import IsReadOnly
-from meshapi.serializers import BuildingSerializer, InstallSerializer, MemberSerializer, UserSerializer
+from meshapi.serializers import (
+    BuildingSerializer,
+    InstallSerializer,
+    LinkSerializer,
+    MemberSerializer,
+    SectorSerializer,
+    UserSerializer,
+)
 
 
 # Home view
@@ -53,3 +60,23 @@ class InstallList(generics.ListCreateAPIView):
 class InstallDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = Install.objects.all()
     serializer_class = InstallSerializer
+
+
+class LinkList(generics.ListCreateAPIView):
+    queryset = Link.objects.all()
+    serializer_class = LinkSerializer
+
+
+class LinkDetail(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Link.objects.all()
+    serializer_class = LinkSerializer
+
+
+class SectorList(generics.ListCreateAPIView):
+    queryset = Sector.objects.all()
+    serializer_class = SectorSerializer
+
+
+class SectorDetail(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Sector.objects.all()
+    serializer_class = SectorSerializer

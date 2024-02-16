@@ -7,7 +7,7 @@ from rest_framework import serializers
 from rest_framework.fields import empty
 from rest_framework.serializers import raise_errors_on_nested_writes
 
-from meshapi.models import Building, Install, Member
+from meshapi.models import Building, Install, Link, Member, Sector
 from meshapi.permissions import check_has_model_view_permission
 
 
@@ -148,9 +148,41 @@ class InstallSerializer(RecursiveSerializer):
     building = BuildingSerializer(exclude_fields=["installs"])
 
 
+class LinkSerializer(RecursiveSerializer):
+    class Meta:
+        model = Link
+        fields = "__all__"
+
+    from_building = BuildingSerializer(exclude_fields=["links_from", "links_to"])
+    to_building = BuildingSerializer(exclude_fields=["links_from", "links_to"])
+
+
+class SectorSerializer(RecursiveSerializer):
+    class Meta:
+        model = Sector
+        fields = "__all__"
+
+    building = BuildingSerializer(exclude_fields=["sectors"])
+
+
 # This is a bit hacky, but gets around the fact that we can't call InstallSerializer() until after
 # MemberSerializer has already been declared
 MemberSerializer._declared_fields["installs"] = InstallSerializer(exclude_fields=["member"], many=True, read_only=True)
 BuildingSerializer._declared_fields["installs"] = InstallSerializer(
     exclude_fields=["building"], many=True, read_only=True
+)
+BuildingSerializer._declared_fields["links_from"] = LinkSerializer(
+    exclude_fields=["building"],
+    many=True,
+    read_only=True,
+)
+BuildingSerializer._declared_fields["links_to"] = LinkSerializer(
+    exclude_fields=["building"],
+    many=True,
+    read_only=True,
+)
+BuildingSerializer._declared_fields["sectors"] = SectorSerializer(
+    exclude_fields=["building"],
+    many=True,
+    read_only=True,
 )
