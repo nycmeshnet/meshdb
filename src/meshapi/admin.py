@@ -152,14 +152,14 @@ class MemberAdmin(admin.ModelAdmin):
         "phone_number__icontains",
         "slack_handle__icontains",
         # Search by building details
-        "install__building__street_address__icontains",
-        "install__building__city__iexact",
-        "install__building__state__iexact",
-        "install__building__zip_code__iexact",
-        "install__building__bin__iexact",
+        "installs__building__street_address__icontains",
+        "installs__building__city__iexact",
+        "installs__building__state__iexact",
+        "installs__building__zip_code__iexact",
+        "installs__building__bin__iexact",
         # Search by network number
-        "install__network_number__iexact",
-        "install__install_number__iexact",
+        "installs__network_number__iexact",
+        "installs__install_number__iexact",
     ]
     inlines = [InstallInline]
     list_display = [
