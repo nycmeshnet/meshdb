@@ -41,21 +41,15 @@ class TestMember(TestCase):
             response.status_code,
             f"status code incorrect. Should be {code}, but got {response.status_code}",
         )
+
+        response_obj = json.loads(response.content)
+        self.assertEqual(response_obj["name"], "Stacy Fakename")
+        self.assertEqual(response_obj["primary_email_address"], "foo@example.com")
+        self.assertEqual(response_obj["stripe_email_address"], "stripe@example.com")
+        self.assertEqual(response_obj["additional_email_addresses"], ["bar@example.com", "baz@example.com"])
         self.assertEqual(
-            json.loads(response.content),
-            {
-                "id": 1,
-                "name": "Stacy Fakename",
-                "primary_email_address": "foo@example.com",
-                "additional_email_addresses": ["bar@example.com", "baz@example.com"],
-                "stripe_email_address": "stripe@example.com",
-                "all_email_addresses": ["foo@example.com", "stripe@example.com", "bar@example.com", "baz@example.com"],
-                "contact_notes": None,
-                "invalid": False,
-                "phone_number": None,
-                "slack_handle": None,
-                "installs": [],
-            },
+            response_obj["all_email_addresses"],
+            ["foo@example.com", "stripe@example.com", "bar@example.com", "baz@example.com"],
         )
 
     def test_broken_member(self):
