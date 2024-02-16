@@ -35,6 +35,7 @@ class RecursiveSerializer(serializers.ModelSerializer):
         "required": _("This field is required."),
         "does_not_exist": _('Invalid pk "{pk_value}" - object does not exist.'),
         "incorrect_type": _("Incorrect type. Expected pk value, received {data_type}."),
+        "invalid_query_param": _("Invalid value for {param_name}. {error_message}"),
         "nesting_detected": _(
             "Nested detected. Nesting is not permitted for write calls. Ensure all top-level fields are scalars"
         ),
@@ -93,7 +94,16 @@ class RecursiveSerializer(serializers.ModelSerializer):
         request = self.context.get("request", None)
         if request:
             user = request.user
-            depth_limit = int(request.query_params.get("max_recursion_depth", -1))
+            try:
+                depth_limit = int(request.query_params.get("max_recursion_depth", -1))
+                if depth_limit < -1:
+                    raise ValueError(f"Invalid value: {depth_limit}, must be an integer >= -1")
+            except ValueError:
+                self.fail(
+                    "invalid_query_param",
+                    param_name="max_recursion_depth",
+                    error_message=f"Invalid value: {depth_limit}, must be an integer >= -1",
+                )
 
         output_fields = {}
         for field_key, serializer in super().get_fields().items():

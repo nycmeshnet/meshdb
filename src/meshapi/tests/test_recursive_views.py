@@ -499,6 +499,22 @@ class TestMonsterQuery(TestCase):
         self.maxDiff = None
         self.c.login(username="admin", password="admin_password")
 
+        response = self.c.get(f"/api/v1/links/1/?max_recursion_depth=-2")
+        code = 400
+        self.assertEqual(
+            code,
+            response.status_code,
+            f"status code incorrect. Should be {code}, but got {response.status_code}",
+        )
+
+        response = self.c.get(f"/api/v1/links/1/?max_recursion_depth=blahhh")
+        code = 400
+        self.assertEqual(
+            code,
+            response.status_code,
+            f"status code incorrect. Should be {code}, but got {response.status_code}",
+        )
+
         response = self.c.get(f"/api/v1/links/1/?max_recursion_depth=0")
 
         code = 200
