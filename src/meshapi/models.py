@@ -128,8 +128,8 @@ class Link(models.Model):
         MMWAVE = "MMWave"
         FIBER = "Fiber"
 
-    from_building = models.ForeignKey(Building, on_delete=models.PROTECT, related_name="link_from")
-    to_building = models.ForeignKey(Building, on_delete=models.PROTECT, related_name="link_to")
+    from_building = models.ForeignKey(Building, on_delete=models.PROTECT, related_name="links_from")
+    to_building = models.ForeignKey(Building, on_delete=models.PROTECT, related_name="links_to")
 
     status = models.TextField(choices=LinkStatus.choices)
     type = models.TextField(choices=LinkType.choices, default=None, blank=True, null=True)
@@ -147,7 +147,7 @@ class Sector(models.Model):
         ACTIVE = "Active"
         POTENTIAL = "Potential"
 
-    building = models.ForeignKey(Building, on_delete=models.PROTECT)
+    building = models.ForeignKey(Building, on_delete=models.PROTECT, related_name="sectors")
     name = models.TextField()
 
     radius = models.FloatField(

@@ -6,7 +6,6 @@ from collections import defaultdict
 from typing import List
 
 import django
-from django.db.models import Q
 
 from meshdb.utils.spreadsheet_import import logger
 
@@ -29,7 +28,9 @@ from meshdb.utils.spreadsheet_import.csv_load import (
 )
 from meshdb.utils.spreadsheet_import.parse_building import get_or_create_building
 from meshdb.utils.spreadsheet_import.parse_install import get_or_create_install
+from meshdb.utils.spreadsheet_import.parse_link import create_link
 from meshdb.utils.spreadsheet_import.parse_member import get_or_create_member
+from meshdb.utils.spreadsheet_import.parse_sector import create_sector
 
 
 def main():
@@ -119,107 +120,16 @@ def main():
     logging.info(f"Loading links from '{links_path}'...")
     links = get_spreadsheet_links(links_path)
     for spreadsheet_link in links:
-        try:
-            from_building = models.Building.objects.filter(
-                Q(installs__install_number=spreadsheet_link.from_install_num)
-                | Q(installs__network_number=spreadsheet_link.from_install_num)
-                | Q(primary_nn=spreadsheet_link.from_install_num),
-            )[0]
-            to_building = models.Building.objects.filter(
-                Q(installs__install_number=spreadsheet_link.to_install_num)
-                | Q(installs__network_number=spreadsheet_link.to_install_num)
-                | Q(primary_nn=spreadsheet_link.to_install_num),
-            )[0]
-        except IndexError:
-            message = (
-                f"Could not find building for install {spreadsheet_link.from_install_num} or "
-                f"{spreadsheet_link.to_install_num}"
-            )
-            if spreadsheet_link.status != SpreadsheetLinkStatus.dead:
-                raise ValueError(message)
-            else:
-                logging.warning(message + ". But this link is dead, skipping this spreadsheet row")
-                continue
-
-        if spreadsheet_link.status in [
-            SpreadsheetLinkStatus.vpn,
-            SpreadsheetLinkStatus.active,
-            SpreadsheetLinkStatus.sixty_ghz,
-            SpreadsheetLinkStatus.fiber,
-        ]:
-            status = models.Link.LinkStatus.ACTIVE
-        elif spreadsheet_link.status == SpreadsheetLinkStatus.dead:
-            status = models.Link.LinkStatus.DEAD
-        elif spreadsheet_link.status == SpreadsheetLinkStatus.planned:
-            status = models.Link.LinkStatus.PLANNED
-        else:
-            raise ValueError(f"Invalid spreadsheet link status {spreadsheet_link.status}")
-
-        link_type = None
-        if spreadsheet_link.status in [
-            SpreadsheetLinkStatus.active,
-        ]:
-            link_type = models.Link.LinkType.STANDARD
-        elif spreadsheet_link.status == SpreadsheetLinkStatus.vpn:
-            link_type = models.Link.LinkType.VPN
-        elif spreadsheet_link.status == SpreadsheetLinkStatus.sixty_ghz:
-            link_type = models.Link.LinkType.MMWAVE
-        elif spreadsheet_link.status == SpreadsheetLinkStatus.fiber:
-            link_type = models.Link.LinkType.FIBER
-
-        link_notes = "\n".join([spreadsheet_link.notes, spreadsheet_link.comments]).strip()
-        link = models.Link(
-            from_building=from_building,
-            to_building=to_building,
-            status=status,
-            type=link_type,
-            install_date=spreadsheet_link.install_date,
-            abandon_date=spreadsheet_link.abandon_date,
-            description=spreadsheet_link.where_to_where if spreadsheet_link.where_to_where else None,
-            notes=link_notes if link_notes else None,
-        )
-        link.save()
+        link = create_link(spreadsheet_link)
+        if link:
+            link.save()
 
     logging.info(f"Loading sectors from '{sectors_path}'...")
     sectors = get_spreadsheet_sectors(sectors_path)
     for spreadsheet_sector in sectors:
-        try:
-            building = models.Building.objects.filter(
-                Q(installs__install_number=spreadsheet_sector.node_id)
-                | Q(installs__network_number=spreadsheet_sector.node_id)
-                | Q(primary_nn=spreadsheet_sector.node_id),
-            )[0]
-        except IndexError:
-            message = f"Could not find building for install {spreadsheet_sector.node_id}"
-            if spreadsheet_sector.status != SpreadsheetSectorStatus.abandoned:
-                raise ValueError(message)
-            else:
-                logging.warning(message + ". But this sector is abandoned, skipping this spreadsheet row")
-
-        if spreadsheet_sector.status == SpreadsheetSectorStatus.active:
-            status = models.Sector.SectorStatus.ACTIVE
-        elif spreadsheet_sector.status == SpreadsheetSectorStatus.abandoned:
-            status = models.Sector.SectorStatus.ABANDONED
-        elif spreadsheet_sector.status == SpreadsheetSectorStatus.potential:
-            status = models.Sector.SectorStatus.POTENTIAL
-        else:
-            raise ValueError(f"Invalid spreadsheet sector status {spreadsheet_sector.status}")
-
-        sector_notes = "\n".join([spreadsheet_sector.notes, spreadsheet_sector.comments]).strip()
-        sector = models.Sector(
-            building=building,
-            radius=spreadsheet_sector.radius,
-            azimuth=spreadsheet_sector.azimuth,
-            width=spreadsheet_sector.width,
-            status=status,
-            install_date=spreadsheet_sector.install_date,
-            abandon_date=spreadsheet_sector.abandon_date,
-            device_name=spreadsheet_sector.device,
-            name=spreadsheet_sector.names,
-            ssid=spreadsheet_sector.ssid if spreadsheet_sector.ssid else None,
-            notes=sector_notes if sector_notes else None,
-        )
-        sector.save()
+        sector = create_sector(spreadsheet_sector)
+        if sector:
+            sector.save()
 
 
 if __name__ == "__main__":

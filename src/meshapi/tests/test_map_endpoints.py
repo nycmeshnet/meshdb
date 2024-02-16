@@ -425,6 +425,16 @@ class TestViewsGetUnauthenticated(TestCase):
         )
         random.save()
 
+        inactive = Building(
+            building_status=Building.BuildingStatus.INACTIVE,
+            address_truth_sources="",
+            latitude=0,
+            longitude=0,
+            altitude=0,
+            primary_nn=123456,
+        )
+        inactive.save()
+
         links.append(
             Link(
                 from_building=sn1,
@@ -471,6 +481,24 @@ class TestViewsGetUnauthenticated(TestCase):
             )
         )
 
+        links.append(
+            Link(
+                from_building=sn1,
+                to_building=random,
+                status=Link.LinkStatus.DEAD,
+                type=Link.LinkType.STANDARD,
+            )
+        )
+
+        links.append(
+            Link(
+                from_building=sn1,
+                to_building=inactive,
+                status=Link.LinkStatus.ACTIVE,
+                type=Link.LinkType.STANDARD,
+            )
+        )
+
         for link in links:
             link.save()
 
@@ -505,6 +533,147 @@ class TestViewsGetUnauthenticated(TestCase):
                     "from": 1934,
                     "to": 123,
                     "status": "planned",
+                },
+            ],
+        )
+
+    def test_link_install_number_resolution(self):
+        links = []
+
+        # Use the same member for everything since it doesn't matter
+        member = Member(name="Fake Name")
+        member.save()
+
+        building_1 = Building(
+            building_status=Building.BuildingStatus.ACTIVE,
+            address_truth_sources="",
+            latitude=0,
+            longitude=0,
+            altitude=0,
+            primary_nn=555,
+        )
+        building_1.save()
+
+        Install(
+            install_number=5,
+            install_status=Install.InstallStatus.INACTIVE,
+            request_date=datetime.date(2015, 3, 15),
+            building=building_1,
+            member=member,
+        ).save()
+        Install(
+            install_number=6,
+            install_status=Install.InstallStatus.CLOSED,
+            request_date=datetime.date(2015, 3, 15),
+            building=building_1,
+            member=member,
+        ).save()
+        Install(
+            install_number=7,
+            install_status=Install.InstallStatus.ACTIVE,
+            request_date=datetime.date(2015, 3, 15),
+            building=building_1,
+            member=member,
+        ).save()
+
+        building_2 = Building(
+            building_status=Building.BuildingStatus.ACTIVE,
+            address_truth_sources="",
+            latitude=0,
+            longitude=0,
+            altitude=0,
+            primary_nn=99,
+        )
+        building_2.save()
+        Install(
+            install_number=90,
+            install_status=Install.InstallStatus.CLOSED,
+            request_date=datetime.date(2015, 3, 15),
+            building=building_2,
+            member=member,
+        ).save()
+        Install(
+            install_number=91,
+            install_status=Install.InstallStatus.NN_REASSIGNED,
+            request_date=datetime.date(2015, 3, 15),
+            building=building_2,
+            member=member,
+        ).save()
+
+        building_3 = Building(
+            building_status=Building.BuildingStatus.ACTIVE,
+            address_truth_sources="",
+            latitude=0,
+            longitude=0,
+            altitude=0,
+            primary_nn=731,
+        )
+        building_3.save()
+        Install(
+            install_number=104,
+            install_status=Install.InstallStatus.PENDING,
+            request_date=datetime.date(2015, 3, 15),
+            building=building_3,
+            member=member,
+        ).save()
+        Install(
+            install_number=105,
+            install_status=Install.InstallStatus.REQUEST_RECEIVED,
+            request_date=datetime.date(2015, 3, 15),
+            building=building_3,
+            member=member,
+        ).save()
+
+        links.append(
+            Link(
+                from_building=building_1,
+                to_building=building_2,
+                status=Link.LinkStatus.ACTIVE,
+                type=Link.LinkType.STANDARD,
+            )
+        )
+
+        links.append(
+            Link(
+                from_building=building_2,
+                to_building=building_3,
+                status=Link.LinkStatus.ACTIVE,
+                type=Link.LinkType.STANDARD,
+            )
+        )
+
+        links.append(
+            Link(
+                from_building=building_3,
+                to_building=building_1,
+                status=Link.LinkStatus.ACTIVE,
+                type=Link.LinkType.STANDARD,
+            )
+        )
+
+        for link in links:
+            link.save()
+
+        self.maxDiff = None
+        response = self.c.get("/api/v1/mapdata/links/")
+
+        self.assertEqual(
+            json.loads(response.content.decode("UTF8")),
+            [
+                {
+                    "from": 7,
+                    "to": 99,
+                    "status": "active",
+                },
+                {
+                    "from": 99,
+                    "to": 104,
+                    "status": "active",
+                },
+                {
+                    "from": 104,
+                    "to": 7,
+                    "status": "active",
                 },
             ],
         )
