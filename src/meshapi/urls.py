@@ -6,8 +6,6 @@ from meshapi import views
 urlpatterns = [
     path("", views.api_root),
     path("auth/", include("rest_framework.urls")),
-    path("users/", views.UserList.as_view(), name="meshapi-v1-user-list"),
-    path("users/<int:pk>/", views.UserDetail.as_view(), name="meshapi-v1-user-detail"),
     path("buildings/", views.BuildingList.as_view(), name="meshapi-v1-building-list"),
     path("buildings/<int:pk>/", views.BuildingDetail.as_view(), name="meshapi-v1-building-detail"),
     path("members/", views.MemberList.as_view(), name="meshapi-v1-member-list"),

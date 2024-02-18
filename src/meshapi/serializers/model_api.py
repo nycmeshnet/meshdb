@@ -11,12 +11,6 @@ from meshapi.models import Building, Install, Link, Member, Sector
 from meshapi.permissions import check_has_model_view_permission
 
 
-class UserSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = User
-        fields = "__all__"
-
-
 class RecursiveSerializer(serializers.ModelSerializer):
     """
     A serializer which follows foreign-key relationships when serializing, taking care to avoid

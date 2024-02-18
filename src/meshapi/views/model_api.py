@@ -11,7 +11,6 @@ from meshapi.serializers import (
     LinkSerializer,
     MemberSerializer,
     SectorSerializer,
-    UserSerializer,
 )
 
 
@@ -20,16 +19,6 @@ from meshapi.serializers import (
 @permission_classes([permissions.AllowAny])
 def api_root(request, format=None):
     return Response("We're meshin'.")
-
-
-class UserList(generics.ListAPIView):
-    queryset = User.objects.all()
-    serializer_class = UserSerializer
-
-
-class UserDetail(generics.RetrieveAPIView):
-    queryset = User.objects.all()
-    serializer_class = UserSerializer
 
 
 class BuildingList(generics.ListCreateAPIView):
