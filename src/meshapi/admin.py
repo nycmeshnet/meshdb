@@ -202,7 +202,7 @@ class InstallAdmin(admin.ModelAdmin):
         "install_date",
         "abandon_date",
     ]
-    list_display = ["__str__", "network_number", "member", "building", "unit"]
+    list_display = ["__str__", "install_status", "network_number", "member", "building", "unit"]
     search_fields = [
         # Install number
         "install_number__iexact",
