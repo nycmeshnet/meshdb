@@ -85,7 +85,7 @@ class BuildingAdmin(admin.ModelAdmin):
         ("node_name", admin.EmptyFieldListFilter),
         BoroughFilter,
     ]
-    list_display = ["street_address", "node_name", "primary_nn"]
+    list_display = ["__str__", "street_address", "node_name", "primary_nn"]
     fieldsets = [
         (
             "Node Details",
