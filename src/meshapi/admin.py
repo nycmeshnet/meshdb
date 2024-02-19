@@ -12,7 +12,7 @@ admin.site.index_title = "Welcome to MeshDB Admin Portal"
 
 class InstallInline(admin.TabularInline):
     model = Install
-    extra = 0  
+    extra = 0
     # show_change_link = True
     fields = ["install_status", "network_number", "member", "unit"]
     readonly_fields = fields
