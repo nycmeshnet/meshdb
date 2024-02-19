@@ -198,3 +198,8 @@ class Sector(models.Model):
     ssid = models.TextField(default=None, blank=True, null=True)
 
     notes = models.TextField(default=None, blank=True, null=True)
+
+    def __str__(self):
+        if self.ssid:
+            return self.ssid
+        return f"MeshDB Sector ID {self.id}"

@@ -289,7 +289,7 @@ class SectorAdmin(admin.ModelAdmin):
     form = SectorAdminForm
     search_fields = ["name__icontains", "device_name__icontains", "ssid__icontains"]
     list_display = [
-        "id",
+        "__str__",
         "ssid",
         "name",
         "device_name",
