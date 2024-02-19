@@ -1,4 +1,5 @@
 from django.db.models import Q
+from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import generics, permissions
 
 from meshapi.models import Building, Install, Link, Sector
@@ -11,7 +12,16 @@ from meshapi.serializers import (
 )
 
 
-class MapDataInstallList(generics.ListAPIView):
+@extend_schema_view(
+    get=extend_schema(
+        tags=["Website Map Data"],
+        auth=[],
+        summary='Complete list of all "Nodes" (mostly Installs with some fake installs generated to solve NN re-use), '
+        "unpaginated, in the format expected by the website map. (Warning: This endpoint is a legacy format and may be "
+        "deprecated/removed in the future)",
+    ),
+)
+class MapDataNodeList(generics.ListAPIView):
     permission_classes = [permissions.AllowAny]
     serializer_class = MapDataInstallSerializer
     pagination_class = None
@@ -54,6 +64,14 @@ class MapDataInstallList(generics.ListAPIView):
         return all_installs
 
 
+@extend_schema_view(
+    get=extend_schema(
+        tags=["Website Map Data"],
+        auth=[],
+        summary="Complete list of all Links, unpaginated, in the format expected by the website map. "
+        "(Warning: This endpoint is a legacy format and may be deprecated/removed in the future)",
+    ),
+)
 class MapDataLinkList(generics.ListAPIView):
     permission_classes = [permissions.AllowAny]
     serializer_class = MapDataLinkSerializer
@@ -65,6 +83,14 @@ class MapDataLinkList(generics.ListAPIView):
     )
 
 
+@extend_schema_view(
+    get=extend_schema(
+        tags=["Website Map Data"],
+        auth=[],
+        summary="Complete list of all Sectors, unpaginated, in the format expected by the website map. "
+        "(Warning: This endpoint is a legacy format and may be deprecated/removed in the future)",
+    ),
+)
 class MapDataSectorList(generics.ListAPIView):
     permission_classes = [permissions.AllowAny]
     serializer_class = MapDataSectorSerializer

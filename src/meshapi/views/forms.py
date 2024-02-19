@@ -7,9 +7,11 @@ from typing import Optional
 
 from django.db import IntegrityError, transaction
 from django.db.models import Q
-from rest_framework import permissions, status
+from drf_spectacular.utils import OpenApiResponse, extend_schema, extend_schema_view, inline_serializer
+from rest_framework import permissions, serializers, status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
+from rest_framework_dataclasses.serializers import DataclassSerializer
 
 from meshapi.exceptions import AddressAPIError, AddressError
 from meshapi.models import NETWORK_NUMBER_MAX, NETWORK_NUMBER_MIN, Building, Install, Member
@@ -37,6 +39,43 @@ class JoinFormRequest:
     ncl: bool
 
 
+class JoinFormRequestSerializer(DataclassSerializer):
+    class Meta:
+        dataclass = JoinFormRequest
+
+
+form_err_response_schema = inline_serializer("ErrorResponse", fields={"detail": serializers.CharField()})
+
+
+@extend_schema_view(
+    post=extend_schema(
+        tags=["User Forms"],
+        auth=[],
+        summary="Register a new request for a potential mesh Install. "
+        "Used by the join form posted on the nycmesh.net website",
+        request=JoinFormRequestSerializer,
+        responses={
+            "201": OpenApiResponse(
+                inline_serializer(
+                    "JoinFormSuccessResponse",
+                    fields={
+                        "detail": serializers.CharField(),
+                        "building_id": serializers.IntegerField(),
+                        "member_id": serializers.IntegerField(),
+                        "install_number": serializers.IntegerField(),
+                        "member_exists": serializers.BooleanField(),
+                    },
+                ),
+                description="Request received, an install has been created (along with member and "
+                "building objects if necessary).",
+            ),
+            "400": OpenApiResponse(
+                form_err_response_schema, description="Invalid request body JSON or missing required fields"
+            ),
+            "500": OpenApiResponse(form_err_response_schema, description="Unexpected internal error"),
+        },
+    ),
+)
 @api_view(["POST"])
 @permission_classes([permissions.AllowAny])
 @advisory_lock("join_form_lock")
@@ -256,6 +295,50 @@ class NetworkNumberAssignmentRequest:
     install_number: int
 
 
+class NetworkNumberAssignmentRequestSerializer(DataclassSerializer):
+    class Meta:
+        dataclass = NetworkNumberAssignmentRequest
+
+    password = serializers.CharField()
+
+
+nn_form_success_schema = inline_serializer(
+    "NNFormSuccessResponse",
+    fields={
+        "detail": serializers.CharField(),
+        "building_id": serializers.IntegerField(),
+        "install_number": serializers.IntegerField(),
+        "network_number": serializers.IntegerField(),
+        "created": serializers.BooleanField(),
+    },
+)
+
+
+@extend_schema_view(
+    post=extend_schema(
+        tags=["User Forms"],
+        summary="Assign a network number to a given Install object. Used by the NN Assignment form",
+        request=NetworkNumberAssignmentRequestSerializer,
+        responses={
+            "200": OpenApiResponse(
+                nn_form_success_schema,
+                description="This install already has an NN, no action has been perfomed in the DB",
+            ),
+            "201": OpenApiResponse(
+                nn_form_success_schema,
+                description="This install did not already have an NN. One has been found "
+                "(either from the backlog of unused installs or already existing on the Building) "
+                "and assigned to this install.",
+            ),
+            "400": OpenApiResponse(
+                form_err_response_schema, description="Invalid request body JSON or missing required fields"
+            ),
+            "403": OpenApiResponse(form_err_response_schema, description="Incorrect or missing password"),
+            "404": OpenApiResponse(form_err_response_schema, description="Requested install number could not be found"),
+            "500": OpenApiResponse(form_err_response_schema, description="Unexpected internal error"),
+        },
+    ),
+)
 @api_view(["POST"])
 @permission_classes([HasNNAssignPermission | LegacyNNAssignmentPassword])
 @transaction.atomic

@@ -6,6 +6,8 @@ from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.db.models.fields import EmailField
 
+from meshdb.utils.spreadsheet_import.building.constants import AddressTruthSource
+
 NETWORK_NUMBER_MIN = 101
 NETWORK_NUMBER_MAX = 8192
 
@@ -15,17 +17,51 @@ class Building(models.Model):
         INACTIVE = "Inactive"
         ACTIVE = "Active"
 
-    bin = models.IntegerField(blank=True, null=True)
-    building_status = models.TextField(choices=BuildingStatus.choices)
-    street_address = models.TextField(blank=True, null=True)
-    city = models.TextField(blank=True, null=True)
-    state = models.TextField(blank=True, null=True)
-    zip_code = models.TextField(blank=True, null=True)
-    invalid = models.BooleanField(default=False)
-    address_truth_sources = models.TextField()
-    latitude = models.FloatField()
-    longitude = models.FloatField()
-    altitude = models.FloatField(blank=True, null=True)
+    bin = models.IntegerField(
+        blank=True,
+        null=True,
+        help_text="NYC DOB Identifier for this building",
+        validators=[MinValueValidator(0)],
+    )
+    building_status = models.TextField(
+        choices=BuildingStatus.choices,
+        help_text="Current building status. Active indicates this is a building with active mesh equipment, "
+        "regardless of if there are any members connected via active installs",
+    )
+    street_address = models.TextField(
+        blank=True, null=True, help_text="Line 1 only of the address of this building: i.e. <house num> <street>"
+    )
+    city = models.TextField(
+        blank=True,
+        null=True,
+        help_text="The name of the borough this building is in for buildings within NYC, "
+        '"New York" for Manhattan to match street addresses. The actual city name for anything outside NYC',
+    )
+    state = models.TextField(
+        blank=True,
+        null=True,
+        help_text='The 2 letter abreviation of the US State this building is contained within, e.g. "NY" or "NJ"',
+    )
+    zip_code = models.TextField(
+        blank=True, null=True, help_text="The five digit ZIP code this building is contained within"
+    )
+    invalid = models.BooleanField(
+        default=False,
+        help_text="Is the location of this building specified sufficiently enough to be considered valid? "
+        "This means the building must have a non-null street address, city, state, and zip. "
+        "Some old spreadsheet imports are missing some of this information, and this field is useful for filtering these out",
+    )
+    address_truth_sources = models.TextField(
+        help_text="A comma separated list of strings that answers the question: How did we determine the content of "
+        "the street address, city, state, and ZIP fields? This is useful in understanding the level of validation "
+        "applied to spreadsheet imported data. Possible values are: "
+        f"{', '.join(src.value for src in AddressTruthSource)}. Check the import script for details"
+    )
+    latitude = models.FloatField(help_text="Building latitude in decimal degrees")
+    longitude = models.FloatField(help_text="Building longitude in decimal degrees")
+    altitude = models.FloatField(
+        blank=True, null=True, help_text='Building rooftop altitude in "absolute" meters above sea level'
+    )
     primary_nn = models.IntegerField(
         blank=True,
         null=True,
@@ -33,9 +69,25 @@ class Building(models.Model):
             MinValueValidator(NETWORK_NUMBER_MIN),
             MaxValueValidator(NETWORK_NUMBER_MAX),
         ],
+        help_text="The primary network number of this building, for nearly all buildings "
+        "this will be the same value attached to all installs. In rare cases where "
+        'buildings have more that one NN, this is the "primary" one, indicating what '
+        "this building should be referred to as (this should match the core router)",
     )
-    node_name = models.TextField(default=None, blank=True, null=True)
-    notes = models.TextField(blank=True, null=True)
+    node_name = models.TextField(
+        default=None,
+        blank=True,
+        null=True,
+        help_text="The colloquial name of this node used among mesh volunteers, if applicable",
+    )
+    notes = models.TextField(
+        blank=True,
+        null=True,
+        help_text="A free-form text description of this building, to track any additional information. "
+        "For Buidings imported from the spreadsheet, this starts with a formatted block of information about the import process"
+        "and original spreadsheet data. However this structure can be changed by admins at any time and should not be relied on"
+        "by automated systems. ",
+    )
 
     def __str__(self):
         if self.node_name:
@@ -48,14 +100,40 @@ class Building(models.Model):
 
 
 class Member(models.Model):
-    name = models.TextField()
-    primary_email_address = models.EmailField(null=True)
-    stripe_email_address = models.EmailField(null=True, blank=True, default=None)
-    additional_email_addresses = ArrayField(EmailField(), null=True, blank=True, default=list)
-    phone_number = models.TextField(default=None, blank=True, null=True)
-    slack_handle = models.TextField(default=None, blank=True, null=True)
-    invalid = models.BooleanField(default=False)
-    contact_notes = models.TextField(default=None, blank=True, null=True)
+    name = models.TextField(help_text='Member full name in the format: "First Last"')
+    primary_email_address = models.EmailField(null=True, help_text="Primary email address used to contact the member")
+    stripe_email_address = models.EmailField(
+        null=True,
+        blank=True,
+        default=None,
+        help_text="Email address used by the member to donate via Stripe, if different to their primary email",
+    )
+    additional_email_addresses = ArrayField(
+        EmailField(),
+        null=True,
+        blank=True,
+        default=list,
+        help_text="Any additional email addresses associated with this member",
+    )
+    phone_number = models.TextField(
+        default=None, blank=True, null=True, help_text="A contact phone number for this member"
+    )
+    slack_handle = models.TextField(default=None, blank=True, null=True, help_text="The member's slack handle")
+    invalid = models.BooleanField(
+        default=False,
+        help_text="Is there enough information about how to contact "
+        "this member for this object to be considered valid? This mostly means the member must have a non-null primary email address. "
+        "Some old spreadsheet imports are missing this information, and this field is useful for filtering these out",
+    )
+    contact_notes = models.TextField(
+        default=None,
+        blank=True,
+        null=True,
+        help_text="A free-form text description of how to contact this member, to track any additional information. "
+        "For Members imported from the spreadsheet, this starts with a formatted block of information about the import process"
+        "and original spreadsheet data. However this structure can be changed by admins at any time and should not be relied on"
+        "by automated systems. ",
+    )
 
     def __str__(self):
         if self.name:
@@ -101,29 +179,87 @@ class Install(models.Model):
         blank=True,
         null=True,
         validators=[MinValueValidator(NETWORK_NUMBER_MIN), MaxValueValidator(NETWORK_NUMBER_MAX)],
+        help_text="The network number associated with this install, this corresponds to "
+        "the static IP address and OSPF ID of the router this install utilizes, the DHCP range it "
+        "receives an address from, etc.",
     )
 
     # Summary status of install
-    install_status = models.TextField(choices=InstallStatus.choices)
+    install_status = models.TextField(
+        choices=InstallStatus.choices,
+        help_text="The current status of this install",
+    )
 
     # OSTicket ID
-    ticket_id = models.IntegerField(blank=True, null=True)
+    ticket_id = models.IntegerField(
+        blank=True,
+        null=True,
+        help_text="The ID of the OSTicket used to track communications with the member about this install",
+    )
 
     # Important dates
-    request_date = models.DateField()
-    install_date = models.DateField(default=None, blank=True, null=True)
-    abandon_date = models.DateField(default=None, blank=True, null=True)
+    request_date = models.DateField(help_text="The date that this install request was received")
+    install_date = models.DateField(
+        default=None,
+        blank=True,
+        null=True,
+        help_text="The date this install was completed and deployed to the mesh",
+    )
+    abandon_date = models.DateField(
+        default=None,
+        blank=True,
+        null=True,
+        help_text="The date this install was abandoned, unplugged, or disassembled",
+    )
 
     # Relation to Building
-    building = models.ForeignKey(Building, on_delete=models.PROTECT, related_name="installs")
-    unit = models.TextField(default=None, blank=True, null=True)
-    roof_access = models.BooleanField(default=False)
+    building = models.ForeignKey(
+        Building,
+        on_delete=models.PROTECT,
+        related_name="installs",
+        help_text="The building where the install is located",
+    )
+    unit = models.TextField(
+        default=None,
+        blank=True,
+        null=True,
+        help_text="Line 2 of this install's mailing address",
+    )
+    roof_access = models.BooleanField(
+        default=False,
+        help_text="True if the member indicated they had access to the roof when they submitted the join form",
+    )
 
     # Relation to Member
-    member = models.ForeignKey(Member, on_delete=models.PROTECT, related_name="installs")
-    referral = models.TextField(default=None, blank=True, null=True)
-    notes = models.TextField(default=None, blank=True, null=True)
-    diy = models.BooleanField(default=None, blank=True, null=True, verbose_name="Is DIY?")
+    member = models.ForeignKey(
+        Member,
+        on_delete=models.PROTECT,
+        related_name="installs",
+        help_text="The member this install is associated with",
+    )
+    referral = models.TextField(
+        default=None,
+        blank=True,
+        null=True,
+        help_text='The "How did you hear about us?" information provided to us when the member submitted the join form',
+    )
+    notes = models.TextField(
+        default=None,
+        blank=True,
+        null=True,
+        help_text="A free-form text description of this Install, to track any additional information. "
+        "For Installs imported from the spreadsheet, this starts with a formatted block of information about the import process"
+        "and original spreadsheet data. However this structure can be changed by admins at any time and should not be relied on"
+        "by automated systems. ",
+    )
+    diy = models.BooleanField(
+        default=None,
+        blank=True,
+        null=True,
+        verbose_name="Is DIY?",
+        help_text="Was this install conducted by the member themselves? "
+        "If not, it was done by a volunteer installer on their behalf",
+    )
 
     class Meta:
         permissions = [
@@ -146,17 +282,48 @@ class Link(models.Model):
         MMWAVE = "MMWave"
         FIBER = "Fiber"
 
-    from_building = models.ForeignKey(Building, on_delete=models.PROTECT, related_name="links_from")
-    to_building = models.ForeignKey(Building, on_delete=models.PROTECT, related_name="links_to")
+    from_building = models.ForeignKey(
+        Building,
+        on_delete=models.PROTECT,
+        related_name="links_from",
+        help_text="The building on one side of this network link, from/to are not meaningful except to disambiguate",
+    )
+    to_building = models.ForeignKey(
+        Building,
+        on_delete=models.PROTECT,
+        related_name="links_to",
+        help_text="The building on one side of this network link, from/to are not meaningful except to disambiguate",
+    )
 
-    status = models.TextField(choices=LinkStatus.choices)
-    type = models.TextField(choices=LinkType.choices, default=None, blank=True, null=True)
+    status = models.TextField(choices=LinkStatus.choices, help_text="The current status of this link")
+    type = models.TextField(
+        choices=LinkType.choices,
+        default=None,
+        blank=True,
+        null=True,
+        help_text="The technology used for this link 5Ghz, 60Ghz, fiber, etc.",
+    )
 
-    install_date = models.DateField(default=None, blank=True, null=True)
-    abandon_date = models.DateField(default=None, blank=True, null=True)
+    install_date = models.DateField(default=None, blank=True, null=True, help_text="The date this link was created")
+    abandon_date = models.DateField(
+        default=None,
+        blank=True,
+        null=True,
+        help_text="The date this link was powered off, disassembled, or abandoned",
+    )
 
-    description = models.TextField(default=None, blank=True, null=True)
-    notes = models.TextField(default=None, blank=True, null=True)
+    description = models.TextField(
+        default=None,
+        blank=True,
+        null=True,
+        help_text='A short description of "where to where" this link connects in human readable language',
+    )
+    notes = models.TextField(
+        default=None,
+        blank=True,
+        null=True,
+        help_text="A free-form text description of this Link, to track any additional information.",
+    )
 
     def __str__(self):
         if self.from_building.primary_nn and self.to_building.primary_nn:
@@ -170,34 +337,63 @@ class Sector(models.Model):
         ACTIVE = "Active"
         POTENTIAL = "Potential"
 
-    building = models.ForeignKey(Building, on_delete=models.PROTECT, related_name="sectors")
-    name = models.TextField()
+    building = models.ForeignKey(
+        Building,
+        on_delete=models.PROTECT,
+        related_name="sectors",
+        help_text="The building this sector is installed on",
+    )
+    name = models.TextField(
+        help_text="The name of the hub sector is installed on",
+    )
 
     radius = models.FloatField(
+        help_text="The radius to display this sector on the map (in km)",
         validators=[MinValueValidator(0)],
     )
     azimuth = models.IntegerField(
+        help_text="The compass heading that this sector is pointed towards",
         validators=[
             MinValueValidator(0),
             MaxValueValidator(360),
         ],
     )
     width = models.IntegerField(
+        help_text="The approximate width of the beam this sector produces",
         validators=[
             MinValueValidator(0),
             MaxValueValidator(360),
         ],
     )
 
-    status = models.TextField(choices=SectorStatus.choices)
+    status = models.TextField(choices=SectorStatus.choices, help_text="The current status of this Sector")
 
-    install_date = models.DateField(default=None, blank=True, null=True)
-    abandon_date = models.DateField(default=None, blank=True, null=True)
+    install_date = models.DateField(default=None, blank=True, null=True, help_text="The date this Sector was installed")
+    abandon_date = models.DateField(
+        default=None,
+        blank=True,
+        null=True,
+        help_text="The date this Sector was powered off, disassembled, or abandoned",
+    )
 
-    device_name = models.TextField()
-    ssid = models.TextField(default=None, blank=True, null=True)
+    device_name = models.TextField(
+        help_text="The name of the device/antenna being used to provide this sector of coverage"
+    )
+    ssid = models.TextField(
+        default=None,
+        blank=True,
+        null=True,
+        help_text="The SSID being broadcast by this device",
+    )
 
-    notes = models.TextField(default=None, blank=True, null=True)
+    notes = models.TextField(
+        default=None,
+        blank=True,
+        null=True,
+        help_text="A free-form text description of this Sector, to track any additional information. "
+        "The structure of this data can be changed by admins at any time and should not be relied on "
+        "by automated systems. ",
+    )
 
     def __str__(self):
         if self.ssid:

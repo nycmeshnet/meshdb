@@ -4,6 +4,12 @@ from meshapi.models import Install
 
 
 class QueryFormSerializer(serializers.ModelSerializer):
+    """
+    Objects which approximate the CSV output from the legacy docs query form. These approximately
+    correspond to the spreadsheet row format, by flattening attributes across many models into a
+    single JSON object
+    """
+
     class Meta:
         model = Install
         fields = (
