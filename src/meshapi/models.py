@@ -131,7 +131,7 @@ class Install(models.Model):
         ]
 
     def __str__(self):
-        return f"Install #{str(self.install_number)}"
+        return f"#{str(self.install_number)}"
 
 
 class Link(models.Model):

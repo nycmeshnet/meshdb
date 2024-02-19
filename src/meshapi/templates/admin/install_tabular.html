@@ -32,7 +32,7 @@
              id="{{ inline_admin_formset.formset.prefix }}-{% if forloop.last and inline_admin_formset.has_add_permission %}empty{% else %}{{ forloop.counter0 }}{% endif %}">
         <!--Janktown: We're hardcoding Install Number and Link to Install in the template because we're horrible.-->
         <td>
-          <strong><a href="{% url inline_admin_form.model_admin.opts|admin_urlname:'change' inline_admin_form.original.pk|admin_urlquote %}">#{{ inline_admin_form.original.pk }}</a></strong>
+          <strong><a href="{% url inline_admin_form.model_admin.opts|admin_urlname:'change' inline_admin_form.original.pk|admin_urlquote %}">{{ inline_admin_form.original }}</a></strong>
         </td>
         {% for fieldset in inline_admin_form %}
           {% for line in fieldset %}

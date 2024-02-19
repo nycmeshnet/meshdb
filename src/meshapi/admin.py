@@ -24,7 +24,7 @@ class InstallInline(admin.TabularInline):
 
     class Media:
         css = {
-            "all": ("admin/admin.css",),
+            "all": ("admin/install_tabular.css",),
         }
 
 
@@ -202,7 +202,7 @@ class InstallAdmin(admin.ModelAdmin):
         "install_date",
         "abandon_date",
     ]
-    list_display = ["install_number", "network_number", "member", "building", "unit"]
+    list_display = ["__str__", "network_number", "member", "building", "unit"]
     search_fields = [
         # Install number
         "install_number__iexact",
