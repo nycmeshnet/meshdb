@@ -23,7 +23,7 @@ class InstallInline(admin.TabularInline):
 
     class Media:
         css = {
-            'all': ('admin/admin.css',),
+            "all": ("admin/admin.css",),
         }
 
 
