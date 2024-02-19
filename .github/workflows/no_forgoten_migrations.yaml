@@ -39,6 +39,6 @@ jobs:
           DB_PORT: 5432
           DJANGO_SECRET_KEY: k7j&!u07c%%97s!^a_6%mh_wbzo*$hl4lj_6c2ee6dk)y9!k88
         run: |
-          python src/manage.py makemigrations meshapi --dry-run # Run extra time for debug output
-          python src/manage.py makemigrations meshapi --dry-run | grep "No changes detected in app 'meshapi'"
+          python src/manage.py makemigrations meshapi meshapi_hooks --dry-run # Run extra time for debug output
+          python src/manage.py makemigrations meshapi meshapi_hooks --dry-run | grep "No changes detected in apps"
           
