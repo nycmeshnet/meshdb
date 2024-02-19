@@ -21,6 +21,11 @@ class InstallInline(admin.TabularInline):
     def has_add_permission(self, request, obj):
         return False
 
+    class Media:
+        css = {
+            'all': ('admin/admin.css',),
+        }
+
 
 class BuildingAdminForm(forms.ModelForm):
     class Meta:
