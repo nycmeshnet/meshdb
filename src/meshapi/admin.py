@@ -9,10 +9,16 @@ admin.site.index_title = "Welcome to MeshDB Admin Portal"
 
 # Register your models here.
 
-
 class InstallInline(admin.TabularInline):
     model = Install
-    extra = 1  # Number of empty forms to display
+    extra = 0  # Number of empty forms to display
+    show_change_link = True
+    fields = ["install_status", "network_number", "member", "unit"] 
+    readonly_fields = fields 
+    can_delete = False
+
+    def has_add_permission(self, request, obj):
+        return False
 
 
 class BuildingAdminForm(forms.ModelForm):
@@ -74,7 +80,7 @@ class BuildingAdmin(admin.ModelAdmin):
         "installs__install_number__iexact",
         # Search by Member info
         "installs__member__name__icontains",
-        "installs__member__email_address__icontains",
+        "installs__member__primary_email_address__icontains",
         "installs__member__phone_number__iexact",
         "installs__member__slack_handle__iexact",
     ]
@@ -148,7 +154,7 @@ class MemberAdmin(admin.ModelAdmin):
     search_fields = [
         # Search by name
         "name__icontains",
-        "email_address__icontains",
+        "primary_email_address__icontains",
         "phone_number__icontains",
         "slack_handle__icontains",
         # Search by building details
