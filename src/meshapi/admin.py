@@ -9,12 +9,13 @@ admin.site.index_title = "Welcome to MeshDB Admin Portal"
 
 # Register your models here.
 
+
 class InstallInline(admin.TabularInline):
     model = Install
     extra = 0  # Number of empty forms to display
     show_change_link = True
-    fields = ["install_status", "network_number", "member", "unit"] 
-    readonly_fields = fields 
+    fields = ["install_status", "network_number", "member", "unit"]
+    readonly_fields = fields
     can_delete = False
 
     def has_add_permission(self, request, obj):
