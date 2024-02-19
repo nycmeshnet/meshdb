@@ -103,7 +103,7 @@ ROOT_URLCONF = "meshdb.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [os.path.join(BASE_DIR, "meshdb/templates")],
+        "DIRS": [os.path.join(BASE_DIR, "meshdb/templates"), os.path.join(BASE_DIR, "meshapi/templates")],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
