@@ -2,7 +2,7 @@ import requests
 from celery import shared_task
 from celery.exceptions import MaxRetriesExceededError
 
-from meshapi_hooks.hooks import CeleryRecursiveSerializerHook
+from meshapi_hooks.hooks import CelerySerializerHook
 
 HTTP_ATTEMPT_COUNT_PER_DELIVERY_ATTEMPT = 4
 
@@ -10,7 +10,7 @@ HTTP_ATTEMPT_COUNT_PER_DELIVERY_ATTEMPT = 4
 @shared_task(bind=True, max_retries=HTTP_ATTEMPT_COUNT_PER_DELIVERY_ATTEMPT - 1)
 def deliver_webhook_task(self, hook_id, payload):
     """Deliver the payload to the hook target"""
-    hook = CeleryRecursiveSerializerHook.objects.get(id=hook_id)
+    hook = CelerySerializerHook.objects.get(id=hook_id)
     try:
         response = requests.post(url=hook.target, data=payload, headers=hook.headers)
         if response.status_code >= 400:

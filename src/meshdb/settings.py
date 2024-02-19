@@ -212,4 +212,4 @@ HOOK_SERIALIZERS = {
     "meshapi.Install": "meshapi.serializers.model_api.InstallSerializer",
 }
 
-HOOK_CUSTOM_MODEL = "meshapi_hooks.CeleryRecursiveSerializerHook"
+HOOK_CUSTOM_MODEL = "meshapi_hooks.CelerySerializerHook"

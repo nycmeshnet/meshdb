@@ -66,7 +66,7 @@ class TestSector(TestCase):
             f"status code incorrect. Should be {code}, but got {response.status_code}",
         )
 
-    def test_recursive_get(self):
+    def test_get_sector(self):
         sector = Sector(
             id=1,
             name="Vernon",
@@ -90,26 +90,4 @@ class TestSector(TestCase):
 
         response_obj = json.loads(response.content)
         self.assertEqual(response_obj["status"], "Active")
-        self.assertEqual(
-            response_obj["building"],
-            {
-                "address_truth_sources": "",
-                "altitude": 0.0,
-                "bin": None,
-                "building_status": "Active",
-                "city": None,
-                "id": 1,
-                "installs": [],
-                "invalid": True,
-                "latitude": 0.0,
-                "links_from": [],
-                "links_to": [],
-                "longitude": 0.0,
-                "node_name": None,
-                "notes": None,
-                "primary_nn": None,
-                "state": None,
-                "street_address": None,
-                "zip_code": None,
-            },
-        )
+        self.assertEqual(response_obj["building"], 1)
