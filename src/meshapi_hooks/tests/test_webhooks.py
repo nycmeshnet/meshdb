@@ -4,7 +4,7 @@ import queue
 from django.contrib.auth.models import Permission, User
 from flask import Flask, Response, request
 
-from meshapi_hooks.hooks import CeleryRecursiveSerializerHook
+from meshapi_hooks.hooks import CelerySerializerHook
 
 multiprocessing.set_start_method("fork")
 
@@ -85,24 +85,24 @@ class TestMeshAPIWebhooks(TransactionTestCase):
         hook_user.user_permissions.add(Permission.objects.get(codename="view_install"))
 
         # For testing, just so that we don't have to wait around for a large number of failures
-        CeleryRecursiveSerializerHook.MAX_CONSECUTIVE_FAILURES_BEFORE_DISABLE = 1
+        CelerySerializerHook.MAX_CONSECUTIVE_FAILURES_BEFORE_DISABLE = 1
 
         # Create the webhooks in Django
         # (this would be done by an admin via the UI in prod)
-        member_webhook = CeleryRecursiveSerializerHook(
+        member_webhook = CelerySerializerHook(
             user=hook_user,
             target="http://localhost:8091/webhook",
             event="member.created",
         )
         member_webhook.save()
-        install_webhook = CeleryRecursiveSerializerHook(
+        install_webhook = CelerySerializerHook(
             user=hook_user,
             target="http://localhost:8091/webhook",
             event="install.created",
         )
         install_webhook.save()
 
-        building_webhook = CeleryRecursiveSerializerHook(
+        building_webhook = CelerySerializerHook(
             enabled=False,
             user=hook_user,
             target="http://localhost:8091/webhook",
@@ -135,7 +135,7 @@ class TestMeshAPIWebhooks(TransactionTestCase):
 
     def test_flaky_hook(self):
         # Modify the member hook to use the flaky endpoint
-        member_hook = CeleryRecursiveSerializerHook.objects.get(event="member.created")
+        member_hook = CelerySerializerHook.objects.get(event="member.created")
         member_hook.target = "http://localhost:8091/flaky-webhook"
         member_hook.save()
 
@@ -162,7 +162,7 @@ class TestMeshAPIWebhooks(TransactionTestCase):
 
     def test_webhook_gets_disabled_after_many_retries(self):
         # Modify the member hook to use the flaky endpoint
-        member_hook = CeleryRecursiveSerializerHook.objects.get(event="member.created")
+        member_hook = CelerySerializerHook.objects.get(event="member.created")
         member_hook.target = "http://localhost:8091/bad-webhook"
         member_hook.save()
 
@@ -228,13 +228,11 @@ class TestMeshAPIWebhooks(TransactionTestCase):
 
         # The user we created doesn't have permission to access the details of the building, so
         # the member payload should only include an id and nothing else
-        assert flask_request["data"]["building"] == {"id": self.building_obj.id}
+        assert flask_request["data"]["building"] == self.building_obj.id
 
         # They do have access to the details of the member,
         # so they should be able to see the email, etc
-        assert flask_request["data"]["member"]["id"] == self.member_obj.id
-        assert flask_request["data"]["member"]["primary_email_address"] == self.member_obj.primary_email_address
-        assert flask_request["data"]["member"]["name"] == self.member_obj.name
+        assert flask_request["data"]["member"] == self.member_obj.id
 
         assert flask_request["hook"]["event"] == "install.created"
         assert flask_request["hook"]["target"] == "http://localhost:8091/webhook"

@@ -1,15 +1,15 @@
 import drf_hooks.admin
 from django.contrib import admin
 
-from meshapi_hooks.hooks import CeleryRecursiveSerializerHook
+from meshapi_hooks.hooks import CelerySerializerHook
 
-admin.site.unregister(CeleryRecursiveSerializerHook)
+admin.site.unregister(CelerySerializerHook)
 
 
-@admin.register(CeleryRecursiveSerializerHook)
-class CeleryRecursiveSerializerHookAdmin(drf_hooks.admin.HookAdmin):
+@admin.register(CelerySerializerHook)
+class CelerySerializerHookAdmin(drf_hooks.admin.HookAdmin):
     fields = ("enabled", "user", "target", "event", "headers", "consecutive_failures")
     readonly_fields = ["consecutive_failures"]
 
     class Meta:
-        model = CeleryRecursiveSerializerHook
+        model = CelerySerializerHook

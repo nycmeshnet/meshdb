@@ -69,7 +69,7 @@ class TestLink(TestCase):
             f"status code incorrect. Should be {code}, but got {response.status_code}",
         )
 
-    def test_recursive_get(self):
+    def test_get_link(self):
         link = Link(
             from_building=self.building_1,
             to_building=self.building_2,
@@ -88,47 +88,5 @@ class TestLink(TestCase):
 
         response_obj = json.loads(response.content)
         self.assertEqual(response_obj["status"], "Active")
-        self.assertEqual(
-            response_obj["from_building"],
-            {
-                "id": 1,
-                "address_truth_sources": "",
-                "altitude": 0.0,
-                "bin": None,
-                "building_status": "Active",
-                "city": None,
-                "installs": [],
-                "sectors": [],
-                "invalid": True,
-                "latitude": 0.0,
-                "longitude": 0.0,
-                "node_name": None,
-                "notes": None,
-                "primary_nn": None,
-                "state": None,
-                "street_address": None,
-                "zip_code": None,
-            },
-        )
-        self.assertEqual(
-            response_obj["to_building"],
-            {
-                "id": 2,
-                "address_truth_sources": "",
-                "altitude": 0.0,
-                "bin": None,
-                "building_status": "Active",
-                "city": None,
-                "installs": [],
-                "sectors": [],
-                "invalid": True,
-                "latitude": 0.0,
-                "longitude": 0.0,
-                "node_name": None,
-                "notes": None,
-                "primary_nn": None,
-                "state": None,
-                "street_address": None,
-                "zip_code": None,
-            },
-        )
+        self.assertEqual(response_obj["from_building"], 1)
+        self.assertEqual(response_obj["to_building"], 2)

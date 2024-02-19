@@ -1,7 +1,7 @@
 import json
 import time
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import date, datetime
 from json.decoder import JSONDecodeError
 from typing import Optional
 
@@ -136,7 +136,7 @@ def join_form(request):
         network_number=None,
         install_status=Install.InstallStatus.REQUEST_RECEIVED,
         ticket_id=None,
-        request_date=datetime.today(),
+        request_date=date.today(),
         install_date=None,
         abandon_date=None,
         building=join_form_building,
