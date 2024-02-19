@@ -29,7 +29,7 @@ class TestMemberLookups(TestCase):
         m2.save()
 
     def test_member_name_search(self):
-        response = self.c.get("/api/v1/member/lookup/?name=Joh")
+        response = self.c.get("/api/v1/members/lookup/?name=Joh")
         code = 200
         self.assertEqual(
             code,
@@ -41,7 +41,7 @@ class TestMemberLookups(TestCase):
         self.assertEqual(response_objs[0]["name"], "John Smith")
 
     def test_member_email_search(self):
-        response = self.c.get("/api/v1/member/lookup/?email_address=donald")
+        response = self.c.get("/api/v1/members/lookup/?email_address=donald")
         code = 200
         self.assertEqual(
             code,
@@ -53,7 +53,7 @@ class TestMemberLookups(TestCase):
         self.assertEqual(len(response_objs), 1)
         self.assertEqual(response_objs[0]["name"], "Donald Smith")
 
-        response = self.c.get("/api/v1/member/lookup/?email_address=smith")
+        response = self.c.get("/api/v1/members/lookup/?email_address=smith")
         code = 200
         self.assertEqual(
             code,
@@ -67,7 +67,7 @@ class TestMemberLookups(TestCase):
         self.assertEqual(response_objs[1]["name"], "Donald Smith")
 
     def test_member_alt_email_search(self):
-        response = self.c.get("/api/v1/member/lookup/?email_address=stripe")
+        response = self.c.get("/api/v1/members/lookup/?email_address=stripe")
         code = 200
         self.assertEqual(
             code,
@@ -79,7 +79,7 @@ class TestMemberLookups(TestCase):
         self.assertEqual(len(response_objs), 1)
         self.assertEqual(response_objs[0]["name"], "Donald Smith")
 
-        response = self.c.get("/api/v1/member/lookup/?email_address=addl")
+        response = self.c.get("/api/v1/members/lookup/?email_address=addl")
         code = 200
         self.assertEqual(
             code,
@@ -92,7 +92,7 @@ class TestMemberLookups(TestCase):
         self.assertEqual(response_objs[0]["name"], "Donald Smith")
 
     def test_member_phone_search(self):
-        response = self.c.get("/api/v1/member/lookup/?phone_number=6666")
+        response = self.c.get("/api/v1/members/lookup/?phone_number=6666")
         code = 200
         self.assertEqual(
             code,
@@ -105,7 +105,7 @@ class TestMemberLookups(TestCase):
         self.assertEqual(response_objs[0]["name"], "Donald Smith")
 
     def test_member_combined_search(self):
-        response = self.c.get("/api/v1/member/lookup/?phone_number=555&email_address=smith&name=don")
+        response = self.c.get("/api/v1/members/lookup/?phone_number=555&email_address=smith&name=don")
         code = 200
         self.assertEqual(
             code,

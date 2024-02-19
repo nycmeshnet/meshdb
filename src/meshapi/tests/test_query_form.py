@@ -39,10 +39,10 @@ class TestQueryForm(TestCase):
         self.assertEqual(len(resp_json), 1)
 
     def test_query_address(self):
-        self.query("building", "street_address", self.install.building.street_address)
+        self.query("buildings", "street_address", self.install.building.street_address)
 
     def test_query_email(self):
-        self.query("member", "email_address", self.install.member.primary_email_address)
+        self.query("members", "email_address", self.install.member.primary_email_address)
 
     def test_query_nn(self):
-        self.query("install", "network_number", self.install.network_number)
+        self.query("installs", "network_number", self.install.network_number)

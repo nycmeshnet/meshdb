@@ -1,156 +1,115 @@
-from dataclasses import asdict, dataclass
-from typing import Dict
+from typing import Any, Dict, Optional
 
-from rest_framework.views import APIView, Response, models, status
+from rest_framework import generics
+from rest_framework.views import models
 
 from meshapi import permissions
 from meshapi.models import Building, Install, Member
+from meshapi.serializers.query_api import QueryFormSerializer
 
 """
 Re-implements https://docs.nycmesh.net/installs/query/
 Search by address, email, nn, install_number, or bin
 Guarded by PSK
 
-Returns:
-<Query>:<Query Data>
-<Install Number>, <Addy>, <Unit #>, <Name>, <Email>, <Notes>, <NN>, <Install Status>
-<Install Number>, <Addy>, <Unit #>, <Name>, <Email>, <Notes>, <NN>, <Install Status>
-<Install Number>, <Addy>, <Unit #>, <Name>, <Email>, <Notes>, <NN>, <Install Status>
-...
-
-Line 2 is the same no matter what(tm)
+However, we return a JSON array, rather than a CSV file
 """
 
 
-@dataclass
-class QueryResponse:
-    install_number: int
-    street_address: str
-    unit: str
-    city: str
-    state: str
-    zip_code: int
-    name: str
-    primary_email_address: str
-    stripe_email_address: str
-    additional_email_addresses: list[str]
-    notes: str
-    network_number: int
-    install_status: str
+def filter_model_on_query_params(
+    query_params: Dict[str, Any],
+    model: type[models.Model],
+    permitted_filters: Dict[str, Optional[str]],
+    subsitutions: Dict[str, str] = None,
+):
+    query_dict = {}
+    for k, v in query_params.items():
+        if v:
+            if subsitutions and k in subsitutions:
+                query_dict[subsitutions[k]] = v
+            else:
+                query_dict[k] = v
 
-    @staticmethod
-    def from_install(install):
-        return QueryResponse(
-            install_number=install.install_number,
-            street_address=install.building.street_address,
-            city=install.building.city,
-            state=install.building.state,
-            zip_code=install.building.zip_code,
-            unit=install.unit,
-            name=install.member.name,
-            primary_email_address=install.member.primary_email_address,
-            stripe_email_address=install.member.stripe_email_address,
-            additional_email_addresses=install.member.additional_email_addresses,
-            notes=f"{install.notes}\n{install.building.notes}\n{install.member.contact_notes}",
-            network_number=install.network_number,
-            install_status=install.install_status,
-        )
+    filter_args = {}
+    for k, v in query_dict.items():
+        if k in permitted_filters.keys():
+            if permitted_filters[k]:
+                filter_args[f"{k}__{permitted_filters[k]}"] = v
+            else:
+                filter_args[f"{k}"] = v
+
+    return model.objects.filter(**filter_args)
 
 
-class QueryView(APIView):
-    def filter_on(
-        self,
-        model: type[models.Model],
-        permitted_filters: Dict[str, str],
-        subsitutions: Dict[str, str] = None,
-    ):
-        query_dict = {}
-        for k, v in self.request.query_params.items():
-            if v:
-                if subsitutions and k in subsitutions:
-                    query_dict[subsitutions[k]] = v
-                else:
-                    query_dict[k] = v
-
-        filter_args = {}
-        for k, v in query_dict.items():
-            if k in permitted_filters.keys():
-                if permitted_filters[k]:
-                    filter_args[f"{k}__{permitted_filters[k]}"] = v
-                else:
-                    filter_args[f"{k}"] = v
-
-        return model.objects.filter(**filter_args)
+BUILDING_FILTERS = {
+    "street_address": "icontains",
+    "zip_code": "iexact",
+    "city": "icontains",
+    "state": "icontains",
+    "bin": "iexact",
+}
 
 
-class QueryBuilding(QueryView):
+class QueryBuilding(generics.ListAPIView):
+    serializer_class = QueryFormSerializer
+    pagination_class = None
     permission_classes = [permissions.LegacyMeshQueryPassword]
 
-    def get(self, request, format=None):
-        buildings = self.filter_on(
+    def get_queryset(self):
+        buildings = filter_model_on_query_params(
+            self.request.query_params,
             Building,
-            {
-                "street_address": "icontains",
-                "zip_code": "iexact",
-                "city": "icontains",
-                "state": "icontains",
-                "bin": "iexact",
-            },
+            BUILDING_FILTERS,
         )
 
-        responses = []
+        output_qs = []
         for building in buildings:
-            for install in building.installs.all():
-                responses.append(asdict(QueryResponse.from_install(install)))
+            output_qs.extend(building.installs.all())
 
-        return Response(
-            responses,
-            status=status.HTTP_200_OK,
-        )
+        return output_qs
 
 
-class QueryMember(QueryView):
+MEMBER_FILTERS = {
+    "email_address": None,
+}
+
+
+class QueryMember(generics.ListAPIView):
+    serializer_class = QueryFormSerializer
+    pagination_class = None
     permission_classes = [permissions.LegacyMeshQueryPassword]
 
-    def get(self, request, format=None):
-        members = self.filter_on(
+    def get_queryset(self):
+        members = filter_model_on_query_params(
+            self.request.query_params,
             Member,
-            {
-                "email_address": None,
-            },
+            MEMBER_FILTERS,
             {
                 "email_address": "primary_email_address",
             },
         )
 
-        responses = []
+        output_qs = []
         for member in members:
-            for install in member.installs.all():
-                responses.append(asdict(QueryResponse.from_install(install)))
+            output_qs.extend(member.installs.all())
 
-        return Response(
-            responses,
-            status=status.HTTP_200_OK,
-        )
+        return output_qs
 
 
-class QueryInstall(QueryView):
+INSTALL_FILTERS = {
+    "network_number": None,
+    "install_number": None,
+}
+
+
+class QueryInstall(generics.ListAPIView):
+    serializer_class = QueryFormSerializer
+    pagination_class = None
     permission_classes = [permissions.LegacyMeshQueryPassword]
 
-    def get(self, request, format=None):
-        installs = self.filter_on(
+    def get_queryset(self):
+        return filter_model_on_query_params(
+            self.request.query_params,
             Install,
-            {
-                "network_number": None,
-                "install_number": None,
-            },
-        )
-
-        responses = []
-        for install in installs:
-            responses.append(asdict(QueryResponse.from_install(install)))
-
-        return Response(
-            responses,
-            status=status.HTTP_200_OK,
+            INSTALL_FILTERS,
         )

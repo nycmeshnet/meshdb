@@ -38,9 +38,10 @@ class HasNNAssignPermission(HasDjangoPermission):
 # Janky
 class LegacyMeshQueryPassword(permissions.BasePermission):
     def has_permission(self, request, view):
-        if request.query_params["password"] != os.environ.get("QUERY_PSK"):
-            raise PermissionDenied("Authentication Failed.")
-        return True
+        if "password" in request.query_params and request.query_params["password"] == os.environ.get("QUERY_PSK"):
+            return True
+
+        raise PermissionDenied("Authentication Failed.")
 
 
 class LegacyNNAssignmentPassword(permissions.BasePermission):
