@@ -7,9 +7,8 @@ admin.site.site_header = "MeshDB Admin"
 admin.site.site_title = "MeshDB Admin Portal"
 admin.site.index_title = "Welcome to MeshDB Admin Portal"
 
-# Register your models here.
 
-
+# This controls the list of installs reverse FK'd to Buildings and Members
 class InstallInline(admin.TabularInline):
     model = Install
     extra = 0
@@ -38,7 +37,6 @@ class BuildingAdminForm(forms.ModelForm):
             "state": forms.TextInput(),
             "zip_code": forms.NumberInput(),
             "node_name": forms.TextInput(),
-            "street_address": forms.TextInput(),
         }
 
 
@@ -162,6 +160,8 @@ class MemberAdmin(admin.ModelAdmin):
         # Search by name
         "name__icontains",
         "primary_email_address__icontains",
+        "stripe_email_address__icontains",
+        "secondary_email_addresses__icontains",
         "phone_number__icontains",
         "slack_handle__icontains",
         # Search by building details
@@ -179,6 +179,7 @@ class MemberAdmin(admin.ModelAdmin):
         "__str__",
         "name",
         "primary_email_address",
+        "stripe_email_address",
         "phone_number",
     ]
 
@@ -215,7 +216,7 @@ class InstallAdmin(admin.ModelAdmin):
         "building__bin__iexact",
         # Search by member details
         "member__name__icontains",
-        "member__email_address__icontains",
+        "member__primary_email_address__icontains",
         "member__phone_number__iexact",
         "member__slack_handle__iexact",
     ]
@@ -227,7 +228,6 @@ class InstallAdmin(admin.ModelAdmin):
                 "fields": [
                     "member",
                     "install_status",
-                    # "install_number",
                     "ticket_id",
                     "network_number",
                 ]
