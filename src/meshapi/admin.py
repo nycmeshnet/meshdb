@@ -163,6 +163,7 @@ class MemberAdmin(admin.ModelAdmin):
     ]
     inlines = [InstallInline]
     list_display = [
+        "__str__",
         "name",
         "primary_email_address",
         "phone_number",
@@ -268,7 +269,7 @@ class LinkAdmin(admin.ModelAdmin):
         "from_building__icontains",
         "to_building__icontains",
     ]
-    list_display = ["id", "from_building", "to_building"]
+    list_display = ["__str__", "from_building", "to_building"]
     list_filter = ["status", "type"]
 
 

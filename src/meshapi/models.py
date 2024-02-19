@@ -158,6 +158,11 @@ class Link(models.Model):
     description = models.TextField(default=None, blank=True, null=True)
     notes = models.TextField(default=None, blank=True, null=True)
 
+    def __str__(self):
+        if self.from_building.primary_nn and self.to_building.primary_nn:
+            return f"NN{self.from_building.primary_nn} → NN{self.to_building.primary_nn}"
+        return f"MeshDB Link ID {self.id}"
+
 
 class Sector(models.Model):
     class SectorStatus(models.TextChoices):
