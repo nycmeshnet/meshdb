@@ -27,6 +27,45 @@ class InstallInline(admin.TabularInline):
         }
 
 
+# This controls the list of installs reverse FK'd to Buildings and Members
+class FromBuildingInline(admin.TabularInline):
+    model = Link
+    extra = 0
+    # show_change_link = True
+    fields = ["status", "to_building", "description"]
+    readonly_fields = fields
+    can_delete = False
+    template = "admin/install_tabular.html"
+    fk_name = "from_building"
+
+    def has_add_permission(self, request, obj):
+        return False
+
+    class Media:
+        css = {
+            "all": ("admin/install_tabular.css",),
+        }
+
+# This controls the list of installs reverse FK'd to Buildings and Members
+class ToBuildingInline(admin.TabularInline):
+    model = Link
+    extra = 0
+    # show_change_link = True
+    fields = ["status", "from_building", "description"]
+    readonly_fields = fields
+    can_delete = False
+    template = "admin/install_tabular.html"
+    fk_name = "to_building"
+
+    def has_add_permission(self, request, obj):
+        return False
+
+    class Media:
+        css = {
+            "all": ("admin/install_tabular.css",),
+        }
+
+
 class BuildingAdminForm(forms.ModelForm):
     class Meta:
         model = Building
@@ -89,7 +128,7 @@ class BuildingAdmin(admin.ModelAdmin):
         "installs__member__phone_number__iexact",
         "installs__member__slack_handle__iexact",
     ]
-    inlines = [InstallInline]
+    inlines = [InstallInline, ToBuildingInline, FromBuildingInline]
     list_filter = [
         "building_status",
         ("primary_nn", admin.EmptyFieldListFilter),
@@ -282,7 +321,7 @@ class LinkAdmin(admin.ModelAdmin):
         "from_building__icontains",
         "to_building__icontains",
     ]
-    list_display = ["__str__", "from_building", "to_building"]
+    list_display = ["__str__", "status", "from_building", "to_building", "description"]
     list_filter = ["status", "type"]
 
 
