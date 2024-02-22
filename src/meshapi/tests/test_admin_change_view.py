@@ -4,6 +4,7 @@ from django.contrib.auth.models import User
 from meshapi.models import Building, Install, Link, Member, Sector
 from .sample_data import sample_building, sample_install, sample_member
 
+
 class TestAdminChangeView(TestCase):
     c = Client()
 
@@ -50,11 +51,7 @@ class TestAdminChangeView(TestCase):
 
     def _call(self, route, code):
         response = self.c.get(route)
-        self.assertEqual(
-            code,
-            response.status_code,
-            f"Call to admin panel route {route} failed. Got code {code}."
-        )
+        self.assertEqual(code, response.status_code, f"Call to admin panel route {route} failed. Got code {code}.")
 
     def test_change_building(self):
         self._call(f"/admin/meshapi/building/{self.building_1.id}/change/", 200)
@@ -70,4 +67,3 @@ class TestAdminChangeView(TestCase):
 
     def test_change_sector(self):
         self._call(f"/admin/meshapi/sector/{self.sector.id}/change/", 200)
-

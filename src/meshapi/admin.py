@@ -46,6 +46,7 @@ class FromBuildingInline(admin.TabularInline):
             "all": ("admin/install_tabular.css",),
         }
 
+
 # This controls the list of installs reverse FK'd to Buildings and Members
 class ToBuildingInline(admin.TabularInline):
     model = Link

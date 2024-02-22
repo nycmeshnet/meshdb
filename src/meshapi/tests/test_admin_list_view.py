@@ -1,8 +1,9 @@
 from django.test import Client, TestCase
 from django.contrib.auth.models import User
 
+
 # Sanity check to make sure that the list views in the admin panel still work
-# These will often break when you update something in the model and forget to 
+# These will often break when you update something in the model and forget to
 # update the admin panel
 class TestAdminListView(TestCase):
     c = Client()
@@ -15,11 +16,7 @@ class TestAdminListView(TestCase):
 
     def _call(self, route, code):
         response = self.c.get(route)
-        self.assertEqual(
-            code,
-            response.status_code,
-            f"Could not view {route} in the admin panel."
-        )
+        self.assertEqual(code, response.status_code, f"Could not view {route} in the admin panel.")
 
     def test_list_building(self):
         self._call("/admin/meshapi/building/", 200)
@@ -35,4 +32,3 @@ class TestAdminListView(TestCase):
 
     def test_list_sector(self):
         self._call("/admin/meshapi/sector/", 200)
-
