@@ -47,6 +47,11 @@ class Building(models.Model):
             return f"BIN {self.bin}"
         return f"MeshDB Building ID {self.id}"
 
+    def get_thumb(self):
+        if len(self.panoramas) >= 1:
+            return self.panoramas[0]
+        return None
+
 
 class Member(models.Model):
     name = models.TextField()

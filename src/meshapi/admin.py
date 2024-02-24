@@ -1,5 +1,6 @@
 from django.contrib import admin
 from django.contrib.admin.options import forms
+from django.utils.safestring import mark_safe
 
 from meshapi.models import Building, Install, Link, Member, Sector
 
@@ -66,19 +67,6 @@ class ToBuildingInline(admin.TabularInline):
         }
 
 
-class BuildingAdminForm(forms.ModelForm):
-    class Meta:
-        model = Building
-        fields = "__all__"
-        widgets = {
-            "street_address": forms.TextInput(),
-            "city": forms.TextInput(),
-            "state": forms.TextInput(),
-            "zip_code": forms.NumberInput(),
-            "node_name": forms.TextInput(),
-        }
-
-
 class BoroughFilter(admin.SimpleListFilter):
     title = "Borough"
     parameter_name = "borough"
@@ -104,6 +92,19 @@ class BoroughFilter(admin.SimpleListFilter):
         elif self.value() == "staten_island":
             return queryset.filter(city="Staten Island")
         return queryset
+
+
+class BuildingAdminForm(forms.ModelForm):
+    class Meta:
+        model = Building
+        fields = "__all__"
+        widgets = {
+            "street_address": forms.TextInput(),
+            "city": forms.TextInput(),
+            "state": forms.TextInput(),
+            "zip_code": forms.NumberInput(),
+            "node_name": forms.TextInput(),
+        }
 
 
 @admin.register(Building)
@@ -175,10 +176,19 @@ class BuildingAdmin(admin.ModelAdmin):
             {
                 "fields": [
                     "notes",
+                    "panoramas",
                 ]
             },
         ),
     ]
+
+    # This is probably a bad idea because you'll have to load a million panos
+    # and OOM your computer
+    @mark_safe
+    def thumb(self, obj):
+        return f"<img src='{obj.get_thumb()}' width='50' height='50' />"
+
+    thumb.__name__ = 'Thumbnail'
 
 
 class MemberAdminForm(forms.ModelForm):

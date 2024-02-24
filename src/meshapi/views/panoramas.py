@@ -4,6 +4,7 @@ from rest_framework import permissions
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.views import status
+from meshapi.models import Building, Install
 
 from meshapi.util.django_pglocks import advisory_lock
 
@@ -21,6 +22,9 @@ def update_panos(request):
     branch = 'master'
     directory = 'data/panoramas'
 
+    # This assumes they're all JPGs.
+    netlify_pano_url = "https://node-db.netlify.app/panoramas/"
+
     head_tree_sha = get_head_tree_sha(owner, repo, branch)
 
     files = list_files_in_directory(owner, repo, directory, head_tree_sha)
@@ -34,6 +38,18 @@ def update_panos(request):
     panos = build_pano_dict(files)
 
     print(panos)
+
+    for install_number, labels in panos.items():
+        try:
+            install: Install = Install.objects.get(install_number=int(install_number))
+            if not install:
+                print(f"Warning: Could not add pano to building (Install #{install_number})")
+                continue
+            for label in labels:
+                install.building.panoramas.append(f"{netlify_pano_url}{install_number}{label}.jpg")
+            install.building.save()
+        except Exception as e:
+            print(f"Warning: Could not add pano to building (Install #{install_number})")
 
     return Response({}, status=status.HTTP_200_OK)
 
