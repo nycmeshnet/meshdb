@@ -36,6 +36,7 @@ class Building(models.Model):
     )
     node_name = models.TextField(default=None, blank=True, null=True)
     notes = models.TextField(blank=True, null=True)
+    panoramas = ArrayField(models.URLField(), null=True, blank=True, default=list)
 
     def __str__(self):
         if self.node_name:
