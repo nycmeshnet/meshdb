@@ -3,6 +3,7 @@ from typing import List
 from django.contrib.postgres.fields import ArrayField
 from django.db import models
 from django.db.models.fields import EmailField
+from django_jsonform.models.fields import ArrayField as JSONFormArrayField
 
 
 class Member(models.Model):
@@ -14,7 +15,7 @@ class Member(models.Model):
         default=None,
         help_text="Email address used by the member to donate via Stripe, if different to their primary email",
     )
-    additional_email_addresses = ArrayField(
+    additional_email_addresses = JSONFormArrayField(
         EmailField(),
         null=True,
         blank=True,
