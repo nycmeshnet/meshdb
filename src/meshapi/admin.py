@@ -201,7 +201,7 @@ class MemberAdmin(admin.ModelAdmin):
         "name__icontains",
         "primary_email_address__icontains",
         "stripe_email_address__icontains",
-        "secondary_email_addresses__icontains",
+        "additional_email_addresses__icontains",
         "phone_number__icontains",
         "slack_handle__icontains",
         # Search by building details
@@ -319,8 +319,12 @@ class LinkAdminForm(forms.ModelForm):
 class LinkAdmin(admin.ModelAdmin):
     form = LinkAdminForm
     search_fields = [
-        "from_building__icontains",
-        "to_building__icontains",
+        "from_building__node_name__icontains",
+        "to_building__node_name__icontains",
+        "from_building__street_address__icontains",
+        "to_building__street_address__icontains",
+        "from_building__primary_nn__iexact",
+        "to_building__primary_nn__iexact",
     ]
     list_display = ["__str__", "status", "from_building", "to_building", "description"]
     list_filter = ["status", "type"]
