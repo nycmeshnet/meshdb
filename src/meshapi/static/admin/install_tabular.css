@@ -1,0 +1,13 @@
+/* Increase size of titles. Currently unused, but may be useful later. */
+.inline-group .tabular td.original p {
+    font-size: 12px;
+}
+
+/* Hide titles so we can hardcode them into the template */
+td.original p {
+  visibility: hidden
+}
+
+.inline-group .tabular tr.has_original td {
+    padding-top: 5px;
+}

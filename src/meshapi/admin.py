@@ -7,12 +7,64 @@ admin.site.site_header = "MeshDB Admin"
 admin.site.site_title = "MeshDB Admin Portal"
 admin.site.index_title = "Welcome to MeshDB Admin Portal"
 
-# Register your models here.
 
-
+# This controls the list of installs reverse FK'd to Buildings and Members
 class InstallInline(admin.TabularInline):
     model = Install
-    extra = 1  # Number of empty forms to display
+    extra = 0
+    # show_change_link = True
+    fields = ["install_status", "network_number", "member", "unit"]
+    readonly_fields = fields
+    can_delete = False
+    template = "admin/install_tabular.html"
+
+    def has_add_permission(self, request, obj):
+        return False
+
+    class Media:
+        css = {
+            "all": ("admin/install_tabular.css",),
+        }
+
+
+# This controls the list of installs reverse FK'd to Buildings and Members
+class FromBuildingInline(admin.TabularInline):
+    model = Link
+    extra = 0
+    # show_change_link = True
+    fields = ["status", "to_building", "description"]
+    readonly_fields = fields
+    can_delete = False
+    template = "admin/install_tabular.html"
+    fk_name = "from_building"
+
+    def has_add_permission(self, request, obj):
+        return False
+
+    class Media:
+        css = {
+            "all": ("admin/install_tabular.css",),
+        }
+
+
+# This controls the list of installs reverse FK'd to Buildings and Members
+class ToBuildingInline(admin.TabularInline):
+    model = Link
+    extra = 0
+    # show_change_link = True
+    fields = ["status", "from_building", "description"]
+    readonly_fields = fields
+    can_delete = False
+    template = "admin/install_tabular.html"
+    fk_name = "to_building"
+
+    def has_add_permission(self, request, obj):
+        return False
+
+    class Media:
+        css = {
+            "all": ("admin/install_tabular.css",),
+        }
 
 
 class BuildingAdminForm(forms.ModelForm):
@@ -25,7 +77,6 @@ class BuildingAdminForm(forms.ModelForm):
             "state": forms.TextInput(),
             "zip_code": forms.NumberInput(),
             "node_name": forms.TextInput(),
-            "street_address": forms.TextInput(),
         }
 
 
@@ -74,18 +125,18 @@ class BuildingAdmin(admin.ModelAdmin):
         "installs__install_number__iexact",
         # Search by Member info
         "installs__member__name__icontains",
-        "installs__member__email_address__icontains",
+        "installs__member__primary_email_address__icontains",
         "installs__member__phone_number__iexact",
         "installs__member__slack_handle__iexact",
     ]
-    inlines = [InstallInline]
+    inlines = [InstallInline, ToBuildingInline, FromBuildingInline]
     list_filter = [
         "building_status",
         ("primary_nn", admin.EmptyFieldListFilter),
         ("node_name", admin.EmptyFieldListFilter),
         BoroughFilter,
     ]
-    list_display = ["street_address", "node_name", "primary_nn"]
+    list_display = ["__str__", "street_address", "node_name", "primary_nn"]
     fieldsets = [
         (
             "Node Details",
@@ -148,7 +199,9 @@ class MemberAdmin(admin.ModelAdmin):
     search_fields = [
         # Search by name
         "name__icontains",
-        "email_address__icontains",
+        "primary_email_address__icontains",
+        "stripe_email_address__icontains",
+        "additional_email_addresses__icontains",
         "phone_number__icontains",
         "slack_handle__icontains",
         # Search by building details
@@ -163,8 +216,10 @@ class MemberAdmin(admin.ModelAdmin):
     ]
     inlines = [InstallInline]
     list_display = [
+        "__str__",
         "name",
         "primary_email_address",
+        "stripe_email_address",
         "phone_number",
     ]
 
@@ -188,7 +243,7 @@ class InstallAdmin(admin.ModelAdmin):
         "install_date",
         "abandon_date",
     ]
-    list_display = ["install_number", "network_number", "member", "building", "unit"]
+    list_display = ["__str__", "install_status", "network_number", "member", "building", "unit"]
     search_fields = [
         # Install number
         "install_number__iexact",
@@ -201,7 +256,7 @@ class InstallAdmin(admin.ModelAdmin):
         "building__bin__iexact",
         # Search by member details
         "member__name__icontains",
-        "member__email_address__icontains",
+        "member__primary_email_address__icontains",
         "member__phone_number__iexact",
         "member__slack_handle__iexact",
     ]
@@ -213,7 +268,6 @@ class InstallAdmin(admin.ModelAdmin):
                 "fields": [
                     "member",
                     "install_status",
-                    # "install_number",
                     "ticket_id",
                     "network_number",
                 ]
@@ -265,10 +319,14 @@ class LinkAdminForm(forms.ModelForm):
 class LinkAdmin(admin.ModelAdmin):
     form = LinkAdminForm
     search_fields = [
-        "from_building__icontains",
-        "to_building__icontains",
+        "from_building__node_name__icontains",
+        "to_building__node_name__icontains",
+        "from_building__street_address__icontains",
+        "to_building__street_address__icontains",
+        "from_building__primary_nn__iexact",
+        "to_building__primary_nn__iexact",
     ]
-    list_display = ["id", "from_building", "to_building"]
+    list_display = ["__str__", "status", "from_building", "to_building", "description"]
     list_filter = ["status", "type"]
 
 
@@ -288,7 +346,7 @@ class SectorAdmin(admin.ModelAdmin):
     form = SectorAdminForm
     search_fields = ["name__icontains", "device_name__icontains", "ssid__icontains"]
     list_display = [
-        "id",
+        "__str__",
         "ssid",
         "name",
         "device_name",

@@ -131,7 +131,7 @@ class Install(models.Model):
         ]
 
     def __str__(self):
-        return f"Install #{str(self.install_number)}"
+        return f"#{str(self.install_number)}"
 
 
 class Link(models.Model):
@@ -157,6 +157,11 @@ class Link(models.Model):
 
     description = models.TextField(default=None, blank=True, null=True)
     notes = models.TextField(default=None, blank=True, null=True)
+
+    def __str__(self):
+        if self.from_building.primary_nn and self.to_building.primary_nn:
+            return f"NN{self.from_building.primary_nn} → NN{self.to_building.primary_nn}"
+        return f"MeshDB Link ID {self.id}"
 
 
 class Sector(models.Model):
@@ -193,3 +198,8 @@ class Sector(models.Model):
     ssid = models.TextField(default=None, blank=True, null=True)
 
     notes = models.TextField(default=None, blank=True, null=True)
+
+    def __str__(self):
+        if self.ssid:
+            return self.ssid
+        return f"MeshDB Sector ID {self.id}"
