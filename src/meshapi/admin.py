@@ -1,7 +1,10 @@
 from django.contrib import admin
 from django.contrib.admin.options import forms
+from django.utils.safestring import mark_safe
+from django_jsonform.widgets import JSONFormWidget
 
 from meshapi.models import Building, Install, Link, Member, Sector
+from meshapi.widgets import PanoramaViewer
 
 admin.site.site_header = "MeshDB Admin"
 admin.site.site_title = "MeshDB Admin Portal"
@@ -66,19 +69,6 @@ class ToBuildingInline(admin.TabularInline):
         }
 
 
-class BuildingAdminForm(forms.ModelForm):
-    class Meta:
-        model = Building
-        fields = "__all__"
-        widgets = {
-            "street_address": forms.TextInput(),
-            "city": forms.TextInput(),
-            "state": forms.TextInput(),
-            "zip_code": forms.NumberInput(),
-            "node_name": forms.TextInput(),
-        }
-
-
 class BoroughFilter(admin.SimpleListFilter):
     title = "Borough"
     parameter_name = "borough"
@@ -104,6 +94,20 @@ class BoroughFilter(admin.SimpleListFilter):
         elif self.value() == "staten_island":
             return queryset.filter(city="Staten Island")
         return queryset
+
+
+class BuildingAdminForm(forms.ModelForm):
+    class Meta:
+        model = Building
+        fields = "__all__"
+        widgets = {
+            "street_address": forms.TextInput(),
+            "city": forms.TextInput(),
+            "state": forms.TextInput(),
+            "zip_code": forms.NumberInput(),
+            "node_name": forms.TextInput(),
+            "panoramas": PanoramaViewer(schema={"type": "array", "items": {"type": "string"}}),
+        }
 
 
 @admin.register(Building)
@@ -175,10 +179,20 @@ class BuildingAdmin(admin.ModelAdmin):
             {
                 "fields": [
                     "notes",
+                    "panoramas",
                 ]
             },
         ),
     ]
+
+    # This is probably a bad idea because you'll have to load a million panos
+    # and OOM your computer
+    # Need to find a way to "thumbnail-ize" them on the server side, probably.
+    @mark_safe
+    def thumb(self, obj):
+        return f"<img src='{obj.get_thumb()}' width='50' height='50' />"
+
+    thumb.__name__ = "Thumbnail"
 
 
 class MemberAdminForm(forms.ModelForm):

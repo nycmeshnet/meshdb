@@ -51,4 +51,10 @@ jobs:
           PELIAS_ADDRESS_PARSER_URL: http://localhost:6800/parser/parse
           QUERY_PSK: localdev
           NN_ASSIGN_PSK: localdev
+          PANO_REPO_OWNER: nycmeshnet
+          PANO_REPO: node-db
+          PANO_BRANCH: master
+          PANO_DIR: data/panoramas
+          PANO_HOST: https://node-db.netlify.app/panoramas/
+          PANO_GITHUB_TOKEN: ${{ secrets.PANO_GITHUB_TOKEN }}
         run: python3 src/manage.py test meshapi meshapi_hooks
