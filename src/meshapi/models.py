@@ -1,10 +1,9 @@
 from typing import List
 
 from django.contrib.auth.models import Group, Permission
-from django.contrib.postgres.fields import ArrayField
+from django_jsonform.models.fields import ArrayField as JSONFormArrayField
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
-from django.db.models.fields import EmailField
 
 NETWORK_NUMBER_MIN = 101
 NETWORK_NUMBER_MAX = 8192
@@ -36,7 +35,7 @@ class Building(models.Model):
     )
     node_name = models.TextField(default=None, blank=True, null=True)
     notes = models.TextField(blank=True, null=True)
-    panoramas = ArrayField(models.URLField(), null=True, blank=True, default=list)
+    panoramas = JSONFormArrayField(models.URLField(), null=True, blank=True, default=list)
 
     def __str__(self):
         if self.node_name:
@@ -57,7 +56,7 @@ class Member(models.Model):
     name = models.TextField()
     primary_email_address = models.EmailField(null=True)
     stripe_email_address = models.EmailField(null=True, blank=True, default=None)
-    additional_email_addresses = ArrayField(EmailField(), null=True, blank=True, default=list)
+    additional_email_addresses = JSONFormArrayField(models.EmailField(), null=True, blank=True, default=list)
     phone_number = models.TextField(default=None, blank=True, null=True)
     slack_handle = models.TextField(default=None, blank=True, null=True)
     invalid = models.BooleanField(default=False)

@@ -28,7 +28,7 @@ urlpatterns = [
     path("mapdata/links/", views.MapDataLinkList.as_view(), name="meshapi-v1-map-data-links"),
     path("mapdata/sectors/", views.MapDataSectorList.as_view(), name="meshapi-v1-map-data-sectors"),
     path("geography/whole-mesh.kml", views.map_kml, name="meshapi-v1-geography-whole-mesh-kml"),
-    path("update-panos/", views.update_panos, name="meshapi-v1-update-panos")
+    path("update-panos/", views.update_panos, name="meshapi-v1-update-panos"),
 ]
 
 urlpatterns = format_suffix_patterns(urlpatterns)

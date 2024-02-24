@@ -85,6 +85,7 @@ INSTALLED_APPS = [
     "meshapi_hooks",
     "meshweb",
     "corsheaders",
+    "django_jsonform",
 ]
 
 MIDDLEWARE = [

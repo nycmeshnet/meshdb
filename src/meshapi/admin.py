@@ -1,6 +1,7 @@
 from django.contrib import admin
 from django.contrib.admin.options import forms
 from django.utils.safestring import mark_safe
+from django_jsonform.widgets import JSONFormWidget
 
 from meshapi.models import Building, Install, Link, Member, Sector
 
@@ -184,11 +185,12 @@ class BuildingAdmin(admin.ModelAdmin):
 
     # This is probably a bad idea because you'll have to load a million panos
     # and OOM your computer
+    # Need to find a way to "thumbnail-ize" them on the server side, probably.
     @mark_safe
     def thumb(self, obj):
         return f"<img src='{obj.get_thumb()}' width='50' height='50' />"
 
-    thumb.__name__ = 'Thumbnail'
+    thumb.__name__ = "Thumbnail"
 
 
 class MemberAdminForm(forms.ModelForm):

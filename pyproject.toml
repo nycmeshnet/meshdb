@@ -24,6 +24,7 @@ dependencies = [
     "nameparser==1.1.*",
     "inflect==7.0.*",
     "fastkml[lxml]==1.a10", # Update me to stable, once 1.0 is released officially
+    "django-jsonform==2.21.*",
 ]
 
 [project.optional-dependencies]

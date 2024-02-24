@@ -14,13 +14,13 @@ from meshapi.util.django_pglocks import advisory_lock
 # we could store it in postgres :P
 @api_view(["GET"])
 @permission_classes([permissions.AllowAny])
-#@advisory_lock() # TODO: Wanna lock the table when we update the panoramas?
+# @advisory_lock() # TODO: Wanna lock the table when we update the panoramas?
 def update_panos(request):
     # TODO: Make env variables
-    owner = 'nycmeshnet'
-    repo = 'node-db'
-    branch = 'master'
-    directory = 'data/panoramas'
+    owner = "nycmeshnet"
+    repo = "node-db"
+    branch = "master"
+    directory = "data/panoramas"
 
     # This assumes they're all JPGs.
     netlify_pano_url = "https://node-db.netlify.app/panoramas/"
@@ -53,6 +53,7 @@ def update_panos(request):
 
     return Response({}, status=status.HTTP_200_OK)
 
+
 def build_pano_dict(files: list[str]):
     panos = {}
     for f in files:
@@ -63,9 +64,10 @@ def build_pano_dict(files: list[str]):
             panos[number].append(label)
     return panos
 
+
 def parse_pano_title(title: str):
-    number = ''
-    label = ''
+    number = ""
+    label = ""
     for i in range(0, len(title)):
         if title[i].isdigit():
             number += title[i]
@@ -78,25 +80,26 @@ def parse_pano_title(title: str):
             break
     return (number, label)
 
+
 def get_head_tree_sha(owner, repo, branch):
-    url = f'https://api.github.com/repos/{owner}/{repo}/branches/{branch}'
+    url = f"https://api.github.com/repos/{owner}/{repo}/branches/{branch}"
     master = requests.get(url)
     master = master.json()
-    return master['commit']['commit']['tree']['sha']
+    return master["commit"]["commit"]["tree"]["sha"]
+
 
 # Returns all the filenames, stripped of extensions and everything
 def list_files_in_directory(owner: str, repo: str, directory: str, tree):
     url = f"https://api.github.com/repos/{owner}/{repo}/git/trees/{tree}?recursive=1"
     response = requests.get(url)
-    
+
     if response.status_code == 200:
         files = []
         tree = response.json()
-        for item in tree['tree']:
-            if item['type'] == 'blob' and directory in item['path']:
-                files.append(Path(item['path']).stem)
+        for item in tree["tree"]:
+            if item["type"] == "blob" and directory in item["path"]:
+                files.append(Path(item["path"]).stem)
         return files
     else:
         print(f"Error: Failed to fetch directory contents. Status code: {response.status_code}")
         return None
-
