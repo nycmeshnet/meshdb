@@ -128,7 +128,7 @@ class BuildingAdmin(admin.ModelAdmin):
         "installs__member__phone_number__iexact",
         "installs__member__slack_handle__iexact",
     ]
-    #inlines = [InstallInline, ToBuildingInline, FromBuildingInline]
+    # inlines = [InstallInline, ToBuildingInline, FromBuildingInline]
     inlines = [InstallInline]
     list_filter = [
         "building_status",
