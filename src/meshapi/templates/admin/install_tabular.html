@@ -13,8 +13,8 @@
    {{ inline_admin_formset.formset.non_form_errors }}
    <table>
      <thead><tr>
-       <!--Blank header to make room for pk-->
-       <th></th>
+       <th class="original"></th>
+       <th/>
      {% for field in inline_admin_formset.fields %}
        <th class="column-{{ field.name }}{% if field.required %} required{% endif %}{% if field.widget.is_hidden %} hidden{% endif %}">{{ field.label|capfirst }}
        {% if field.help_text %}<img src="{% static "admin/img/icon-unknown.svg" %}" class="help help-tooltip" width="10" height="10" alt="({{ field.help_text|striptags }})" title="{{ field.help_text|striptags }}">{% endif %}
@@ -30,9 +30,23 @@
         {% endif %}
         <tr class="form-row {% if inline_admin_form.original or inline_admin_form.show_url %}has_original{% endif %}{% if forloop.last and inline_admin_formset.has_add_permission %} empty-form{% endif %}"
              id="{{ inline_admin_formset.formset.prefix }}-{% if forloop.last and inline_admin_formset.has_add_permission %}empty{% else %}{{ forloop.counter0 }}{% endif %}">
-        <!--Janktown: We're hardcoding Install Number and Link to Install in the template because we're horrible.-->
+        <td class="original">
+          {% if inline_admin_form.original or inline_admin_form.show_url %}<p>
+          {% if inline_admin_form.original %}
+          {{ inline_admin_form.original }}
+          {% if inline_admin_form.model_admin.show_change_link and inline_admin_form.model_admin.has_registered_model %}<a href="{% url inline_admin_form.model_admin.opts|admin_urlname:'change' inline_admin_form.original.pk|admin_urlquote %}" class="{{ inline_admin_formset.has_change_permission|yesno:'inlinechangelink,inlineviewlink' }}">{% if inline_admin_formset.has_change_permission %}{% translate "Change" %}{% else %}{% translate "View" %}{% endif %}</a>{% endif %}
+          {% endif %}
+          {% if inline_admin_form.show_url %}<a href="{{ inline_admin_form.absolute_url }}">{% translate "View on site" %}</a>{% endif %}
+            </p>{% endif %}
+          {% if inline_admin_form.needs_explicit_pk_field %}{{ inline_admin_form.pk_field.field }}{% endif %}
+          {% if inline_admin_form.fk_field %}{{ inline_admin_form.fk_field.field }}{% endif %}
+        </td>
         <td>
-          <strong><a href="{% url inline_admin_form.model_admin.opts|admin_urlname:'change' inline_admin_form.original.pk|admin_urlquote %}">{{ inline_admin_form.original }}</a></strong>
+          <strong>
+            <a href="{% url inline_admin_form.model_admin.opts|admin_urlname:'change' inline_admin_form.original.pk|admin_urlquote %}">
+              {{ inline_admin_form.original }}
+            </a>
+          </strong>
         </td>
         {% for fieldset in inline_admin_form %}
           {% for line in fieldset %}
