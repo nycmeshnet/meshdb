@@ -35,5 +35,5 @@ urlpatterns = [
     path("mapdata/links/", views.MapDataLinkList.as_view(), name="meshapi-v1-map-data-links"),
     path("mapdata/sectors/", views.MapDataSectorList.as_view(), name="meshapi-v1-map-data-sectors"),
     path("geography/whole-mesh.kml", views.WholeMeshKML.as_view(), name="meshapi-v1-geography-whole-mesh-kml"),
-    path("update-panos/", views.update_panos, name="meshapi-v1-update-panos")
+    path("update-panoramas/", views.update_panoramas_from_github, name="meshapi-v1-update-panoramas"),
 ]

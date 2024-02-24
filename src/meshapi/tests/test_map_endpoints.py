@@ -51,6 +51,7 @@ class TestViewsGetUnauthenticated(TestCase):
                 latitude=40.7686554,
                 longitude=-73.9291817,
                 altitude=37,
+                panoramas=["https://node-db.netlify.app/panoramas/2.jpg"],
             )
         )
         installs.append(
@@ -82,6 +83,11 @@ class TestViewsGetUnauthenticated(TestCase):
                 longitude=-73.987881,
                 altitude=27,
                 primary_node=nodes[-1],
+                panoramas=[
+                    "https://node-db.netlify.app/panoramas/3.jpg",
+                    "https://node-db.netlify.app/panoramas/3a.jpg",
+                    "https://node-db.netlify.app/panoramas/3b.jpg",
+                ],
             )
         )
         installs.append(
@@ -288,7 +294,7 @@ class TestViewsGetUnauthenticated(TestCase):
                     "installDate": 1627185600000,
                     "roofAccess": False,
                     "notes": "Peter",
-                    "panoramas": [],
+                    "panoramas": ["2.jpg"],
                 },
                 {
                     "id": 3,
@@ -299,7 +305,7 @@ class TestViewsGetUnauthenticated(TestCase):
                     "installDate": 1413259200000,
                     "roofAccess": False,
                     "notes": "Hub: LiteBeamLR to SN1 plus kiosk failover",
-                    "panoramas": [],
+                    "panoramas": ["3.jpg", "3a.jpg", "3b.jpg"],
                 },
                 {
                     "id": 190,
