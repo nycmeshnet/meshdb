@@ -49,7 +49,7 @@ def update_panos(request):
                 install.building.panoramas.append(f"{netlify_pano_url}{install_number}{label}.jpg")
             install.building.save()
         except Exception as e:
-            print(f"Warning: Could not add pano to building (Install #{install_number})")
+            print(f"Warning: Could not add pano to building (Install #{install_number}): {e}")
 
     return Response({}, status=status.HTTP_200_OK)
 
