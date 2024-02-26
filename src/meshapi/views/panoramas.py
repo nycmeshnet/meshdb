@@ -18,12 +18,14 @@ from meshapi.util.django_pglocks import advisory_lock
 # @advisory_lock() # TODO: Wanna lock the table when we update the panoramas?
 def update_panoramas_from_github(request):
     # TODO: Make env variables
-    owner = "nycmeshnet"
-    repo = "node-db"
-    branch = "master"
-    directory = "data/panoramas"
+    owner = os.environ.get("PANO_REPO_OWNER")
+    repo = os.environ.get("PANO_REPO")
+    branch = os.environ.get("PANO_BRANCH")
+    directory = os.environ.get("PANO_DIR")
+    host_url = os.environ.get("PANO_HOST")
 
-    netlify_pano_url = "https://node-db.netlify.app/panoramas/"
+    if not owner or not repo or not branch or not directory or not host_url:
+        return Response({"detail": "Did not find environment variables"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     head_tree_sha = get_head_tree_sha(owner, repo, branch)
 
@@ -47,7 +49,7 @@ def update_panoramas_from_github(request):
                 warnings.append(install_number)
                 continue
             for filename in filenames:
-                file_url = f"{netlify_pano_url}{filename}"
+                file_url = f"{host_url}{filename}"
                 install.building.panoramas.append(file_url)
             install.building.save()
             panoramas_saved += len(filenames)
