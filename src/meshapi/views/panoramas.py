@@ -9,6 +9,9 @@ from meshapi.models import Building, Install
 
 from meshapi.util.django_pglocks import advisory_lock
 
+# Raised if we get total nonsense as a panorama title
+class BadPanoramaTitle(Exception):
+    pass
 
 # View called to make MeshDB refresh the panoramas.
 # We want a cache to be able to diff which panos we've already ingested. Maybe
@@ -32,6 +35,8 @@ def update_panoramas_from_github(request):
     panorama_files = list_files_in_directory(owner, repo, directory, head_tree_sha)
     if not panorama_files:
         return Response({"detail": "Could not list files"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    print(panorama_files)
 
     panos = build_pano_dict(panorama_files)
 
@@ -71,26 +76,50 @@ def update_panoramas_from_github(request):
 def build_pano_dict(files: list[str]):
     panos = {}
     for f in files:
-        number, label = parse_pano_title(Path(f).stem)
+        try:
+            number, label = parse_pano_title(Path(f).stem)
+        except BadPanoramaTitle as e:
+            print(e)
+            continue
         if number not in panos:
             panos[number] = [f]
         else:
             panos[number].append(f)
     return panos
 
-
+# This is awful. Maybe there are easy ways to generalize some cases like stripping
+# spaces, but for now I would rather explicitly handle these cases until I have
+# better tests.
 def parse_pano_title(title: str):
+    if len(title) <= 0:
+        raise BadPanoramaTitle("Got title of length 0")
+
+    # Get that file extension outta here
+    stem = Path(title).stem
+
+    # Handle dumb edge case
+    if len(stem) > 4 and stem[0:4] == "IMG_":
+        return (stem[4:], "")
+
+    # Some of the files have spaces but are otherwise fine
+    if stem[0] == " ":
+        stem = stem[1:]
+
+    # Handle any other dumb edge cases by bailing
+    if not stem[0].isdigit():
+        raise BadPanoramaTitle(f"First character not a digit: {title}")
+
     number = ""
     label = ""
-    for i in range(0, len(title)):
-        if title[i].isdigit():
-            number += title[i]
+    for i in range(0, len(stem)):
+        if stem[i].isdigit():
+            number += stem[i]
         elif i == 0:
             # There are some files in here that have a space or something in the
             # first letter, so we handle that edge case by ignoring it.
             continue
         else:
-            label = title[i:]
+            label = stem[i:]
             break
     return (number, label)
 
