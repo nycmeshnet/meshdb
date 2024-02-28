@@ -280,10 +280,10 @@ class TestJoinForm(TestCase):
         self.assertEqual(
             code,
             response1.status_code,
-            f"status code incorrect for Valid Join Form. Should be {code}, but got {response1.status_code}.\n Response is: {response1.content.decode('utf-8')}",
+            f"status code incorrect. Should be {code}, but got {response1.status_code}.\n Response is: {response1.content.decode('utf-8')}",
         )
 
-        validate_successful_join_form_submission(self, "Valid Join Form", s, response1)
+        validate_successful_join_form_submission(self, "", s, response1)
 
         member_object = Member.objects.get(id=json.loads(response1.content.decode("utf-8"))["member_id"])
         member_object.stripe_email_address = "jsmith+stripe@gmail.com"
@@ -305,11 +305,11 @@ class TestJoinForm(TestCase):
         self.assertEqual(
             code,
             response2.status_code,
-            f"status code incorrect for Valid Join Form. Should be {code}, "
+            f"status code incorrect. Should be {code}, "
             f"but got {response2.status_code}.\n Response is: {response2.content.decode('utf-8')}",
         )
 
-        validate_successful_join_form_submission(self, "Valid Join Form", s, response2)
+        validate_successful_join_form_submission(self, "", s, response2)
 
         self.assertEqual(
             member_object.id,
@@ -322,7 +322,7 @@ class TestJoinForm(TestCase):
         # and we will connect it to their old registration
         v_sub_3 = valid_join_form_submission.copy()
         v_sub_3["email"] = "jsmith+other@gmail.com"
-        v_sub_3["street_address"] = "153 Broome Street"
+        v_sub_3["street_address"] = "178 Broome Street"
 
         form, s = pull_apart_join_form_submission(v_sub_3)
 
@@ -333,7 +333,7 @@ class TestJoinForm(TestCase):
         self.assertEqual(
             code,
             response3.status_code,
-            f"status code incorrect for Valid Join Form. Should be {code}, "
+            f"status code incorrect. Should be {code}, "
             f"but got {response3.status_code}.\n Response is: {response3.content.decode('utf-8')}",
         )
 

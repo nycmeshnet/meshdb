@@ -12,7 +12,6 @@ admin.site.index_title = "Welcome to MeshDB Admin Portal"
 class InstallInline(admin.TabularInline):
     model = Install
     extra = 0
-    # show_change_link = True
     fields = ["install_status", "network_number", "member", "unit"]
     readonly_fields = fields
     can_delete = False
@@ -129,7 +128,8 @@ class BuildingAdmin(admin.ModelAdmin):
         "installs__member__phone_number__iexact",
         "installs__member__slack_handle__iexact",
     ]
-    inlines = [InstallInline, ToBuildingInline, FromBuildingInline]
+    # inlines = [InstallInline, ToBuildingInline, FromBuildingInline]
+    inlines = [InstallInline]
     list_filter = [
         "building_status",
         ("primary_nn", admin.EmptyFieldListFilter),
