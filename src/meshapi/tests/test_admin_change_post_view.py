@@ -55,7 +55,6 @@ class TestAdminChangeView(TestCase):
         self.building_1.city = "Faketown"
         response = self.c.post(route, self.building_1, content_type="application/json")
         self.assertEqual(code, response.status_code, f"Call to admin panel route {route} failed. Got code {code}.")
-        
 
 
 #    def test_change_post_member(self):
