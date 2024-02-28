@@ -88,6 +88,7 @@ def join_form(request):
             time.sleep(3)
     # If we run out of tries, bail.
     if nyc_addr_info == None:
+        print(f"Could not parse address: {r.street_address}, {r.city}, {r.state}, {r.zip}")
         return Response(
             {"detail": "Your address could not be validated."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
