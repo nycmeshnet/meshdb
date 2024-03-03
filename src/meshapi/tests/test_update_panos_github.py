@@ -87,12 +87,11 @@ class TestPanoUtils(TestCase):
     # Also this API likes to give me 500s and it would be nice to know if that was
     # a common enough thing to disrupt tests. I guess this is designed to detect
     # flakiness
-    def test_get_head_tree_sha(self):
+    def test_github_API(self):
         head_tree_sha = panoramas.get_head_tree_sha(self.owner, self.repo, self.branch)
         assert head_tree_sha is not None
 
-    def test_list_files_in_git_directory(self):
         panorama_files = panoramas.list_files_in_git_directory(
-            self.owner, self.repo, self.directory, self.head_tree_sha
+            self.owner, self.repo, self.directory, head_tree_sha
         )
         assert panorama_files is not None
