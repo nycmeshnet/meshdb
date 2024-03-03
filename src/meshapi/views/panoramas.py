@@ -15,6 +15,11 @@ class BadPanoramaTitle(Exception):
     pass
 
 
+# Raised if one of the Git URLs is unreachable or returns not a 200
+class CantTalkToGit(Exception):
+    pass
+
+
 # View called to make MeshDB refresh the panoramas.
 # We want a cache to be able to diff which panos we've already ingested. Maybe
 # we could store it in postgres :P
@@ -33,10 +38,14 @@ def update_panoramas_from_github(request):
         return Response({"detail": "Did not find environment variables"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     head_tree_sha = get_head_tree_sha(owner, repo, branch)
+    if not head_tree_sha:
+        return Response(
+            {"detail": "Could not get head tree SHA from GitHub"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
 
-    panorama_files = list_files_in_directory(owner, repo, directory, head_tree_sha)
+    panorama_files = list_files_in_git_directory(owner, repo, directory, head_tree_sha)
     if not panorama_files:
-        return Response({"detail": "Could not list files"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        return Response({"detail": "Could not get file list from GitHub"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     print(panorama_files)
 
@@ -74,6 +83,9 @@ def set_panoramas(panos: dict[str, list[str]]) -> tuple[int, list[str]]:
             for filename in filenames:
                 file_url = f"{host_url}{filename}"
                 panoramas.append(file_url)
+            if install.building.panoramas == panoramas:
+                print(f"Warning: No change to panoramas (Install #{install_number})")
+                continue
             install.building.panoramas = panoramas
             install.building.save()
             panoramas_saved += len(filenames)
@@ -140,12 +152,14 @@ def parse_pano_title(title: str):
 def get_head_tree_sha(owner, repo, branch):
     url = f"https://api.github.com/repos/{owner}/{repo}/branches/{branch}"
     master = requests.get(url)
+    if master.status_code != 200:
+        return None
     master = master.json()
     return master["commit"]["commit"]["tree"]["sha"]
 
 
 # Returns all the filenames, stripped of extensions and everything
-def list_files_in_directory(owner: str, repo: str, directory: str, tree):
+def list_files_in_git_directory(owner: str, repo: str, directory: str, tree):
     url = f"https://api.github.com/repos/{owner}/{repo}/git/trees/{tree}?recursive=1"
     response = requests.get(url)
 
