@@ -15,10 +15,6 @@ class TestFullPanoPipeline(TestCase):
         self.building_1.save()
         sample_install_copy["building"] = self.building_1
 
-        self.building_2 = Building(**sample_building)
-        self.building_2.street_address = "69" + str(self.building_2.street_address)
-        self.building_2.save()
-
         self.member = Member(**sample_member)
         self.member.save()
         sample_install_copy["member"] = self.member
@@ -26,29 +22,27 @@ class TestFullPanoPipeline(TestCase):
         self.install = Install(**sample_install_copy)
         self.install.save()
 
-        self.sector = Sector(
-            id=1,
-            name="Vernon",
-            device_name="LAP-120",
-            building=self.building_1,
-            status="Active",
-            azimuth=0,
-            width=120,
-            radius=0.3,
-        )
-        self.sector.save()
-
-        self.link = Link(
-            from_building=self.building_1,
-            to_building=self.building_2,
-            status=Link.LinkStatus.ACTIVE,
-        )
-        self.link.save()
-
         self.admin_user = User.objects.create_superuser(
             username="admin", password="admin_password", email="admin@example.com"
         )
         self.c.login(username="admin", password="admin_password")
+
+    def test_set_panoramas(self):
+        # Fabricate some fake panorama photos
+        n = self.install.install_number
+        panos = {
+            n: [f"{n}.jpg", f"{n}a.jpg"]
+        }
+
+        panoramas.set_panoramas(panos)
+
+        # Now check that that worked.
+        building = Building.objects.get(id=self.building_1.id)
+        saved_panoramas = [
+            "https://node-db.netlify.app/panoramas/1.jpg",
+            "https://node-db.netlify.app/panoramas/1a.jpg",
+        ]
+        self.assertEqual(saved_panoramas, building.panoramas)
 
 
 class TestPanoUtils(TestCase):

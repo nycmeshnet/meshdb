@@ -22,7 +22,7 @@ class BadPanoramaTitle(Exception):
 @permission_classes([permissions.AllowAny])
 # @advisory_lock() # TODO: Wanna lock the table when we update the panoramas?
 def update_panoramas_from_github(request):
-    # TODO: Make env variables
+    # Check that we have all the environment variables we need
     owner = os.environ.get("PANO_REPO_OWNER")
     repo = os.environ.get("PANO_REPO")
     branch = os.environ.get("PANO_BRANCH")
@@ -41,28 +41,8 @@ def update_panoramas_from_github(request):
     print(panorama_files)
 
     panos = build_pano_dict(panorama_files)
-
-    panoramas_saved = 0
-    warnings = []
-
-    for install_number, filenames in panos.items():
-        try:
-            install: Install = Install.objects.get(install_number=int(install_number))
-            install.building.panoramas = []
-            if not install:
-                print(
-                    f"Warning: Could not add panorama to building (Install #{install_number}). Install does not exist."
-                )
-                warnings.append(install_number)
-                continue
-            for filename in filenames:
-                file_url = f"{host_url}{filename}"
-                install.building.panoramas.append(file_url)
-            install.building.save()
-            panoramas_saved += len(filenames)
-        except Exception as e:
-            print(f"Warning: Could not add panorama to building (Install #{install_number}): {e}")
-            warnings.append(install_number)
+    
+    panoramas_saved, warnings = set_panoramas(panos)
 
     return Response(
         {
@@ -73,6 +53,33 @@ def update_panoramas_from_github(request):
         },
         status=status.HTTP_200_OK,
     )
+
+def set_panoramas(panos: dict[str, list[str]]) -> tuple[int, list[str]]:
+    panoramas_saved = 0
+    warnings = []
+
+    host_url = os.environ.get("PANO_HOST")
+
+    for install_number, filenames in panos.items():
+        try:
+            install: Install = Install.objects.get(install_number=int(install_number))
+            panoramas = []
+            if not install:
+                print(
+                    f"Warning: Could not add panorama to building (Install #{install_number}). Install does not exist."
+                )
+                warnings.append(install_number)
+                continue
+            for filename in filenames:
+                file_url = f"{host_url}{filename}"
+                panoramas.append(file_url)
+            install.building.panoramas = panoramas
+            install.building.save()
+            panoramas_saved += len(filenames)
+        except Exception as e:
+            print(f"Warning: Could not add panorama to building (Install #{install_number}): {e}")
+            warnings.append(install_number)
+    return panoramas_saved, warnings
 
 
 def build_pano_dict(files: list[str]):
