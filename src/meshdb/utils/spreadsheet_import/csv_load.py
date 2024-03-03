@@ -131,12 +131,12 @@ def get_spreadsheet_rows(
                 continue
 
             try:
-                install_date = datetime.datetime.strptime(row["installDate"], "%m/%d/%Y")
+                install_date = datetime.datetime.strptime(row["installDate"], "%m/%d/%Y").date()
             except ValueError:
                 install_date = None
 
             try:
-                abandon_date = datetime.datetime.strptime(row["abandonDate"], "%m/%d/%Y")
+                abandon_date = datetime.datetime.strptime(row["abandonDate"], "%m/%d/%Y").date()
             except ValueError:
                 abandon_date = None
 
