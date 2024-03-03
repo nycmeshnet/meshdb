@@ -9,9 +9,11 @@ from meshapi.models import Building, Install
 
 from meshapi.util.django_pglocks import advisory_lock
 
+
 # Raised if we get total nonsense as a panorama title
 class BadPanoramaTitle(Exception):
     pass
+
 
 # View called to make MeshDB refresh the panoramas.
 # We want a cache to be able to diff which panos we've already ingested. Maybe
@@ -86,6 +88,7 @@ def build_pano_dict(files: list[str]):
         else:
             panos[number].append(f)
     return panos
+
 
 # This is awful. Maybe there are easy ways to generalize some cases like stripping
 # spaces, but for now I would rather explicitly handle these cases until I have

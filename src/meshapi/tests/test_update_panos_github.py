@@ -75,11 +75,9 @@ class TestPanoUtils(TestCase):
     def test_parse_pano_bad_title(self):
         with self.assertRaises(panoramas.BadPanoramaTitle):
             test_cases = {
-                "Icon\r": ("",""),
-                "": ("",""),
-                "chom": ("",""),
+                "Icon\r": ("", ""),
+                "": ("", ""),
+                "chom": ("", ""),
             }
             for case, _ in test_cases.items():
                 panoramas.parse_pano_title(case)
-
-
