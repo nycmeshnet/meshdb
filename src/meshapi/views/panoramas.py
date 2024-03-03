@@ -158,7 +158,6 @@ def get_head_tree_sha(owner, repo, branch):
     url = f"https://api.github.com/repos/{owner}/{repo}/branches/{branch}"
     token = os.environ.get("GITHUB_TOKEN", default=None)
     print("chom")
-    print("chom")
     if not token:
         raise GitBozoException
     master = requests.get(url, headers={"Authorization": f"Bearer {token}"})
