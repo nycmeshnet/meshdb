@@ -36,10 +36,10 @@ class TestFullPanoPipeline(TestCase):
         panoramas.set_panoramas(panos)
 
         # Now check that that worked.
-        building = Building.objects.get(id=self.building_1.id)
+        building = Building.objects.get(id=self.install.building.id)
         saved_panoramas = [
-            "https://node-db.netlify.app/panoramas/1.jpg",
-            "https://node-db.netlify.app/panoramas/1a.jpg",
+            f"https://node-db.netlify.app/panoramas/{n}.jpg",
+            f"https://node-db.netlify.app/panoramas/{n}a.jpg",
         ]
         self.assertEqual(saved_panoramas, building.panoramas)
 
@@ -91,7 +91,5 @@ class TestPanoUtils(TestCase):
         head_tree_sha = panoramas.get_head_tree_sha(self.owner, self.repo, self.branch)
         assert head_tree_sha is not None
 
-        panorama_files = panoramas.list_files_in_git_directory(
-            self.owner, self.repo, self.directory, head_tree_sha
-        )
+        panorama_files = panoramas.list_files_in_git_directory(self.owner, self.repo, self.directory, head_tree_sha)
         assert panorama_files is not None
