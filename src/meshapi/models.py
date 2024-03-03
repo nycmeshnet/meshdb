@@ -95,16 +95,8 @@ class Install(models.Model):
         db_column="install_number",
     )
 
-    # The NN this install is associated with.
-    # Through this, a building can have multiple NNs
-    network_number = models.IntegerField(
-        blank=True,
-        null=True,
-        validators=[MinValueValidator(NETWORK_NUMBER_MIN), MaxValueValidator(NETWORK_NUMBER_MAX)],
-    )
-
     # Summary status of install
-    install_status = models.TextField(choices=InstallStatus.choices)
+    status = models.TextField(choices=InstallStatus.choices)
 
     # OSTicket ID
     ticket_id = models.IntegerField(blank=True, null=True)
@@ -133,6 +125,31 @@ class Install(models.Model):
     def __str__(self):
         return f"#{str(self.install_number)}"
 
+class Device(models.Model):
+    class DeviceStatus(models.TextChoices):
+        ABANDONED = "Abandoned"
+        ACTIVE = "Active"
+        POTENTIAL = "Potential"
+
+    name = models.TextField()
+    device_name = models.TextField()
+
+    status = models.TextField(choices=DeviceStatus.choices)
+    powered_by_install = models.ForeignKey(Install, on_delete=models.PROTECT, related_name="powers")
+
+    # The NN this device is associated with.
+    # Through this, a building can have multiple NNs
+    network_number = models.IntegerField(
+        blank=True,
+        null=True,
+        validators=[MinValueValidator(NETWORK_NUMBER_MIN), MaxValueValidator(NETWORK_NUMBER_MAX)],
+    )
+
+    install_date = models.DateField(default=None, blank=True, null=True)
+    abandon_date = models.DateField(default=None, blank=True, null=True)
+
+    notes = models.TextField(default=None, blank=True, null=True)
+
 
 class Link(models.Model):
     class LinkStatus(models.TextChoices):
@@ -146,8 +163,8 @@ class Link(models.Model):
         MMWAVE = "MMWave"
         FIBER = "Fiber"
 
-    from_building = models.ForeignKey(Building, on_delete=models.PROTECT, related_name="links_from")
-    to_building = models.ForeignKey(Building, on_delete=models.PROTECT, related_name="links_to")
+    from_device = models.ForeignKey(Building, on_delete=models.PROTECT, related_name="links_from")
+    to_device = models.ForeignKey(Building, on_delete=models.PROTECT, related_name="links_to")
 
     status = models.TextField(choices=LinkStatus.choices)
     type = models.TextField(choices=LinkType.choices, default=None, blank=True, null=True)
@@ -164,15 +181,7 @@ class Link(models.Model):
         return f"MeshDB Link ID {self.id}"
 
 
-class Sector(models.Model):
-    class SectorStatus(models.TextChoices):
-        ABANDONED = "Abandoned"
-        ACTIVE = "Active"
-        POTENTIAL = "Potential"
-
-    building = models.ForeignKey(Building, on_delete=models.PROTECT, related_name="sectors")
-    name = models.TextField()
-
+class Sector(Device):
     radius = models.FloatField(
         validators=[MinValueValidator(0)],
     )
@@ -189,15 +198,8 @@ class Sector(models.Model):
         ],
     )
 
-    status = models.TextField(choices=SectorStatus.choices)
-
-    install_date = models.DateField(default=None, blank=True, null=True)
-    abandon_date = models.DateField(default=None, blank=True, null=True)
-
-    device_name = models.TextField()
+    # XXX (willnilges): Move SSID to device?
     ssid = models.TextField(default=None, blank=True, null=True)
-
-    notes = models.TextField(default=None, blank=True, null=True)
 
     def __str__(self):
         if self.ssid:
