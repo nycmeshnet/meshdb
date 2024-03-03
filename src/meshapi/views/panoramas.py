@@ -41,7 +41,7 @@ def update_panoramas_from_github(request):
     print(panorama_files)
 
     panos = build_pano_dict(panorama_files)
-    
+
     panoramas_saved, warnings = set_panoramas(panos)
 
     return Response(
@@ -53,6 +53,7 @@ def update_panoramas_from_github(request):
         },
         status=status.HTTP_200_OK,
     )
+
 
 def set_panoramas(panos: dict[str, list[str]]) -> tuple[int, list[str]]:
     panoramas_saved = 0

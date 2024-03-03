@@ -30,9 +30,7 @@ class TestFullPanoPipeline(TestCase):
     def test_set_panoramas(self):
         # Fabricate some fake panorama photos
         n = self.install.install_number
-        panos = {
-            n: [f"{n}.jpg", f"{n}a.jpg"]
-        }
+        panos = {n: [f"{n}.jpg", f"{n}a.jpg"]}
 
         panoramas.set_panoramas(panos)
 
