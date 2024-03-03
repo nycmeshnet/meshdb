@@ -28,13 +28,6 @@ class TestFullPanoPipeline(TestCase):
         )
         self.c.login(username="admin", password="admin_password")
 
-        # Check that we have all the environment variables we need
-        self.owner = os.environ.get("PANO_REPO_OWNER")
-        self.repo = os.environ.get("PANO_REPO")
-        self.branch = os.environ.get("PANO_BRANCH")
-        self.directory = os.environ.get("PANO_DIR")
-        self.host_url = os.environ.get("PANO_HOST")
-
     def test_set_panoramas(self):
         # Fabricate some fake panorama photos
         n = self.install.install_number
@@ -52,6 +45,14 @@ class TestFullPanoPipeline(TestCase):
 
 
 class TestPanoUtils(TestCase):
+    def setUp(self):
+        # Check that we have all the environment variables we need
+        self.owner = os.environ.get("PANO_REPO_OWNER")
+        self.repo = os.environ.get("PANO_REPO")
+        self.branch = os.environ.get("PANO_BRANCH")
+        self.directory = os.environ.get("PANO_DIR")
+        self.host_url = os.environ.get("PANO_HOST")
+
     def test_parse_pano_title(self):
         test_cases = {
             # Normal cases

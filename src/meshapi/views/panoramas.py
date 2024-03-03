@@ -33,8 +33,9 @@ def update_panoramas_from_github(request):
     branch = os.environ.get("PANO_BRANCH")
     directory = os.environ.get("PANO_DIR")
     host_url = os.environ.get("PANO_HOST")
+    token = os.environ.get("GITHUB_TOKEN")
 
-    if not owner or not repo or not branch or not directory or not host_url:
+    if not owner or not repo or not branch or not directory or not host_url or not token:
         return Response({"detail": "Did not find environment variables"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     head_tree_sha = get_head_tree_sha(owner, repo, branch)
@@ -151,8 +152,10 @@ def parse_pano_title(title: str):
 # 100k/7MB of data)
 def get_head_tree_sha(owner, repo, branch):
     url = f"https://api.github.com/repos/{owner}/{repo}/branches/{branch}"
-    master = requests.get(url)
+    token = os.environ.get("GITHUB_TOKEN")
+    master = requests.get(url, headers={"Authorization": f"Bearer {token}"})
     if master.status_code != 200:
+        print(f"Error: Got status {master.status_code} from GitHub trying to get SHA.")
         return None
     master = master.json()
     return master["commit"]["commit"]["tree"]["sha"]
@@ -161,15 +164,14 @@ def get_head_tree_sha(owner, repo, branch):
 # Returns all the filenames, stripped of extensions and everything
 def list_files_in_git_directory(owner: str, repo: str, directory: str, tree):
     url = f"https://api.github.com/repos/{owner}/{repo}/git/trees/{tree}?recursive=1"
-    response = requests.get(url)
-
-    if response.status_code == 200:
-        files = []
-        tree = response.json()
-        for item in tree["tree"]:
-            if item["type"] == "blob" and directory in item["path"]:
-                files.append(os.path.basename(item["path"]))
-        return files
-    else:
-        print(f"Error: Failed to fetch directory contents. Status code: {response.status_code}")
+    token = os.environ.get("GITHUB_TOKEN")
+    response = requests.get(url, headers={"Authorization": f"Bearer {token}"})
+    if response.status_code != 200:
+        print(f"Error: Failed to fetch GitHub directory contents. Status code: {response.status_code}")
         return None
+    files = []
+    tree = response.json()
+    for item in tree["tree"]:
+        if item["type"] == "blob" and directory in item["path"]:
+            files.append(os.path.basename(item["path"]))
+    return files
