@@ -52,10 +52,17 @@ class TestPanoUtils(TestCase):
         self.branch = os.environ.get("PANO_BRANCH")
         self.directory = os.environ.get("PANO_DIR")
         self.host_url = os.environ.get("PANO_HOST")
-        self.token = os.environ.get("GITHUB_TOKEN")
+        self.token = os.environ.get("PANO_GITHUB_TOKEN")
 
-        if not self.owner or not self.repo or not self.branch or not self.directory or not self.host_url or not self.token:
-            return Response({"detail": "Did not find environment variables"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        if (
+            not self.owner
+            or not self.repo
+            or not self.branch
+            or not self.directory
+            or not self.host_url
+            or not self.token
+        ):
+            raise Exception("Did not find environment variables.")
 
     def test_parse_pano_title(self):
         test_cases = {

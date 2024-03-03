@@ -14,6 +14,7 @@ from meshapi.util.django_pglocks import advisory_lock
 class BadPanoramaTitle(Exception):
     pass
 
+
 # View called to make MeshDB refresh the panoramas.
 # We want a cache to be able to diff which panos we've already ingested. Maybe
 # we could store it in postgres :P
