@@ -10,6 +10,10 @@ from meshapi.models import Building, Install
 from meshapi.util.django_pglocks import advisory_lock
 
 
+class GitBozoException(Exception):
+    pass
+
+
 # Raised if we get total nonsense as a panorama title
 class BadPanoramaTitle(Exception):
     pass
@@ -152,7 +156,9 @@ def parse_pano_title(title: str):
 # 100k/7MB of data)
 def get_head_tree_sha(owner, repo, branch):
     url = f"https://api.github.com/repos/{owner}/{repo}/branches/{branch}"
-    token = os.environ.get("GITHUB_TOKEN")
+    token = os.environ.get("GITHUB_TOKEN", default=None)
+    if not token:
+        raise GitBozoException
     master = requests.get(url, headers={"Authorization": f"Bearer {token}"})
     if master.status_code != 200:
         print(f"Error: Got status {master.status_code} from GitHub trying to get SHA.")
@@ -164,7 +170,9 @@ def get_head_tree_sha(owner, repo, branch):
 # Returns all the filenames, stripped of extensions and everything
 def list_files_in_git_directory(owner: str, repo: str, directory: str, tree):
     url = f"https://api.github.com/repos/{owner}/{repo}/git/trees/{tree}?recursive=1"
-    token = os.environ.get("GITHUB_TOKEN")
+    token = os.environ.get("GITHUB_TOKEN", default=None)
+    if not token:
+        raise GitBozoException
     response = requests.get(url, headers={"Authorization": f"Bearer {token}"})
     if response.status_code != 200:
         print(f"Error: Failed to fetch GitHub directory contents. Status code: {response.status_code}")
