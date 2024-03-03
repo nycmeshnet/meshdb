@@ -56,4 +56,5 @@ jobs:
           PANO_BRANCH: master
           PANO_DIR: data/panoramas
           PANO_HOST: https://node-db.netlify.app/panoramas/
+          PANO_GITHUB_TOKEN: ${{ secrets.PANO_GITHUB_TOKEN }}
         run: python3 src/manage.py test meshapi meshapi_hooks
