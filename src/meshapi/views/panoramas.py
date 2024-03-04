@@ -28,7 +28,7 @@ def update_panoramas_from_github(request):
     branch = os.environ.get("PANO_BRANCH")
     directory = os.environ.get("PANO_DIR")
     host_url = os.environ.get("PANO_HOST")
-    token = os.environ.get("GITHUB_TOKEN")
+    token = os.environ.get("PANO_GITHUB_TOKEN")
 
     if not owner or not repo or not branch or not directory or not host_url or not token:
         return Response({"detail": "Did not find environment variables"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -80,7 +80,6 @@ def set_panoramas(panos: dict[str, list[str]]) -> tuple[int, list[str]]:
                 file_url = f"{host_url}{filename}"
                 panoramas.append(file_url)
             if install.building.panoramas == panoramas:
-                print(f"Warning: No change to panoramas (Install #{install_number})")
                 continue
             install.building.panoramas = panoramas
             install.building.save()
