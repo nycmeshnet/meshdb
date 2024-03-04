@@ -24,4 +24,13 @@ class Migration(migrations.Migration):
                 base_field=models.EmailField(max_length=254), blank=True, default=list, null=True, size=None
             ),
         ),
+        migrations.AlterModelOptions(
+            name="install",
+            options={
+                "permissions": [
+                    ("assign_nn", "Can assign an NN to install"),
+                    ("update_panoramas", "Can update panoramas"),
+                ]
+            },
+        ),
     ]
