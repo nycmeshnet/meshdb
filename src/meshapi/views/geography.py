@@ -119,7 +119,7 @@ def map_kml(request):
 
     for link in (
         Link.objects.filter(~Q(status=Link.LinkStatus.DEAD))
-        .annotate(highest_altitude=Greatest("from_building__altitude", "to_building__altitude"))
+        .annotate(highest_altitude=Greatest("from_device__altitude", "to_device__altitude"))
         .order_by(F("highest_altitude").asc(nulls_first=True))
     ):
         placemark = kml.Placemark(
@@ -129,14 +129,14 @@ def map_kml(request):
                 geometry=LineString(
                     [
                         (
-                            link.from_building.longitude,
-                            link.from_building.latitude,
-                            link.from_building.altitude or DEFAULT_ALTITUDE,
+                            link.from_device.longitude,
+                            link.from_device.latitude,
+                            link.from_device.altitude or DEFAULT_ALTITUDE,
                         ),
                         (
-                            link.to_building.longitude,
-                            link.to_building.latitude,
-                            link.to_building.altitude or DEFAULT_ALTITUDE,
+                            link.to_device.longitude,
+                            link.to_device.latitude,
+                            link.to_device.altitude or DEFAULT_ALTITUDE,
                         ),
                     ]
                 ),
@@ -145,8 +145,8 @@ def map_kml(request):
             ),
         )
 
-        from_identifier = link.from_building.primary_nn or link.from_building.installs.first().install_number
-        to_identifier = link.to_building.primary_nn or link.to_building.installs.first().install_number
+        from_identifier = link.from_device.primary_nn or link.from_device.installs.first().install_number
+        to_identifier = link.to_device.primary_nn or link.to_device.installs.first().install_number
 
         extended_data = {
             "name": f"Links-{link.id}",

@@ -41,8 +41,8 @@ class TestLink(TestCase):
         response = self.c.post(
             "/api/v1/links/",
             {
-                "from_building": self.building_1.id,
-                "to_building": self.building_2.id,
+                "from_device": self.building_1.id,
+                "to_device": self.building_2.id,
                 "status": "Active",
             },
         )
@@ -57,8 +57,8 @@ class TestLink(TestCase):
         response = self.c.post(
             "/api/v1/links/",
             {
-                "from_building": "",
-                "to_building": self.building_2.id,
+                "from_device": "",
+                "to_device": self.building_2.id,
                 "status": "Active",
             },
         )
@@ -71,8 +71,8 @@ class TestLink(TestCase):
 
     def test_get_link(self):
         link = Link(
-            from_building=self.building_1,
-            to_building=self.building_2,
+            from_device=self.building_1,
+            to_device=self.building_2,
             status=Link.LinkStatus.ACTIVE,
         )
         link.save()
@@ -88,5 +88,5 @@ class TestLink(TestCase):
 
         response_obj = json.loads(response.content)
         self.assertEqual(response_obj["status"], "Active")
-        self.assertEqual(response_obj["from_building"], 1)
-        self.assertEqual(response_obj["to_building"], 2)
+        self.assertEqual(response_obj["from_device"], 1)
+        self.assertEqual(response_obj["to_device"], 2)

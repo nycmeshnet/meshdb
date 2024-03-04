@@ -32,7 +32,7 @@ class JavascriptDateField(serializers.IntegerField):
         )
 
 
-def get_install_number_from_building(building):
+def get_install_number_from_device(building):
     installs = building.installs.exclude(install_status__in=EXCLUDED_INSTALL_STATUSES).order_by("install_number")
     active_installs = [install for install in installs if install.install_status == Install.InstallStatus.ACTIVE]
     if len(active_installs):
@@ -143,10 +143,10 @@ class MapDataLinkSerializer(serializers.ModelSerializer):
         return "active"
 
     def get_to_install_number(self, link):
-        return get_install_number_from_building(link.to_building)
+        return get_install_number_from_device(link.to_device)
 
     def get_from_install_number(self, link):
-        return get_install_number_from_building(link.from_building)
+        return get_install_number_from_device(link.from_device)
 
     def get_fields(self):
         result = super().get_fields()
@@ -189,7 +189,7 @@ class MapDataSectorSerializer(serializers.ModelSerializer):
     installDate = JavascriptDateField(source="install_date")
 
     def get_node_id(self, sector):
-        return get_install_number_from_building(sector.building)
+        return get_install_number_from_device(sector.building)
 
     def convert_status_to_spreadsheet_status(self, sector):
         return str(sector.status).lower()

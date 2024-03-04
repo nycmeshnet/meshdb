@@ -31,11 +31,11 @@ class FromBuildingInline(admin.TabularInline):
     model = Link
     extra = 0
     # show_change_link = True
-    fields = ["status", "to_building", "description"]
+    fields = ["status", "to_device", "description"]
     readonly_fields = fields
     can_delete = False
     template = "admin/install_tabular.html"
-    fk_name = "from_building"
+    fk_name = "from_device"
 
     def has_add_permission(self, request, obj):
         return False
@@ -51,11 +51,11 @@ class ToBuildingInline(admin.TabularInline):
     model = Link
     extra = 0
     # show_change_link = True
-    fields = ["status", "from_building", "description"]
+    fields = ["status", "from_device", "description"]
     readonly_fields = fields
     can_delete = False
     template = "admin/install_tabular.html"
-    fk_name = "to_building"
+    fk_name = "to_device"
 
     def has_add_permission(self, request, obj):
         return False
@@ -319,14 +319,14 @@ class LinkAdminForm(forms.ModelForm):
 class LinkAdmin(admin.ModelAdmin):
     form = LinkAdminForm
     search_fields = [
-        "from_building__node_name__icontains",
-        "to_building__node_name__icontains",
-        "from_building__street_address__icontains",
-        "to_building__street_address__icontains",
-        "from_building__primary_nn__iexact",
-        "to_building__primary_nn__iexact",
+        "from_device__node_name__icontains",
+        "to_device__node_name__icontains",
+        "from_device__street_address__icontains",
+        "to_device__street_address__icontains",
+        "from_device__primary_nn__iexact",
+        "to_device__primary_nn__iexact",
     ]
-    list_display = ["__str__", "status", "from_building", "to_building", "description"]
+    list_display = ["__str__", "status", "from_device", "to_device", "description"]
     list_filter = ["status", "type"]
 
 

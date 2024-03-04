@@ -163,8 +163,8 @@ class Link(models.Model):
         MMWAVE = "MMWave"
         FIBER = "Fiber"
 
-    from_device = models.ForeignKey(Building, on_delete=models.PROTECT, related_name="links_from")
-    to_device = models.ForeignKey(Building, on_delete=models.PROTECT, related_name="links_to")
+    from_device = models.ForeignKey(Device, on_delete=models.PROTECT, related_name="links_from")
+    to_device = models.ForeignKey(Device, on_delete=models.PROTECT, related_name="links_to")
 
     status = models.TextField(choices=LinkStatus.choices)
     type = models.TextField(choices=LinkType.choices, default=None, blank=True, null=True)
@@ -176,8 +176,8 @@ class Link(models.Model):
     notes = models.TextField(default=None, blank=True, null=True)
 
     def __str__(self):
-        if self.from_building.primary_nn and self.to_building.primary_nn:
-            return f"NN{self.from_building.primary_nn} → NN{self.to_building.primary_nn}"
+        if self.from_device.network_number and self.to_device.network_number:
+            return f"NN{self.from_device.network_number} → NN{self.to_device.network_number}"
         return f"MeshDB Link ID {self.id}"
 
 

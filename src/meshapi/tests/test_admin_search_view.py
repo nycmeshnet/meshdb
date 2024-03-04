@@ -38,8 +38,8 @@ class TestAdminChangeView(TestCase):
         self.sector.save()
 
         self.link = Link(
-            from_building=self.building_1,
-            to_building=self.building_2,
+            from_device=self.building_1,
+            to_device=self.building_2,
             status=Link.LinkStatus.ACTIVE,
         )
         self.link.save()

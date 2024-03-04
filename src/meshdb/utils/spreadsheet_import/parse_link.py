@@ -8,8 +8,8 @@ from meshdb.utils.spreadsheet_import.csv_load import SpreadsheetLink, Spreadshee
 
 def create_link(spreadsheet_link: SpreadsheetLink) -> Optional[models.Link]:
     try:
-        from_building = get_building_from_node_id(spreadsheet_link.from_node_id)
-        to_building = get_building_from_node_id(spreadsheet_link.to_node_id)
+        from_device = get_building_from_node_id(spreadsheet_link.from_node_id)
+        to_device = get_building_from_node_id(spreadsheet_link.to_node_id)
     except ValueError as e:
         if spreadsheet_link.status != SpreadsheetLinkStatus.dead:
             raise e
@@ -45,8 +45,8 @@ def create_link(spreadsheet_link: SpreadsheetLink) -> Optional[models.Link]:
 
     link_notes = "\n".join([spreadsheet_link.notes, spreadsheet_link.comments]).strip()
     link = models.Link(
-        from_building=from_building,
-        to_building=to_building,
+        from_device=from_device,
+        to_device=to_device,
         status=status,
         type=link_type,
         install_date=spreadsheet_link.install_date,

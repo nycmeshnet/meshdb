@@ -437,8 +437,8 @@ class TestViewsGetUnauthenticated(TestCase):
 
         links.append(
             Link(
-                from_building=sn1,
-                to_building=sn3,
+                from_device=sn1,
+                to_device=sn3,
                 status=Link.LinkStatus.ACTIVE,
                 type=Link.LinkType.VPN,
                 install_date=datetime.date(2022, 1, 26),
@@ -447,8 +447,8 @@ class TestViewsGetUnauthenticated(TestCase):
 
         links.append(
             Link(
-                from_building=sn1,
-                to_building=grand,
+                from_device=sn1,
+                to_device=grand,
                 status=Link.LinkStatus.ACTIVE,
                 type=Link.LinkType.MMWAVE,
             )
@@ -456,8 +456,8 @@ class TestViewsGetUnauthenticated(TestCase):
 
         links.append(
             Link(
-                from_building=sn1,
-                to_building=brian,
+                from_device=sn1,
+                to_device=brian,
                 status=Link.LinkStatus.ACTIVE,
                 type=Link.LinkType.STANDARD,
             )
@@ -465,8 +465,8 @@ class TestViewsGetUnauthenticated(TestCase):
 
         links.append(
             Link(
-                from_building=grand,
-                to_building=sn10,
+                from_device=grand,
+                to_device=sn10,
                 status=Link.LinkStatus.ACTIVE,
                 type=Link.LinkType.FIBER,
             )
@@ -474,8 +474,8 @@ class TestViewsGetUnauthenticated(TestCase):
 
         links.append(
             Link(
-                from_building=grand,
-                to_building=random,
+                from_device=grand,
+                to_device=random,
                 status=Link.LinkStatus.PLANNED,
                 type=Link.LinkType.STANDARD,
             )
@@ -483,8 +483,8 @@ class TestViewsGetUnauthenticated(TestCase):
 
         links.append(
             Link(
-                from_building=sn1,
-                to_building=random,
+                from_device=sn1,
+                to_device=random,
                 status=Link.LinkStatus.DEAD,
                 type=Link.LinkType.STANDARD,
             )
@@ -492,8 +492,8 @@ class TestViewsGetUnauthenticated(TestCase):
 
         links.append(
             Link(
-                from_building=sn1,
-                to_building=inactive,
+                from_device=sn1,
+                to_device=inactive,
                 status=Link.LinkStatus.ACTIVE,
                 type=Link.LinkType.STANDARD,
             )
@@ -626,8 +626,8 @@ class TestViewsGetUnauthenticated(TestCase):
 
         links.append(
             Link(
-                from_building=building_1,
-                to_building=building_2,
+                from_device=building_1,
+                to_device=building_2,
                 status=Link.LinkStatus.ACTIVE,
                 type=Link.LinkType.STANDARD,
             )
@@ -635,8 +635,8 @@ class TestViewsGetUnauthenticated(TestCase):
 
         links.append(
             Link(
-                from_building=building_2,
-                to_building=building_3,
+                from_device=building_2,
+                to_device=building_3,
                 status=Link.LinkStatus.ACTIVE,
                 type=Link.LinkType.STANDARD,
             )
@@ -644,8 +644,8 @@ class TestViewsGetUnauthenticated(TestCase):
 
         links.append(
             Link(
-                from_building=building_3,
-                to_building=building_1,
+                from_device=building_3,
+                to_device=building_1,
                 status=Link.LinkStatus.ACTIVE,
                 type=Link.LinkType.STANDARD,
             )

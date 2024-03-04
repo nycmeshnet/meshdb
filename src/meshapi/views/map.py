@@ -60,8 +60,8 @@ class MapDataLinkList(generics.ListAPIView):
     pagination_class = None
     queryset = (
         Link.objects.exclude(status__in=[Link.LinkStatus.DEAD])
-        .exclude(from_building__building_status=Building.BuildingStatus.INACTIVE)
-        .exclude(to_building__building_status=Building.BuildingStatus.INACTIVE)
+        .exclude(from_device__building_status=Building.BuildingStatus.INACTIVE)
+        .exclude(to_device__building_status=Building.BuildingStatus.INACTIVE)
     )
 
 
