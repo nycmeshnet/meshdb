@@ -19,7 +19,7 @@ class QueryFormSerializer(serializers.ModelSerializer):
             "additional_email_addresses",
             "notes",
             "network_number",
-            "install_status",
+            "status",
         )
 
     street_address = serializers.CharField(source="building.street_address")

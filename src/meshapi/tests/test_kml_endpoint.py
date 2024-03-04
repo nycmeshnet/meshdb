@@ -26,7 +26,7 @@ def create_building_install_pair(member_ref, nn):
         building=building,
         install_number=nn,
         network_number=nn,
-        install_status=Install.InstallStatus.ACTIVE,
+        status=Install.InstallStatus.ACTIVE,
         request_date=datetime.date.today(),
     )
     install.save()

@@ -232,12 +232,12 @@ class TestFindGaps(TestCase):
         # Inactive install, reserves the install number as an NN even though
         # no NN is technically assigned
         inst["install_number"] = 130
-        inst["install_status"] = Install.InstallStatus.INACTIVE
+        inst["status"] = Install.InstallStatus.INACTIVE
         self.add_data(build, memb, inst, index=130, nn=False)
 
         # Old join request, doesn't reserve the NN
         inst["install_number"] = 131
-        inst["install_status"] = Install.InstallStatus.REQUEST_RECEIVED
+        inst["status"] = Install.InstallStatus.REQUEST_RECEIVED
         self.add_data(build, memb, inst, index=131, nn=False)
 
         # Then create another couple installs

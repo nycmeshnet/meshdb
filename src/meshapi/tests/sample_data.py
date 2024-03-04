@@ -23,7 +23,7 @@ sample_building = {
 
 sample_install = {
     "network_number": 2000,
-    "install_status": Install.InstallStatus.ACTIVE,
+    "status": Install.InstallStatus.ACTIVE,
     "ticket_id": 69,
     "request_date": "2022-02-27",
     "install_date": "2022-03-01",

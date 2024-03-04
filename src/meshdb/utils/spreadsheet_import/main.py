@@ -84,7 +84,7 @@ def main():
 
             building_status_for_current_row = (
                 models.Building.BuildingStatus.ACTIVE
-                if install.install_status == models.Install.InstallStatus.ACTIVE
+                if install.status == models.Install.InstallStatus.ACTIVE
                 else models.Building.BuildingStatus.INACTIVE
             )
 

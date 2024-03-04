@@ -135,7 +135,7 @@ def join_form(request):
 
     join_form_install = Install(
         network_number=None,
-        install_status=Install.InstallStatus.REQUEST_RECEIVED,
+        status=Install.InstallStatus.REQUEST_RECEIVED,
         ticket_id=None,
         request_date=date.today(),
         install_date=None,
@@ -207,7 +207,7 @@ def get_next_available_network_number() -> int:
     """
 
     defined_nns = set(
-        Install.objects.exclude(install_status=Install.InstallStatus.REQUEST_RECEIVED, network_number__isnull=True)
+        Install.objects.exclude(status=Install.InstallStatus.REQUEST_RECEIVED, network_number__isnull=True)
         .order_by("install_number")
         .values_list("install_number", flat=True)
     ).union(set(Install.objects.values_list("network_number", flat=True)))
@@ -237,7 +237,7 @@ def get_next_available_network_number() -> int:
         # definitely unused. The logic above should do that, but this is so important that for
         # safety that we should double-check
         if (
-            nn_donor_install.install_status != Install.InstallStatus.REQUEST_RECEIVED
+            nn_donor_install.status != Install.InstallStatus.REQUEST_RECEIVED
             or nn_donor_install.network_number is not None
         ):
             raise ValueError(
@@ -245,7 +245,7 @@ def get_next_available_network_number() -> int:
                 f"looks active (#{nn_donor_install.install_number})"
             )
 
-        nn_donor_install.install_status = Install.InstallStatus.NN_REASSIGNED
+        nn_donor_install.status = Install.InstallStatus.NN_REASSIGNED
         nn_donor_install.save()
 
     return free_nn
@@ -315,7 +315,7 @@ def network_number_assignment(request):
         nn_install.network_number = free_nn
         nn_building.primary_nn = free_nn
 
-    nn_install.install_status = Install.InstallStatus.ACTIVE
+    nn_install.status = Install.InstallStatus.ACTIVE
 
     try:
         nn_building.save()

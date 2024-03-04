@@ -56,7 +56,7 @@ class TestViewsGetUnauthenticated(TestCase):
         installs.append(
             Install(
                 install_number=2,
-                install_status=Install.InstallStatus.INACTIVE,
+                status=Install.InstallStatus.INACTIVE,
                 request_date=datetime.date(2015, 3, 15),
                 install_date=datetime.date(2021, 7, 25),
                 roof_access=False,
@@ -81,7 +81,7 @@ class TestViewsGetUnauthenticated(TestCase):
             Install(
                 install_number=3,
                 network_number=3,
-                install_status=Install.InstallStatus.ACTIVE,
+                status=Install.InstallStatus.ACTIVE,
                 request_date=datetime.date(2015, 3, 15),
                 install_date=datetime.date(2014, 10, 14),
                 roof_access=False,
@@ -103,7 +103,7 @@ class TestViewsGetUnauthenticated(TestCase):
         installs.append(
             Install(
                 install_number=190,
-                install_status=Install.InstallStatus.REQUEST_RECEIVED,
+                status=Install.InstallStatus.REQUEST_RECEIVED,
                 request_date=datetime.date(2015, 9, 30),
                 roof_access=False,
                 building=buildings[-1],
@@ -123,7 +123,7 @@ class TestViewsGetUnauthenticated(TestCase):
         installs.append(
             Install(
                 install_number=14956,
-                install_status=Install.InstallStatus.PENDING,
+                status=Install.InstallStatus.PENDING,
                 request_date=datetime.date(2024, 1, 27),
                 roof_access=True,
                 building=buildings[-1],
@@ -143,7 +143,7 @@ class TestViewsGetUnauthenticated(TestCase):
         installs.append(
             Install(
                 install_number=245,
-                install_status=Install.InstallStatus.NN_REASSIGNED,
+                status=Install.InstallStatus.NN_REASSIGNED,
                 request_date=datetime.date(2024, 1, 27),
                 roof_access=True,
                 building=buildings[-1],
@@ -165,7 +165,7 @@ class TestViewsGetUnauthenticated(TestCase):
             Install(
                 install_number=15657,
                 network_number=567,
-                install_status=Install.InstallStatus.ACTIVE,
+                status=Install.InstallStatus.ACTIVE,
                 request_date=datetime.date(2024, 1, 27),
                 roof_access=True,
                 building=buildings[-1],
@@ -176,7 +176,7 @@ class TestViewsGetUnauthenticated(TestCase):
         installs.append(
             Install(
                 install_number=2134,
-                install_status=Install.InstallStatus.CLOSED,
+                status=Install.InstallStatus.CLOSED,
                 request_date=datetime.date(2024, 1, 27),
                 roof_access=True,
                 building=buildings[-1],
@@ -328,7 +328,7 @@ class TestViewsGetUnauthenticated(TestCase):
 
         install = Install(
             install_number=1126,
-            install_status=Install.InstallStatus.ACTIVE,
+            status=Install.InstallStatus.ACTIVE,
             request_date=datetime.date(2015, 9, 30),
             roof_access=False,
             building=buildings[-1],
@@ -556,21 +556,21 @@ class TestViewsGetUnauthenticated(TestCase):
 
         Install(
             install_number=5,
-            install_status=Install.InstallStatus.INACTIVE,
+            status=Install.InstallStatus.INACTIVE,
             request_date=datetime.date(2015, 3, 15),
             building=building_1,
             member=member,
         ).save()
         Install(
             install_number=6,
-            install_status=Install.InstallStatus.CLOSED,
+            status=Install.InstallStatus.CLOSED,
             request_date=datetime.date(2015, 3, 15),
             building=building_1,
             member=member,
         ).save()
         Install(
             install_number=7,
-            install_status=Install.InstallStatus.ACTIVE,
+            status=Install.InstallStatus.ACTIVE,
             request_date=datetime.date(2015, 3, 15),
             building=building_1,
             member=member,
@@ -587,14 +587,14 @@ class TestViewsGetUnauthenticated(TestCase):
         building_2.save()
         Install(
             install_number=90,
-            install_status=Install.InstallStatus.CLOSED,
+            status=Install.InstallStatus.CLOSED,
             request_date=datetime.date(2015, 3, 15),
             building=building_2,
             member=member,
         ).save()
         Install(
             install_number=91,
-            install_status=Install.InstallStatus.NN_REASSIGNED,
+            status=Install.InstallStatus.NN_REASSIGNED,
             request_date=datetime.date(2015, 3, 15),
             building=building_2,
             member=member,
@@ -611,14 +611,14 @@ class TestViewsGetUnauthenticated(TestCase):
         building_3.save()
         Install(
             install_number=104,
-            install_status=Install.InstallStatus.PENDING,
+            status=Install.InstallStatus.PENDING,
             request_date=datetime.date(2015, 3, 15),
             building=building_3,
             member=member,
         ).save()
         Install(
             install_number=105,
-            install_status=Install.InstallStatus.REQUEST_RECEIVED,
+            status=Install.InstallStatus.REQUEST_RECEIVED,
             request_date=datetime.date(2015, 3, 15),
             building=building_3,
             member=member,

@@ -79,7 +79,7 @@ def map_kml(request):
         nodes_folder.append(folder_map[city_name])
 
     for install in Install.objects.filter(
-        ~Q(install_status=Install.InstallStatus.CLOSED)
+        ~Q(status=Install.InstallStatus.CLOSED)
         & Q(building__longitude__isnull=False)
         & Q(building__latitude__isnull=False)
     ):
@@ -87,7 +87,7 @@ def map_kml(request):
         placemark = kml.Placemark(
             name=str(identifier),
             style_url=styles.StyleUrl(
-                url="#red_dot" if install.install_status == Install.InstallStatus.ACTIVE else "#grey_dot"
+                url="#red_dot" if install.status == Install.InstallStatus.ACTIVE else "#grey_dot"
             ),
             kml_geometry=geometry.Point(
                 geometry=Point(
@@ -102,11 +102,11 @@ def map_kml(request):
         extended_data = {
             "name": str(identifier),
             "roofAccess": str(install.roof_access),
-            "marker-color": ACTIVE_COLOR if install.install_status == Install.InstallStatus.ACTIVE else INACTIVE_COLOR,
+            "marker-color": ACTIVE_COLOR if install.status == Install.InstallStatus.ACTIVE else INACTIVE_COLOR,
             "id": str(identifier),
             "install_number": str(install.install_number),
             "network_number": str(install.network_number),
-            "status": install.install_status,
+            "status": install.status,
             # Leave disabled, notes can leak a lot of information & this endpoint is public
             # "notes": install.notes,
         }

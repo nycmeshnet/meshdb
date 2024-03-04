@@ -12,7 +12,7 @@ admin.site.index_title = "Welcome to MeshDB Admin Portal"
 class InstallInline(admin.TabularInline):
     model = Install
     extra = 0
-    fields = ["install_status", "network_number", "member", "unit"]
+    fields = ["status", "network_number", "member", "unit"]
     readonly_fields = fields
     can_delete = False
     template = "admin/install_tabular.html"
@@ -238,12 +238,12 @@ class InstallAdmin(admin.ModelAdmin):
     form = InstallAdminForm
     list_filter = [
         ("network_number", admin.EmptyFieldListFilter),
-        "install_status",
+        "status",
         "request_date",
         "install_date",
         "abandon_date",
     ]
-    list_display = ["__str__", "install_status", "network_number", "member", "building", "unit"]
+    list_display = ["__str__", "status", "network_number", "member", "building", "unit"]
     search_fields = [
         # Install number
         "install_number__iexact",
@@ -267,7 +267,7 @@ class InstallAdmin(admin.ModelAdmin):
             {
                 "fields": [
                     "member",
-                    "install_status",
+                    "status",
                     "ticket_id",
                     "network_number",
                 ]

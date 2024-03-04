@@ -5,11 +5,11 @@ from rest_framework import serializers
 
 from meshapi.models import Install, Link, Sector
 
-EXCLUDED_INSTALL_STATUSES = {
+EXCLUDED_statusES = {
     Install.InstallStatus.CLOSED,
     Install.InstallStatus.NN_REASSIGNED,
 }
-ALLOWED_INSTALL_STATUSES = set(Install.InstallStatus.values) - EXCLUDED_INSTALL_STATUSES
+ALLOWED_statusES = set(Install.InstallStatus.values) - EXCLUDED_statusES
 
 
 class JavascriptDateField(serializers.IntegerField):
@@ -33,8 +33,8 @@ class JavascriptDateField(serializers.IntegerField):
 
 
 def get_install_number_from_device(building):
-    installs = building.installs.exclude(install_status__in=EXCLUDED_INSTALL_STATUSES).order_by("install_number")
-    active_installs = [install for install in installs if install.install_status == Install.InstallStatus.ACTIVE]
+    installs = building.installs.exclude(status__in=EXCLUDED_statusES).order_by("install_number")
+    active_installs = [install for install in installs if install.status == Install.InstallStatus.ACTIVE]
     if len(active_installs):
         return active_installs[0].install_number
 
@@ -86,22 +86,22 @@ class MapDataInstallSerializer(serializers.ModelSerializer):
         return None
 
     def convert_status_to_spreadsheet_status(self, install):
-        if install.install_status == Install.InstallStatus.REQUEST_RECEIVED:
+        if install.status == Install.InstallStatus.REQUEST_RECEIVED:
             return None
-        elif install.install_status == Install.InstallStatus.PENDING:
+        elif install.status == Install.InstallStatus.PENDING:
             return "Interested"
-        elif install.install_status == Install.InstallStatus.BLOCKED:
+        elif install.status == Install.InstallStatus.BLOCKED:
             return "No Los"
-        elif install.install_status == Install.InstallStatus.ACTIVE:
+        elif install.status == Install.InstallStatus.ACTIVE:
             return "Installed"
-        elif install.install_status == Install.InstallStatus.INACTIVE:
+        elif install.status == Install.InstallStatus.INACTIVE:
             return "Powered Off"
-        elif install.install_status == Install.InstallStatus.CLOSED:
+        elif install.status == Install.InstallStatus.CLOSED:
             return "Abandoned"
-        elif install.install_status == Install.InstallStatus.NN_REASSIGNED:
+        elif install.status == Install.InstallStatus.NN_REASSIGNED:
             return "NN Assigned"
 
-        return install.install_status
+        return install.status
 
     def to_representation(self, install):
         result = super().to_representation(install)

@@ -1,10 +1,10 @@
 from django.db.models import Q
 from rest_framework import generics, permissions
 
-from meshapi.models import Building, Install, Link, Sector
+from meshapi.models import Building, Device, Install, Link, Sector
 from meshapi.serializers import (
-    ALLOWED_INSTALL_STATUSES,
-    EXCLUDED_INSTALL_STATUSES,
+    ALLOWED_statusES,
+    EXCLUDED_statusES,
     MapDataInstallSerializer,
     MapDataLinkSerializer,
     MapDataSectorSerializer,
@@ -19,7 +19,7 @@ class MapDataInstallList(generics.ListAPIView):
     def get_queryset(self):
         all_installs = []
 
-        queryset = Install.objects.filter(~Q(install_status__in=EXCLUDED_INSTALL_STATUSES))
+        queryset = Install.objects.filter(~Q(status__in=EXCLUDED_statusES))
 
         for install in queryset:
             all_installs.append(install)
@@ -35,14 +35,14 @@ class MapDataInstallList(generics.ListAPIView):
                 primary_nn__isnull=False,
                 building_status=Building.BuildingStatus.ACTIVE,
             )
-            & Q(installs__install_status__in=ALLOWED_INSTALL_STATUSES)
+            & Q(installs__status__in=ALLOWED_statusES)
         ):
             if building.primary_nn not in covered_nns:
                 representative_install = building.installs.all()[0]
                 all_installs.append(
                     Install(
                         install_number=building.primary_nn,
-                        install_status=Install.InstallStatus.NN_REASSIGNED,
+                        status=Install.InstallStatus.NN_REASSIGNED,
                         building=building,
                         request_date=representative_install.request_date,
                         roof_access=representative_install.roof_access,
@@ -58,10 +58,11 @@ class MapDataLinkList(generics.ListAPIView):
     permission_classes = [permissions.AllowAny]
     serializer_class = MapDataLinkSerializer
     pagination_class = None
+    # XXX (willnilges): Is DeviceStatus.ABANDONED analogous to BuildingStatus.INACTIVE?
     queryset = (
         Link.objects.exclude(status__in=[Link.LinkStatus.DEAD])
-        .exclude(from_device__building_status=Building.BuildingStatus.INACTIVE)
-        .exclude(to_device__building_status=Building.BuildingStatus.INACTIVE)
+        .exclude(from_device__status=Device.DeviceStatus.ABANDONED)
+        .exclude(to_device__status=Device.DeviceStatus.ABANDONED)
     )
 
 
@@ -69,4 +70,4 @@ class MapDataSectorList(generics.ListAPIView):
     permission_classes = [permissions.AllowAny]
     serializer_class = MapDataSectorSerializer
     pagination_class = None
-    queryset = Sector.objects.filter(~Q(status__in=[Sector.SectorStatus.ABANDONED]))
+    queryset = Sector.objects.filter(~Q(status__in=[Sector.DeviceStatus.ABANDONED]))
