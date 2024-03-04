@@ -106,7 +106,8 @@ class BuildingAdminForm(forms.ModelForm):
             "state": forms.TextInput(),
             "zip_code": forms.NumberInput(),
             "node_name": forms.TextInput(),
-            "panoramas": PanoramaViewer(),
+            "panoramas": PanoramaViewer(schema = {'type': 'array', 'items': {'type': 'string'}}),
+            #"panoramas": JSONFormWidget(schema = {'type': 'array', 'items': {'type': 'string'},}),
         }
 
 
