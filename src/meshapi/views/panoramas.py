@@ -6,6 +6,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.views import status
 from meshapi.models import Building, Install
+from meshapi.permissions import HasPanoramaUpdatePermission
 
 from meshapi.util.django_pglocks import advisory_lock
 
@@ -19,8 +20,8 @@ class BadPanoramaTitle(Exception):
 # We want a cache to be able to diff which panos we've already ingested. Maybe
 # we could store it in postgres :P
 @api_view(["GET"])
-@permission_classes([permissions.AllowAny])
-# @advisory_lock() # TODO: Wanna lock the table when we update the panoramas?
+@permission_classes([HasPanoramaUpdatePermission])
+@advisory_lock("update_panoramas_lock") 
 def update_panoramas_from_github(request):
     # Check that we have all the environment variables we need
     owner = os.environ.get("PANO_REPO_OWNER")
