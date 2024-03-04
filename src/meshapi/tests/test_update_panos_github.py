@@ -7,7 +7,7 @@ from meshapi.views import panoramas
 from .sample_data import sample_building, sample_install, sample_member
 
 
-class TestFullPanoPipeline(TestCase):
+class TestPanoPipeline(TestCase):
     c = Client()
 
     def setUp(self):
@@ -42,6 +42,36 @@ class TestFullPanoPipeline(TestCase):
             f"https://node-db.netlify.app/panoramas/{n}a.jpg",
         ]
         self.assertEqual(saved_panoramas, building.panoramas)
+
+
+class TestPanoAuthentication(TestCase):
+    c = Client()
+    admin_c = Client()
+
+    def setUp(self):
+        self.admin_user = User.objects.create_superuser(
+            username="admin", password="admin_password", email="admin@example.com"
+        )
+        self.admin_c.login(username="admin", password="admin_password")
+
+    def test_update_panoramas_unauthenticated(self):
+        response = self.c.get("/api/v1/update-panoramas/")
+        code = 403
+        self.assertEqual(
+            code,
+            response.status_code,
+            f"status code incorrect. Should be {code}, but got {response.status_code}",
+        )
+
+    # This tests the endpoint, but not the actual full pipeline.
+    def test_update_panoramas_authenticated(self):
+        response = self.admin_c.get("/api/v1/update-panoramas/")
+        code = 200
+        self.assertEqual(
+            code,
+            response.status_code,
+            f"status code incorrect. Should be {code}, but got {response.status_code}",
+        )
 
 
 class TestPanoUtils(TestCase):

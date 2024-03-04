@@ -17,8 +17,6 @@ class BadPanoramaTitle(Exception):
 
 
 # View called to make MeshDB refresh the panoramas.
-# We want a cache to be able to diff which panos we've already ingested. Maybe
-# we could store it in postgres :P
 @api_view(["GET"])
 @permission_classes([HasPanoramaUpdatePermission])
 @advisory_lock("update_panoramas_lock")
