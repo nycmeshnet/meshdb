@@ -1,0 +1,31 @@
+<div>
+<p>
+Here is your stuff
+</p>
+<p>
+ {{ value }}
+</p>
+<p>
+{{ widget.attrs.items }}
+</p>
+
+{% for name, value in widget.attrs.items %}{% if value is not False %} {{ name }}{% if value is not True %}="{{ value|stringformat:'s' }}"{% endif %}{% endif %}{% endfor %}
+
+<table style="width: 100%; margin-bottom: 10px;">
+<thead>
+<tr>
+	<td></td>
+	<td>Title</td>
+	<td>Image</td>
+</tr>
+</thead>
+<tbody>
+{% for item in panoramas %}
+	<tr>
+		<td>{{ item }}</td>
+		<td><img src="{{ item }}" height="50"></td>
+	</tr>
+{% endfor %}
+</tbody>
+</table>
+</div>

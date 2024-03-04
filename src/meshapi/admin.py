@@ -4,6 +4,7 @@ from django.utils.safestring import mark_safe
 from django_jsonform.widgets import JSONFormWidget
 
 from meshapi.models import Building, Install, Link, Member, Sector
+from meshapi.widgets import PanoramaViewer
 
 admin.site.site_header = "MeshDB Admin"
 admin.site.site_title = "MeshDB Admin Portal"
@@ -105,6 +106,7 @@ class BuildingAdminForm(forms.ModelForm):
             "state": forms.TextInput(),
             "zip_code": forms.NumberInput(),
             "node_name": forms.TextInput(),
+            "panoramas": PanoramaViewer(),
         }
 
 

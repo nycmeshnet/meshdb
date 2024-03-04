@@ -1,6 +1,7 @@
 from typing import List
 
 from django.contrib.auth.models import Group, Permission
+from django.contrib.postgres.fields import ArrayField
 from django_jsonform.models.fields import ArrayField as JSONFormArrayField
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
@@ -35,7 +36,7 @@ class Building(models.Model):
     )
     node_name = models.TextField(default=None, blank=True, null=True)
     notes = models.TextField(blank=True, null=True)
-    panoramas = JSONFormArrayField(models.URLField(), null=True, blank=True, default=list)
+    panoramas = ArrayField(models.URLField(), null=True, blank=True, default=list)
 
     def __str__(self):
         if self.node_name:
