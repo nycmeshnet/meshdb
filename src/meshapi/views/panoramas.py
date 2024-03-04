@@ -21,7 +21,7 @@ class BadPanoramaTitle(Exception):
 # we could store it in postgres :P
 @api_view(["GET"])
 @permission_classes([HasPanoramaUpdatePermission])
-@advisory_lock("update_panoramas_lock") 
+@advisory_lock("update_panoramas_lock")
 def update_panoramas_from_github(request):
     # Check that we have all the environment variables we need
     owner = os.environ.get("PANO_REPO_OWNER")
