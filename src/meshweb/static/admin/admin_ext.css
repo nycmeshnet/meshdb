@@ -33,3 +33,14 @@
     margin: auto;
     margin-top: 0px;
 }
+
+#map-wrapper {
+    display: flex;
+    overflow: hidden;
+    height: 85vh;
+}
+#map-wrapper .main {
+    display: flex;
+    flex: 1 0 auto;
+    overflow-y: auto;
+}
