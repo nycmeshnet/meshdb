@@ -12,7 +12,7 @@ admin.site.index_title = "Welcome to MeshDB Admin Portal"
 class InstallInline(admin.TabularInline):
     model = Install
     extra = 0
-    fields = ["status", "network_number", "member", "unit"]
+    fields = ["status", "member", "unit"] # "network_number",
     readonly_fields = fields
     can_delete = False
     template = "admin/install_tabular.html"
@@ -120,7 +120,7 @@ class BuildingAdmin(admin.ModelAdmin):
         "bin__iexact",
         # Search by NN
         "primary_nn__iexact",
-        "installs__network_number__iexact",
+        #"installs__network_number__iexact",
         "installs__install_number__iexact",
         # Search by Member info
         "installs__member__name__icontains",
@@ -211,7 +211,7 @@ class MemberAdmin(admin.ModelAdmin):
         "installs__building__zip_code__iexact",
         "installs__building__bin__iexact",
         # Search by network number
-        "installs__network_number__iexact",
+        #"installs__network_number__iexact",
         "installs__install_number__iexact",
     ]
     inlines = [InstallInline]
@@ -237,17 +237,17 @@ class InstallAdminForm(forms.ModelForm):
 class InstallAdmin(admin.ModelAdmin):
     form = InstallAdminForm
     list_filter = [
-        ("network_number", admin.EmptyFieldListFilter),
+        #("network_number", admin.EmptyFieldListFilter),
         "status",
         "request_date",
         "install_date",
         "abandon_date",
     ]
-    list_display = ["__str__", "status", "network_number", "member", "building", "unit"]
+    list_display = ["__str__", "status", "member", "building", "unit"] #"network_number",
     search_fields = [
         # Install number
         "install_number__iexact",
-        "network_number__iexact",
+        #"network_number__iexact",
         # Search by building details
         "building__street_address__icontains",
         "building__city__iexact",
@@ -269,7 +269,7 @@ class InstallAdmin(admin.ModelAdmin):
                     "member",
                     "status",
                     "ticket_id",
-                    "network_number",
+                    #"network_number",
                 ]
             },
         ),

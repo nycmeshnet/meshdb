@@ -96,7 +96,7 @@ class Install(models.Model):
     )
 
     # Summary status of install
-    status = models.TextField(choices=InstallStatus.choices)
+    status = models.TextField(choices=InstallStatus.choices, default=InstallStatus.REQUEST_RECEIVED) # XXX (willnilges): Should this be null?
 
     # OSTicket ID
     ticket_id = models.IntegerField(blank=True, null=True)
