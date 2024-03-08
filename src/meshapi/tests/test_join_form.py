@@ -401,14 +401,14 @@ class TestJoinFormRaceCondition(TransactionTestCase):
         self.assertEqual(
             code,
             response1.status_code,
-            f"status code incorrect for Valid Join Form. Should be {code}, but got {response1.status_code}.\n Response is: {response1.content.decode('utf-8')}",
+            f"status code incorrect. Should be {code}, but got {response1.status_code}.\n Response is: {response1.content.decode('utf-8')}",
         )
 
         code = 201
         self.assertEqual(
             code,
             response2.status_code,
-            f"status code incorrect for Valid Join Form. Should be {code}, but got {response2.status_code}.\n Response is: {response2.content.decode('utf-8')}",
+            f"status code incorrect. Should be {code}, but got {response2.status_code}.\n Response is: {response2.content.decode('utf-8')}",
         )
 
         # Make sure that duplicate buildings were not created

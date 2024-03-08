@@ -3,8 +3,8 @@ from rest_framework import generics, permissions
 
 from meshapi.models import Building, Device, Install, Link, Sector
 from meshapi.serializers import (
-    ALLOWED_statusES,
-    EXCLUDED_statusES,
+    ALLOWED_STATUSES,
+    EXCLUDED_STATUSES,
     MapDataInstallSerializer,
     MapDataLinkSerializer,
     MapDataSectorSerializer,
@@ -19,7 +19,7 @@ class MapDataInstallList(generics.ListAPIView):
     def get_queryset(self):
         all_installs = []
 
-        queryset = Install.objects.filter(~Q(status__in=EXCLUDED_statusES))
+        queryset = Install.objects.filter(~Q(status__in=EXCLUDED_STATUSES))
 
         for install in queryset:
             all_installs.append(install)
@@ -28,14 +28,14 @@ class MapDataInstallList(generics.ListAPIView):
         # NN assigned rows in the query above, we need to go through the building objects and
         # include the nns we haven't already covered via install num
         covered_nns = {
-            install.network_number for install in all_installs if install.install_number == install.network_number
+            install.via_device.get().network_number for install in all_installs if install.via_device.exists() and install.install_number == install.via_device.get().network_number
         }
         for building in Building.objects.filter(
             Q(
                 primary_nn__isnull=False,
                 building_status=Building.BuildingStatus.ACTIVE,
             )
-            & Q(installs__status__in=ALLOWED_statusES)
+            & Q(installs__status__in=ALLOWED_STATUSES)
         ):
             if building.primary_nn not in covered_nns:
                 representative_install = building.installs.all()[0]

@@ -83,7 +83,7 @@ def map_kml(request):
         & Q(building__longitude__isnull=False)
         & Q(building__latitude__isnull=False)
     ):
-        identifier = install.network_number or install.install_number
+        identifier = install.via_device.get().network_number or install.install_number
         placemark = kml.Placemark(
             name=str(identifier),
             style_url=styles.StyleUrl(
@@ -105,7 +105,7 @@ def map_kml(request):
             "marker-color": ACTIVE_COLOR if install.status == Install.InstallStatus.ACTIVE else INACTIVE_COLOR,
             "id": str(identifier),
             "install_number": str(install.install_number),
-            "network_number": str(install.network_number),
+            "network_number": str(install.via_device.get().network_number),
             "status": install.status,
             # Leave disabled, notes can leak a lot of information & this endpoint is public
             # "notes": install.notes,
@@ -119,7 +119,7 @@ def map_kml(request):
 
     for link in (
         Link.objects.filter(~Q(status=Link.LinkStatus.DEAD))
-        .annotate(highest_altitude=Greatest("from_device__altitude", "to_device__altitude"))
+        .annotate(highest_altitude=Greatest("from_device__powered_by_install__building__altitude", "to_device__powered_by_install__building__altitude"))
         .order_by(F("highest_altitude").asc(nulls_first=True))
     ):
         placemark = kml.Placemark(
@@ -129,14 +129,14 @@ def map_kml(request):
                 geometry=LineString(
                     [
                         (
-                            link.from_device.longitude,
-                            link.from_device.latitude,
-                            link.from_device.altitude or DEFAULT_ALTITUDE,
+                            link.from_device.powered_by_install.building.longitude,
+                            link.from_device.powered_by_install.building.latitude,
+                            link.from_device.powered_by_install.building.altitude or DEFAULT_ALTITUDE,
                         ),
                         (
-                            link.to_device.longitude,
-                            link.to_device.latitude,
-                            link.to_device.altitude or DEFAULT_ALTITUDE,
+                            link.to_device.powered_by_install.building.longitude,
+                            link.to_device.powered_by_install.building.latitude,
+                            link.to_device.powered_by_install.building.altitude or DEFAULT_ALTITUDE,
                         ),
                     ]
                 ),
@@ -145,8 +145,8 @@ def map_kml(request):
             ),
         )
 
-        from_identifier = link.from_device.primary_nn or link.from_device.installs.first().install_number
-        to_identifier = link.to_device.primary_nn or link.to_device.installs.first().install_number
+        from_identifier = link.from_device.network_number or link.from_device.powered_by_install.building.installs.first().install_number
+        to_identifier = link.to_device.network_number or link.to_device.powered_by_install.building.installs.first().install_number
 
         extended_data = {
             "name": f"Links-{link.id}",

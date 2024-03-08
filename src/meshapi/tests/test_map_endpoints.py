@@ -5,7 +5,8 @@ from django.contrib.auth.models import Group, User
 from django.test import Client, TestCase
 from rest_framework.authtoken.models import Token
 
-from meshapi.models import Building, Install, Link, Member, Sector
+from meshapi.models import Building, Device, Install, Link, Member, Sector
+from meshapi.tests.test_kml_endpoint import create_building_install_pair
 
 
 class TestViewsGetUnauthenticated(TestCase):
@@ -39,6 +40,7 @@ class TestViewsGetUnauthenticated(TestCase):
     def test_install_data(self):
         installs = []
         buildings = []
+        devices = []
 
         # Use the same member for everything since it doesn't matter
         member = Member(name="Fake Name")
@@ -73,14 +75,13 @@ class TestViewsGetUnauthenticated(TestCase):
                 latitude=40.724868,
                 longitude=-73.987881,
                 altitude=27,
-                node_name="Brian",
+                site_name="Brian",
                 primary_nn=3,
             )
         )
         installs.append(
             Install(
                 install_number=3,
-                network_number=3,
                 status=Install.InstallStatus.ACTIVE,
                 request_date=datetime.date(2015, 3, 15),
                 install_date=datetime.date(2014, 10, 14),
@@ -90,6 +91,17 @@ class TestViewsGetUnauthenticated(TestCase):
                 notes="Spreadsheet notes:\nHub: LiteBeamLR to SN1 plus kiosk failover",
             )
         )
+        devices.append(
+            Device(
+                name="FakeDevice",
+                device_name="LBE",
+                status=Device.DeviceStatus.ACTIVE,
+                network_number=3,
+                serves_install=installs[-1],
+                powered_by_install=installs[-1],
+            )
+        )
+        #installs[-1].via_device.set(devices[-1])
 
         buildings.append(
             Building(
@@ -164,7 +176,6 @@ class TestViewsGetUnauthenticated(TestCase):
         installs.append(
             Install(
                 install_number=15657,
-                network_number=567,
                 status=Install.InstallStatus.ACTIVE,
                 request_date=datetime.date(2024, 1, 27),
                 roof_access=True,
@@ -172,6 +183,17 @@ class TestViewsGetUnauthenticated(TestCase):
                 member=member,
             )
         )
+        devices.append(
+            Device(
+                name="FakeDevice2",
+                device_name="LBE",
+                status=Device.DeviceStatus.ACTIVE,
+                network_number=567,
+                serves_install=installs[-1],
+                powered_by_install=installs[-1],
+            )
+        )
+        #installs[-1].via_device.set(devices[-1])
 
         installs.append(
             Install(
@@ -189,6 +211,9 @@ class TestViewsGetUnauthenticated(TestCase):
 
         for install in installs:
             install.save()
+
+        for device in devices:
+            device.save()
 
         self.maxDiff = None
         response = self.c.get("/api/v1/mapdata/installs/")
@@ -365,80 +390,47 @@ class TestViewsGetUnauthenticated(TestCase):
     def test_link_data(self):
         links = []
 
-        grand = Building(
-            building_status=Building.BuildingStatus.ACTIVE,
-            address_truth_sources="",
-            latitude=0,
-            longitude=0,
-            altitude=0,
-            primary_nn=1934,
-        )
+        grand, grand_inst, grand_device = create_building_install_pair(None, 1934, Building.BuildingStatus.ACTIVE)
         grand.save()
+        grand_inst.save()
+        grand_device.save()
 
-        sn1 = Building(
-            building_status=Building.BuildingStatus.ACTIVE,
-            address_truth_sources="",
-            latitude=0,
-            longitude=0,
-            altitude=0,
-            primary_nn=227,
-        )
+        sn1, sn1_inst, sn1_device = create_building_install_pair(None, 227, Building.BuildingStatus.ACTIVE)
         sn1.save()
+        sn1_inst.save()
+        sn1_device.save()
 
-        sn10 = Building(
-            building_status=Building.BuildingStatus.ACTIVE,
-            address_truth_sources="",
-            latitude=0,
-            longitude=0,
-            altitude=0,
-            primary_nn=10,
-        )
+        sn10, sn10_inst, sn10_device = create_building_install_pair(None, 10, Building.BuildingStatus.ACTIVE)
         sn10.save()
+        sn10_inst.save()
+        sn10_device.save()
 
-        sn3 = Building(
-            building_status=Building.BuildingStatus.ACTIVE,
-            address_truth_sources="",
-            latitude=0,
-            longitude=0,
-            altitude=0,
-            primary_nn=713,
-        )
+        sn3, sn3_inst, sn3_device = create_building_install_pair(None, 713, Building.BuildingStatus.ACTIVE)
         sn3.save()
+        sn3_inst.save()
+        sn3_device.save()
 
-        brian = Building(
-            building_status=Building.BuildingStatus.ACTIVE,
-            address_truth_sources="",
-            latitude=0,
-            longitude=0,
-            altitude=0,
-            primary_nn=3,
-        )
+
+        brian, brian_inst, brian_device = create_building_install_pair(None, 3, Building.BuildingStatus.ACTIVE)
         brian.save()
+        brian_inst.save()
+        brian_device.save()
 
-        random = Building(
-            building_status=Building.BuildingStatus.ACTIVE,
-            address_truth_sources="",
-            latitude=0,
-            longitude=0,
-            altitude=0,
-            primary_nn=123,
-        )
+        random, random_inst, random_device = create_building_install_pair(None, 123, Building.BuildingStatus.ACTIVE)
         random.save()
+        random_inst.save()
+        random_device.save()
 
-        inactive = Building(
-            building_status=Building.BuildingStatus.INACTIVE,
-            address_truth_sources="",
-            latitude=0,
-            longitude=0,
-            altitude=0,
-            primary_nn=123456,
-        )
+        inactive, inactive_inst, inactive_device = create_building_install_pair(None, 123456, Building.BuildingStatus.INACTIVE)
+        inactive_device.status = Device.DeviceStatus.ABANDONED
         inactive.save()
+        inactive_inst.save()
+        inactive_device.save()
 
         links.append(
             Link(
-                from_device=sn1,
-                to_device=sn3,
+                from_device=sn1_device,
+                to_device=sn3_device,
                 status=Link.LinkStatus.ACTIVE,
                 type=Link.LinkType.VPN,
                 install_date=datetime.date(2022, 1, 26),
@@ -447,8 +439,8 @@ class TestViewsGetUnauthenticated(TestCase):
 
         links.append(
             Link(
-                from_device=sn1,
-                to_device=grand,
+                from_device=sn1_device,
+                to_device=grand_device,
                 status=Link.LinkStatus.ACTIVE,
                 type=Link.LinkType.MMWAVE,
             )
@@ -456,8 +448,8 @@ class TestViewsGetUnauthenticated(TestCase):
 
         links.append(
             Link(
-                from_device=sn1,
-                to_device=brian,
+                from_device=sn1_device,
+                to_device=brian_device,
                 status=Link.LinkStatus.ACTIVE,
                 type=Link.LinkType.STANDARD,
             )
@@ -465,8 +457,8 @@ class TestViewsGetUnauthenticated(TestCase):
 
         links.append(
             Link(
-                from_device=grand,
-                to_device=sn10,
+                from_device=grand_device,
+                to_device=sn10_device,
                 status=Link.LinkStatus.ACTIVE,
                 type=Link.LinkType.FIBER,
             )
@@ -474,8 +466,8 @@ class TestViewsGetUnauthenticated(TestCase):
 
         links.append(
             Link(
-                from_device=grand,
-                to_device=random,
+                from_device=grand_device,
+                to_device=random_device,
                 status=Link.LinkStatus.PLANNED,
                 type=Link.LinkType.STANDARD,
             )
@@ -483,8 +475,8 @@ class TestViewsGetUnauthenticated(TestCase):
 
         links.append(
             Link(
-                from_device=sn1,
-                to_device=random,
+                from_device=sn1_device,
+                to_device=random_device,
                 status=Link.LinkStatus.DEAD,
                 type=Link.LinkType.STANDARD,
             )
@@ -492,8 +484,8 @@ class TestViewsGetUnauthenticated(TestCase):
 
         links.append(
             Link(
-                from_device=sn1,
-                to_device=inactive,
+                from_device=sn1_device,
+                to_device=inactive_device,
                 status=Link.LinkStatus.ACTIVE,
                 type=Link.LinkType.STANDARD,
             )

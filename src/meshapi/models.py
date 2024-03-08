@@ -34,12 +34,12 @@ class Building(models.Model):
             MaxValueValidator(NETWORK_NUMBER_MAX),
         ],
     )
-    node_name = models.TextField(default=None, blank=True, null=True)
+    site_name = models.TextField(default=None, blank=True, null=True)
     notes = models.TextField(blank=True, null=True)
 
     def __str__(self):
-        if self.node_name:
-            return str(self.node_name)
+        if self.site_name:
+            return str(self.site_name)
         if self.street_address:
             return str(self.street_address)
         if self.bin:
@@ -78,7 +78,6 @@ class Member(models.Model):
 
         return all_emails
 
-
 class Install(models.Model):
     class InstallStatus(models.TextChoices):
         REQUEST_RECEIVED = "Request Received"
@@ -111,8 +110,8 @@ class Install(models.Model):
     unit = models.TextField(default=None, blank=True, null=True)
     roof_access = models.BooleanField(default=False)
 
-    # Relation to Member
-    member = models.ForeignKey(Member, on_delete=models.PROTECT, related_name="installs")
+    # Relation to Member (can be null if this is something the mesh owns (like 713))
+    member = models.ForeignKey(Member, on_delete=models.PROTECT, related_name="installs", default=None, blank=True, null=True)
     referral = models.TextField(default=None, blank=True, null=True)
     notes = models.TextField(default=None, blank=True, null=True)
     diy = models.BooleanField(default=None, blank=True, null=True, verbose_name="Is DIY?")
@@ -135,7 +134,6 @@ class Device(models.Model):
     device_name = models.TextField()
 
     status = models.TextField(choices=DeviceStatus.choices)
-    powered_by_install = models.ForeignKey(Install, on_delete=models.PROTECT, related_name="powers")
 
     # The NN this device is associated with.
     # Through this, a building can have multiple NNs
@@ -148,7 +146,37 @@ class Device(models.Model):
     install_date = models.DateField(default=None, blank=True, null=True)
     abandon_date = models.DateField(default=None, blank=True, null=True)
 
+    # Relation to Install 
+    serves_install = models.ForeignKey(Install, on_delete=models.PROTECT, related_name="via_device", default=None, blank=True, null=True)
+    powered_by_install = models.ForeignKey(Install, on_delete=models.PROTECT, related_name="powers_device", default=None, blank=True, null=True)
+
     notes = models.TextField(default=None, blank=True, null=True)
+
+
+class Sector(Device):
+    radius = models.FloatField(
+        validators=[MinValueValidator(0)],
+    )
+    azimuth = models.IntegerField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(360),
+        ],
+    )
+    width = models.IntegerField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(360),
+        ],
+    )
+
+    # XXX (willnilges): Move SSID to device?
+    ssid = models.TextField(default=None, blank=True, null=True)
+
+    def __str__(self):
+        if self.ssid:
+            return self.ssid
+        return f"MeshDB Sector ID {self.id}"
 
 
 class Link(models.Model):
@@ -179,29 +207,3 @@ class Link(models.Model):
         if self.from_device.network_number and self.to_device.network_number:
             return f"NN{self.from_device.network_number} → NN{self.to_device.network_number}"
         return f"MeshDB Link ID {self.id}"
-
-
-class Sector(Device):
-    radius = models.FloatField(
-        validators=[MinValueValidator(0)],
-    )
-    azimuth = models.IntegerField(
-        validators=[
-            MinValueValidator(0),
-            MaxValueValidator(360),
-        ],
-    )
-    width = models.IntegerField(
-        validators=[
-            MinValueValidator(0),
-            MaxValueValidator(360),
-        ],
-    )
-
-    # XXX (willnilges): Move SSID to device?
-    ssid = models.TextField(default=None, blank=True, null=True)
-
-    def __str__(self):
-        if self.ssid:
-            return self.ssid
-        return f"MeshDB Sector ID {self.id}"

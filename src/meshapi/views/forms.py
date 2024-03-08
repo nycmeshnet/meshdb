@@ -134,7 +134,6 @@ def join_form(request):
     )
 
     join_form_install = Install(
-        network_number=None,
         status=Install.InstallStatus.REQUEST_RECEIVED,
         ticket_id=None,
         request_date=date.today(),

@@ -3,7 +3,9 @@ import json
 from django.contrib.auth.models import User
 from django.test import Client, TestCase
 
-from ..models import Building, Sector
+from ..models import Building, Install, Member, Sector
+
+from meshapi.tests.sample_data import sample_building, sample_install, sample_member
 
 
 class TestSector(TestCase):
@@ -15,16 +17,17 @@ class TestSector(TestCase):
         )
         self.c.login(username="admin", password="admin_password")
 
-        self.building_1 = Building(
-            id=1,
-            building_status=Building.BuildingStatus.ACTIVE,
-            address_truth_sources="",
-            latitude=0,
-            longitude=0,
-            altitude=0,
-            invalid=True,
-        )
+        self.member_1 = Member(**sample_member)
+        self.member_1.save()
+
+        self.building_1 = Building(**sample_building)
         self.building_1.save()
+
+        install = sample_install.copy()
+        install["member"] = self.member_1
+        install["building"] = self.building_1
+        self.install_1 = Install(**install)
+        self.install_1.save()
 
     def test_new_sector(self):
         response = self.c.post(
@@ -32,7 +35,7 @@ class TestSector(TestCase):
             {
                 "name": "Vernon",
                 "device_name": "LAP-120",
-                "building": self.building_1.id,
+                "powered_by_install": self.install_1.install_number,
                 "status": "Active",
                 "azimuth": 0,
                 "width": 120,
@@ -52,7 +55,7 @@ class TestSector(TestCase):
             {
                 "name": "Vernon",
                 "device_name": "",
-                "building": "",
+                "powered_by_install": "",
                 "status": "",
                 "azimuth": 0,
                 "width": 120,
@@ -71,7 +74,7 @@ class TestSector(TestCase):
             id=1,
             name="Vernon",
             device_name="LAP-120",
-            building=self.building_1,
+            powered_by_install=self.install_1,
             status="Active",
             azimuth=0,
             width=120,
@@ -90,4 +93,4 @@ class TestSector(TestCase):
 
         response_obj = json.loads(response.content)
         self.assertEqual(response_obj["status"], "Active")
-        self.assertEqual(response_obj["building"], 1)
+        self.assertEqual(response_obj["powered_by_install"], 1)

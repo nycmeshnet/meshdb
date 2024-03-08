@@ -3,13 +3,13 @@ from collections import OrderedDict
 
 from rest_framework import serializers
 
-from meshapi.models import Install, Link, Sector
+from meshapi.models import Device, Install, Link, Sector
 
-EXCLUDED_statusES = {
+EXCLUDED_STATUSES = {
     Install.InstallStatus.CLOSED,
     Install.InstallStatus.NN_REASSIGNED,
 }
-ALLOWED_statusES = set(Install.InstallStatus.values) - EXCLUDED_statusES
+ALLOWED_STATUSES = set(Install.InstallStatus.values) - EXCLUDED_STATUSES
 
 
 class JavascriptDateField(serializers.IntegerField):
@@ -32,22 +32,22 @@ class JavascriptDateField(serializers.IntegerField):
         )
 
 
-def get_install_number_from_device(building):
-    installs = building.installs.exclude(status__in=EXCLUDED_statusES).order_by("install_number")
-    active_installs = [install for install in installs if install.status == Install.InstallStatus.ACTIVE]
-    if len(active_installs):
-        return active_installs[0].install_number
-
-    if len(installs) == 0:
-        if building.primary_nn:
-            return building.primary_nn
-        else:
-            raise ValueError(
-                f"Building {building} with ID {building.id} is invalid for install "
-                f"number conversion, no attached installs with or NN assigned to building"
-            )
-    else:
-        return installs.first().install_number
+#def get_install_number_from_device(device: Device):
+#    installs = device.powered_by_install.exclude(status__in=EXCLUDED_STATUSES).order_by("install_number")
+#    active_installs = [install for install in installs if install.status == Install.InstallStatus.ACTIVE]
+#    if len(active_installs):
+#        return active_installs[0].install_number
+#
+#    if len(installs) == 0:
+#        if device.network_number:
+#            return device.network_number
+#        else:
+#            raise ValueError(
+#                f"Building {device} with ID {device.id} is invalid for install "
+#                f"number conversion, no attached installs with or NN assigned to building"
+#            )
+#    else:
+#        return installs.first().install_number
 
 
 class MapDataInstallSerializer(serializers.ModelSerializer):
@@ -66,7 +66,7 @@ class MapDataInstallSerializer(serializers.ModelSerializer):
         )
 
     id = serializers.IntegerField(source="install_number")
-    name = serializers.CharField(source="building.node_name")
+    name = serializers.CharField(source="building.site_name")
     status = serializers.SerializerMethodField("convert_status_to_spreadsheet_status")
     coordinates = serializers.SerializerMethodField("get_building_coordinates")
     requestDate = JavascriptDateField(source="request_date")
@@ -143,10 +143,10 @@ class MapDataLinkSerializer(serializers.ModelSerializer):
         return "active"
 
     def get_to_install_number(self, link):
-        return get_install_number_from_device(link.to_device)
+        return link.to_device.powered_by_install.install_number
 
     def get_from_install_number(self, link):
-        return get_install_number_from_device(link.from_device)
+        return link.from_device.powered_by_install.install_number
 
     def get_fields(self):
         result = super().get_fields()
@@ -188,8 +188,8 @@ class MapDataSectorSerializer(serializers.ModelSerializer):
     device = serializers.CharField(source="device_name")
     installDate = JavascriptDateField(source="install_date")
 
-    def get_node_id(self, sector):
-        return get_install_number_from_device(sector.building)
+    def get_node_id(self, sector: Sector):
+        return sector.powered_by_install.install_number
 
     def convert_status_to_spreadsheet_status(self, sector):
         return str(sector.status).lower()

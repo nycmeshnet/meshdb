@@ -1,4 +1,4 @@
-from meshapi.models import Install
+from meshapi.models import Building, Device, Install, Link, Member
 
 sample_member = {
     "name": "John Smith",
@@ -22,7 +22,6 @@ sample_building = {
 }
 
 sample_install = {
-    "network_number": 2000,
     "status": Install.InstallStatus.ACTIVE,
     "ticket_id": 69,
     "request_date": "2022-02-27",
@@ -34,3 +33,72 @@ sample_install = {
     "member": 1,
     "notes": "Referral: Read about it on the internet",
 }
+
+sample_device = {
+    "status": Device.DeviceStatus.ACTIVE,
+    "name": "sample-device",
+    "device_name": "Omni",
+    "serves_install": 1,
+    "powered_by_install": 1,
+    "network_number": 2000,
+}
+
+sample_sector = {
+    "status": Device.DeviceStatus.ACTIVE,
+    "name": "sample-sector",
+    "device_name": "LAP-120",
+    "network_number": None,
+    "powered_by_install": 1,
+    "radius": 2.0,
+    "azimuth": 180.0,
+    "width": 90.0,
+    "ssid": "sample-sector-ssid",
+}
+
+
+# Utility class to lessen the toil of setting up tests
+def add_sample_data():
+    sample_install_copy = sample_install.copy()
+    building_1 = Building(**sample_building)
+    building_1.save()
+    sample_install_copy["building"] = building_1
+
+    building_2 = Building(**sample_building)
+    building_2.street_address = "69" + str(building_2.street_address)
+    building_2.save()
+
+    member = Member(**sample_member)
+    member.save()
+    sample_install_copy["member"] = member
+
+    install_1 = Install(**sample_install_copy)
+    install_1.save()
+
+    install_2 = Install(**sample_install_copy)
+    install_2.building = building_2
+    install_2.save()
+
+    device_1 = Device(
+        id=1,
+        name="Vernon",
+        device_name="LBE",
+        status="Active",
+    )
+    device_1.save()
+
+    device_2 = Device(
+        id=2,
+        name="Not Vernon",
+        device_name="LBE",
+        status="Active",
+    )
+    device_2.save()
+
+    link = Link(
+        from_device=device_1,
+        to_device=device_2,
+        status=Link.LinkStatus.ACTIVE,
+    )
+    link.save()
+
+    return member, building_1, building_2, install_1, install_2, device_1, device_2, link

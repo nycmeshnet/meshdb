@@ -151,28 +151,28 @@ def diff_new_building_against_existing(
             )
             diff_notes += f"\nDropped NN change from install #{row_id}: {new_building.primary_nn}"
 
-    if existing_building.node_name != new_building.node_name and new_building.node_name:
-        if not existing_building.node_name:
+    if existing_building.site_name != new_building.site_name and new_building.site_name:
+        if not existing_building.site_name:
             # If we didn't have a node name for this building before, but now we do, use the new
             # one instead. This is probably a later registration in the same building, where
             # the original never got installed
-            existing_building.node_name = new_building.node_name
+            existing_building.site_name = new_building.site_name
         else:
             add_dropped_edit(
                 DroppedModification(
                     list(install.install_number for install in existing_building.installs.all()),
                     row_id,
                     str(existing_building.bin) if existing_building.bin else existing_building.street_address,
-                    "building.node_name",
-                    existing_building.node_name if existing_building.node_name else "",
-                    new_building.node_name,
+                    "building.site_name",
+                    existing_building.site_name if existing_building.site_name else "",
+                    new_building.site_name,
                 )
             )
             logging.debug(
                 f"Dropping changed node name from install # {row_id} "
-                f"{repr(existing_building.node_name)} -> {repr(new_building.node_name)}"
+                f"{repr(existing_building.site_name)} -> {repr(new_building.site_name)}"
             )
-            diff_notes += f"\nDropped node name change from install #{row_id}: {new_building.node_name}"
+            diff_notes += f"\nDropped node name change from install #{row_id}: {new_building.site_name}"
 
     return diff_notes
 
@@ -247,7 +247,7 @@ def get_or_create_building(
                 state=address_result.address.state,
                 zip_code=address_result.address.zip_code,
                 primary_nn=row.nn if row.nn else None,
-                node_name=row.nodeName if row.nodeName else None,
+                site_name=row.nodeName if row.nodeName else None,
             ),
             add_dropped_edit,
         )
@@ -285,7 +285,7 @@ def get_or_create_building(
         ),
         address_truth_sources=addr_truth_sources,
         primary_nn=row.nn if row.nn else None,
-        node_name=row.nodeName if row.nodeName else None,
+        site_name=row.nodeName if row.nodeName else None,
         # Let's not throw away the spreadsheet location information, just case it's useful in
         # chasing down a mis-parsed address in the future
         notes=f"Spreadsheet Address: {row.address}\n"

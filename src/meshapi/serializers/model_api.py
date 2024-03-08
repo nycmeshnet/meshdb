@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from meshapi.models import Building, Install, Link, Member, Sector
+from meshapi.models import Building, Device, Install, Link, Member, Sector
 
 
 class BuildingSerializer(serializers.ModelSerializer):
@@ -28,6 +28,12 @@ class MemberSerializer(serializers.ModelSerializer):
 class InstallSerializer(serializers.ModelSerializer):
     class Meta:
         model = Install
+        fields = "__all__"
+
+
+class DeviceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Device
         fields = "__all__"
 
 

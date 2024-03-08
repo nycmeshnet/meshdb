@@ -92,7 +92,7 @@ class TestViewsPostDeleteInstaller(TestCase):
         assert member.name == "Chom2"
 
         sample_building_changed = sample_member.copy()
-        sample_building_changed["node_name"] = "Chom2"
+        sample_building_changed["site_name"] = "Chom2"
         response = self.c.post("/api/v1/buildings/", sample_building_changed)
         assert_correct_response(self, response, 403)
         response = self.c.put(
