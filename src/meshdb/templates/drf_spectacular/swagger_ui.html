@@ -1,0 +1,40 @@
+{% extends "drf_spectacular/swagger_ui.html" %}
+
+{% block head %}
+    {{ block.super }}
+    <script>
+    const LogoutViaDjango = () => ({
+      statePlugins: {
+        auth: {
+          wrapActions: {
+            logout: (internalLogoutAction) => (keys) => {
+                if (keys.indexOf("Session ID") !== -1){
+                    // The logoutURL variable gets magically inserted via the template settings object in docs.py
+                    window.location.replace(logoutURL + "?next=" + window.location)
+                }
+              return internalLogoutAction(keys)
+            }
+          }
+        }
+      }
+    })
+
+
+  const ui_onComplete = function () {
+      // FIXME: this is an attempt at a workaround to fix the swagger-ui's completely backwards
+      // convention that a closed padlock represents an unlocked endpoint.
+      // Much anger expressed here:  https://github.com/swagger-api/swagger-ui/issues/4402
+      // in the future we should try to get this working
+      {#console.log(JSON.stringify(versions));#}
+      {#var lockedIcon = document.querySelector(".svg-assets defs symbol#locked");#}
+      {#var unlockedIcon = document.querySelector(".svg-assets defs symbol#unlocked");#}
+      {#lockedIcon.id = "unlocked";#}
+      {#unlockedIcon.id = "locked";#}
+
+      // Borrowed from here
+      // https://github.com/tfranzel/drf-spectacular/issues/1099#issuecomment-1920345459
+      // The sessionID variable gets magically inserted via the template settings object in docs.py
+      ui.preauthorizeApiKey("Session ID", sessionID);
+  };
+</script>
+{% endblock head %}

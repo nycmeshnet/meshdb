@@ -1,9 +1,11 @@
 from typing import Any, Dict, Optional
 
+from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import generics
 from rest_framework.views import models
 
 from meshapi import permissions
+from meshapi.docs import map_query_filters_to_param_annotations, query_form_password_param
 from meshapi.models import Building, Install, Member
 from meshapi.serializers.query_api import QueryFormSerializer
 
@@ -50,6 +52,15 @@ BUILDING_FILTERS = {
 }
 
 
+@extend_schema_view(
+    get=extend_schema(
+        tags=["Legacy Query Form"],
+        parameters=[query_form_password_param] + map_query_filters_to_param_annotations(BUILDING_FILTERS),
+        summary="Query & filter based on Building attributes. "
+        "Results are returned as flattened spreadsheet row style output",
+        auth=[],
+    ),
+)
 class QueryBuilding(generics.ListAPIView):
     serializer_class = QueryFormSerializer
     pagination_class = None
@@ -74,6 +85,15 @@ MEMBER_FILTERS = {
 }
 
 
+@extend_schema_view(
+    get=extend_schema(
+        tags=["Legacy Query Form"],
+        parameters=[query_form_password_param] + map_query_filters_to_param_annotations(MEMBER_FILTERS),
+        summary="Query & filter based on Member attributes. "
+        "Results are returned as flattened spreadsheet row style output",
+        auth=[],
+    ),
+)
 class QueryMember(generics.ListAPIView):
     serializer_class = QueryFormSerializer
     pagination_class = None
@@ -102,6 +122,15 @@ INSTALL_FILTERS = {
 }
 
 
+@extend_schema_view(
+    get=extend_schema(
+        tags=["Legacy Query Form"],
+        parameters=[query_form_password_param] + map_query_filters_to_param_annotations(INSTALL_FILTERS),
+        summary="Query & filter based on Install attributes. "
+        "Results are returned as flattened spreadsheet row style output",
+        auth=[],
+    ),
+)
 class QueryInstall(generics.ListAPIView):
     serializer_class = QueryFormSerializer
     pagination_class = None

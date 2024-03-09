@@ -85,6 +85,7 @@ INSTALLED_APPS = [
     "meshapi_hooks",
     "meshweb",
     "corsheaders",
+    "drf_spectacular",
 ]
 
 MIDDLEWARE = [
@@ -192,6 +193,7 @@ REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": [
         "rest_framework.permissions.DjangoModelPermissions",
     ],
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
 }
 
 HOOK_EVENTS = {
@@ -213,3 +215,41 @@ HOOK_SERIALIZERS = {
 }
 
 HOOK_CUSTOM_MODEL = "meshapi_hooks.CelerySerializerHook"
+
+SPECTACULAR_SETTINGS = {
+    "TITLE": "MeshDB Data API",
+    "VERSION": "1.0.0",
+    "SERVE_INCLUDE_SCHEMA": False,
+    "TAGS": [
+        {"name": "API Status", "description": "Meta-endpoint to indicate API status"},
+        {"name": "Members", "description": "Members of the mesh and their contact details"},
+        {"name": "Buildings", "description": "Buildings on the mesh and their location data"},
+        {
+            "name": "Installs",
+            "description": "Installs, one corresponding to each household that is either already on the mesh, or wishes to join the mesh",
+        },
+        {"name": "Links", "description": "Links between buildings"},
+        {
+            "name": "Sectors",
+            "description": 'Special antennas with broad coverage of a radial "slice" of land area. See https://docs.nycmesh.net/hardware/liteap/',
+        },
+        {"name": "Geographic & KML Data", "description": "Endpoints for geographic and KML data export"},
+        {
+            "name": "Website Map Data",
+            "description": "Endpoints used to power the nycmesh.net website map. "
+            "Uses a legacy data format, not recommended for new applications",
+        },
+        {
+            "name": "Legacy Query Form",
+            "description": "Endpoints used to power the legacy docs query form. "
+            "Uses a legacy data format, not recommended for new applications",
+        },
+        {"name": "User Forms", "description": "Forms exposed directly to mesh members"},
+    ],
+    "SWAGGER_UI_SETTINGS": {
+        "defaultModelsExpandDepth": 10,
+        "defaultModelExpandDepth": 10,
+        "displayRequestDuration": True,
+        "docExpansion": "none",
+    },
+}

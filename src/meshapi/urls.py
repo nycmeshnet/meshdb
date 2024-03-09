@@ -5,7 +5,6 @@ from meshapi import views
 
 urlpatterns = [
     path("", views.api_root),
-    path("auth/", include("rest_framework.urls")),
     path("buildings/", views.BuildingList.as_view(), name="meshapi-v1-building-list"),
     path("buildings/<int:pk>/", views.BuildingDetail.as_view(), name="meshapi-v1-building-detail"),
     path("members/", views.MemberList.as_view(), name="meshapi-v1-member-list"),
@@ -24,10 +23,8 @@ urlpatterns = [
     path("query/buildings/", views.QueryBuilding.as_view(), name="meshapi-v1-query-building"),
     path("query/members/", views.QueryMember.as_view(), name="meshapi-v1-query-member"),
     path("query/installs/", views.QueryInstall.as_view(), name="meshapi-v1-query-install"),
-    path("mapdata/installs/", views.MapDataInstallList.as_view(), name="meshapi-v1-map-data-installs"),
+    path("mapdata/nodes/", views.MapDataNodeList.as_view(), name="meshapi-v1-map-data-installs"),
     path("mapdata/links/", views.MapDataLinkList.as_view(), name="meshapi-v1-map-data-links"),
     path("mapdata/sectors/", views.MapDataSectorList.as_view(), name="meshapi-v1-map-data-sectors"),
-    path("geography/whole-mesh.kml", views.map_kml, name="meshapi-v1-geography-whole-mesh-kml"),
+    path("geography/whole-mesh.kml", views.WholeMeshKML.as_view(), name="meshapi-v1-geography-whole-mesh-kml"),
 ]
-
-urlpatterns = format_suffix_patterns(urlpatterns)

@@ -10,6 +10,11 @@ class BuildingSerializer(serializers.ModelSerializer):
 
     installs = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
 
+    links_from = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
+    links_to = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
+
+    sectors = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
+
 
 class MemberSerializer(serializers.ModelSerializer):
     class Meta:
@@ -18,11 +23,6 @@ class MemberSerializer(serializers.ModelSerializer):
 
     all_email_addresses = serializers.ReadOnlyField()
     installs = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
-
-    links_from = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
-    links_to = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
-
-    sectors = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
 
 
 class InstallSerializer(serializers.ModelSerializer):

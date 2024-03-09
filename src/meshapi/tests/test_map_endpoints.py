@@ -16,7 +16,7 @@ class TestViewsGetUnauthenticated(TestCase):
 
     def test_views_get_unauthenticated(self):
         routes = [
-            ("/api/v1/mapdata/installs/", 200),
+            ("/api/v1/mapdata/nodes/", 200),
             ("/api/v1/mapdata/links/", 200),
             ("/api/v1/mapdata/sectors/", 200),
         ]
@@ -191,7 +191,7 @@ class TestViewsGetUnauthenticated(TestCase):
             install.save()
 
         self.maxDiff = None
-        response = self.c.get("/api/v1/mapdata/installs/")
+        response = self.c.get("/api/v1/mapdata/nodes/")
 
         self.assertEqual(
             json.loads(response.content.decode("UTF8")),

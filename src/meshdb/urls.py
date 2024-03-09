@@ -16,9 +16,22 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import include, path
+from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
+
+from meshapi.docs import SpectacularSwaggerInjectVarsView
 
 urlpatterns = [
+    path("", include("meshweb.urls")),
+    path("auth/", include("rest_framework.urls")),
     path("admin/", admin.site.urls),
     path("api/v1/", include("meshapi.urls")),
-    path("", include("meshweb.urls")),
+    path("api-docs/openapi3.json", SpectacularAPIView.as_view(), name="api-docs-schema"),
+    path(
+        "api-docs/swagger/",
+        SpectacularSwaggerInjectVarsView.as_view(
+            url_name="api-docs-schema"  # , template_name="drf_spectacular/swagger_ui.html"
+        ),
+        name="api-docs-swagger",
+    ),
+    path("api-docs/redoc/", SpectacularRedocView.as_view(url_name="api-docs-schema"), name="api-docs-redoc"),
 ]
