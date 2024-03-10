@@ -1,6 +1,129 @@
 
+const mapStyles = [
+  {
+    "featureType": "administrative.land_parcel",
+    "elementType": "labels",
+    "stylers": [
+      {
+        "visibility": "off"
+      }
+    ]
+  },
+  {
+    "featureType": "poi",
+    "elementType": "labels.text",
+    "stylers": [
+      {
+        "visibility": "off"
+      }
+    ]
+  },
+  {
+    "featureType": "poi.attraction",
+    "elementType": "labels",
+    "stylers": [
+      {
+        "visibility": "off"
+      }
+    ]
+  },
+  {
+    "featureType": "poi.business",
+    "stylers": [
+      {
+        "visibility": "off"
+      }
+    ]
+  },
+  {
+    "featureType": "poi.medical",
+    "elementType": "labels",
+    "stylers": [
+      {
+        "visibility": "off"
+      }
+    ]
+  },
+  {
+    "featureType": "poi.park",
+    "elementType": "labels",
+    "stylers": [
+      {
+        "visibility": "on"
+      }
+    ]
+  },
+  {
+    "featureType": "poi.park",
+    "elementType": "labels.icon",
+    "stylers": [
+      {
+        "visibility": "off"
+      }
+    ]
+  },
+  {
+    "featureType": "poi.school",
+    "elementType": "labels.icon",
+    "stylers": [
+      {
+        "visibility": "off"
+      }
+    ]
+  },
+  {
+    "featureType": "poi.sports_complex",
+    "elementType": "labels.icon",
+    "stylers": [
+      {
+        "visibility": "off"
+      }
+    ]
+  },
+  {
+    "featureType": "road.highway",
+    "elementType": "geometry.fill",
+    "stylers": [
+      {
+        "color": "#ffffff"
+      },
+      {
+        "saturation": -40
+      }
+    ]
+  },
+  {
+    "featureType": "road.highway",
+    "elementType": "geometry.stroke",
+    "stylers": [
+      {
+        "visibility": "off"
+      }
+    ]
+  },
+  {
+    "featureType": "road.highway.controlled_access",
+    "elementType": "labels.icon",
+    "stylers": [
+      {
+        "visibility": "off"
+      }
+    ]
+  },
+  {
+    "featureType": "transit.station",
+    "stylers": [
+      {
+        "visibility": "off"
+      }
+    ]
+  }
+];
+
+let map;
+
 function updateMapForRoute() {
-    document.getElementById("map").getElementsByTagName("p")[0].innerHTML = location.pathname + location.search;
+    // document.getElementById("map").getElementsByTagName("p")[0].innerHTML = location.pathname + location.search;
 }
 
 async function loadScripts(scripts) {
@@ -17,16 +140,13 @@ async function loadScripts(scripts) {
 }
 
 async function updateAdminContent() {
-  let currentPathname = location.pathname;
+    let currentPathname = location.pathname;
 
     const response = await fetch(location.pathname + location.search);
     if (!response.ok) {
-      throw new Error("Error loading page");
+        throw new Error("Error loading new contents for page: " + response.status + " " + response.statusText);
     }
-    // if (response.redirected) {
-    //   window.location = response.url;
-    //   return;
-    // }
+
     const current_map = document.getElementById("map");
 
     const text = await response.text();
@@ -35,21 +155,21 @@ async function updateAdminContent() {
     doc.getElementById("map").replaceWith(current_map);
 
 
-  if (location.pathname != currentPathname) {
-    return
-  }
+    // Bail if the user clicked an additional link while we could load/parse the first one
+    if (location.pathname !== currentPathname) {
+        return
+    }
 
+    // Replace the whole page with the new one
+    const newHTML = doc.getElementsByTagName("html")[0];
+    document.getElementsByTagName("html")[0].replaceWith(newHTML);
 
-  const newHTML = doc.getElementsByTagName("html")[0];
-  document.getElementsByTagName("html")[0].replaceWith(newHTML);
+    // Re-run other javascript to make page happy
+    if (window.DateTimeShortcuts) window.removeEventListener('load', window.DateTimeShortcuts.init);
+    await loadScripts(document.head.querySelectorAll('script'));
 
-  if (window.DateTimeShortcuts) window.removeEventListener('load', window.DateTimeShortcuts.init);
-  await loadScripts(document.head.querySelectorAll('script'));
-
-  console.log("Simulating window load...")
-  dispatchEvent(new Event('load'));
-
-  //window.scrollTo(0, 0);
+    console.log("Simulating window load...")
+    dispatchEvent(new Event('load'));
 }
 
 
@@ -67,25 +187,40 @@ function shouldNotIntercept(event) {
 
 function interceptLinks() {
     navigation.addEventListener("navigate", (event) => {
-      // Exit early if this navigation shouldn't be intercepted,
-      // e.g. if the navigation is cross-origin, or a download request
-      if (shouldNotIntercept(event)) return;
+        // Exit early if this navigation shouldn't be intercepted,
+        // e.g. if the navigation is cross-origin, or a download request
+        if (shouldNotIntercept(event)) return;
 
-      const url = event.destination.url;
-      event.intercept({
-          async handler() {
-              console.log("Caught navigation to " + url)
+        const url = event.destination.url;
+        event.intercept({
+            async handler() {
+                console.log("Caught navigation to " + url)
 
                 updateMapForRoute();
                 updateAdminContent();
-          },
+            },
         });
     });
 }
 
 function start() {
-  updateMapForRoute();
-  interceptLinks();
+    updateMapForRoute();
+    interceptLinks();
 }
 
-start();
+async function initMap() {
+    const {Map} = await google.maps.importLibrary("maps");
+
+    map = new Map(document.getElementById("map-inner"), {
+        center: {lat: 40.7211997, lng: -73.9927221},
+        zoom: 11.7,
+        styles: mapStyles,
+        streetViewControl: false,
+    });
+
+    google.maps.event.addListenerOnce( map, 'idle', function() {
+        start();
+    });
+}
+
+initMap();

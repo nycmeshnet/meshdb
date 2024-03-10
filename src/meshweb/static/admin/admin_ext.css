@@ -61,13 +61,37 @@
 
 #map {
     display: flex;
-    justify-content: center;
-    align-items: center;
-    background: lightblue;
     margin-right: 10px;
     flex: 1 1 auto;
 }
 
-#map > p {
-    height: fit-content;
+#map > div {
+    display: flex;
+    flex-grow: 1;
+}
+
+
+/* Fix missing maps styles */
+.gm-control-active > img {
+    box-sizing: content-box;
+    display: none;
+    left: 50%;
+    pointer-events: none;
+    position: absolute;
+    top: 50%;
+    transform: translate(-50%,-50%);
+}
+
+.gm-control-active > img:nth-child(1) {
+    display:block;
+}
+
+.gm-control-active:hover > img:nth-child(1),
+.gm-control-active:active > img:nth-child(1) {
+    display:none;
+}
+
+.gm-control-active:hover > img:nth-child(2),
+.gm-control-active:active > img:nth-child(3) {
+    display:block;
 }
