@@ -122,8 +122,29 @@ const mapStyles = [
 
 let map;
 
-function updateMapForRoute() {
-    // document.getElementById("map").getElementsByTagName("p")[0].innerHTML = location.pathname + location.search;
+function getCurrentTarget(){
+    let path = location.pathname.replace(/^\/admin\/meshapi\//, "");
+    path = path.replace(/\/$/, "");
+
+    const [type, id, action] = path.split("/");
+    return [type, id, action];
+}
+
+async function updateMapForRoute() {
+    const [type, id, action] = getCurrentTarget();
+
+    if (["building"].indexOf(type) === -1) return;
+    if (!id) return;
+
+    const buildingResponse = await fetch(`/api/v1/buildings/${id}/`);
+    if (!buildingResponse.ok) return;
+    const building = await buildingResponse.json();
+    console.log(building);
+
+    map.setCenter(new google.maps.LatLng(building.latitude, building.longitude))
+    map.setZoom(18);
+
+    document.getElementById("map").getElementsByTagName("p")[0].innerHTML = [type,id];
 }
 
 async function loadScripts(scripts) {
