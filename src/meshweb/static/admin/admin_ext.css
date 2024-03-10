@@ -34,13 +34,40 @@
     margin-top: 0px;
 }
 
+@media screen and (min-width: 1600px) {
+    #map-wrapper .main {
+        max-width: 1000px;
+    }
+}
+@media screen and (max-width: 1600px) {
+    #map-wrapper .main {
+        max-width: 800px;
+    }
+}
+
 #map-wrapper {
     display: flex;
     overflow: hidden;
-    height: 85vh;
+    flex: 1 1 auto;
+    margin-bottom: 10px;
+    flex-shrink: 1 !important;
 }
 #map-wrapper .main {
     display: flex;
     flex: 1 0 auto;
     overflow-y: auto;
+    flex-direction: row;
+}
+
+#map {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: lightblue;
+    margin-right: 10px;
+    flex: 1 1 auto;
+}
+
+#map > p {
+    height: fit-content;
 }
