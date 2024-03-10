@@ -26,14 +26,6 @@ class Building(models.Model):
     latitude = models.FloatField()
     longitude = models.FloatField()
     altitude = models.FloatField(blank=True, null=True)
-    primary_nn = models.IntegerField(
-        blank=True,
-        null=True,
-        validators=[
-            MinValueValidator(NETWORK_NUMBER_MIN),
-            MaxValueValidator(NETWORK_NUMBER_MAX),
-        ],
-    )
     site_name = models.TextField(default=None, blank=True, null=True)
     notes = models.TextField(blank=True, null=True)
 
@@ -78,6 +70,7 @@ class Member(models.Model):
 
         return all_emails
 
+
 class Install(models.Model):
     class InstallStatus(models.TextChoices):
         REQUEST_RECEIVED = "Request Received"
@@ -111,7 +104,9 @@ class Install(models.Model):
     roof_access = models.BooleanField(default=False)
 
     # Relation to Member (can be null if this is something the mesh owns (like 713))
-    member = models.ForeignKey(Member, on_delete=models.PROTECT, related_name="installs", default=None, blank=True, null=True)
+    member = models.ForeignKey(
+        Member, on_delete=models.PROTECT, related_name="installs", default=None, blank=True, null=True
+    )
     referral = models.TextField(default=None, blank=True, null=True)
     notes = models.TextField(default=None, blank=True, null=True)
     diy = models.BooleanField(default=None, blank=True, null=True, verbose_name="Is DIY?")
@@ -124,6 +119,7 @@ class Install(models.Model):
     def __str__(self):
         return f"#{str(self.install_number)}"
 
+
 class Device(models.Model):
     class DeviceStatus(models.TextChoices):
         ABANDONED = "Abandoned"
@@ -131,7 +127,7 @@ class Device(models.Model):
         POTENTIAL = "Potential"
 
     name = models.TextField()
-    device_name = models.TextField()
+    model = models.TextField()
 
     status = models.TextField(choices=DeviceStatus.choices)
 
@@ -146,9 +142,18 @@ class Device(models.Model):
     install_date = models.DateField(default=None, blank=True, null=True)
     abandon_date = models.DateField(default=None, blank=True, null=True)
 
-    # Relation to Install 
-    serves_install = models.ForeignKey(Install, on_delete=models.PROTECT, related_name="via_device", default=None, blank=True, null=True)
-    powered_by_install = models.ForeignKey(Install, on_delete=models.PROTECT, related_name="powers_device", default=None, blank=True, null=True)
+    # Relation to Install
+    serves_install = models.ForeignKey(
+        Install, on_delete=models.PROTECT, related_name="via_device", default=None, blank=True, null=True
+    )
+    powered_by_install = models.ForeignKey(
+        Install, on_delete=models.PROTECT, related_name="powers_device", default=None, blank=True, null=True
+    )
+
+    # Relation to Building
+    serves_building = models.ForeignKey(
+        Building, on_delete=models.PROTECT, related_name="primary_device", default=None, blank=True, null=True
+    )
 
     notes = models.TextField(default=None, blank=True, null=True)
 

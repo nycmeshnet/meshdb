@@ -2,6 +2,7 @@ import datetime
 from collections import OrderedDict
 
 from rest_framework import serializers
+from build.lib.meshapi.serializers.map import EXCLUDED_INSTALL_STATUSES
 
 from meshapi.models import Device, Install, Link, Sector
 
@@ -32,7 +33,7 @@ class JavascriptDateField(serializers.IntegerField):
         )
 
 
-#def get_install_number_from_device(device: Device):
+# def get_install_number_from_device(device: Device):
 #    installs = device.powered_by_install.exclude(status__in=EXCLUDED_STATUSES).order_by("install_number")
 #    active_installs = [install for install in installs if install.status == Install.InstallStatus.ACTIVE]
 #    if len(active_installs):
@@ -143,9 +144,13 @@ class MapDataLinkSerializer(serializers.ModelSerializer):
         return "active"
 
     def get_to_install_number(self, link):
+        if link.to_device.powered_by_install.status in EXCLUDED_INSTALL_STATUSES:
+            return link.to_device.powered_by_install.building.primary_nn
         return link.to_device.powered_by_install.install_number
 
     def get_from_install_number(self, link):
+        if link.from_device.powered_by_install.status in EXCLUDED_INSTALL_STATUSES:
+            return link.from_device.powered_by_install.building.primary_nn
         return link.from_device.powered_by_install.install_number
 
     def get_fields(self):

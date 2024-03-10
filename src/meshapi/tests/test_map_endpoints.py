@@ -101,7 +101,7 @@ class TestViewsGetUnauthenticated(TestCase):
                 powered_by_install=installs[-1],
             )
         )
-        #installs[-1].via_device.set(devices[-1])
+        # installs[-1].via_device.set(devices[-1])
 
         buildings.append(
             Building(
@@ -193,7 +193,7 @@ class TestViewsGetUnauthenticated(TestCase):
                 powered_by_install=installs[-1],
             )
         )
-        #installs[-1].via_device.set(devices[-1])
+        # installs[-1].via_device.set(devices[-1])
 
         installs.append(
             Install(
@@ -410,7 +410,6 @@ class TestViewsGetUnauthenticated(TestCase):
         sn3_inst.save()
         sn3_device.save()
 
-
         brian, brian_inst, brian_device = create_building_install_pair(None, 3, Building.BuildingStatus.ACTIVE)
         brian.save()
         brian_inst.save()
@@ -421,7 +420,9 @@ class TestViewsGetUnauthenticated(TestCase):
         random_inst.save()
         random_device.save()
 
-        inactive, inactive_inst, inactive_device = create_building_install_pair(None, 123456, Building.BuildingStatus.INACTIVE)
+        inactive, inactive_inst, inactive_device = create_building_install_pair(
+            None, 123456, Building.BuildingStatus.INACTIVE
+        )
         inactive_device.status = Device.DeviceStatus.ABANDONED
         inactive.save()
         inactive_inst.save()
@@ -545,7 +546,6 @@ class TestViewsGetUnauthenticated(TestCase):
             primary_nn=555,
         )
         building_1.save()
-
         Install(
             install_number=5,
             status=Install.InstallStatus.INACTIVE,
@@ -560,13 +560,21 @@ class TestViewsGetUnauthenticated(TestCase):
             building=building_1,
             member=member,
         ).save()
-        Install(
+        install_7 = Install(
             install_number=7,
             status=Install.InstallStatus.ACTIVE,
             request_date=datetime.date(2015, 3, 15),
             building=building_1,
             member=member,
-        ).save()
+        )
+        install_7.save()
+        building_1_device = Device(
+            status=Device.DeviceStatus.ACTIVE,
+            network_number=555,
+            serves_install=install_7,
+            powered_by_install=install_7,
+        )
+        building_1_device.save()
 
         building_2 = Building(
             building_status=Building.BuildingStatus.ACTIVE,
@@ -584,13 +592,21 @@ class TestViewsGetUnauthenticated(TestCase):
             building=building_2,
             member=member,
         ).save()
-        Install(
+        install_91 = Install(
             install_number=91,
             status=Install.InstallStatus.NN_REASSIGNED,
             request_date=datetime.date(2015, 3, 15),
             building=building_2,
             member=member,
-        ).save()
+        )
+        install_91.save()
+        building_2_device = Device(
+            status=Device.DeviceStatus.ACTIVE,
+            network_number=99,
+            serves_install=install_91,
+            powered_by_install=install_91,
+        )
+        building_2_device.save()
 
         building_3 = Building(
             building_status=Building.BuildingStatus.ACTIVE,
@@ -601,13 +617,21 @@ class TestViewsGetUnauthenticated(TestCase):
             primary_nn=731,
         )
         building_3.save()
-        Install(
+        install_104 = Install(
             install_number=104,
             status=Install.InstallStatus.PENDING,
             request_date=datetime.date(2015, 3, 15),
             building=building_3,
             member=member,
-        ).save()
+        )
+        install_104.save()
+        building_3_device = Device(
+            status=Device.DeviceStatus.ACTIVE,
+            network_number=731,
+            serves_install=install_104,
+            powered_by_install=install_104,
+        )
+        building_3_device.save()
         Install(
             install_number=105,
             status=Install.InstallStatus.REQUEST_RECEIVED,
@@ -618,8 +642,8 @@ class TestViewsGetUnauthenticated(TestCase):
 
         links.append(
             Link(
-                from_device=building_1,
-                to_device=building_2,
+                from_device=building_1_device,
+                to_device=building_2_device,
                 status=Link.LinkStatus.ACTIVE,
                 type=Link.LinkType.STANDARD,
             )
@@ -627,8 +651,8 @@ class TestViewsGetUnauthenticated(TestCase):
 
         links.append(
             Link(
-                from_device=building_2,
-                to_device=building_3,
+                from_device=building_2_device,
+                to_device=building_3_device,
                 status=Link.LinkStatus.ACTIVE,
                 type=Link.LinkType.STANDARD,
             )
@@ -636,8 +660,8 @@ class TestViewsGetUnauthenticated(TestCase):
 
         links.append(
             Link(
-                from_device=building_3,
-                to_device=building_1,
+                from_device=building_3_device,
+                to_device=building_1_device,
                 status=Link.LinkStatus.ACTIVE,
                 type=Link.LinkType.STANDARD,
             )

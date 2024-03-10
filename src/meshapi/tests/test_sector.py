@@ -93,4 +93,4 @@ class TestSector(TestCase):
 
         response_obj = json.loads(response.content)
         self.assertEqual(response_obj["status"], "Active")
-        self.assertEqual(response_obj["powered_by_install"], 1)
+        self.assertEqual(response_obj["powered_by_install"], self.install_1.install_number)

@@ -330,7 +330,6 @@ class TestNNRaceCondition(TransactionTestCase):
 
         inst["building"] = building_obj1
         inst["member"] = member_obj
-        inst["network_number"] = None
 
         install_obj1 = Install(**inst)
         install_obj1.save()

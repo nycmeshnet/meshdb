@@ -12,7 +12,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 
 from meshapi.exceptions import AddressAPIError, AddressError
-from meshapi.models import NETWORK_NUMBER_MAX, NETWORK_NUMBER_MIN, Building, Install, Member
+from meshapi.models import NETWORK_NUMBER_MAX, NETWORK_NUMBER_MIN, Building, Device, Install, Member
 from meshapi.permissions import HasNNAssignPermission, LegacyNNAssignmentPassword
 from meshapi.util.django_pglocks import advisory_lock
 from meshapi.validation import NYCAddressInfo, validate_email_address, validate_phone_number
@@ -253,6 +253,7 @@ def get_next_available_network_number() -> int:
 @dataclass
 class NetworkNumberAssignmentRequest:
     install_number: int
+    nn_to_link: int
 
 
 @api_view(["POST"])
@@ -284,35 +285,39 @@ def network_number_assignment(request):
         print(f'NN Request failed. Could not get Install w/ Install Number "{r.install_number}": {e}')
         return Response({"detail": "Install Number not found"}, status=status.HTTP_404_NOT_FOUND)
 
-    # Check if the install already has a network number
-    if nn_install.network_number != None:
-        message = f"This Install Number ({r.install_number}) already has a Network Number ({nn_install.network_number}) associated with it!"
+    # First, check if there is already a Network Number at the Install's Building
+    # The second check is just for sanity, it should never be False.
+    if (nn_install.building.primary_device.exists() and nn_install.building.primary_device.network_number != None):
+        message = f"This Install Number ({r.install_number}) already has a Network Number ({nn_install.building.primary_device.network_number}) associated with it!"
         print(message)
         return Response(
             {
                 "detail": message,
                 "building_id": nn_install.building.id,
                 "install_number": nn_install.install_number,
-                "network_number": nn_install.network_number,
+                "network_number": nn_install.building.primary_device.network_number,
                 "created": False,
             },
             status=status.HTTP_200_OK,
         )
 
-    nn_building = nn_install.building
+    if r.nn_to_link:
+        device: Device = Device.objects.get(network_number=r.nn_to_link)
+        nn_install.
+        pass
 
-    # If the building already has a primary NN, then use that.
-    if nn_building.primary_nn is not None:
-        nn_install.network_number = nn_building.primary_nn
-    else:
-        try:
-            free_nn = get_next_available_network_number()
-        except ValueError as exception:
-            return Response({"detail": f"NN Request failed. {exception}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    # TODO: make device
 
-        # Set the next free NN on both the install and the Building
-        nn_install.network_number = free_nn
-        nn_building.primary_nn = free_nn
+    # At this point, we're certain that there is no Network Number associated
+    # with this building at all.
+    try:
+        free_nn = get_next_available_network_number()
+    except ValueError as exception:
+        return Response({"detail": f"NN Request failed. {exception}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    # Set the next free NN on both the install and the Building
+    nn_install.network_number = free_nn
+    nn_building.primary_nn = free_nn
 
     nn_install.status = Install.InstallStatus.ACTIVE
 

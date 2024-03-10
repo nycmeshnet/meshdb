@@ -10,6 +10,7 @@ from rest_framework.authtoken.models import Token
 from meshapi.models import Building, Device, Install, Link, Member, Sector
 
 import random
+
 random.seed()
 
 
@@ -39,7 +40,7 @@ def create_building_install_pair(member_ref, nn, building_status=Building.Buildi
         device_name="LBE",
         serves_install=install,
         powered_by_install=install,
-        network_number=nn #random.randrange(3000, 7999) # Seems high enough lol
+        network_number=nn,  # random.randrange(3000, 7999) # Seems high enough lol
     )
     device.save()
 
@@ -80,7 +81,11 @@ class TestKMLEndpoint(TestCase):
         sn10_install, sn10, sn10_dev = create_building_install_pair(fake_member, 10)
         sn3_install, sn3, sn3_dev = create_building_install_pair(fake_member, 713)
         brian_install, brian, brian_dev = create_building_install_pair(fake_member, 3)
-        random_install, random, random_dev, = create_building_install_pair(fake_member, 123)
+        (
+            random_install,
+            random,
+            random_dev,
+        ) = create_building_install_pair(fake_member, 123)
 
         links.append(
             Link(
