@@ -77,7 +77,7 @@ class MapDataInstallSerializer(serializers.ModelSerializer):
     notes = serializers.SerializerMethodField("get_start_of_notes")
     panoramas = serializers.SerializerMethodField(
         "get_panorama_filename"
-    )  # FIXME: THIS WILL REMOVE ALL PANORAMAS FROM THE MAP UI
+    )
 
     def get_building_coordinates(self, install):
         building = install.building
