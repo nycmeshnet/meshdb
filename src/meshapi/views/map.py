@@ -2,7 +2,7 @@ from django.db.models import Q
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import generics, permissions
 
-from meshapi.models import Building, Install, Link, Sector
+from meshapi.models import Building, Device, Install, Link, Node, Sector
 from meshapi.serializers import (
     ALLOWED_INSTALL_STATUSES,
     EXCLUDED_INSTALL_STATUSES,
@@ -77,9 +77,11 @@ class MapDataLinkList(generics.ListAPIView):
     serializer_class = MapDataLinkSerializer
     pagination_class = None
     queryset = (
-        Link.objects.exclude(status__in=[Link.LinkStatus.DEAD])
-        .exclude(from_building__building_status=Building.BuildingStatus.INACTIVE)
-        .exclude(to_building__building_status=Building.BuildingStatus.INACTIVE)
+        Link.objects.exclude(status__in=[Link.LinkStatus.INACTIVE])
+        .exclude(from_device__status=Device.DeviceStatus.INACTIVE)
+        .exclude(to_device__status=Device.DeviceStatus.INACTIVE)
+        .exclude(to_device__node__status=Node.NodeStatus.INACTIVE)
+        .exclude(from_device__node__status=Node.NodeStatus.INACTIVE)
     )
 
 
@@ -95,4 +97,4 @@ class MapDataSectorList(generics.ListAPIView):
     permission_classes = [permissions.AllowAny]
     serializer_class = MapDataSectorSerializer
     pagination_class = None
-    queryset = Sector.objects.filter(~Q(status__in=[Sector.SectorStatus.ABANDONED]))
+    queryset = Sector.objects.filter(~Q(status__in=[Device.DeviceStatus.INACTIVE]))
