@@ -1,0 +1,74 @@
+from django.core.validators import MaxValueValidator
+from django.db import models
+
+NETWORK_NUMBER_MIN = 101
+NETWORK_NUMBER_MAX = 8192
+
+
+class Node(models.Model):
+    class NodeStatus(models.TextChoices):
+        INACTIVE = "Inactive"
+        ACTIVE = "Active"
+        PLANNED = "Planned"
+
+    network_number = models.AutoField(
+        primary_key=True,
+        db_column="network_number",
+        validators=[MaxValueValidator(NETWORK_NUMBER_MAX)],
+    )
+
+    name = models.CharField(
+        default=None,
+        blank=True,
+        null=True,
+        help_text="The colloquial name of this node used among mesh volunteers, if applicable",
+    )
+
+    status = models.CharField(choices=NodeStatus.choices, help_text="The current status of this Node")
+
+    latitude = models.FloatField(
+        help_text="Approximate Node latitude in decimal degrees (this will match one of the attached "
+        "Building objects in most cases, but has been manually moved around in some cases to "
+        "more accurately reflect node location)"
+    )
+    longitude = models.FloatField(
+        help_text="Approximate Node longitude in decimal degrees (this will match one of the attached "
+        "Building objects in most cases, but has been manually moved around in some cases to "
+        "more accurately reflect node location)"
+    )
+    altitude = models.FloatField(
+        blank=True,
+        null=True,
+        help_text='Approximate Node altitude in "absolute" meters above mean sea level (this will '
+        "match one of the attached Building objects in most cases, but has been manually moved "
+        "around in some cases to more accurately reflect node location)",
+    )
+
+    install_date = models.DateField(
+        default=None,
+        blank=True,
+        null=True,
+        help_text="The date the first Install or Device associated with this Node became active on the mesh",
+    )
+    abandon_date = models.DateField(
+        default=None,
+        blank=True,
+        null=True,
+        help_text="The date the last Install or Device associated with this Node was abandoned, "
+        "unplugged, or removed from service",
+    )
+
+    notes = models.TextField(
+        blank=True,
+        null=True,
+        help_text="A free-form text description of this Node, to track any additional information. "
+        "For Nodes imported from the spreadsheet, this starts with a formatted block of information about the import process"
+        "and original spreadsheet data. However this structure can be changed by admins at any time and should not be relied on"
+        "by automated systems. ",
+    )
+
+    def __str__(self):
+        if self.name:
+            return str(self.name)
+
+        return f"NN{str(self.network_number)}"
