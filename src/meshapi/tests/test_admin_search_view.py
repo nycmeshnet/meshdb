@@ -1,11 +1,12 @@
-from django.test import Client, TestCase
 from django.contrib.auth.models import User
+from django.test import Client, TestCase
 
-from meshapi.models import Building, Install, Link, Member, Sector
-from .sample_data import sample_building, sample_install, sample_member
+from meshapi.models import Building, Device, Install, Link, Member, Node, Sector
+
+from .sample_data import sample_building, sample_device, sample_install, sample_member, sample_node
 
 
-class TestAdminChangeView(TestCase):
+class TestAdminSearchView(TestCase):
     c = Client()
 
     def setUp(self):
@@ -14,10 +15,6 @@ class TestAdminChangeView(TestCase):
         self.building_1.save()
         sample_install_copy["building"] = self.building_1
 
-        self.building_2 = Building(**sample_building)
-        self.building_2.street_address = "69" + str(self.building_2.street_address)
-        self.building_2.save()
-
         self.member = Member(**sample_member)
         self.member.save()
         sample_install_copy["member"] = self.member
@@ -25,21 +22,31 @@ class TestAdminChangeView(TestCase):
         self.install = Install(**sample_install_copy)
         self.install.save()
 
+        self.node1 = Node(**sample_node)
+        self.node1.save()
+        self.node2 = Node(**sample_node)
+        self.node2.save()
+
+        self.device1 = Device(**sample_device)
+        self.device1.node = self.node1
+        self.device1.save()
+
+        self.device2 = Device(**sample_device)
+        self.device2.node = self.node2
+        self.device2.save()
+
         self.sector = Sector(
-            id=1,
-            name="Vernon",
-            device_name="LAP-120",
-            building=self.building_1,
-            status="Active",
-            azimuth=0,
-            width=120,
-            radius=0.3,
+            radius=1,
+            azimuth=45,
+            width=180,
+            **sample_device,
         )
+        self.sector.node = self.node2
         self.sector.save()
 
         self.link = Link(
-            from_building=self.building_1,
-            to_building=self.building_2,
+            from_device=self.device1,
+            to_device=self.device2,
             status=Link.LinkStatus.ACTIVE,
         )
         self.link.save()
@@ -67,3 +74,9 @@ class TestAdminChangeView(TestCase):
 
     def test_search_sector(self):
         self._call("/admin/meshapi/sector/?q=1", 200)
+
+    def test_search_device(self):
+        self._call("/admin/meshapi/device/?q=1", 200)
+
+    def test_search_node(self):
+        self._call("/admin/meshapi/node/?q=1", 200)

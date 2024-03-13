@@ -109,8 +109,9 @@ class WholeMeshKML(APIView):
             folder_map[city_name] = kml.Folder(name=folder_name)
             nodes_folder.append(folder_map[city_name])
 
+        # TODO: Should we iterate nodes instead here? Might be a an Olivier question
         for install in Install.objects.filter(
-            ~Q(install_status=Install.InstallStatus.CLOSED)
+            ~Q(status=Install.InstallStatus.CLOSED)
             & Q(building__longitude__isnull=False)
             & Q(building__latitude__isnull=False)
         ):

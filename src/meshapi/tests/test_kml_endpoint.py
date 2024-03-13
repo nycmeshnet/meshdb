@@ -12,7 +12,6 @@ from meshapi.models import Building, Install, Link, Member, Sector
 
 def create_building_install_pair(member_ref, nn):
     building = Building(
-        building_status=Building.BuildingStatus.ACTIVE,
         address_truth_sources="",
         latitude=0,
         longitude=0,
@@ -25,7 +24,6 @@ def create_building_install_pair(member_ref, nn):
         member=member_ref,
         building=building,
         install_number=nn,
-        network_number=nn,
         install_status=Install.InstallStatus.ACTIVE,
         request_date=datetime.date.today(),
     )

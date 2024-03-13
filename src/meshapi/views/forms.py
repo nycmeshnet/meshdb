@@ -14,7 +14,7 @@ from rest_framework.response import Response
 from rest_framework_dataclasses.serializers import DataclassSerializer
 
 from meshapi.exceptions import AddressAPIError, AddressError
-from meshapi.models import NETWORK_NUMBER_MAX, NETWORK_NUMBER_MIN, Building, Install, Member
+from meshapi.models import NETWORK_NUMBER_MAX, NETWORK_NUMBER_MIN, Building, Install, Member, Node
 from meshapi.permissions import HasNNAssignPermission, LegacyNNAssignmentPassword
 from meshapi.util.django_pglocks import advisory_lock
 from meshapi.validation import NYCAddressInfo, validate_email_address, validate_phone_number
@@ -155,11 +155,13 @@ def join_form(request):
     existing_buildings = Building.objects.filter(bin=nyc_addr_info.bin)
 
     join_form_building = (
+        # TODO: This should do a normalized address lookup, in addition to BIN. To account for cases
+        #  where there are multiple addresses for a single BIN. Doing existing_buildings[0] here
+        #  picks arbitrarily in that case.
         existing_buildings[0]
         if len(existing_buildings) > 0
         else Building(
-            bin=nyc_addr_info.bin if nyc_addr_info is not None else -1,
-            building_status=Building.BuildingStatus.INACTIVE,
+            bin=nyc_addr_info.bin if nyc_addr_info is not None else None,
             street_address=nyc_addr_info.street_address,
             city=nyc_addr_info.city,
             state=nyc_addr_info.state,
@@ -168,13 +170,11 @@ def join_form(request):
             longitude=nyc_addr_info.longitude,
             altitude=nyc_addr_info.altitude,
             address_truth_sources=[AddressTruthSource.NYCPlanningLabs],
-            primary_nn=None,
         )
     )
 
     join_form_install = Install(
-        network_number=None,
-        install_status=Install.InstallStatus.REQUEST_RECEIVED,
+        status=Install.InstallStatus.REQUEST_RECEIVED,
         ticket_id=None,
         request_date=date.today(),
         install_date=None,
@@ -185,6 +185,7 @@ def join_form(request):
         member=join_form_member,
         referral=r.referral,
         notes=None,
+        node=join_form_building.primary_node if join_form_building.primary_node else None,
     )
 
     try:

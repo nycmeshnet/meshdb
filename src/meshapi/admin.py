@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.admin.options import forms
 
-from meshapi.models import Building, Install, Link, Member, Sector
+from meshapi.models import Building, Device, Install, Link, Member, Node, Sector
 
 admin.site.site_header = "MeshDB Admin"
 admin.site.site_title = "MeshDB Admin Portal"
@@ -66,18 +66,6 @@ class ToBuildingInline(admin.TabularInline):
         }
 
 
-# class BuildingAdminForm(forms.ModelForm):
-#     class Meta:
-#         model = Building
-#         fields = "__all__"
-#         widgets = {
-#             "street_address": forms.TextInput(),
-#             "city": forms.TextInput(),
-#             "state": forms.TextInput(),
-#             "zip_code": forms.NumberInput(),
-#         }
-
-
 class BoroughFilter(admin.SimpleListFilter):
     title = "Borough"
     parameter_name = "borough"
@@ -137,9 +125,8 @@ class BuildingAdmin(admin.ModelAdmin):
             "Node Details",
             {
                 "fields": [
-                    "node_name",
-                    "primary_nn",
-                    "building_status",
+                    "primary_node",
+                    "nodes",
                 ]
             },
         ),
@@ -206,7 +193,7 @@ class MemberAdmin(admin.ModelAdmin):
         "installs__building__zip_code__iexact",
         "installs__building__bin__iexact",
         # Search by network number
-        "installs__network_number__iexact",
+        "installs__node__network_number__iexact",
         "installs__install_number__iexact",
     ]
     inlines = [InstallInline]
@@ -232,7 +219,7 @@ class InstallAdminForm(forms.ModelForm):
 class InstallAdmin(admin.ModelAdmin):
     form = InstallAdminForm
     list_filter = [
-        ("network_number", admin.EmptyFieldListFilter),
+        ("node", admin.EmptyFieldListFilter),
         "status",
         "request_date",
         "install_date",
@@ -347,3 +334,25 @@ class SectorAdmin(admin.ModelAdmin):
         "model_name",
     ]
     list_filter = ["model_name", "install_date"]
+
+
+class NodeAdminForm(forms.ModelForm):
+    class Meta:
+        model = Node
+        fields = "__all__"
+
+
+@admin.register(Node)
+class NodeAdmin(admin.ModelAdmin):
+    form = SectorAdminForm
+
+
+class DeviceAdminForm(forms.ModelForm):
+    class Meta:
+        model = Device
+        fields = "__all__"
+
+
+@admin.register(Device)
+class NodeAdmin(admin.ModelAdmin):
+    form = DeviceAdminForm

@@ -1,8 +1,9 @@
-from django.test import Client, TestCase
 from django.contrib.auth.models import User
+from django.test import Client, TestCase
 
-from meshapi.models import Building, Install, Link, Member, Sector
-from .sample_data import sample_building, sample_install, sample_member
+from meshapi.models import Building, Device, Install, Link, Member, Node, Sector
+
+from .sample_data import sample_building, sample_device, sample_install, sample_member, sample_node
 
 
 class TestAdminChangeView(TestCase):
@@ -14,10 +15,6 @@ class TestAdminChangeView(TestCase):
         self.building_1.save()
         sample_install_copy["building"] = self.building_1
 
-        self.building_2 = Building(**sample_building)
-        self.building_2.street_address = "69" + str(self.building_2.street_address)
-        self.building_2.save()
-
         self.member = Member(**sample_member)
         self.member.save()
         sample_install_copy["member"] = self.member
@@ -25,21 +22,22 @@ class TestAdminChangeView(TestCase):
         self.install = Install(**sample_install_copy)
         self.install.save()
 
-        self.sector = Sector(
-            id=1,
-            name="Vernon",
-            device_name="LAP-120",
-            building=self.building_1,
-            status="Active",
-            azimuth=0,
-            width=120,
-            radius=0.3,
-        )
-        self.sector.save()
+        self.node1 = Node(**sample_node)
+        self.node1.save()
+        self.node2 = Node(**sample_node)
+        self.node2.save()
+
+        self.device1 = Device(**sample_device)
+        self.device1.node = self.node1
+        self.device1.save()
+
+        self.device2 = Device(**sample_device)
+        self.device2.node = self.node2
+        self.device2.save()
 
         self.link = Link(
-            from_building=self.building_1,
-            to_building=self.building_2,
+            from_device=self.device1,
+            to_device=self.device2,
             status=Link.LinkStatus.ACTIVE,
         )
         self.link.save()
@@ -65,5 +63,8 @@ class TestAdminChangeView(TestCase):
     def test_change_link(self):
         self._call(f"/admin/meshapi/link/{self.link.id}/change/", 200)
 
-    def test_change_sector(self):
-        self._call(f"/admin/meshapi/sector/{self.sector.id}/change/", 200)
+    def test_change_device(self):
+        self._call(f"/admin/meshapi/device/{self.device1.id}/change/", 200)
+
+    def test_change_node(self):
+        self._call(f"/admin/meshapi/node/{self.node1.network_number}/change/", 200)

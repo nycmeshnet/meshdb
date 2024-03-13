@@ -85,14 +85,15 @@ class Building(models.Model):
     )
 
     def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+
         # Ensure primary_node is always contained in nodes
         if self.primary_node and self.primary_node not in self.nodes.all():
             self.nodes.add(self.primary_node)
 
         if len(self.nodes.all()) == 1:
             self.primary_node = self.nodes.first()
-
-        super().save(*args, **kwargs)
+            super().save(*args, **kwargs)
 
     def __str__(self):
         if self.street_address:
