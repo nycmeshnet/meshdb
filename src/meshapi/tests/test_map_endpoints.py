@@ -5,7 +5,7 @@ from django.contrib.auth.models import Group, User
 from django.test import Client, TestCase
 from rest_framework.authtoken.models import Token
 
-from meshapi.models import Building, Install, Link, Member, Sector
+from meshapi.models import Building, Install, Link, Member, Node, Sector
 
 
 class TestViewsGetUnauthenticated(TestCase):
@@ -39,6 +39,7 @@ class TestViewsGetUnauthenticated(TestCase):
     def test_install_data(self):
         installs = []
         buildings = []
+        nodes = []
 
         # Use the same member for everything since it doesn't matter
         member = Member(name="Fake Name")
@@ -46,8 +47,7 @@ class TestViewsGetUnauthenticated(TestCase):
 
         buildings.append(
             Building(
-                building_status=Building.BuildingStatus.INACTIVE,
-                address_truth_sources="",
+                address_truth_sources=[],
                 latitude=40.7686554,
                 longitude=-73.9291817,
                 altitude=37,
@@ -56,7 +56,7 @@ class TestViewsGetUnauthenticated(TestCase):
         installs.append(
             Install(
                 install_number=2,
-                install_status=Install.InstallStatus.INACTIVE,
+                status=Install.InstallStatus.INACTIVE,
                 request_date=datetime.date(2015, 3, 15),
                 install_date=datetime.date(2021, 7, 25),
                 roof_access=False,
@@ -66,22 +66,28 @@ class TestViewsGetUnauthenticated(TestCase):
             )
         )
 
+        nodes.append(
+            Node(
+                network_number=3,
+                status=Node.NodeStatus.ACTIVE,
+                latitude=40.724868,
+                longitude=-73.987881,
+            )
+        )
         buildings.append(
             Building(
-                building_status=Building.BuildingStatus.ACTIVE,
-                address_truth_sources="",
+                address_truth_sources=[],
                 latitude=40.724868,
                 longitude=-73.987881,
                 altitude=27,
-                node_name="Brian",
-                primary_nn=3,
+                primary_node=nodes[-1],
             )
         )
         installs.append(
             Install(
                 install_number=3,
-                network_number=3,
-                install_status=Install.InstallStatus.ACTIVE,
+                node=nodes[-1],
+                status=Install.InstallStatus.ACTIVE,
                 request_date=datetime.date(2015, 3, 15),
                 install_date=datetime.date(2014, 10, 14),
                 roof_access=False,
@@ -93,8 +99,7 @@ class TestViewsGetUnauthenticated(TestCase):
 
         buildings.append(
             Building(
-                building_status=Building.BuildingStatus.ACTIVE,
-                address_truth_sources="",
+                address_truth_sources=[],
                 latitude=40.660073,
                 longitude=-73.921184,
                 altitude=16,
@@ -103,7 +108,7 @@ class TestViewsGetUnauthenticated(TestCase):
         installs.append(
             Install(
                 install_number=190,
-                install_status=Install.InstallStatus.REQUEST_RECEIVED,
+                status=Install.InstallStatus.REQUEST_RECEIVED,
                 request_date=datetime.date(2015, 9, 30),
                 roof_access=False,
                 building=buildings[-1],
@@ -113,8 +118,7 @@ class TestViewsGetUnauthenticated(TestCase):
 
         buildings.append(
             Building(
-                building_status=Building.BuildingStatus.ACTIVE,
-                address_truth_sources="",
+                address_truth_sources=[],
                 latitude=40.6962265,
                 longitude=-73.9917741,
                 altitude=66,
@@ -123,7 +127,7 @@ class TestViewsGetUnauthenticated(TestCase):
         installs.append(
             Install(
                 install_number=14956,
-                install_status=Install.InstallStatus.PENDING,
+                status=Install.InstallStatus.PENDING,
                 request_date=datetime.date(2024, 1, 27),
                 roof_access=True,
                 building=buildings[-1],
@@ -133,8 +137,7 @@ class TestViewsGetUnauthenticated(TestCase):
 
         buildings.append(
             Building(
-                building_status=Building.BuildingStatus.ACTIVE,
-                address_truth_sources="",
+                address_truth_sources=[],
                 latitude=40.6962265,
                 longitude=-73.9917741,
                 altitude=66,
@@ -143,7 +146,7 @@ class TestViewsGetUnauthenticated(TestCase):
         installs.append(
             Install(
                 install_number=245,
-                install_status=Install.InstallStatus.NN_REASSIGNED,
+                status=Install.InstallStatus.NN_REASSIGNED,
                 request_date=datetime.date(2024, 1, 27),
                 roof_access=True,
                 building=buildings[-1],
@@ -151,21 +154,28 @@ class TestViewsGetUnauthenticated(TestCase):
             )
         )
 
+        nodes.append(
+            Node(
+                network_number=567,
+                status=Node.NodeStatus.ACTIVE,
+                latitude=40.724868,
+                longitude=-73.987881,
+            )
+        )
         buildings.append(
             Building(
-                building_status=Building.BuildingStatus.ACTIVE,
-                address_truth_sources="",
+                address_truth_sources=[],
                 latitude=40.6962265,
                 longitude=-73.9917741,
                 altitude=66,
-                primary_nn=567,
+                primary_node=nodes[-1],
             )
         )
         installs.append(
             Install(
                 install_number=15657,
-                network_number=567,
-                install_status=Install.InstallStatus.ACTIVE,
+                node=nodes[-1],
+                status=Install.InstallStatus.ACTIVE,
                 request_date=datetime.date(2024, 1, 27),
                 roof_access=True,
                 building=buildings[-1],
@@ -176,7 +186,7 @@ class TestViewsGetUnauthenticated(TestCase):
         installs.append(
             Install(
                 install_number=2134,
-                install_status=Install.InstallStatus.CLOSED,
+                status=Install.InstallStatus.CLOSED,
                 request_date=datetime.date(2024, 1, 27),
                 roof_access=True,
                 building=buildings[-1],

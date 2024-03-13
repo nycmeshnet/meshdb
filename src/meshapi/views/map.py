@@ -29,11 +29,12 @@ class MapDataNodeList(generics.ListAPIView):
     def get_queryset(self):
         all_installs = []
 
-        queryset = Install.objects.filter(~Q(install_status__in=EXCLUDED_INSTALL_STATUSES))
+        queryset = Install.objects.filter(~Q(status__in=EXCLUDED_INSTALL_STATUSES))
 
         for install in queryset:
             all_installs.append(install)
 
+        # TODO: This all needs to be re-worked to account for the Node table
         # We need to make sure there is an entry on the map for every NN, and since we excluded the
         # NN assigned rows in the query above, we need to go through the building objects and
         # include the nns we haven't already covered via install num
@@ -41,11 +42,7 @@ class MapDataNodeList(generics.ListAPIView):
             install.network_number for install in all_installs if install.install_number == install.network_number
         }
         for building in Building.objects.filter(
-            Q(
-                primary_nn__isnull=False,
-                building_status=Building.BuildingStatus.ACTIVE,
-            )
-            & Q(installs__install_status__in=ALLOWED_INSTALL_STATUSES)
+            Q(primary_node__isnull=False) & Q(installs__install_status__in=ALLOWED_INSTALL_STATUSES)
         ):
             if building.primary_nn not in covered_nns:
                 representative_install = building.installs.all()[0]

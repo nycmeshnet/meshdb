@@ -5,13 +5,15 @@ from rest_framework import generics, permissions
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 
-from meshapi.models import Building, Install, Link, Member, Sector
+from meshapi.models import Building, Device, Install, Link, Member, Node, Sector
 from meshapi.permissions import IsReadOnly
 from meshapi.serializers import (
     BuildingSerializer,
+    DeviceSerializer,
     InstallSerializer,
     LinkSerializer,
     MemberSerializer,
+    NodeSerializer,
     SectorSerializer,
 )
 
@@ -100,6 +102,26 @@ class InstallDetail(generics.RetrieveUpdateDestroyAPIView):
 
 
 @extend_schema_view(
+    get=extend_schema(tags=["Nodes"]),
+    post=extend_schema(tags=["Nodes"]),
+)
+class NodeList(generics.ListCreateAPIView):
+    queryset = Node.objects.all()
+    serializer_class = NodeSerializer
+
+
+@extend_schema_view(
+    get=extend_schema(tags=["Nodes"]),
+    put=extend_schema(tags=["Nodes"]),
+    patch=extend_schema(tags=["Nodes"]),
+    delete=extend_schema(tags=["Nodes"]),
+)
+class NodeDetail(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Node.objects.all()
+    serializer_class = NodeSerializer
+
+
+@extend_schema_view(
     get=extend_schema(tags=["Links"]),
     post=extend_schema(tags=["Links"]),
 )
@@ -117,6 +139,26 @@ class LinkList(generics.ListCreateAPIView):
 class LinkDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = Link.objects.all()
     serializer_class = LinkSerializer
+
+
+@extend_schema_view(
+    get=extend_schema(tags=["Devices"]),
+    post=extend_schema(tags=["Devices"]),
+)
+class DeviceList(generics.ListCreateAPIView):
+    queryset = Device.objects.all()
+    serializer_class = DeviceSerializer
+
+
+@extend_schema_view(
+    get=extend_schema(tags=["Devices"]),
+    put=extend_schema(tags=["Devices"]),
+    patch=extend_schema(tags=["Devices"]),
+    delete=extend_schema(tags=["Devices"]),
+)
+class DeviceDetail(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Device.objects.all()
+    serializer_class = DeviceSerializer
 
 
 @extend_schema_view(

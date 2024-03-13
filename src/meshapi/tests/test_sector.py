@@ -3,7 +3,7 @@ import json
 from django.contrib.auth.models import User
 from django.test import Client, TestCase
 
-from ..models import Building, Sector
+from ..models import Building, Node, Sector
 
 
 class TestSector(TestCase):
@@ -15,16 +15,14 @@ class TestSector(TestCase):
         )
         self.c.login(username="admin", password="admin_password")
 
-        self.building_1 = Building(
-            id=1,
-            building_status=Building.BuildingStatus.ACTIVE,
-            address_truth_sources="",
+        self.node = Node(
+            network_number=1,
+            name="Test Node",
+            status=Node.NodeStatus.ACTIVE,
             latitude=0,
             longitude=0,
-            altitude=0,
-            invalid=True,
         )
-        self.building_1.save()
+        self.node.save()
 
     def test_new_sector(self):
         response = self.c.post(
@@ -32,8 +30,9 @@ class TestSector(TestCase):
             {
                 "name": "Vernon",
                 "device_name": "LAP-120",
-                "building": self.building_1.id,
-                "status": "Active",
+                "node": self.node.network_number,
+                "latitude": 0,
+                "longitude": 0,
                 "azimuth": 0,
                 "width": 120,
                 "radius": 0.3,
@@ -46,14 +45,14 @@ class TestSector(TestCase):
             f"status code incorrect. Should be {code}, but got {response.status_code}",
         )
 
-    def test_broken_link(self):
+    def test_broken_sector(self):
         response = self.c.post(
             "/api/v1/sectors/",
             {
                 "name": "Vernon",
-                "device_name": "",
-                "building": "",
-                "status": "",
+                "node": self.node.network_number,
+                "latitude": 0,
+                "longitude": 0,
                 "azimuth": 0,
                 "width": 120,
                 "radius": 0.3,
@@ -70,8 +69,6 @@ class TestSector(TestCase):
         sector = Sector(
             id=1,
             name="Vernon",
-            device_name="LAP-120",
-            building=self.building_1,
             status="Active",
             azimuth=0,
             width=120,

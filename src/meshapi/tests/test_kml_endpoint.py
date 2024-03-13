@@ -7,29 +7,47 @@ from fastkml import kml
 from lxml import etree
 from rest_framework.authtoken.models import Token
 
-from meshapi.models import Building, Install, Link, Member, Sector
+from meshapi.models import Building, Device, Install, Link, Member, Node, Sector
 
 
-def create_building_install_pair(member_ref, nn):
+def create_building_install_node_and_device(member_ref, nn):
+    node = Node(
+        network_number=nn,
+        status=Node.NodeStatus.ACTIVE,
+        latitude=0,
+        longitude=0,
+    )
+    node.save()
+
     building = Building(
-        address_truth_sources="",
+        address_truth_sources=[],
         latitude=0,
         longitude=0,
         altitude=0,
-        primary_nn=nn,
+        primary_node=node,
     )
     building.save()
 
     install = Install(
         member=member_ref,
         building=building,
-        install_number=nn,
-        install_status=Install.InstallStatus.ACTIVE,
+        node=node,
+        status=Install.InstallStatus.ACTIVE,
         request_date=datetime.date.today(),
     )
     install.save()
 
-    return install, building
+    device = Device(
+        node=node,
+        model_name="OmniTik",
+        type=Device.DeviceType.ROUTER,
+        status=Device.DeviceStatus.ACTIVE,
+        latitude=0,
+        longitude=0,
+    )
+    device.save()
+
+    return building, install, node, device
 
 
 class TestKMLEndpoint(TestCase):
@@ -61,17 +79,17 @@ class TestKMLEndpoint(TestCase):
         fake_member = Member(name="Stacy Fakename")
         fake_member.save()
 
-        grand_install, grand = create_building_install_pair(fake_member, 1934)
-        sn1_install, sn1 = create_building_install_pair(fake_member, 227)
-        sn10_install, sn10 = create_building_install_pair(fake_member, 10)
-        sn3_install, sn3 = create_building_install_pair(fake_member, 713)
-        brian_install, brian = create_building_install_pair(fake_member, 3)
-        random_install, random = create_building_install_pair(fake_member, 123)
+        grand_building, grand_install, grand, grand_omni = create_building_install_node_and_device(fake_member, 1934)
+        sn1_building, sn1_install, sn1, sn1_omni = create_building_install_node_and_device(fake_member, 227)
+        sn1_building, sn10_install, sn10, sn10_omni = create_building_install_node_and_device(fake_member, 10)
+        s3_building, sn3_install, sn3, sn3_omni = create_building_install_node_and_device(fake_member, 713)
+        brian_building, brian_install, brian, brian_omni = create_building_install_node_and_device(fake_member, 3)
+        random_building, random_install, random, random_omni = create_building_install_node_and_device(fake_member, 123)
 
         links.append(
             Link(
-                from_building=sn1,
-                to_building=sn3,
+                from_device=sn1_omni,
+                to_device=sn3_omni,
                 status=Link.LinkStatus.ACTIVE,
                 type=Link.LinkType.VPN,
                 install_date=datetime.date(2022, 1, 26),
@@ -80,8 +98,8 @@ class TestKMLEndpoint(TestCase):
 
         links.append(
             Link(
-                from_building=sn1,
-                to_building=grand,
+                from_device=sn1_omni,
+                to_device=grand_omni,
                 status=Link.LinkStatus.ACTIVE,
                 type=Link.LinkType.MMWAVE,
             )
@@ -89,8 +107,8 @@ class TestKMLEndpoint(TestCase):
 
         links.append(
             Link(
-                from_building=sn1,
-                to_building=brian,
+                from_device=sn1_omni,
+                to_device=brian_omni,
                 status=Link.LinkStatus.ACTIVE,
                 type=Link.LinkType.STANDARD,
             )
@@ -98,8 +116,8 @@ class TestKMLEndpoint(TestCase):
 
         links.append(
             Link(
-                from_building=grand,
-                to_building=sn10,
+                from_device=grand_omni,
+                to_device=sn10_omni,
                 status=Link.LinkStatus.ACTIVE,
                 type=Link.LinkType.FIBER,
             )
@@ -107,8 +125,8 @@ class TestKMLEndpoint(TestCase):
 
         links.append(
             Link(
-                from_building=grand,
-                to_building=random,
+                from_device=grand_omni,
+                to_device=random_omni,
                 status=Link.LinkStatus.PLANNED,
                 type=Link.LinkType.STANDARD,
             )

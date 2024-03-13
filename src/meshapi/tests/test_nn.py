@@ -1,3 +1,4 @@
+import datetime
 import json
 import time
 from unittest import mock
@@ -6,7 +7,7 @@ from django.conf import os
 from django.contrib.auth.models import User
 from django.test import Client, TestCase, TransactionTestCase
 
-from meshapi.models import Building, Install, Member
+from meshapi.models import Building, Install, Member, Node
 
 from ..views import get_next_available_network_number
 from .group_helpers import create_groups
@@ -27,18 +28,19 @@ class TestNN(TestCase):
         # Create sample data
         member_obj = Member(**sample_member)
         member_obj.save()
-        building = sample_building.copy()
-        building["primary_nn"] = None
-        building_obj = Building(**building)
-        building_obj.save()
-        inst = sample_install.copy()
 
+        self.building = Building(**sample_building)
+        self.building.latitude = 4
+        self.building.longitude = 4
+        self.building.save()
+
+        inst = sample_install.copy()
         if inst["abandon_date"] == "":
             inst["abandon_date"] = None
 
-        inst["building"] = building_obj
+        inst["building"] = self.building
         inst["member"] = member_obj
-        inst["network_number"] = None
+
         install_obj = Install(**inst)
         install_obj.save()
 
@@ -65,6 +67,12 @@ class TestNN(TestCase):
             resp_nn,
             f"nn incorrect for test_nn_valid_install_number. Should be {expected_nn}, but got {resp_nn}",
         )
+
+        node_object = Node.objects.get(network_number=expected_nn)
+        self.assertEqual(node_object.status, Node.NodeStatus.ACTIVE)
+        self.assertEqual(node_object.latitude, self.building.latitude)
+        self.assertEqual(node_object.longitude, self.building.longitude)
+        self.assertEqual(node_object.install_date, datetime.date.today())
 
         # Now test to make sure that we get 200 for dupes
         response = self.admin_c.post(

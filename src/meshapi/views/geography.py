@@ -115,11 +115,11 @@ class WholeMeshKML(APIView):
             & Q(building__longitude__isnull=False)
             & Q(building__latitude__isnull=False)
         ):
-            identifier = install.network_number or install.install_number
+            identifier = install.node.network_number if install.node else install.install_number
             placemark = kml.Placemark(
                 name=str(identifier),
                 style_url=styles.StyleUrl(
-                    url="#red_dot" if install.install_status == Install.InstallStatus.ACTIVE else "#grey_dot"
+                    url="#red_dot" if install.status == Install.InstallStatus.ACTIVE else "#grey_dot"
                 ),
                 kml_geometry=geometry.Point(
                     geometry=Point(
@@ -134,13 +134,11 @@ class WholeMeshKML(APIView):
             extended_data = {
                 "name": str(identifier),
                 "roofAccess": str(install.roof_access),
-                "marker-color": ACTIVE_COLOR
-                if install.install_status == Install.InstallStatus.ACTIVE
-                else INACTIVE_COLOR,
+                "marker-color": ACTIVE_COLOR if install.status == Install.InstallStatus.ACTIVE else INACTIVE_COLOR,
                 "id": str(identifier),
                 "install_number": str(install.install_number),
-                "network_number": str(install.network_number),
-                "status": install.install_status,
+                "network_number": str(install.node.network_number if install.node else None),
+                "status": install.status,
                 # Leave disabled, notes can leak a lot of information & this endpoint is public
                 # "notes": install.notes,
             }
@@ -152,8 +150,8 @@ class WholeMeshKML(APIView):
             folder.append(placemark)
 
         for link in (
-            Link.objects.filter(~Q(status=Link.LinkStatus.DEAD))
-            .annotate(highest_altitude=Greatest("from_building__altitude", "to_building__altitude"))
+            Link.objects.filter(~Q(status=Link.LinkStatus.INACTIVE))
+            .annotate(highest_altitude=Greatest("from_device__altitude", "to_device__altitude"))
             .order_by(F("highest_altitude").asc(nulls_first=True))
         ):
             placemark = kml.Placemark(
@@ -163,14 +161,14 @@ class WholeMeshKML(APIView):
                     geometry=LineString(
                         [
                             (
-                                link.from_building.longitude,
-                                link.from_building.latitude,
-                                link.from_building.altitude or DEFAULT_ALTITUDE,
+                                link.from_device.longitude,
+                                link.from_device.latitude,
+                                link.from_device.altitude or DEFAULT_ALTITUDE,
                             ),
                             (
-                                link.to_building.longitude,
-                                link.to_building.latitude,
-                                link.to_building.altitude or DEFAULT_ALTITUDE,
+                                link.from_device.longitude,
+                                link.from_device.latitude,
+                                link.from_device.altitude or DEFAULT_ALTITUDE,
                             ),
                         ]
                     ),
@@ -179,8 +177,8 @@ class WholeMeshKML(APIView):
                 ),
             )
 
-            from_identifier = link.from_building.primary_nn or link.from_building.installs.first().install_number
-            to_identifier = link.to_building.primary_nn or link.to_building.installs.first().install_number
+            from_identifier = link.from_device.node.network_number
+            to_identifier = link.to_device.node.network_number
 
             extended_data = {
                 "name": f"Links-{link.id}",
