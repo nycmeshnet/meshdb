@@ -3,7 +3,8 @@ import json
 from django.contrib.auth.models import User
 from django.test import Client, TestCase
 
-from ..models import Building, Node, Sector
+from ..models import Building, Device, Node, Sector
+from .sample_data import sample_node
 
 
 class TestSector(TestCase):
@@ -16,7 +17,7 @@ class TestSector(TestCase):
         self.c.login(username="admin", password="admin_password")
 
         self.node = Node(
-            network_number=1,
+            network_number=7,
             name="Test Node",
             status=Node.NodeStatus.ACTIVE,
             latitude=0,
@@ -28,9 +29,10 @@ class TestSector(TestCase):
         response = self.c.post(
             "/api/v1/sectors/",
             {
-                "name": "Vernon",
-                "device_name": "LAP-120",
+                "model_name": "LAP-120",
                 "node": self.node.network_number,
+                "type": Device.DeviceType.AP,
+                "status": Device.DeviceStatus.ACTIVE,
                 "latitude": 0,
                 "longitude": 0,
                 "azimuth": 0,
@@ -66,13 +68,18 @@ class TestSector(TestCase):
         )
 
     def test_get_sector(self):
+        node = Node(**sample_node)
+        node.save()
         sector = Sector(
             id=1,
             name="Vernon",
             status="Active",
+            longitude=0,
+            latitude=0,
             azimuth=0,
             width=120,
             radius=0.3,
+            node=node,
         )
         sector.save()
 
@@ -87,4 +94,4 @@ class TestSector(TestCase):
 
         response_obj = json.loads(response.content)
         self.assertEqual(response_obj["status"], "Active")
-        self.assertEqual(response_obj["building"], 1)
+        self.assertEqual(response_obj["node"], node.network_number)

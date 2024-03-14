@@ -190,33 +190,40 @@ class TestFindGaps(TestCase):
     c = Client()
     admin_c = Client()
 
-    def add_data(self, b, m, i, index=101, nn=False):
+    def add_data(self, b, m, i, index=101, create_node=False):
         i = i.copy()
         b["zip_code"] += index
         b["address_truth_sources"] = ["NYCPlanningLabs"]
-
-        if nn:
-            b["primary_nn"] = index
-            i["network_number"] = index
-        else:
-            b["primary_nn"] = None
-            i["network_number"] = None
-
         if i["abandon_date"] == "":
             i["abandon_date"] = None
 
         building_obj = Building(**b)
-        building_obj.save()
         i["building"] = building_obj
 
         m["primary_email_address"] = f"john{index}@gmail.com"
         member_obj = Member(**m)
-        member_obj.save()
         i["member"] = member_obj
         i["ticket_id"] = index
         install_obj = Install(**i)
+
+        if create_node:
+            node = Node(
+                network_number=index,
+                status=Node.NodeStatus.ACTIVE,
+                latitude=0,
+                longitude=0,
+            )
+            node.save()
+
+            building_obj.primary_node = node
+            install_obj.node = node
+
+        member_obj.save()
+        building_obj.save()
         install_obj.save()
+
         i["install_number"] = install_obj.install_number
+
         return i
 
     def setUp(self):
@@ -231,39 +238,39 @@ class TestFindGaps(TestCase):
         memb = sample_member.copy()
         build["street_address"] = "123 Fake St"
         for i in range(101, 111):
-            self.add_data(build, memb, inst, index=i, nn=True)
+            self.add_data(build, memb, inst, index=i, create_node=True)
 
         # Skip a few numbers (111, 112)
         for i in range(113, 130):
-            self.add_data(build, memb, inst, index=i, nn=True)
+            self.add_data(build, memb, inst, index=i, create_node=True)
 
         # Inactive install, reserves the install number as an NN even though
         # no NN is technically assigned
         inst["install_number"] = 130
-        inst["install_status"] = Install.InstallStatus.INACTIVE
-        self.add_data(build, memb, inst, index=130, nn=False)
+        inst["status"] = Install.InstallStatus.INACTIVE
+        self.add_data(build, memb, inst, index=130, create_node=False)
 
         # Old join request, doesn't reserve the NN
         inst["install_number"] = 131
-        inst["install_status"] = Install.InstallStatus.REQUEST_RECEIVED
-        self.add_data(build, memb, inst, index=131, nn=False)
+        inst["status"] = Install.InstallStatus.REQUEST_RECEIVED
+        self.add_data(build, memb, inst, index=131, create_node=False)
 
         # Then create another couple installs
         # These will get numbers assigned next
         b2 = sample_building.copy()
         m2 = sample_member.copy()
         self.inst2 = sample_install.copy()
-        self.inst2 = self.add_data(b2, m2, self.inst2, index=5002, nn=False)
+        self.inst2 = self.add_data(b2, m2, self.inst2, index=5002, create_node=False)
 
         b3 = sample_building.copy()
         m3 = sample_member.copy()
         self.inst3 = sample_install.copy()
-        self.inst3 = self.add_data(b3, m3, self.inst3, index=5003, nn=False)
+        self.inst3 = self.add_data(b3, m3, self.inst3, index=5003, create_node=False)
 
         b4 = sample_building.copy()
         m4 = sample_member.copy()
         self.inst4 = sample_install.copy()
-        self.inst4 = self.add_data(b4, m4, self.inst4, index=5004, nn=False)
+        self.inst4 = self.add_data(b4, m4, self.inst4, index=5004, create_node=False)
 
     def test_nn_search_for_new_number(self):
         # Try to give NNs to all the installs. Should end up with two right
@@ -294,11 +301,11 @@ class TestFindGaps(TestCase):
             )
 
         # Sanity check that the other buildings actually exist
-        self.assertIsNotNone(Install.objects.filter(network_number=129)[0].install_number)
-        self.assertIsNotNone(Building.objects.filter(primary_nn=129)[0].id)
+        self.assertIsNotNone(Install.objects.filter(node_id=129)[0].install_number)
+        self.assertIsNotNone(Building.objects.filter(primary_node_id=129)[0].id)
 
-        self.assertIsNotNone(Install.objects.filter(network_number=131)[0].install_number)
-        self.assertIsNotNone(Building.objects.filter(primary_nn=131)[0].id)
+        self.assertIsNotNone(Install.objects.filter(node_id=131)[0].install_number)
+        self.assertIsNotNone(Building.objects.filter(primary_node_id=131)[0].id)
 
 
 def mocked_slow_nn_lookup():
@@ -321,7 +328,6 @@ class TestNNRaceCondition(TransactionTestCase):
         member_obj.save()
 
         building = sample_building.copy()
-        building["primary_nn"] = None
         building_obj1 = Building(**building)
         building_obj1.save()
 
@@ -338,7 +344,6 @@ class TestNNRaceCondition(TransactionTestCase):
 
         inst["building"] = building_obj1
         inst["member"] = member_obj
-        inst["network_number"] = None
 
         install_obj1 = Install(**inst)
         install_obj1.save()

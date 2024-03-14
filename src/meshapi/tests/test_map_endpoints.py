@@ -5,7 +5,7 @@ from django.contrib.auth.models import Group, User
 from django.test import Client, TestCase
 from rest_framework.authtoken.models import Token
 
-from meshapi.models import Building, Install, Link, Member, Node, Sector
+from meshapi.models import Building, Device, Install, Link, Member, Node, Sector
 
 
 class TestViewsGetUnauthenticated(TestCase):
@@ -69,6 +69,7 @@ class TestViewsGetUnauthenticated(TestCase):
         nodes.append(
             Node(
                 network_number=3,
+                name="Brian",
                 status=Node.NodeStatus.ACTIVE,
                 latitude=40.724868,
                 longitude=-73.987881,
@@ -194,6 +195,9 @@ class TestViewsGetUnauthenticated(TestCase):
             )
         )
 
+        for node in nodes:
+            node.save()
+
         for building in buildings:
             building.save()
 
@@ -263,74 +267,79 @@ class TestViewsGetUnauthenticated(TestCase):
 
     def test_sector_data(self):
         sectors = []
-        buildings = []
+        nodes = []
 
         # Use the same member for everything since it doesn't matter
         member = Member(name="Fake Name")
         member.save()
 
-        buildings.append(
-            Building(
-                building_status=Building.BuildingStatus.ACTIVE,
-                address_truth_sources="",
+        fake_building = Building(address_truth_sources=[], latitude=0, longitude=0)
+        fake_building.save()
+
+        nodes.append(
+            Node(
+                network_number=155,
                 latitude=0,
                 longitude=0,
-                altitude=0,
-                primary_nn=155,
+                status=Node.NodeStatus.ACTIVE,
             )
         )
         sectors.append(
             Sector(
-                building=buildings[-1],
+                node=nodes[-1],
+                latitude=0,
+                longitude=0,
                 radius=0.3,
                 azimuth=0,
                 width=360,
-                status=Sector.SectorStatus.ACTIVE,
-                device_name="Omni",
+                status=Device.DeviceStatus.ACTIVE,
+                model_name="Omni",
                 install_date=datetime.date(2021, 3, 21),
             )
         )
-        buildings.append(
-            Building(
-                building_status=Building.BuildingStatus.ACTIVE,
-                address_truth_sources="",
+        nodes.append(
+            Node(
+                network_number=227,
                 latitude=0,
                 longitude=0,
-                altitude=0,
-                primary_nn=227,
+                status=Node.NodeStatus.ACTIVE,
             )
         )
         sectors.append(
             Sector(
-                building=buildings[-1],
+                node=nodes[-1],
+                latitude=0,
+                longitude=0,
                 radius=0.75,
                 azimuth=300,
                 width=90,
-                status=Sector.SectorStatus.ABANDONED,
-                device_name="SN1Sector2",
+                status=Device.DeviceStatus.INACTIVE,
+                model_name="LAP-120s",
             )
         )
-        buildings.append(
-            Building(
-                building_status=Building.BuildingStatus.ACTIVE,
-                address_truth_sources="",
+
+        nodes.append(
+            Node(
+                network_number=786,
                 latitude=0,
                 longitude=0,
-                altitude=0,
+                status=Node.NodeStatus.ACTIVE,
             )
         )
         sectors.append(
             Sector(
-                building=buildings[-1],
+                node=nodes[-1],
+                latitude=0,
+                longitude=0,
                 radius=0.3,
                 azimuth=0,
                 width=360,
-                status=Sector.SectorStatus.POTENTIAL,
-                device_name="Omni",
+                status=Device.DeviceStatus.POTENTIAL,
+                model_name="Omni",
             )
         )
 
-        for building in buildings:
+        for building in nodes:
             building.save()
 
         for sector in sectors:
@@ -338,10 +347,11 @@ class TestViewsGetUnauthenticated(TestCase):
 
         install = Install(
             install_number=1126,
-            install_status=Install.InstallStatus.ACTIVE,
+            status=Install.InstallStatus.ACTIVE,
             request_date=datetime.date(2015, 9, 30),
             roof_access=False,
-            building=buildings[-1],
+            building=fake_building,
+            node=nodes[-1],
             member=member,
         )
         install.save()
@@ -375,80 +385,129 @@ class TestViewsGetUnauthenticated(TestCase):
     def test_link_data(self):
         links = []
 
-        grand = Building(
-            building_status=Building.BuildingStatus.ACTIVE,
-            address_truth_sources="",
+        grand = Node(
+            network_number=1934,
+            status=Node.NodeStatus.ACTIVE,
             latitude=0,
             longitude=0,
-            altitude=0,
-            primary_nn=1934,
         )
         grand.save()
-
-        sn1 = Building(
-            building_status=Building.BuildingStatus.ACTIVE,
-            address_truth_sources="",
+        grand_omni = Device(
+            node=grand,
+            model_name="OmniTik",
+            type=Device.DeviceType.ROUTER,
+            status=Device.DeviceStatus.ACTIVE,
             latitude=0,
             longitude=0,
-            altitude=0,
-            primary_nn=227,
+        )
+        grand_omni.save()
+
+        sn1 = Node(
+            network_number=227,
+            status=Node.NodeStatus.ACTIVE,
+            latitude=0,
+            longitude=0,
         )
         sn1.save()
-
-        sn10 = Building(
-            building_status=Building.BuildingStatus.ACTIVE,
-            address_truth_sources="",
+        sn1_omni = Device(
+            node=sn1,
+            model_name="OmniTik",
+            type=Device.DeviceType.ROUTER,
+            status=Device.DeviceStatus.ACTIVE,
             latitude=0,
             longitude=0,
-            altitude=0,
-            primary_nn=10,
+        )
+        sn1_omni.save()
+
+        sn10 = Node(
+            network_number=10,
+            status=Node.NodeStatus.ACTIVE,
+            latitude=0,
+            longitude=0,
         )
         sn10.save()
-
-        sn3 = Building(
-            building_status=Building.BuildingStatus.ACTIVE,
-            address_truth_sources="",
+        sn10_omni = Device(
+            node=sn10,
+            model_name="OmniTik",
+            type=Device.DeviceType.ROUTER,
+            status=Device.DeviceStatus.ACTIVE,
             latitude=0,
             longitude=0,
-            altitude=0,
-            primary_nn=713,
+        )
+        sn10_omni.save()
+
+        sn3 = Node(
+            network_number=713,
+            latitude=0,
+            longitude=0,
+            status=Node.NodeStatus.ACTIVE,
         )
         sn3.save()
-
-        brian = Building(
-            building_status=Building.BuildingStatus.ACTIVE,
-            address_truth_sources="",
+        sn3_omni = Device(
+            node=sn3,
+            model_name="OmniTik",
+            type=Device.DeviceType.ROUTER,
+            status=Device.DeviceStatus.ACTIVE,
             latitude=0,
             longitude=0,
-            altitude=0,
-            primary_nn=3,
+        )
+        sn3_omni.save()
+
+        brian = Node(
+            network_number=3,
+            latitude=0,
+            longitude=0,
+            status=Node.NodeStatus.ACTIVE,
         )
         brian.save()
-
-        random = Building(
-            building_status=Building.BuildingStatus.ACTIVE,
-            address_truth_sources="",
+        brian_omni = Device(
+            node=brian,
+            model_name="OmniTik",
+            type=Device.DeviceType.ROUTER,
+            status=Device.DeviceStatus.ACTIVE,
             latitude=0,
             longitude=0,
-            altitude=0,
-            primary_nn=123,
+        )
+        brian_omni.save()
+
+        random = Node(
+            network_number=123,
+            latitude=0,
+            longitude=0,
+            status=Node.NodeStatus.ACTIVE,
         )
         random.save()
-
-        inactive = Building(
-            building_status=Building.BuildingStatus.INACTIVE,
-            address_truth_sources="",
+        random_omni = Device(
+            node=random,
+            model_name="OmniTik",
+            type=Device.DeviceType.ROUTER,
+            status=Device.DeviceStatus.ACTIVE,
             latitude=0,
             longitude=0,
-            altitude=0,
-            primary_nn=123456,
+        )
+        random_omni.save()
+
+        inactive = Node(
+            network_number=123456,
+            latitude=0,
+            longitude=0,
+            status=Node.NodeStatus.INACTIVE,
         )
         inactive.save()
+        inactive_omni = Device(
+            node=inactive,
+            model_name="OmniTik",
+            type=Device.DeviceType.ROUTER,
+            status=Device.DeviceStatus.ACTIVE,
+            latitude=0,
+            longitude=0,
+        )
+        inactive_omni.save()
 
         links.append(
             Link(
-                from_building=sn1,
-                to_building=sn3,
+                from_device=sn1_omni,
+                to_device=sn3_omni,
                 status=Link.LinkStatus.ACTIVE,
                 type=Link.LinkType.VPN,
                 install_date=datetime.date(2022, 1, 26),
@@ -457,8 +516,8 @@ class TestViewsGetUnauthenticated(TestCase):
 
         links.append(
             Link(
-                from_building=sn1,
-                to_building=grand,
+                from_device=sn1_omni,
+                to_device=grand_omni,
                 status=Link.LinkStatus.ACTIVE,
                 type=Link.LinkType.MMWAVE,
             )
@@ -466,8 +525,8 @@ class TestViewsGetUnauthenticated(TestCase):
 
         links.append(
             Link(
-                from_building=sn1,
-                to_building=brian,
+                from_device=sn1_omni,
+                to_device=brian_omni,
                 status=Link.LinkStatus.ACTIVE,
                 type=Link.LinkType.STANDARD,
             )
@@ -475,8 +534,8 @@ class TestViewsGetUnauthenticated(TestCase):
 
         links.append(
             Link(
-                from_building=grand,
-                to_building=sn10,
+                from_device=grand_omni,
+                to_device=sn10_omni,
                 status=Link.LinkStatus.ACTIVE,
                 type=Link.LinkType.FIBER,
             )
@@ -484,8 +543,8 @@ class TestViewsGetUnauthenticated(TestCase):
 
         links.append(
             Link(
-                from_building=grand,
-                to_building=random,
+                from_device=grand_omni,
+                to_device=random_omni,
                 status=Link.LinkStatus.PLANNED,
                 type=Link.LinkType.STANDARD,
             )
@@ -493,17 +552,17 @@ class TestViewsGetUnauthenticated(TestCase):
 
         links.append(
             Link(
-                from_building=sn1,
-                to_building=random,
-                status=Link.LinkStatus.DEAD,
+                from_device=sn1_omni,
+                to_device=random_omni,
+                status=Link.LinkStatus.INACTIVE,
                 type=Link.LinkType.STANDARD,
             )
         )
 
         links.append(
             Link(
-                from_building=sn1,
-                to_building=inactive,
+                from_device=sn1_omni,
+                to_device=inactive_omni,
                 status=Link.LinkStatus.ACTIVE,
                 type=Link.LinkType.STANDARD,
             )
@@ -550,94 +609,126 @@ class TestViewsGetUnauthenticated(TestCase):
     def test_link_install_number_resolution(self):
         links = []
 
-        # Use the same member for everything since it doesn't matter
+        # Use the same member & building for everything since it doesn't matter
         member = Member(name="Fake Name")
         member.save()
 
-        building_1 = Building(
-            building_status=Building.BuildingStatus.ACTIVE,
-            address_truth_sources="",
+        fake_building = Building(address_truth_sources=[], latitude=0, longitude=0)
+        fake_building.save()
+
+        node_1 = Node(
+            network_number=555,
             latitude=0,
             longitude=0,
-            altitude=0,
-            primary_nn=555,
+            status=Node.NodeStatus.ACTIVE,
         )
-        building_1.save()
+        node_1.save()
 
         Install(
             install_number=5,
-            install_status=Install.InstallStatus.INACTIVE,
+            status=Install.InstallStatus.INACTIVE,
             request_date=datetime.date(2015, 3, 15),
-            building=building_1,
+            node=node_1,
             member=member,
+            building=fake_building,
         ).save()
         Install(
             install_number=6,
-            install_status=Install.InstallStatus.CLOSED,
+            status=Install.InstallStatus.CLOSED,
             request_date=datetime.date(2015, 3, 15),
-            building=building_1,
+            node=node_1,
             member=member,
+            building=fake_building,
         ).save()
         Install(
             install_number=7,
-            install_status=Install.InstallStatus.ACTIVE,
+            status=Install.InstallStatus.ACTIVE,
             request_date=datetime.date(2015, 3, 15),
-            building=building_1,
+            node=node_1,
             member=member,
+            building=fake_building,
         ).save()
 
-        building_2 = Building(
-            building_status=Building.BuildingStatus.ACTIVE,
-            address_truth_sources="",
+        node_2 = Node(
+            network_number=99,
             latitude=0,
             longitude=0,
-            altitude=0,
-            primary_nn=99,
+            status=Node.NodeStatus.ACTIVE,
         )
-        building_2.save()
+        node_2.save()
         Install(
             install_number=90,
-            install_status=Install.InstallStatus.CLOSED,
+            status=Install.InstallStatus.CLOSED,
             request_date=datetime.date(2015, 3, 15),
-            building=building_2,
+            node=node_2,
             member=member,
+            building=fake_building,
         ).save()
         Install(
             install_number=91,
-            install_status=Install.InstallStatus.NN_REASSIGNED,
+            status=Install.InstallStatus.NN_REASSIGNED,
             request_date=datetime.date(2015, 3, 15),
-            building=building_2,
+            node=node_2,
             member=member,
+            building=fake_building,
         ).save()
 
-        building_3 = Building(
-            building_status=Building.BuildingStatus.ACTIVE,
-            address_truth_sources="",
+        node_3 = Node(
+            network_number=731,
             latitude=0,
             longitude=0,
-            altitude=0,
-            primary_nn=731,
+            status=Node.NodeStatus.ACTIVE,
         )
-        building_3.save()
+        node_3.save()
         Install(
             install_number=104,
-            install_status=Install.InstallStatus.PENDING,
+            status=Install.InstallStatus.PENDING,
             request_date=datetime.date(2015, 3, 15),
-            building=building_3,
+            node=node_3,
             member=member,
+            building=fake_building,
         ).save()
         Install(
             install_number=105,
-            install_status=Install.InstallStatus.REQUEST_RECEIVED,
+            status=Install.InstallStatus.REQUEST_RECEIVED,
             request_date=datetime.date(2015, 3, 15),
-            building=building_3,
+            node=node_3,
             member=member,
+            building=fake_building,
         ).save()
 
+        device_1 = Device(
+            node=node_1,
+            model_name="OmniTik",
+            type=Device.DeviceType.ROUTER,
+            status=Device.DeviceStatus.ACTIVE,
+            latitude=0,
+            longitude=0,
+        )
+        device_1.save()
+        device_2 = Device(
+            node=node_2,
+            model_name="OmniTik",
+            type=Device.DeviceType.ROUTER,
+            status=Device.DeviceStatus.ACTIVE,
+            latitude=0,
+            longitude=0,
+        )
+        device_2.save()
+        device_3 = Device(
+            node=node_3,
+            model_name="OmniTik",
+            type=Device.DeviceType.ROUTER,
+            status=Device.DeviceStatus.ACTIVE,
+            latitude=0,
+            longitude=0,
+        )
+        device_3.save()
+
         links.append(
             Link(
-                from_building=building_1,
-                to_building=building_2,
+                from_device=device_1,
+                to_device=device_2,
                 status=Link.LinkStatus.ACTIVE,
                 type=Link.LinkType.STANDARD,
             )
@@ -645,8 +736,8 @@ class TestViewsGetUnauthenticated(TestCase):
 
         links.append(
             Link(
-                from_building=building_2,
-                to_building=building_3,
+                from_device=device_2,
+                to_device=device_3,
                 status=Link.LinkStatus.ACTIVE,
                 type=Link.LinkType.STANDARD,
             )
@@ -654,8 +745,8 @@ class TestViewsGetUnauthenticated(TestCase):
 
         links.append(
             Link(
-                from_building=building_3,
-                to_building=building_1,
+                from_device=device_3,
+                to_device=device_1,
                 status=Link.LinkStatus.ACTIVE,
                 type=Link.LinkType.STANDARD,
             )

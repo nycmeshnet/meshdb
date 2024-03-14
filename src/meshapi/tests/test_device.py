@@ -96,7 +96,11 @@ class TestDevice(TestCase):
         self.assertEqual(response_obj["notes"], None)
 
     def test_modify_device(self):
-        response = self.c.put(f"/api/v1/devices/{self.device.id}/", {"notes": "New notes! Wheee"})
+        response = self.c.patch(
+            f"/api/v1/devices/{self.device.id}/",
+            {"notes": "New notes! Wheee"},
+            content_type="application/json",
+        )
 
         code = 200
         self.assertEqual(
@@ -108,7 +112,7 @@ class TestDevice(TestCase):
         response_obj = json.loads(response.content)
         self.assertEqual(response_obj["name"], None)
         self.assertEqual(response_obj["status"], "Active")
-        self.assertEqual(response_obj["status"], "New notes! Wheee")
+        self.assertEqual(response_obj["notes"], "New notes! Wheee")
 
     def test_delete_device(self):
         device_id = self.device.id

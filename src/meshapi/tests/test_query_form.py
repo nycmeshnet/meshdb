@@ -3,7 +3,7 @@ import json
 from django.conf import os
 from django.test import Client, TestCase
 
-from meshapi.models import Building, Install, Member
+from meshapi.models import Building, Install, Member, Node
 
 from .sample_data import sample_building, sample_install, sample_member
 
@@ -21,7 +21,11 @@ class TestQueryForm(TestCase):
         member.save()
         sample_install_copy["member"] = member
 
+        node = Node(latitude=0, longitude=0, status=Node.NodeStatus.ACTIVE)
+        node.save()
+
         self.install = Install(**sample_install_copy)
+        self.install.node = node
         self.install.save()
 
     def query(self, route, field, data):
@@ -45,4 +49,4 @@ class TestQueryForm(TestCase):
         self.query("members", "email_address", self.install.member.primary_email_address)
 
     def test_query_nn(self):
-        self.query("installs", "network_number", self.install.network_number)
+        self.query("installs", "network_number", self.install.node.network_number)

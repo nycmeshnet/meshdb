@@ -34,28 +34,30 @@ class MapDataNodeList(generics.ListAPIView):
         for install in queryset:
             all_installs.append(install)
 
-        # TODO: This all needs to be re-worked to account for the Node table
         # We need to make sure there is an entry on the map for every NN, and since we excluded the
-        # NN assigned rows in the query above, we need to go through the building objects and
+        # NN assigned rows in the query above, we need to go through the Node objects and
         # include the nns we haven't already covered via install num
         covered_nns = {
-            install.network_number for install in all_installs if install.install_number == install.network_number
+            install.install_number
+            for install in all_installs
+            if install.node and install.install_number == install.node.network_number
         }
-        for building in Building.objects.filter(
-            Q(primary_node__isnull=False) & Q(installs__install_status__in=ALLOWED_INSTALL_STATUSES)
+        for node in Node.objects.filter(
+            ~Q(status=Node.NodeStatus.INACTIVE) & Q(installs__status__in=ALLOWED_INSTALL_STATUSES)
         ):
-            if building.primary_nn not in covered_nns:
-                representative_install = building.installs.all()[0]
+            if node.network_number not in covered_nns:
+                # Arbitrarily pick a representative install for the details of the "Fake" node
+                representative_install = node.installs.all()[0]
                 all_installs.append(
                     Install(
-                        install_number=building.primary_nn,
-                        install_status=Install.InstallStatus.NN_REASSIGNED,
-                        building=building,
+                        install_number=node.network_number,
+                        status=Install.InstallStatus.NN_REASSIGNED,
+                        building=representative_install.building,
                         request_date=representative_install.request_date,
                         roof_access=representative_install.roof_access,
                     ),
                 )
-                covered_nns.add(building.primary_nn)
+                covered_nns.add(node.network_number)
 
         all_installs.sort(key=lambda i: i.install_number)
         return all_installs

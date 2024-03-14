@@ -69,7 +69,11 @@ class TestNode(TestCase):
         self.assertEqual(response_obj["notes"], None)
 
     def test_modify_node(self):
-        response = self.c.put(f"/api/v1/nodes/{self.node1.network_number}/", {"notes": "New notes! Wheee"})
+        response = self.c.patch(
+            f"/api/v1/nodes/{self.node1.network_number}/",
+            {"notes": "New notes! Wheee"},
+            content_type="application/json",
+        )
 
         code = 200
         self.assertEqual(
@@ -81,7 +85,7 @@ class TestNode(TestCase):
         response_obj = json.loads(response.content)
         self.assertEqual(response_obj["name"], "Amazing Node")
         self.assertEqual(response_obj["status"], "Active")
-        self.assertEqual(response_obj["status"], "New notes! Wheee")
+        self.assertEqual(response_obj["notes"], "New notes! Wheee")
 
     def test_delete_node(self):
         network_num = self.node1.network_number

@@ -7,6 +7,7 @@ class Device(models.Model):
     class DeviceStatus(models.TextChoices):
         INACTIVE = "Inactive"
         ACTIVE = "Active"
+        POTENTIAL = "Potential"
 
     class DeviceType(models.TextChoices):
         AP = "ap"
