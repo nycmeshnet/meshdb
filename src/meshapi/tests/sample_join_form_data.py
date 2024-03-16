@@ -108,3 +108,20 @@ invalid_join_form_submission = {
     "roof_access": True,
     "ncl": "a duck",
 }
+
+
+jefferson_join_form_submission = {
+    "first_name": "John",
+    "last_name": "Smith",
+    "email": "jsmith@gmail.com",
+    "phone": "+1585-758-3425",
+    "street_address": "476 Jefferson Street",
+    "parsed_street_address": "476 Jefferson Street",
+    "city": "Brooklyn",
+    "state": "NY",
+    "zip": 11237,
+    "apartment": "27",
+    "roof_access": True,
+    "referral": "Googled it or something IDK",
+    "ncl": True,
+}

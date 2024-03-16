@@ -271,6 +271,88 @@ class TestJoinForm(TestCase):
             )["member_id"],
         )
 
+    def test_different_street_addr_same_bin_multi_node(self):
+        """ "
+        This test case simulates a new building joining the Jefferson structure to
+        make sure we handle the multi-address multi-node structures correctly
+        """
+
+        # Name, email, phone, location, apt, rooftop, referral
+        form, s = pull_apart_join_form_submission(jefferson_join_form_submission)
+        response1 = self.c.post("/api/v1/join/", form, content_type="application/json")
+
+        code = 201
+        self.assertEqual(
+            code,
+            response1.status_code,
+            f"status code incorrect for Valid Join Form. Should be {code}, but got {response1.status_code}.\n Response is: {response1.content.decode('utf-8')}",
+        )
+
+        validate_successful_join_form_submission(self, "Valid Join Form", s, response1)
+
+        # Now test that the member can "move" and still access the join form
+        v_sub_2 = jefferson_join_form_submission.copy()
+        v_sub_2["street_address"] = "16 Cypress Avenue"
+        v_sub_2["apartment"] = "13"
+
+        building_id_1 = json.loads(
+            response1.content.decode("utf-8"),
+        )["building_id"]
+        building1 = Building.objects.get(id=building_id_1)
+        building1.primary_node = Node(
+            status=Node.NodeStatus.ACTIVE,
+            latitude=building1.latitude,
+            longitude=building1.longitude,
+            altitude=building1.altitude,
+        )
+        building1.primary_node.save()
+        building1.save()
+
+        additional_node_1_for_building = Node(
+            status=Node.NodeStatus.ACTIVE,
+            latitude=building1.latitude,
+            longitude=building1.longitude,
+            altitude=building1.altitude,
+        )
+        additional_node_1_for_building.save()
+        building1.nodes.add(additional_node_1_for_building)
+
+        additional_node_2_for_building = Node(
+            status=Node.NodeStatus.INACTIVE,
+            latitude=building1.latitude,
+            longitude=building1.longitude,
+            altitude=building1.altitude,
+        )
+        additional_node_2_for_building.save()
+        building1.nodes.add(additional_node_2_for_building)
+
+        form, s = pull_apart_join_form_submission(v_sub_2)
+
+        # Name, email, phone, location, apt, rooftop, referral
+        response2 = self.c.post("/api/v1/join/", form, content_type="application/json")
+
+        code = 201
+        self.assertEqual(
+            code,
+            response2.status_code,
+            f"status code incorrect for Valid Join Form. Should be {code}, but got {response2.status_code}.\n Response is: {response2.content.decode('utf-8')}",
+        )
+
+        validate_successful_join_form_submission(self, "Valid Join Form", s, response2)
+
+        building_id_2 = json.loads(
+            response2.content.decode("utf-8"),
+        )["building_id"]
+
+        self.assertNotEqual(building_id_1, building_id_2)
+
+        building2 = Building.objects.get(id=building_id_2)
+        self.assertEqual(building1.primary_node, building2.primary_node)
+        self.assertEqual(
+            set(building1.nodes.all().values_list("network_number", flat=True)),
+            set(building2.nodes.all().values_list("network_number", flat=True)),
+        )
+
     def test_member_moved_and_used_stripe_email_join_form(self):
         # Name, email, phone, location, apt, rooftop, referral
         form, s = pull_apart_join_form_submission(valid_join_form_submission)
