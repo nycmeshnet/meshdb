@@ -46,8 +46,8 @@ class Building(models.Model):
         models.CharField(
             choices=list((src.value, src.name) for src in AddressTruthSource),
         ),
-        help_text="A list of strings that answers the question: How did we determine the content of "
-        "the street address, city, state, and ZIP fields? This is useful in understanding the level of validation "
+        help_text="A list of strings that answers the question: How was the content of"
+        "the street address, city, state, and ZIP fields determined? This is useful in understanding the level of validation "
         "applied to spreadsheet imported data. Possible values are: "
         f"{', '.join(src.value for src in AddressTruthSource)}. Check the import script for details",
     )
