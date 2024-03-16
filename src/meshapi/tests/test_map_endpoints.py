@@ -385,6 +385,9 @@ class TestViewsGetUnauthenticated(TestCase):
     def test_link_data(self):
         links = []
 
+        member = Member(name="Fake Name")
+        member.save()
+
         grand = Node(
             network_number=1934,
             status=Node.NodeStatus.ACTIVE,
@@ -477,6 +480,23 @@ class TestViewsGetUnauthenticated(TestCase):
             status=Node.NodeStatus.ACTIVE,
         )
         random.save()
+        random_building = Building(
+            latitude=0,
+            longitude=0,
+            address_truth_sources=[],
+            primary_node=random,
+        )
+        random_building.save()
+        random_install = Install(
+            install_number=123,
+            building=random_building,
+            node=random,
+            status=Install.InstallStatus.ACTIVE,
+            request_date=datetime.date(2015, 3, 15),
+            member=member,
+        )
+        random_install.save()
+        random.save()
         random_omni = Device(
             node=random,
             model="OmniTik",
@@ -486,6 +506,52 @@ class TestViewsGetUnauthenticated(TestCase):
             longitude=0,
         )
         random_omni.save()
+
+        random_addl_building = Building(
+            latitude=0,
+            longitude=0,
+            address_truth_sources=[],
+            primary_node=random,
+        )
+        random_addl_building.save()
+
+        random_addl_install = Install(
+            install_number=56789,
+            building=random_addl_building,
+            node=random,
+            status=Install.InstallStatus.ACTIVE,
+            request_date=datetime.date(2015, 3, 15),
+            member=member,
+        )
+        random_addl_install.save()
+
+        random_addl_install_2 = Install(
+            install_number=56790,
+            building=random_addl_building,
+            node=random,
+            status=Install.InstallStatus.ACTIVE,
+            request_date=datetime.date(2015, 3, 15),
+            member=member,
+        )
+        random_addl_install_2.save()
+
+        random_addl_building_inactive = Building(
+            latitude=0,
+            longitude=0,
+            address_truth_sources=[],
+            primary_node=random,
+        )
+        random_addl_building_inactive.save()
+
+        random_addl_install_inactive = Install(
+            install_number=56791,
+            building=random_addl_building_inactive,
+            node=random,
+            status=Install.InstallStatus.INACTIVE,
+            request_date=datetime.date(2015, 3, 15),
+            member=member,
+        )
+        random_addl_install_inactive.save()
 
         inactive = Node(
             network_number=123456,
@@ -602,6 +668,11 @@ class TestViewsGetUnauthenticated(TestCase):
                     "from": 1934,
                     "to": 123,
                     "status": "planned",
+                },
+                {
+                    "from": 56789,
+                    "to": 123,
+                    "status": "active",
                 },
             ],
         )

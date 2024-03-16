@@ -1,4 +1,4 @@
-from django.db.models import Q
+from django.db.models import Count, Q
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import generics, permissions
 
@@ -29,7 +29,11 @@ class MapDataNodeList(generics.ListAPIView):
     def get_queryset(self):
         all_installs = []
 
-        queryset = Install.objects.filter(~Q(status__in=EXCLUDED_INSTALL_STATUSES))
+        queryset = (
+            Install.objects.select_related("building")
+            .select_related("node")
+            .filter(~Q(status__in=EXCLUDED_INSTALL_STATUSES))
+        )
 
         for install in queryset:
             all_installs.append(install)
@@ -76,7 +80,9 @@ class MapDataLinkList(generics.ListAPIView):
     serializer_class = MapDataLinkSerializer
     pagination_class = None
     queryset = (
-        Link.objects.exclude(status__in=[Link.LinkStatus.INACTIVE])
+        Link.objects.prefetch_related("from_device__node__installs")
+        .prefetch_related("to_device__node__installs")
+        .exclude(status__in=[Link.LinkStatus.INACTIVE])
         .exclude(to_device__node__status=Node.NodeStatus.INACTIVE)
         .exclude(from_device__node__status=Node.NodeStatus.INACTIVE)
         # TODO: Possibly re-enable the below filters? They make make the map arguably more accurate,
@@ -85,6 +91,38 @@ class MapDataLinkList(generics.ListAPIView):
         # .exclude(from_device__status=Device.DeviceStatus.INACTIVE)
         # .exclude(to_device__status=Device.DeviceStatus.INACTIVE)
     )
+
+    def list(self, request, *args, **kwargs):
+        response = super().list(request, args, kwargs)
+
+        # Slightly hacky way to show ethernet cable runs on the old map.
+        # We just look for nodes where there are installs on separate buildings
+        # and add fake link objects to connect the installs on those other buildings to
+        # the node dot
+        cable_runs = []
+        for node in (
+            Node.objects.prefetch_related("buildings__installs")
+            .annotate(num_buildings=Count("buildings"))
+            .filter(num_buildings__gt=1)
+        ):
+            for building in node.buildings.all():
+                active_installs = building.installs.filter(status=Install.InstallStatus.ACTIVE).order_by(
+                    "install_number"
+                )
+                if active_installs:
+                    from_install = active_installs.first().install_number
+                    if from_install != node.network_number:
+                        cable_runs.append(
+                            {
+                                "from": from_install,
+                                "to": node.network_number,
+                                "status": "active",
+                            }
+                        )
+
+        response.data.extend(cable_runs)
+
+        return response
 
 
 @extend_schema_view(
@@ -99,4 +137,4 @@ class MapDataSectorList(generics.ListAPIView):
     permission_classes = [permissions.AllowAny]
     serializer_class = MapDataSectorSerializer
     pagination_class = None
-    queryset = Sector.objects.filter(~Q(status__in=[Device.DeviceStatus.INACTIVE]))
+    queryset = Sector.objects.prefetch_related("node__installs").filter(~Q(status__in=[Device.DeviceStatus.INACTIVE]))
