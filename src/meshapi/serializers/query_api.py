@@ -25,7 +25,7 @@ class QueryFormSerializer(serializers.ModelSerializer):
             "additional_email_addresses",
             "notes",
             "network_number",
-            "install_status",
+            "status",
         )
 
     street_address = serializers.CharField(source="building.street_address")
@@ -34,6 +34,9 @@ class QueryFormSerializer(serializers.ModelSerializer):
     zip_code = serializers.CharField(source="building.zip_code")
 
     name = serializers.CharField(source="member.name")
+
+    network_number = serializers.IntegerField(source="node.network_number")
+
     primary_email_address = serializers.CharField(source="member.primary_email_address")
     stripe_email_address = serializers.CharField(source="member.stripe_email_address")
     additional_email_addresses = serializers.ListField(
@@ -43,6 +46,8 @@ class QueryFormSerializer(serializers.ModelSerializer):
     notes = serializers.SerializerMethodField("concat_all_notes")
 
     def concat_all_notes(self, install):
-        return "\n".join(
-            [notes for notes in [install.notes, install.building.notes, install.member.contact_notes] if notes]
-        )
+        note_sources = [notes for notes in [install.notes, install.building.notes, install.member.notes] if notes]
+        if install.node and install.node.notes:
+            note_sources.append(install.node.notes)
+
+        return "\n".join(note_sources)

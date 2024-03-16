@@ -6,10 +6,10 @@ from django.contrib.auth.models import User
 from django.db.models import Q
 from django.test import Client, TestCase, TransactionTestCase
 
-from meshapi.models import Building, Install, Member
+from meshapi.models import Building, Install, Member, Node
 from meshapi.views import JoinFormRequest
 
-from .sample_data import sample_building
+from .sample_data import sample_building, sample_node
 from .sample_join_form_data import *
 from .util import TestThread
 
@@ -345,6 +345,41 @@ class TestJoinForm(TestCase):
                 response3.content.decode("utf-8"),
             )["member_id"],
         )
+
+    def test_pre_existing_building_and_node(self):
+        request, s = pull_apart_join_form_submission(valid_join_form_submission)
+
+        node = Node(**sample_node)
+        node.save()
+
+        building = Building(
+            street_address="151 Broome Street",
+            city="New York",
+            state="NY",
+            zip_code="10002",
+            bin=1077609,
+            latitude=0.0,
+            longitude=0.0,
+            altitude=0.0,
+            address_truth_sources=["NYCPlanningLabs"],
+            primary_node=node,
+        )
+        building.save()
+
+        response = self.c.post("/api/v1/join/", request, content_type="application/json")
+        code = 201
+        self.assertEqual(
+            code,
+            response.status_code,
+            f"status code incorrect for Valid Join Form. Should be {code}, but got {response.status_code}.\n Response is: {response.content.decode('utf-8')}",
+        )
+        validate_successful_join_form_submission(self, "Valid Join Form", s, response)
+
+        install_number = json.loads(response.content.decode("utf-8"))["install_number"]
+        install = Install.objects.get(install_number=install_number)
+
+        self.assertEqual(install.building.id, building.id)
+        self.assertEqual(install.node.network_number, node.network_number)
 
 
 def slow_install_init(*args, **kwargs):

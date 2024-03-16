@@ -32,22 +32,16 @@ class JavascriptDateField(serializers.IntegerField):
         )
 
 
-def get_install_number_from_building(building):
-    installs = building.installs.exclude(install_status__in=EXCLUDED_INSTALL_STATUSES).order_by("install_number")
-    active_installs = [install for install in installs if install.install_status == Install.InstallStatus.ACTIVE]
+def get_install_number_from_node(node):
+    installs = node.installs.exclude(status__in=EXCLUDED_INSTALL_STATUSES).order_by("install_number")
+    active_installs = [install for install in installs if install.status == Install.InstallStatus.ACTIVE]
     if len(active_installs):
         return active_installs[0].install_number
 
-    if len(installs) == 0:
-        if building.primary_nn:
-            return building.primary_nn
-        else:
-            raise ValueError(
-                f"Building {building} with ID {building.id} is invalid for install "
-                f"number conversion, no attached installs with or NN assigned to building"
-            )
-    else:
+    if len(installs):
         return installs.first().install_number
+    else:
+        return node.network_number
 
 
 class MapDataInstallSerializer(serializers.ModelSerializer):
@@ -66,7 +60,7 @@ class MapDataInstallSerializer(serializers.ModelSerializer):
         )
 
     id = serializers.IntegerField(source="install_number")
-    name = serializers.CharField(source="building.node_name")
+    name = serializers.SerializerMethodField("get_node_name")
     status = serializers.SerializerMethodField("convert_status_to_spreadsheet_status")
     coordinates = serializers.SerializerMethodField("get_building_coordinates")
     requestDate = JavascriptDateField(source="request_date")
@@ -79,6 +73,10 @@ class MapDataInstallSerializer(serializers.ModelSerializer):
         building = install.building
         return [building.longitude, building.latitude, building.altitude]
 
+    def get_node_name(self, install):
+        node = install.node
+        return node.name if node else None
+
     def get_start_of_notes(self, install):
         if install.notes:
             note_parts = install.notes.split("\n")
@@ -86,22 +84,22 @@ class MapDataInstallSerializer(serializers.ModelSerializer):
         return None
 
     def convert_status_to_spreadsheet_status(self, install):
-        if install.install_status == Install.InstallStatus.REQUEST_RECEIVED:
+        if install.status == Install.InstallStatus.REQUEST_RECEIVED:
             return None
-        elif install.install_status == Install.InstallStatus.PENDING:
+        elif install.status == Install.InstallStatus.PENDING:
             return "Interested"
-        elif install.install_status == Install.InstallStatus.BLOCKED:
+        elif install.status == Install.InstallStatus.BLOCKED:
             return "No Los"
-        elif install.install_status == Install.InstallStatus.ACTIVE:
+        elif install.status == Install.InstallStatus.ACTIVE:
             return "Installed"
-        elif install.install_status == Install.InstallStatus.INACTIVE:
+        elif install.status == Install.InstallStatus.INACTIVE:
             return "Powered Off"
-        elif install.install_status == Install.InstallStatus.CLOSED:
+        elif install.status == Install.InstallStatus.CLOSED:
             return "Abandoned"
-        elif install.install_status == Install.InstallStatus.NN_REASSIGNED:
+        elif install.status == Install.InstallStatus.NN_REASSIGNED:
             return "NN Assigned"
 
-        return install.install_status
+        return install.status
 
     def to_representation(self, install):
         result = super().to_representation(install)
@@ -143,10 +141,10 @@ class MapDataLinkSerializer(serializers.ModelSerializer):
         return "active"
 
     def get_to_install_number(self, link):
-        return get_install_number_from_building(link.to_building)
+        return get_install_number_from_node(link.to_device.node)
 
     def get_from_install_number(self, link):
-        return get_install_number_from_building(link.from_building)
+        return get_install_number_from_node(link.from_device.node)
 
     def get_fields(self):
         result = super().get_fields()
@@ -185,11 +183,11 @@ class MapDataSectorSerializer(serializers.ModelSerializer):
 
     nodeId = serializers.SerializerMethodField("get_node_id")
     status = serializers.SerializerMethodField("convert_status_to_spreadsheet_status")
-    device = serializers.CharField(source="device_name")
+    device = serializers.CharField(source="model")
     installDate = JavascriptDateField(source="install_date")
 
     def get_node_id(self, sector):
-        return get_install_number_from_building(sector.building)
+        return get_install_number_from_node(sector.node)
 
     def convert_status_to_spreadsheet_status(self, sector):
         return str(sector.status).lower()

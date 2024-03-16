@@ -14,7 +14,7 @@ from rest_framework.response import Response
 from rest_framework_dataclasses.serializers import DataclassSerializer
 
 from meshapi.exceptions import AddressAPIError, AddressError
-from meshapi.models import NETWORK_NUMBER_MAX, NETWORK_NUMBER_MIN, Building, Install, Member
+from meshapi.models import NETWORK_NUMBER_MAX, NETWORK_NUMBER_MIN, Building, Install, Member, Node
 from meshapi.permissions import HasNNAssignPermission, LegacyNNAssignmentPassword
 from meshapi.util.django_pglocks import advisory_lock
 from meshapi.validation import NYCAddressInfo, validate_email_address, validate_phone_number
@@ -155,11 +155,13 @@ def join_form(request):
     existing_buildings = Building.objects.filter(bin=nyc_addr_info.bin)
 
     join_form_building = (
+        # TODO: This should do a normalized address lookup, in addition to BIN. To account for cases
+        #  where there are multiple addresses for a single BIN. Doing existing_buildings[0] here
+        #  picks arbitrarily in that case.
         existing_buildings[0]
         if len(existing_buildings) > 0
         else Building(
-            bin=nyc_addr_info.bin if nyc_addr_info is not None else -1,
-            building_status=Building.BuildingStatus.INACTIVE,
+            bin=nyc_addr_info.bin if nyc_addr_info is not None else None,
             street_address=nyc_addr_info.street_address,
             city=nyc_addr_info.city,
             state=nyc_addr_info.state,
@@ -168,13 +170,11 @@ def join_form(request):
             longitude=nyc_addr_info.longitude,
             altitude=nyc_addr_info.altitude,
             address_truth_sources=[AddressTruthSource.NYCPlanningLabs],
-            primary_nn=None,
         )
     )
 
     join_form_install = Install(
-        network_number=None,
-        install_status=Install.InstallStatus.REQUEST_RECEIVED,
+        status=Install.InstallStatus.REQUEST_RECEIVED,
         ticket_id=None,
         request_date=date.today(),
         install_date=None,
@@ -185,6 +185,7 @@ def join_form(request):
         member=join_form_member,
         referral=r.referral,
         notes=None,
+        node=join_form_building.primary_node if join_form_building.primary_node else None,
     )
 
     try:
@@ -246,10 +247,10 @@ def get_next_available_network_number() -> int:
     """
 
     defined_nns = set(
-        Install.objects.exclude(install_status=Install.InstallStatus.REQUEST_RECEIVED, network_number__isnull=True)
-        .order_by("install_number")
-        .values_list("install_number", flat=True)
-    ).union(set(Install.objects.values_list("network_number", flat=True)))
+        Install.objects.exclude(status=Install.InstallStatus.REQUEST_RECEIVED, node__isnull=True).values_list(
+            "install_number", flat=True
+        )
+    ).union(set(Node.objects.values_list("network_number", flat=True)))
 
     # Find the first valid NN that isn't in use
     free_nn = next(i for i in range(NETWORK_NUMBER_MIN, NETWORK_NUMBER_MAX + 1) if i not in defined_nns)
@@ -261,12 +262,16 @@ def get_next_available_network_number() -> int:
 
     # The number we are about to assign should not be connected to any existing installs as
     # an NN. Again, the above logic should do this, but we REALLY care about this not happening
-    already_in_use_nn_qs = Install.objects.filter(network_number=free_nn)
+    already_in_use_nn_qs = Install.objects.filter(node__network_number=free_nn)
     if len(already_in_use_nn_qs):
         raise ValueError(
             f"Invalid NN: {free_nn} is already in use for "
             f"install number {already_in_use_nn_qs.first().install_number}"
         )
+
+    already_exists_node_qs = Node.objects.filter(network_number=free_nn)
+    if len(already_exists_node_qs):
+        raise ValueError(f"Invalid NN: {free_nn} is already the network_number for a pre-exisiting node")
 
     # If we are re-assigning a number from another install, mark it with NN Assigned to indicate
     # that this has happened
@@ -275,16 +280,13 @@ def get_next_available_network_number() -> int:
         # Double check that if we are re-assigning something that has been used before that it is
         # definitely unused. The logic above should do that, but this is so important that for
         # safety that we should double-check
-        if (
-            nn_donor_install.install_status != Install.InstallStatus.REQUEST_RECEIVED
-            or nn_donor_install.network_number is not None
-        ):
+        if nn_donor_install.status != Install.InstallStatus.REQUEST_RECEIVED or nn_donor_install.node is not None:
             raise ValueError(
                 f"Invalid NN: {free_nn} has an install associated that "
                 f"looks active (#{nn_donor_install.install_number})"
             )
 
-        nn_donor_install.install_status = Install.InstallStatus.NN_REASSIGNED
+        nn_donor_install.status = Install.InstallStatus.NN_REASSIGNED
         nn_donor_install.save()
 
     return free_nn
@@ -369,15 +371,15 @@ def network_number_assignment(request):
         return Response({"detail": "Install Number not found"}, status=status.HTTP_404_NOT_FOUND)
 
     # Check if the install already has a network number
-    if nn_install.network_number != None:
-        message = f"This Install Number ({r.install_number}) already has a Network Number ({nn_install.network_number}) associated with it!"
+    if nn_install.node != None:
+        message = f"This Install Number ({r.install_number}) already has a Network Number ({nn_install.node.network_number}) associated with it!"
         print(message)
         return Response(
             {
                 "detail": message,
                 "building_id": nn_install.building.id,
                 "install_number": nn_install.install_number,
-                "network_number": nn_install.network_number,
+                "network_number": nn_install.node.network_number,
                 "created": False,
             },
             status=status.HTTP_200_OK,
@@ -386,21 +388,31 @@ def network_number_assignment(request):
     nn_building = nn_install.building
 
     # If the building already has a primary NN, then use that.
-    if nn_building.primary_nn is not None:
-        nn_install.network_number = nn_building.primary_nn
+    if nn_building.primary_node is not None:
+        nn_install.node = nn_building.primary_node
     else:
         try:
             free_nn = get_next_available_network_number()
         except ValueError as exception:
             return Response({"detail": f"NN Request failed. {exception}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-        # Set the next free NN on both the install and the Building
-        nn_install.network_number = free_nn
-        nn_building.primary_nn = free_nn
+        nn_install.node = Node(
+            network_number=free_nn,
+            status=Node.NodeStatus.ACTIVE,
+            latitude=nn_building.latitude,
+            longitude=nn_building.longitude,
+            altitude=nn_building.altitude,
+            install_date=date.today(),
+            notes="Created by NN Assignment form",
+        )
 
-    nn_install.install_status = Install.InstallStatus.ACTIVE
+        # Set the node on the Building
+        nn_building.primary_node = nn_install.node
+
+    nn_install.status = Install.InstallStatus.ACTIVE
 
     try:
+        nn_install.node.save()
         nn_building.save()
         nn_install.save()
     except IntegrityError as e:
@@ -414,7 +426,7 @@ def network_number_assignment(request):
             "detail": "Network Number has been assigned!",
             "building_id": nn_building.id,
             "install_number": nn_install.install_number,
-            "network_number": nn_install.network_number,
+            "network_number": nn_install.node.network_number,
             "created": True,
         },
         status=status.HTTP_201_CREATED,

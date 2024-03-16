@@ -3,15 +3,14 @@ import json
 from django.contrib.auth.models import Permission, User
 from django.test import Client, TestCase
 
-from meshapi.models import Building, Install, Link, Member, Sector
-from meshapi.tests.sample_data import sample_building, sample_install, sample_member
+from meshapi.models import Building, Install, Link, Member, Node, Sector
+from meshapi.tests.sample_data import sample_building, sample_install, sample_member, sample_node
 
 
 def setup_objects():
     member_obj = Member(id=1, **sample_member)
     member_obj.save()
     building = sample_building.copy()
-    building["primary_nn"] = None
     building_obj = Building(id=1, **building)
     building_obj.save()
     inst = sample_install.copy()
@@ -24,8 +23,6 @@ def setup_objects():
     inst["install_number"] = 2000
     install_obj = Install(**inst)
     install_obj.save()
-
-    return member_obj, building_obj, install_obj
 
 
 class TestViewsGetLimitedPermissions(TestCase):

@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.admin.options import forms
 
-from meshapi.models import Building, Install, Link, Member, Sector
+from meshapi.models import Building, Device, Install, Link, Member, Node, Sector
 
 admin.site.site_header = "MeshDB Admin"
 admin.site.site_title = "MeshDB Admin Portal"
@@ -12,7 +12,7 @@ admin.site.index_title = "Welcome to MeshDB Admin Portal"
 class InstallInline(admin.TabularInline):
     model = Install
     extra = 0
-    fields = ["install_status", "network_number", "member", "unit"]
+    fields = ["status", "node", "member", "unit"]
     readonly_fields = fields
     can_delete = False
     template = "admin/install_tabular.html"
@@ -66,19 +66,6 @@ class ToBuildingInline(admin.TabularInline):
         }
 
 
-class BuildingAdminForm(forms.ModelForm):
-    class Meta:
-        model = Building
-        fields = "__all__"
-        widgets = {
-            "street_address": forms.TextInput(),
-            "city": forms.TextInput(),
-            "state": forms.TextInput(),
-            "zip_code": forms.NumberInput(),
-            "node_name": forms.TextInput(),
-        }
-
-
 class BoroughFilter(admin.SimpleListFilter):
     title = "Borough"
     parameter_name = "borough"
@@ -108,10 +95,10 @@ class BoroughFilter(admin.SimpleListFilter):
 
 @admin.register(Building)
 class BuildingAdmin(admin.ModelAdmin):
-    form = BuildingAdminForm
+    # form = BuildingAdminForm
     search_fields = [
         # Sometimes they have an actual name
-        "node_name__icontains",
+        "nodes__name__icontains",
         # Address info
         "street_address__icontains",
         "city__icontains",
@@ -119,8 +106,7 @@ class BuildingAdmin(admin.ModelAdmin):
         "zip_code__iexact",
         "bin__iexact",
         # Search by NN
-        "primary_nn__iexact",
-        "installs__network_number__iexact",
+        "nodes__network_number__iexact",
         "installs__install_number__iexact",
         # Search by Member info
         "installs__member__name__icontains",
@@ -131,20 +117,16 @@ class BuildingAdmin(admin.ModelAdmin):
     # inlines = [InstallInline, ToBuildingInline, FromBuildingInline]
     inlines = [InstallInline]
     list_filter = [
-        "building_status",
-        ("primary_nn", admin.EmptyFieldListFilter),
-        ("node_name", admin.EmptyFieldListFilter),
         BoroughFilter,
     ]
-    list_display = ["__str__", "street_address", "node_name", "primary_nn"]
+    list_display = ["__str__", "street_address", "primary_node"]
     fieldsets = [
         (
             "Node Details",
             {
                 "fields": [
-                    "node_name",
-                    "primary_nn",
-                    "building_status",
+                    "primary_node",
+                    "nodes",
                 ]
             },
         ),
@@ -211,7 +193,7 @@ class MemberAdmin(admin.ModelAdmin):
         "installs__building__zip_code__iexact",
         "installs__building__bin__iexact",
         # Search by network number
-        "installs__network_number__iexact",
+        "installs__node__network_number__iexact",
         "installs__install_number__iexact",
     ]
     inlines = [InstallInline]
@@ -237,17 +219,17 @@ class InstallAdminForm(forms.ModelForm):
 class InstallAdmin(admin.ModelAdmin):
     form = InstallAdminForm
     list_filter = [
-        ("network_number", admin.EmptyFieldListFilter),
-        "install_status",
+        ("node", admin.EmptyFieldListFilter),
+        "status",
         "request_date",
         "install_date",
         "abandon_date",
     ]
-    list_display = ["__str__", "install_status", "network_number", "member", "building", "unit"]
+    list_display = ["__str__", "status", "node", "member", "building", "unit"]
     search_fields = [
         # Install number
         "install_number__iexact",
-        "network_number__iexact",
+        "node__network_number__iexact",
         # Search by building details
         "building__street_address__icontains",
         "building__city__iexact",
@@ -267,9 +249,9 @@ class InstallAdmin(admin.ModelAdmin):
             {
                 "fields": [
                     "member",
-                    "install_status",
+                    "status",
                     "ticket_id",
-                    "network_number",
+                    "node",
                 ]
             },
         ),
@@ -319,14 +301,14 @@ class LinkAdminForm(forms.ModelForm):
 class LinkAdmin(admin.ModelAdmin):
     form = LinkAdminForm
     search_fields = [
-        "from_building__node_name__icontains",
-        "to_building__node_name__icontains",
-        "from_building__street_address__icontains",
-        "to_building__street_address__icontains",
-        "from_building__primary_nn__iexact",
-        "to_building__primary_nn__iexact",
+        "from_device__node__name__icontains",
+        "to_device__node__name__icontains",
+        "from_device__node__buildings__street_address__icontains",
+        "to_device__node__buildings__street_address__icontains",
+        "from_device__node__network_number__iexact",
+        "to_device__node__network_number__iexact",
     ]
-    list_display = ["__str__", "status", "from_building", "to_building", "description"]
+    list_display = ["__str__", "status", "from_device", "to_device", "description"]
     list_filter = ["status", "type"]
 
 
@@ -336,7 +318,7 @@ class SectorAdminForm(forms.ModelForm):
         fields = "__all__"
         widgets = {
             "name": forms.TextInput(),
-            "device_name": forms.TextInput(),
+            "model": forms.TextInput(),
             "ssid": forms.TextInput(),
         }
 
@@ -344,11 +326,33 @@ class SectorAdminForm(forms.ModelForm):
 @admin.register(Sector)
 class SectorAdmin(admin.ModelAdmin):
     form = SectorAdminForm
-    search_fields = ["name__icontains", "device_name__icontains", "ssid__icontains"]
+    search_fields = ["name__icontains", "model__icontains", "ssid__icontains"]
     list_display = [
         "__str__",
         "ssid",
         "name",
-        "device_name",
+        "model",
     ]
-    list_filter = ["device_name", "install_date"]
+    list_filter = ["model", "install_date"]
+
+
+class NodeAdminForm(forms.ModelForm):
+    class Meta:
+        model = Node
+        fields = "__all__"
+
+
+@admin.register(Node)
+class NodeAdmin(admin.ModelAdmin):
+    form = SectorAdminForm
+
+
+class DeviceAdminForm(forms.ModelForm):
+    class Meta:
+        model = Device
+        fields = "__all__"
+
+
+@admin.register(Device)
+class NodeAdmin(admin.ModelAdmin):
+    form = DeviceAdminForm

@@ -3,7 +3,8 @@ import json
 from django.contrib.auth.models import User
 from django.test import Client, TestCase
 
-from ..models import Building, Sector
+from ..models import Building, Device, Node, Sector
+from .sample_data import sample_node
 
 
 class TestSector(TestCase):
@@ -15,25 +16,25 @@ class TestSector(TestCase):
         )
         self.c.login(username="admin", password="admin_password")
 
-        self.building_1 = Building(
-            id=1,
-            building_status=Building.BuildingStatus.ACTIVE,
-            address_truth_sources="",
+        self.node = Node(
+            network_number=7,
+            name="Test Node",
+            status=Node.NodeStatus.ACTIVE,
             latitude=0,
             longitude=0,
-            altitude=0,
-            invalid=True,
         )
-        self.building_1.save()
+        self.node.save()
 
     def test_new_sector(self):
         response = self.c.post(
             "/api/v1/sectors/",
             {
-                "name": "Vernon",
-                "device_name": "LAP-120",
-                "building": self.building_1.id,
-                "status": "Active",
+                "model": "LAP-120",
+                "node": self.node.network_number,
+                "type": Device.DeviceType.AP,
+                "status": Device.DeviceStatus.ACTIVE,
+                "latitude": 0,
+                "longitude": 0,
                 "azimuth": 0,
                 "width": 120,
                 "radius": 0.3,
@@ -46,14 +47,14 @@ class TestSector(TestCase):
             f"status code incorrect. Should be {code}, but got {response.status_code}",
         )
 
-    def test_broken_link(self):
+    def test_broken_sector(self):
         response = self.c.post(
             "/api/v1/sectors/",
             {
                 "name": "Vernon",
-                "device_name": "",
-                "building": "",
-                "status": "",
+                "node": self.node.network_number,
+                "latitude": 0,
+                "longitude": 0,
                 "azimuth": 0,
                 "width": 120,
                 "radius": 0.3,
@@ -67,15 +68,18 @@ class TestSector(TestCase):
         )
 
     def test_get_sector(self):
+        node = Node(**sample_node)
+        node.save()
         sector = Sector(
             id=1,
             name="Vernon",
-            device_name="LAP-120",
-            building=self.building_1,
             status="Active",
+            longitude=0,
+            latitude=0,
             azimuth=0,
             width=120,
             radius=0.3,
+            node=node,
         )
         sector.save()
 
@@ -90,4 +94,4 @@ class TestSector(TestCase):
 
         response_obj = json.loads(response.content)
         self.assertEqual(response_obj["status"], "Active")
-        self.assertEqual(response_obj["building"], 1)
+        self.assertEqual(response_obj["node"], node.network_number)

@@ -3,7 +3,8 @@ import json
 from django.contrib.auth.models import User
 from django.test import Client, TestCase
 
-from ..models import Building, Link
+from ..models import Building, Device, Link, Node
+from .sample_data import sample_device, sample_node
 
 
 class TestLink(TestCase):
@@ -15,34 +16,32 @@ class TestLink(TestCase):
         )
         self.c.login(username="admin", password="admin_password")
 
-        self.building_1 = Building(
-            id=1,
-            building_status=Building.BuildingStatus.ACTIVE,
-            address_truth_sources="",
-            latitude=0,
-            longitude=0,
-            altitude=0,
-            invalid=True,
-        )
-        self.building_1.save()
+        self.node1 = Node(**sample_node)
+        self.node1.save()
+        self.node2 = Node(**sample_node)
+        self.node2.save()
 
-        self.building_2 = Building(
-            id=2,
-            building_status=Building.BuildingStatus.ACTIVE,
-            address_truth_sources="",
-            latitude=0,
-            longitude=0,
-            altitude=0,
-            invalid=True,
+        self.device1 = Device(**sample_device)
+        self.device1.node = self.node1
+        self.device1.save()
+
+        self.device2 = Device(**sample_device)
+        self.device2.node = self.node2
+        self.device2.save()
+
+        self.link = Link(
+            from_device=self.device1,
+            to_device=self.device2,
+            status=Link.LinkStatus.ACTIVE,
         )
-        self.building_2.save()
+        self.link.save()
 
     def test_new_link(self):
         response = self.c.post(
             "/api/v1/links/",
             {
-                "from_building": self.building_1.id,
-                "to_building": self.building_2.id,
+                "from_device": self.device1.id,
+                "to_device": self.device2.id,
                 "status": "Active",
             },
         )
@@ -58,7 +57,7 @@ class TestLink(TestCase):
             "/api/v1/links/",
             {
                 "from_building": "",
-                "to_building": self.building_2.id,
+                "to_building": self.device2.id,
                 "status": "Active",
             },
         )
@@ -71,8 +70,8 @@ class TestLink(TestCase):
 
     def test_get_link(self):
         link = Link(
-            from_building=self.building_1,
-            to_building=self.building_2,
+            from_device=self.device1,
+            to_device=self.device2,
             status=Link.LinkStatus.ACTIVE,
         )
         link.save()
@@ -88,5 +87,5 @@ class TestLink(TestCase):
 
         response_obj = json.loads(response.content)
         self.assertEqual(response_obj["status"], "Active")
-        self.assertEqual(response_obj["from_building"], 1)
-        self.assertEqual(response_obj["to_building"], 2)
+        self.assertEqual(response_obj["from_device"], self.device1.id)
+        self.assertEqual(response_obj["to_device"], self.device2.id)

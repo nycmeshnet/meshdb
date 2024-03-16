@@ -117,7 +117,7 @@ class QueryMember(generics.ListAPIView):
 
 
 INSTALL_FILTERS = {
-    "network_number": None,
+    "node__network_number": None,
     "install_number": None,
 }
 
@@ -141,4 +141,5 @@ class QueryInstall(generics.ListAPIView):
             self.request.query_params,
             Install,
             INSTALL_FILTERS,
+            {"network_number": "node__network_number"},
         )

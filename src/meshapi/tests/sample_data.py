@@ -1,4 +1,4 @@
-from meshapi.models import Install
+from meshapi.models import Device, Install, Node
 
 sample_member = {
     "name": "John Smith",
@@ -9,7 +9,6 @@ sample_member = {
 
 sample_building = {
     "bin": 8888,
-    "building_status": "Active",
     "street_address": "3333 Chom St",
     "city": "Brooklyn",
     "state": "NY",
@@ -17,13 +16,27 @@ sample_building = {
     "latitude": 0.0,
     "longitude": 0.0,
     "altitude": 0.0,
-    "primary_nn": 2000,
     "address_truth_sources": ["NYCPlanningLabs"],
 }
 
+
+sample_node = {
+    "name": "Amazing Node",
+    "status": Node.NodeStatus.ACTIVE,
+    "latitude": 0.0,
+    "longitude": 0.0,
+}
+
+sample_device = {
+    "model": "OmniTik",
+    "status": Device.DeviceStatus.ACTIVE,
+    "type": Device.DeviceType.AP,
+    "latitude": 0.0,
+    "longitude": 0.0,
+}
+
 sample_install = {
-    "network_number": 2000,
-    "install_status": Install.InstallStatus.ACTIVE,
+    "status": Install.InstallStatus.ACTIVE,
     "ticket_id": 69,
     "request_date": "2022-02-27",
     "install_date": "2022-03-01",
