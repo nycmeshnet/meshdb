@@ -1,5 +1,7 @@
 import logging
+import operator
 import re
+from functools import reduce
 from typing import Callable, List, Optional, Tuple
 
 import phonenumbers
@@ -157,8 +159,7 @@ def get_or_create_member(
     other_emails = primary_emails + secondary_emails + stripe_emails[1:]
 
     # Don't normally include the primary stripe email in the list of all emails,
-    # however if it's the only email we've got, use it instead of making this
-    # member invalid
+    # however if it's the only email we've got, use it instead of having no email
     if stripe_email and not other_emails:
         other_emails = [stripe_email]
 
@@ -197,9 +198,15 @@ def get_or_create_member(
 
     if len(other_emails) > 0:
         existing_members = Member.objects.filter(
-            Q(primary_email_address=other_emails[0])
-            | Q(stripe_email_address=other_emails[0])
-            | Q(additional_email_addresses__contains=[other_emails[0]])
+            reduce(
+                operator.or_,
+                (
+                    Q(primary_email_address=email)
+                    | Q(stripe_email_address=email)
+                    | Q(additional_email_addresses__contains=[email])
+                    for email in other_emails + ([stripe_email] if stripe_email else [])
+                ),
+            )
         )
 
         if existing_members:
@@ -221,16 +228,16 @@ def get_or_create_member(
 
             # TODO: Don't forget to remove me if we remove the previous use of contact notes above
             if row.contactNotes:
-                if not existing_members[0].contact_notes:
-                    existing_members[0].contact_notes = ""
+                if not existing_members[0].notes:
+                    existing_members[0].notes = ""
 
-                existing_members[0].contact_notes += f"Spreadsheet Contact Notes:\n{row.contactNotes}\n\n"
+                existing_members[0].notes += f"Spreadsheet Contact Notes:\n{row.contactNotes}\n\n"
 
             if diff_notes:
-                if not existing_members[0].contact_notes:
-                    existing_members[0].contact_notes = ""
+                if not existing_members[0].notes:
+                    existing_members[0].notes = ""
 
-                existing_members[0].contact_notes += diff_notes
+                existing_members[0].notes += diff_notes
 
             return existing_members[0], False
 
@@ -242,10 +249,7 @@ def get_or_create_member(
             additional_email_addresses=other_emails[1:],
             phone_number=formatted_phone_number,
             slack_handle=None,
-            invalid=len(other_emails) == 0,
-            # TODO: Is this column useful if this is all it means?
-            #  should we include invalid content in the email fields but mark it here instead of making it NULL?
-            contact_notes=notes if notes else None,
+            notes=notes if notes else None,
         ),
         True,
     )

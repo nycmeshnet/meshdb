@@ -6,7 +6,7 @@ import geopy.distance
 from meshapi import models
 from meshapi.exceptions import AddressError
 from meshapi.models import Building
-from meshdb.utils.spreadsheet_import.building.constants import INVALID_BIN_NUMBERS, AddressTruthSource
+from meshdb.utils.spreadsheet_import.building.constants import INVALID_BIN_NUMBERS, AddressTruthSource, DatabaseAddress
 from meshdb.utils.spreadsheet_import.building.resolve_address import AddressParser
 from meshdb.utils.spreadsheet_import.csv_load import DroppedModification, SpreadsheetRow
 
@@ -15,10 +15,21 @@ SAME_BUILDING_MAX_SEPARATION_SQUARE_RADIUS = (
 )
 
 
-def get_existing_building(bin_number: Optional[int], lat_lon: Tuple[float, float]) -> Optional[Building]:
-    if bin_number:
-        existing_buildings = models.Building.objects.filter(bin=bin_number)
+def get_existing_building(
+    bin_number: Optional[int], db_addr: DatabaseAddress, lat_lon: Tuple[float, float]
+) -> Optional[Building]:
+
+    if bin_number and db_addr.street_address:
+        existing_buildings = models.Building.objects.filter(
+            bin=bin_number,
+            street_address=db_addr.street_address,
+        )
         if len(existing_buildings) > 0:
+            if len(existing_buildings) > 1:
+                logging.error(
+                    f"Found more than one building with BIN: {bin_number} and "
+                    f"street address {db_addr.street_address}! These should have been de-duplicated"
+                )
             return existing_buildings[0]
     else:
         existing_buildings = models.Building.objects.filter(
@@ -32,6 +43,11 @@ def get_existing_building(bin_number: Optional[int], lat_lon: Tuple[float, float
             ),
         )
         if len(existing_buildings) > 0:
+            if len(existing_buildings) > 1:
+                logging.error(
+                    f"Found more than one building stacked at the coordinates: {lat_lon}!"
+                    f" These should have been de-duplicated"
+                )
             return existing_buildings[0]
     return None
 
@@ -128,52 +144,6 @@ def diff_new_building_against_existing(
         )
         diff_notes += f"\nDropped ZIP change from install #{row_id}: {new_building.zip_code}"
 
-    if existing_building.primary_nn != new_building.primary_nn and new_building.primary_nn:
-        if not existing_building.primary_nn:
-            # If we didn't have an NN for this building before, but now we do, use the new
-            # one instead. This is probably a later registration in the same building, where
-            # the original never got installed
-            existing_building.primary_nn = new_building.primary_nn
-        else:
-            add_dropped_edit(
-                DroppedModification(
-                    list(install.install_number for install in existing_building.installs.all()),
-                    row_id,
-                    str(existing_building.bin) if existing_building.bin else existing_building.street_address,
-                    "building.primary_nn",
-                    str(existing_building.primary_nn) if existing_building.primary_nn else "",
-                    str(new_building.primary_nn),
-                )
-            )
-            logging.debug(
-                f"Dropping changed nn from install # {row_id} "
-                f"{repr(existing_building.primary_nn)} -> {repr(new_building.primary_nn)}"
-            )
-            diff_notes += f"\nDropped NN change from install #{row_id}: {new_building.primary_nn}"
-
-    if existing_building.node_name != new_building.node_name and new_building.node_name:
-        if not existing_building.node_name:
-            # If we didn't have a node name for this building before, but now we do, use the new
-            # one instead. This is probably a later registration in the same building, where
-            # the original never got installed
-            existing_building.node_name = new_building.node_name
-        else:
-            add_dropped_edit(
-                DroppedModification(
-                    list(install.install_number for install in existing_building.installs.all()),
-                    row_id,
-                    str(existing_building.bin) if existing_building.bin else existing_building.street_address,
-                    "building.node_name",
-                    existing_building.node_name if existing_building.node_name else "",
-                    new_building.node_name,
-                )
-            )
-            logging.debug(
-                f"Dropping changed node name from install # {row_id} "
-                f"{repr(existing_building.node_name)} -> {repr(new_building.node_name)}"
-            )
-            diff_notes += f"\nDropped node name change from install #{row_id}: {new_building.node_name}"
-
     return diff_notes
 
 
@@ -198,32 +168,30 @@ def get_or_create_building(
         return None
 
     distance_warning = ""
-    error_vs_google = geopy.distance.geodesic(address_result.discovered_lat_lon, (row.latitude, row.longitude)).m
-    if error_vs_google > 100:
-        add_dropped_edit(
-            DroppedModification(
-                [row.id],
-                row.id,
-                address_result.discovered_bin
-                if address_result.discovered_bin
-                else address_result.address.street_address,
-                "lat_long_discrepancy_vs_spreadsheet",
-                str(address_result.discovered_lat_lon),
-                str((row.latitude, row.longitude)),
+    if address_result.discovered_lat_lon:
+        error_vs_google = geopy.distance.geodesic(address_result.discovered_lat_lon, (row.latitude, row.longitude)).m
+        if error_vs_google > 100:
+            add_dropped_edit(
+                DroppedModification(
+                    [row.id],
+                    row.id,
+                    address_result.discovered_bin
+                    if address_result.discovered_bin
+                    else address_result.address.street_address,
+                    "lat_long_discrepancy_vs_spreadsheet",
+                    str(address_result.discovered_lat_lon),
+                    str((row.latitude, row.longitude)),
+                )
             )
-        )
-        distance_warning = (
-            f"WARNING: Mismatch vs spreadsheet lat/lon {str((row.latitude, row.longitude))} "
-            f"of {error_vs_google} meters\n"
-        )
-        logging.debug(
-            f"Mismatch vs spreadsheet of {error_vs_google} meters for address '{row.address}'"
-            f" for install # {row.id}. Wrong borough or city? We think this address is in "
-            f"{address_result.address.city}, {address_result.address.state}"
-        )
-
-    addr_latitude = address_result.discovered_lat_lon[0] if address_result.discovered_lat_lon else None
-    addr_longitude = address_result.discovered_lat_lon[1] if address_result.discovered_lat_lon else None
+            distance_warning = (
+                f"WARNING: Mismatch vs spreadsheet lat/lon {str((row.latitude, row.longitude))} "
+                f"of {error_vs_google} meters\n"
+            )
+            logging.debug(
+                f"Mismatch vs spreadsheet of {error_vs_google} meters for address '{row.address}'"
+                f" for install # {row.id}. Wrong borough or city? We think this address is in "
+                f"{address_result.address.city}, {address_result.address.state}"
+            )
 
     latitude = row.latitude
     longitude = row.longitude
@@ -235,19 +203,19 @@ def get_or_create_building(
         else None
     )
 
-    existing_building = get_existing_building(dob_bin, (latitude, longitude))
+    existing_building = get_existing_building(
+        address_result.discovered_bin or dob_bin, address_result.address, (latitude, longitude)
+    )
     if existing_building:
         diff_notes = diff_new_building_against_existing(
             row.id,
             existing_building,
             models.Building(
-                bin=address_result.discovered_bin,
+                bin=address_result.discovered_bin or dob_bin,
                 street_address=address_result.address.street_address,
                 city=address_result.address.city,
                 state=address_result.address.state,
                 zip_code=address_result.address.zip_code,
-                primary_nn=row.nn if row.nn else None,
-                node_name=row.nodeName if row.nodeName else None,
             ),
             add_dropped_edit,
         )
@@ -261,12 +229,10 @@ def get_or_create_building(
         return existing_building
 
     addr_truth_sources = (
-        ",".join(source.value for source in address_result.truth_sources)
-        if address_result.truth_sources
-        else None  # This is so we throw an exception and notice when we are missing sources
+        [source.value for source in address_result.truth_sources] if address_result.truth_sources else None
     )
     return Building(
-        bin=address_result.discovered_bin,
+        bin=address_result.discovered_bin or dob_bin,
         street_address=address_result.address.street_address,
         city=address_result.address.city,
         state=address_result.address.state,
@@ -274,23 +240,12 @@ def get_or_create_building(
         latitude=latitude,
         longitude=longitude,
         altitude=altitude,
-        invalid=(
-            not address_result.address.is_valid()
-            # Not having OSM Nominatim or NYC Planning Labs as a truth source makes this building
-            # invalid, since this means we couldn't find the building in either database
-            or not any(
-                source in address_result.truth_sources
-                for source in [AddressTruthSource.NYCPlanningLabs, AddressTruthSource.OSMNominatim]
-            )
-        ),
         address_truth_sources=addr_truth_sources,
-        primary_nn=row.nn if row.nn else None,
-        node_name=row.nodeName if row.nodeName else None,
         # Let's not throw away the spreadsheet location information, just case it's useful in
         # chasing down a mis-parsed address in the future
         notes=f"Spreadsheet Address: {row.address}\n"
         f"Spreadsheet Neighborhood: {row.neighborhood}\n"
         f"Spreadsheet BIN: {dob_bin}\n\n"
-        f"Our Expected Coordinates (from {addr_truth_sources}): {addr_latitude}, {addr_longitude}\n"
+        f"Our Expected Coordinates (from {addr_truth_sources}): {address_result.discovered_lat_lon}\n"
         f"{distance_warning}",
     )
