@@ -77,10 +77,13 @@ class MapDataLinkList(generics.ListAPIView):
     pagination_class = None
     queryset = (
         Link.objects.exclude(status__in=[Link.LinkStatus.INACTIVE])
-        .exclude(from_device__status=Device.DeviceStatus.INACTIVE)
-        .exclude(to_device__status=Device.DeviceStatus.INACTIVE)
         .exclude(to_device__node__status=Node.NodeStatus.INACTIVE)
         .exclude(from_device__node__status=Node.NodeStatus.INACTIVE)
+        # TODO: Possibly re-enable the below filters? They make make the map arguably more accurate,
+        #  but less consistent with the current one by removing links between devices that are
+        #  inactive in UISP
+        # .exclude(from_device__status=Device.DeviceStatus.INACTIVE)
+        # .exclude(to_device__status=Device.DeviceStatus.INACTIVE)
     )
 
 
