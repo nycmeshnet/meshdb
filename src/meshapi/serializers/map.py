@@ -183,7 +183,7 @@ class MapDataSectorSerializer(serializers.ModelSerializer):
 
     nodeId = serializers.SerializerMethodField("get_node_id")
     status = serializers.SerializerMethodField("convert_status_to_spreadsheet_status")
-    device = serializers.CharField(source="model_name")
+    device = serializers.CharField(source="model")
     installDate = JavascriptDateField(source="install_date")
 
     def get_node_id(self, sector):

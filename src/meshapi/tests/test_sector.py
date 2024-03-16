@@ -29,7 +29,7 @@ class TestSector(TestCase):
         response = self.c.post(
             "/api/v1/sectors/",
             {
-                "model_name": "LAP-120",
+                "model": "LAP-120",
                 "node": self.node.network_number,
                 "type": Device.DeviceType.AP,
                 "status": Device.DeviceStatus.ACTIVE,

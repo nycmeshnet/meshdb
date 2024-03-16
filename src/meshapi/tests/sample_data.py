@@ -28,7 +28,7 @@ sample_node = {
 }
 
 sample_device = {
-    "model_name": "OmniTik",
+    "model": "OmniTik",
     "status": Device.DeviceStatus.ACTIVE,
     "type": Device.DeviceType.AP,
     "latitude": 0.0,
