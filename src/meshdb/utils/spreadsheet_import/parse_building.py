@@ -18,7 +18,6 @@ SAME_BUILDING_MAX_SEPARATION_SQUARE_RADIUS = (
 def get_existing_building(
     bin_number: Optional[int], db_addr: DatabaseAddress, lat_lon: Tuple[float, float]
 ) -> Optional[Building]:
-
     if bin_number and db_addr.street_address:
         existing_buildings = models.Building.objects.filter(
             bin=bin_number,
