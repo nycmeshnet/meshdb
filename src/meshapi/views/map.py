@@ -1,4 +1,6 @@
-from django.db.models import Count, Q
+from datetime import datetime
+
+from django.db.models import Count, F, Q
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import generics, permissions
 
@@ -65,6 +67,45 @@ class MapDataNodeList(generics.ListAPIView):
 
         all_installs.sort(key=lambda i: i.install_number)
         return all_installs
+
+    def list(self, request, *args, **kwargs):
+        response = super().list(request, args, kwargs)
+
+        access_points = []
+        for device in Device.objects.filter(
+            Q(status=Device.DeviceStatus.ACTIVE)
+            & (~Q(node__latitude=F("latitude")) | ~Q(node__longitude=F("longitude")))
+        ):
+            install_date = (
+                int(
+                    datetime.combine(
+                        device.install_date,
+                        datetime.min.time(),
+                    ).timestamp()
+                    * 1000
+                )
+                if device.install_date
+                else None
+            )
+            ap = {
+                "id": 1_000_000 + device.id,  # Hacky but we have no choice
+                "name": device.name,
+                "status": "Installed",
+                "coordinates": [device.longitude, device.latitude, None],
+                "roofAccess": False,
+                "notes": "AP",
+                "panoramas": [],
+            }
+
+            if install_date:
+                ap["requestDate"] = install_date
+                ap["installDate"] = install_date
+
+            access_points.append(ap)
+
+        response.data.extend(access_points)
+
+        return response
 
 
 @extend_schema_view(

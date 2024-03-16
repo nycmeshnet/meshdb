@@ -97,6 +97,18 @@ class TestViewsGetUnauthenticated(TestCase):
                 notes="Spreadsheet notes:\nHub: LiteBeamLR to SN1 plus kiosk failover",
             )
         )
+        ap_device = Device(
+            id=123456,
+            node=nodes[-1],
+            name=f"Northwest AP",
+            model="Unknown",
+            type=Device.DeviceType.AP,
+            install_date=datetime.date(2024, 1, 27),
+            status=Device.DeviceStatus.ACTIVE,
+            latitude=40.724863,
+            longitude=-73.987879,
+        )
+        ap_device.save()
 
         buildings.append(
             Building(
@@ -260,6 +272,17 @@ class TestViewsGetUnauthenticated(TestCase):
                     "coordinates": [-73.9917741, 40.6962265, 66.0],
                     "requestDate": 1706331600000,
                     "roofAccess": True,
+                    "panoramas": [],
+                },
+                {
+                    "id": 1123456,
+                    "name": "Northwest AP",
+                    "status": "Installed",
+                    "coordinates": [-73.987879, 40.724863, None],
+                    "requestDate": 1706331600000,
+                    "installDate": 1706331600000,
+                    "roofAccess": False,
+                    "notes": "AP",
                     "panoramas": [],
                 },
             ],
