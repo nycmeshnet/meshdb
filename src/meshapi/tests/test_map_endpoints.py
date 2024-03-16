@@ -293,7 +293,7 @@ class TestViewsGetUnauthenticated(TestCase):
                 azimuth=0,
                 width=360,
                 status=Device.DeviceStatus.ACTIVE,
-                model_name="Omni",
+                model="Omni",
                 install_date=datetime.date(2021, 3, 21),
             )
         )
@@ -314,7 +314,7 @@ class TestViewsGetUnauthenticated(TestCase):
                 azimuth=300,
                 width=90,
                 status=Device.DeviceStatus.INACTIVE,
-                model_name="LAP-120s",
+                model="LAP-120s",
             )
         )
 
@@ -335,7 +335,7 @@ class TestViewsGetUnauthenticated(TestCase):
                 azimuth=0,
                 width=360,
                 status=Device.DeviceStatus.POTENTIAL,
-                model_name="Omni",
+                model="Omni",
             )
         )
 
@@ -394,7 +394,7 @@ class TestViewsGetUnauthenticated(TestCase):
         grand.save()
         grand_omni = Device(
             node=grand,
-            model_name="OmniTik",
+            model="OmniTik",
             type=Device.DeviceType.ROUTER,
             status=Device.DeviceStatus.ACTIVE,
             latitude=0,
@@ -411,7 +411,7 @@ class TestViewsGetUnauthenticated(TestCase):
         sn1.save()
         sn1_omni = Device(
             node=sn1,
-            model_name="OmniTik",
+            model="OmniTik",
             type=Device.DeviceType.ROUTER,
             status=Device.DeviceStatus.ACTIVE,
             latitude=0,
@@ -428,7 +428,7 @@ class TestViewsGetUnauthenticated(TestCase):
         sn10.save()
         sn10_omni = Device(
             node=sn10,
-            model_name="OmniTik",
+            model="OmniTik",
             type=Device.DeviceType.ROUTER,
             status=Device.DeviceStatus.ACTIVE,
             latitude=0,
@@ -445,7 +445,7 @@ class TestViewsGetUnauthenticated(TestCase):
         sn3.save()
         sn3_omni = Device(
             node=sn3,
-            model_name="OmniTik",
+            model="OmniTik",
             type=Device.DeviceType.ROUTER,
             status=Device.DeviceStatus.ACTIVE,
             latitude=0,
@@ -462,7 +462,7 @@ class TestViewsGetUnauthenticated(TestCase):
         brian.save()
         brian_omni = Device(
             node=brian,
-            model_name="OmniTik",
+            model="OmniTik",
             type=Device.DeviceType.ROUTER,
             status=Device.DeviceStatus.ACTIVE,
             latitude=0,
@@ -479,7 +479,7 @@ class TestViewsGetUnauthenticated(TestCase):
         random.save()
         random_omni = Device(
             node=random,
-            model_name="OmniTik",
+            model="OmniTik",
             type=Device.DeviceType.ROUTER,
             status=Device.DeviceStatus.ACTIVE,
             latitude=0,
@@ -496,7 +496,7 @@ class TestViewsGetUnauthenticated(TestCase):
         inactive.save()
         inactive_omni = Device(
             node=inactive,
-            model_name="OmniTik",
+            model="OmniTik",
             type=Device.DeviceType.ROUTER,
             status=Device.DeviceStatus.ACTIVE,
             latitude=0,
@@ -699,7 +699,7 @@ class TestViewsGetUnauthenticated(TestCase):
 
         device_1 = Device(
             node=node_1,
-            model_name="OmniTik",
+            model="OmniTik",
             type=Device.DeviceType.ROUTER,
             status=Device.DeviceStatus.ACTIVE,
             latitude=0,
@@ -708,7 +708,7 @@ class TestViewsGetUnauthenticated(TestCase):
         device_1.save()
         device_2 = Device(
             node=node_2,
-            model_name="OmniTik",
+            model="OmniTik",
             type=Device.DeviceType.ROUTER,
             status=Device.DeviceStatus.ACTIVE,
             latitude=0,
@@ -717,7 +717,7 @@ class TestViewsGetUnauthenticated(TestCase):
         device_2.save()
         device_3 = Device(
             node=node_3,
-            model_name="OmniTik",
+            model="OmniTik",
             type=Device.DeviceType.ROUTER,
             status=Device.DeviceStatus.ACTIVE,
             latitude=0,

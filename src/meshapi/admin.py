@@ -326,7 +326,7 @@ class SectorAdminForm(forms.ModelForm):
 @admin.register(Sector)
 class SectorAdmin(admin.ModelAdmin):
     form = SectorAdminForm
-    search_fields = ["name__icontains", "model_name__icontains", "ssid__icontains"]
+    search_fields = ["name__icontains", "model__icontains", "ssid__icontains"]
     list_display = [
         "__str__",
         "ssid",
