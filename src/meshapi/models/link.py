@@ -58,6 +58,10 @@ class Link(models.Model):
         help_text="A free-form text description of this Link, to track any additional information.",
     )
 
+    uisp_id = models.CharField(
+        default=None, blank=True, null=True, help_text="The UUID used to indentify this link in UISP (if applicable)"
+    )
+
     def __str__(self):
         if self.from_device.node.network_number and self.to_device.node.network_number:
             return f"NN{self.from_device.node.network_number} → NN{self.to_device.node.network_number}"

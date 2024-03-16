@@ -91,10 +91,6 @@ class Building(models.Model):
         if self.primary_node and self.primary_node not in self.nodes.all():
             self.nodes.add(self.primary_node)
 
-        if len(self.nodes.all()) == 1:
-            self.primary_node = self.nodes.first()
-            super().save(*args, **kwargs)
-
     def __str__(self):
         if self.street_address:
             addr_str = str(self.street_address)

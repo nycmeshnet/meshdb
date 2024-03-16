@@ -93,6 +93,10 @@ class Device(models.Model):
         "by automated systems. ",
     )
 
+    uisp_id = models.CharField(
+        default=None, blank=True, null=True, help_text="The UUID used to indentify this device in UISP (if applicable)"
+    )
+
     def __str__(self):
         if self.name:
             return self.name
