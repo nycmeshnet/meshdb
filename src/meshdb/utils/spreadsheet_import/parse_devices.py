@@ -13,8 +13,15 @@ django.setup()
 
 import dateutil.parser
 
-from meshapi.models import Device, Node, Sector
-from meshdb.utils.spreadsheet_import.csv_load import SpreadsheetSector, SpreadsheetSectorStatus, get_spreadsheet_sectors
+from meshapi.models import Device, Install, Node, Sector
+from meshdb.utils.spreadsheet_import.csv_load import (
+    SpreadsheetRow,
+    SpreadsheetSector,
+    SpreadsheetSectorStatus,
+    SpreadsheetStatus,
+    get_spreadsheet_rows,
+    get_spreadsheet_sectors,
+)
 from meshdb.utils.spreadsheet_import.fetch_uisp import download_uisp_devices
 
 nn_subsitutions = {
@@ -207,6 +214,30 @@ def load_devices_supplement_with_uisp(spreadsheet_sectors: List[SpreadsheetSecto
             logging.warning(
                 f"Discarding information for {active_spreadsheet_discards} unmatched spreadsheet rows for NN {nn}"
             )
+
+
+def load_access_points(spreadsheet_installs: List[SpreadsheetRow]):
+    for row in spreadsheet_installs:
+        if "AP" in row.notes:
+            node = Install.objects.get(install_number=row.id).node
+
+            ap_device = Device(
+                node=node,
+                name=f"{row.nodeName} AP" if row.nodeName else "AP",
+                model="Unknown",
+                type=Device.DeviceType.AP,
+                status=Device.DeviceStatus.ACTIVE
+                if row.status == SpreadsheetStatus.installed
+                else Device.DeviceStatus.INACTIVE,
+                latitude=row.latitude,
+                longitude=row.longitude,
+                install_date=row.installDate,
+                abandon_date=row.abandonDate,
+                notes=f"Spreadsheet Notes:\n{row.notes}\n{row.notes2}\n{row.installNotes}\n"
+                f"Location: {row.apartment}\n"
+                f"Name: {row.nodeName}\n",
+            )
+            ap_device.save()
 
 
 if __name__ == "__main__":

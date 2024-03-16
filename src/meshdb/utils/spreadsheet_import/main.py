@@ -8,7 +8,7 @@ from typing import List
 import django
 
 from meshdb.utils.spreadsheet_import import logger
-from meshdb.utils.spreadsheet_import.parse_devices import load_devices_supplement_with_uisp
+from meshdb.utils.spreadsheet_import.parse_devices import load_access_points, load_devices_supplement_with_uisp
 
 logger.configure()
 
@@ -135,6 +135,9 @@ def main():
         # are associated with the same node when applicable)
         for install in models.Install.objects.all():
             normalize_install_to_primary_building_node(install)
+
+        # Create an AP device for each access point install
+        load_access_points(rows)
 
         logging.debug("Top 15 duplicate emails and submission counts:")
         for email, count in sorted(member_duplicate_counts.items(), key=lambda item: item[1], reverse=True)[:15]:
