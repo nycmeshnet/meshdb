@@ -97,6 +97,13 @@ class Device(models.Model):
         default=None, blank=True, null=True, help_text="The UUID used to indentify this device in UISP (if applicable)"
     )
 
+    ssid = models.CharField(
+        default=None,
+        blank=True,
+        null=True,
+        help_text="The SSID being broadcast by this device",
+    )
+
     def __str__(self):
         if self.name:
             return self.name

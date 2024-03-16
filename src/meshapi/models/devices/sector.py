@@ -24,13 +24,6 @@ class Sector(Device):
         ],
     )
 
-    ssid = models.CharField(
-        default=None,
-        blank=True,
-        null=True,
-        help_text="The SSID being broadcast by this device",
-    )
-
     def __str__(self):
         if self.ssid:
             return self.ssid
