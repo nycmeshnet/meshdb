@@ -28,7 +28,7 @@ from meshdb.utils.spreadsheet_import.csv_load import (
     print_failure_report,
 )
 from meshdb.utils.spreadsheet_import.parse_building import get_or_create_building
-from meshdb.utils.spreadsheet_import.parse_install import create_install
+from meshdb.utils.spreadsheet_import.parse_install import create_install, normalize_install_to_primary_building_node
 from meshdb.utils.spreadsheet_import.parse_link import create_link, load_links_supplement_with_uisp
 from meshdb.utils.spreadsheet_import.parse_member import get_or_create_member
 from meshdb.utils.spreadsheet_import.parse_node import get_or_create_node, normalize_building_node_links
@@ -130,6 +130,11 @@ def main():
 
                 # Ensure the cluster of nodes and buildings this row is a part of is self-consistent
                 normalize_building_node_links(building, node)
+
+        # Do address-based node normalization (i.e. ensure that installs with the same address
+        # are associated with the same node when applicable)
+        for install in models.Install.objects.all():
+            normalize_install_to_primary_building_node(install)
 
         logging.debug("Top 15 duplicate emails and submission counts:")
         for email, count in sorted(member_duplicate_counts.items(), key=lambda item: item[1], reverse=True)[:15]:

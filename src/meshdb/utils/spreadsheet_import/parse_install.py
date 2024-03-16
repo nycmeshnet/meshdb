@@ -1,3 +1,4 @@
+import logging
 from typing import Optional
 
 from meshapi import models
@@ -66,3 +67,13 @@ def create_install(row: SpreadsheetRow) -> Optional[models.Install]:
         install.diy = "diy" in install.notes.lower()
 
     return install
+
+
+def normalize_install_to_primary_building_node(install: models.Install):
+    if install.building.primary_node:
+        if not install.node:
+            install.node = install.building.primary_node
+            install.save()
+        else:
+            if install.node != install.building.primary_node:
+                logging.info(f"Mismatch between building.primary_node and node for Install #{install.install_number}")
