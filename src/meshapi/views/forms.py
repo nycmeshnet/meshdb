@@ -396,7 +396,7 @@ def network_number_assignment(request):
         except ValueError as exception:
             return Response({"detail": f"NN Request failed. {exception}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-        node_object = Node(
+        nn_install.node = Node(
             network_number=free_nn,
             status=Node.NodeStatus.ACTIVE,
             latitude=nn_building.latitude,
@@ -405,15 +405,14 @@ def network_number_assignment(request):
             install_date=date.today(),
             notes="Created by NN Assignment form",
         )
-        node_object.save()
 
-        # Set the node on both the install and the Building
-        nn_install.node = node_object
-        nn_building.primary_node = node_object
+        # Set the node on the Building
+        nn_building.primary_node = nn_install.node
 
     nn_install.status = Install.InstallStatus.ACTIVE
 
     try:
+        nn_install.node.save()
         nn_building.save()
         nn_install.save()
     except IntegrityError as e:
