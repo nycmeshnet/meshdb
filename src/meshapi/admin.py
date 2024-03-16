@@ -318,7 +318,7 @@ class SectorAdminForm(forms.ModelForm):
         fields = "__all__"
         widgets = {
             "name": forms.TextInput(),
-            "model_name": forms.TextInput(),
+            "model": forms.TextInput(),
             "ssid": forms.TextInput(),
         }
 
@@ -331,9 +331,9 @@ class SectorAdmin(admin.ModelAdmin):
         "__str__",
         "ssid",
         "name",
-        "model_name",
+        "model",
     ]
-    list_filter = ["model_name", "install_date"]
+    list_filter = ["model", "install_date"]
 
 
 class NodeAdminForm(forms.ModelForm):

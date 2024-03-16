@@ -27,7 +27,7 @@ class TestDevice(TestCase):
         response = self.c.post(
             "/api/v1/devices/",
             {
-                "model_name": "Lightbeam",
+                "model": "Lightbeam",
                 "status": Device.DeviceStatus.INACTIVE,
                 "type": Device.DeviceType.STATION,
                 "latitude": 0.0,
@@ -46,7 +46,7 @@ class TestDevice(TestCase):
         response = self.c.post(
             "/api/v1/devices/",
             {
-                "model_name": "Lightbeam",
+                "model": "Lightbeam",
                 "status": Device.DeviceStatus.INACTIVE,
                 "type": Device.DeviceType.STATION,
                 "latitude": 0.0,
@@ -66,7 +66,7 @@ class TestDevice(TestCase):
             "/api/v1/devices/",
             {
                 "node": self.node1.network_number,
-                "model_name": "Lightbeam",
+                "model": "Lightbeam",
                 "type": Device.DeviceType.STATION,
                 "latitude": 0.0,
                 "longitude": 0.0,

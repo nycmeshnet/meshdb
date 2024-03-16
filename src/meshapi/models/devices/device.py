@@ -41,7 +41,7 @@ class Device(models.Model):
         help_text="The colloquial name of this node used among mesh volunteers, if applicable",
     )
 
-    model_name = models.CharField(
+    model = models.CharField(
         help_text="The manufacturer model name of this device, e.g. OmniTik or LBEGen2",
     )
 
