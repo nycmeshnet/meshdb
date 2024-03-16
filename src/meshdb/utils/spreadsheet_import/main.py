@@ -32,7 +32,6 @@ from meshdb.utils.spreadsheet_import.parse_install import create_install
 from meshdb.utils.spreadsheet_import.parse_link import create_link, load_links_supplement_with_uisp
 from meshdb.utils.spreadsheet_import.parse_member import get_or_create_member
 from meshdb.utils.spreadsheet_import.parse_node import get_or_create_node, normalize_building_node_links
-from meshdb.utils.spreadsheet_import.parse_sector import create_sector
 
 
 def main():
