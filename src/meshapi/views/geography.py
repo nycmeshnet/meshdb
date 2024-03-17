@@ -100,14 +100,27 @@ class WholeMeshKML(APIView):
         nodes_folder = kml.Folder(name="Nodes")
         kml_document.append(nodes_folder)
 
+        active_nodes_folder = kml.Folder(name="Active")
+        nodes_folder.append(active_nodes_folder)
+        inactive_nodes_folder = kml.Folder(name="Inactive")
+        nodes_folder.append(inactive_nodes_folder)
+
         links_folder = kml.Folder(name="Links")
         kml_document.append(links_folder)
 
-        folder_map: Dict[str, kml.Folder] = {}
+        active_links_folder = kml.Folder(name="Active")
+        links_folder.append(active_links_folder)
+        inactive_links_folder = kml.Folder(name="Inactive")
+        links_folder.append(inactive_links_folder)
+
+        active_folder_map: Dict[str, kml.Folder] = {}
+        inactive_folder_map: Dict[str, kml.Folder] = {}
 
         for city_name, folder_name in CITY_FOLDER_MAP.items():
-            folder_map[city_name] = kml.Folder(name=folder_name)
-            nodes_folder.append(folder_map[city_name])
+            active_folder_map[city_name] = kml.Folder(name=folder_name)
+            inactive_folder_map[city_name] = kml.Folder(name=folder_name)
+            active_nodes_folder.append(active_folder_map[city_name])
+            inactive_nodes_folder.append(inactive_folder_map[city_name])
 
         # TODO: Should we iterate nodes instead here? Might be a an Olivier question
         for install in (
@@ -150,6 +163,12 @@ class WholeMeshKML(APIView):
             placemark.extended_data = ExtendedData(
                 elements=[Data(name=key, value=val) for key, val in extended_data.items()]
             )
+
+            if install.status == Install.InstallStatus.ACTIVE:
+                folder_map = active_folder_map
+            else:
+                folder_map = inactive_folder_map
+
             folder = folder_map[install.building.city if install.building.city in folder_map.keys() else None]
             folder.append(placemark)
 
@@ -200,7 +219,11 @@ class WholeMeshKML(APIView):
             placemark.extended_data = ExtendedData(
                 elements=[Data(name=key, value=val) for key, val in extended_data.items()]
             )
-            links_folder.append(placemark)
+
+            if link.status == Link.LinkStatus.ACTIVE:
+                active_links_folder.append(placemark)
+            else:
+                inactive_links_folder.append(placemark)
 
         return HttpResponse(
             kml_root.to_string(),
