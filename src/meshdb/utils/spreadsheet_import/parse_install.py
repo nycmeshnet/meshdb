@@ -1,3 +1,4 @@
+import logging
 from typing import Optional
 
 from meshapi import models
@@ -38,11 +39,10 @@ def translate_spreadsheet_status_to_db_status(
     raise ValueError(f"Invalid spreadsheet status: {status} do you need to add another case to this function?")
 
 
-def get_or_create_install(row: SpreadsheetRow) -> Optional[models.Install]:
+def create_install(row: SpreadsheetRow) -> Optional[models.Install]:
     install = models.Install(
         install_number=row.id,
-        network_number=row.nn,
-        install_status=translate_spreadsheet_status_to_db_status(row.status),
+        status=translate_spreadsheet_status_to_db_status(row.status),
         ticket_id=None,  # TODO: Figure out if we can export data from OSTicket to back-fill this
         request_date=row.request_date.date(),
         install_date=row.installDate,
@@ -60,10 +60,20 @@ def get_or_create_install(row: SpreadsheetRow) -> Optional[models.Install]:
         f"{row.contactNotes if row.contactNotes else None}\n\n"
         f"-------\n",
     )
-    if install.install_status in [
+    if install.status in [
         models.Install.InstallStatus.ACTIVE,
         models.Install.InstallStatus.INACTIVE,
     ]:
         install.diy = "diy" in install.notes.lower()
 
     return install
+
+
+def normalize_install_to_primary_building_node(install: models.Install):
+    if install.building.primary_node:
+        if not install.node:
+            install.node = install.building.primary_node
+            install.save()
+        else:
+            if install.node != install.building.primary_node:
+                logging.info(f"Mismatch between building.primary_node and node for Install #{install.install_number}")
