@@ -110,10 +110,14 @@ class WholeMeshKML(APIView):
             nodes_folder.append(folder_map[city_name])
 
         # TODO: Should we iterate nodes instead here? Might be a an Olivier question
-        for install in Install.objects.filter(
-            ~Q(status=Install.InstallStatus.CLOSED)
-            & Q(building__longitude__isnull=False)
-            & Q(building__latitude__isnull=False)
+        for install in (
+            Install.objects.prefetch_related("node")
+            .prefetch_related("building")
+            .filter(
+                ~Q(status=Install.InstallStatus.CLOSED)
+                & Q(building__longitude__isnull=False)
+                & Q(building__latitude__isnull=False)
+            )
         ):
             identifier = install.node.network_number if install.node else install.install_number
             placemark = kml.Placemark(
@@ -150,7 +154,9 @@ class WholeMeshKML(APIView):
             folder.append(placemark)
 
         for link in (
-            Link.objects.filter(~Q(status=Link.LinkStatus.INACTIVE))
+            Link.objects.prefetch_related("from_device")
+            .prefetch_related("to_device")
+            .filter(~Q(status=Link.LinkStatus.INACTIVE))
             .annotate(highest_altitude=Greatest("from_device__altitude", "to_device__altitude"))
             .order_by(F("highest_altitude").asc(nulls_first=True))
         ):
