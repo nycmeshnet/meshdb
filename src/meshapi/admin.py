@@ -92,10 +92,9 @@ class BoroughFilter(admin.SimpleListFilter):
             return queryset.filter(city="Staten Island")
         return queryset
 
-
 @admin.register(Building)
 class BuildingAdmin(admin.ModelAdmin):
-    # form = BuildingAdminForm
+    filter_horizontal = ('nodes',)
     search_fields = [
         # Sometimes they have an actual name
         "nodes__name__icontains",
@@ -118,6 +117,7 @@ class BuildingAdmin(admin.ModelAdmin):
     inlines = [InstallInline]
     list_filter = [
         BoroughFilter,
+        ("primary_node", admin.EmptyFieldListFilter),
     ]
     list_display = ["__str__", "street_address", "primary_node"]
     fieldsets = [
@@ -345,6 +345,9 @@ class NodeAdminForm(forms.ModelForm):
 @admin.register(Node)
 class NodeAdmin(admin.ModelAdmin):
     form = SectorAdminForm
+    search_fields = ["network_number__iexact", "name__icontains"]
+    list_filter = ["status", ("name", admin.EmptyFieldListFilter)]
+    list_display = ["network_number", "name", "status"] 
 
 
 class DeviceAdminForm(forms.ModelForm):
@@ -354,5 +357,5 @@ class DeviceAdminForm(forms.ModelForm):
 
 
 @admin.register(Device)
-class NodeAdmin(admin.ModelAdmin):
+class DeviceAdmin(admin.ModelAdmin):
     form = DeviceAdminForm
