@@ -72,3 +72,6 @@ class Node(models.Model):
             return str(self.name)
 
         return f"NN{str(self.network_number)}"
+
+    def __network_number__(self):
+        return f"NN{str(self.network_number)}"

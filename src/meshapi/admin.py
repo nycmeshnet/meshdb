@@ -94,7 +94,7 @@ class BoroughFilter(admin.SimpleListFilter):
 
 @admin.register(Building)
 class BuildingAdmin(admin.ModelAdmin):
-    filter_horizontal = ('nodes',)
+    list_display = ["__str__", "street_address", "primary_node"]
     search_fields = [
         # Sometimes they have an actual name
         "nodes__name__icontains",
@@ -113,13 +113,10 @@ class BuildingAdmin(admin.ModelAdmin):
         "installs__member__phone_number__iexact",
         "installs__member__slack_handle__iexact",
     ]
-    # inlines = [InstallInline, ToBuildingInline, FromBuildingInline]
-    inlines = [InstallInline]
     list_filter = [
         BoroughFilter,
         ("primary_node", admin.EmptyFieldListFilter),
     ]
-    list_display = ["__str__", "street_address", "primary_node"]
     fieldsets = [
         (
             "Node Details",
@@ -161,6 +158,8 @@ class BuildingAdmin(admin.ModelAdmin):
             },
         ),
     ]
+    inlines = [InstallInline]
+    filter_horizontal = ('nodes',)
 
 
 class MemberAdminForm(forms.ModelForm):
@@ -347,7 +346,7 @@ class NodeAdmin(admin.ModelAdmin):
     form = SectorAdminForm
     search_fields = ["network_number__iexact", "name__icontains"]
     list_filter = ["status", ("name", admin.EmptyFieldListFilter)]
-    list_display = ["network_number", "name", "status"] 
+    list_display = ["__network_number__", "name", "status"] 
 
 
 class DeviceAdminForm(forms.ModelForm):
