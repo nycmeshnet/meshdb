@@ -56,7 +56,7 @@ def get_node_from_spreadsheet_id(spreadsheet_node_id: int) -> Node:
         return Install.objects.get(install_number=spreadsheet_node_id).node
 
 
-def get_representative_device_for_node(node: Node) -> Device:
+def get_representative_device_for_node(node: Node, link_status: SpreadsheetLinkStatus) -> Device:
     if node is None:
         raise ValueError("Node must exist!")
 
@@ -66,32 +66,39 @@ def get_representative_device_for_node(node: Node) -> Device:
     for search_term in search_terms:
         candidates = node.devices.filter(name__icontains=search_term)
         if len(candidates):
-            return candidates.first()
+            device = candidates.first()
+            break
+    else:
+        # Otherwise return an arbitrary device
+        device = node.devices.first()
 
-    # Otherwise return an arbitrary device
-    return node.devices.first()
+    if not device:
+        status = {
+            Link.LinkStatus.ACTIVE: Device.DeviceStatus.ACTIVE,
+            Link.LinkStatus.INACTIVE: Device.DeviceStatus.INACTIVE,
+            Link.LinkStatus.PLANNED: Device.DeviceStatus.POTENTIAL,
+        }[convert_spreadsheet_link_status(link_status)]
+
+        logging.warning(f"Creating mock device for NN{node.network_number}. Could not find any pre-existing devices")
+        device = Device(
+            node=node,
+            name=f"NN{node.network_number} Core",
+            model="Unknown",
+            type=Device.DeviceType.OTHER,
+            status=status,
+            latitude=node.latitude,
+            longitude=node.longitude,
+            altitude=node.altitude,
+            notes=f"Automatically created to allow the import of spreadsheet links to/from NN{node.network_number}",
+        )
+        device.save()
+
+    return device
 
 
-def create_link(spreadsheet_link: SpreadsheetLink) -> Optional[models.Link]:
-    try:
-        from_device = get_representative_device_for_node(get_node_from_spreadsheet_id(spreadsheet_link.from_node_id))
-        to_device = get_representative_device_for_node(get_node_from_spreadsheet_id(spreadsheet_link.to_node_id))
-    except ValueError as e:
-        if spreadsheet_link.status != SpreadsheetLinkStatus.dead:
-            logging.error(
-                f"Could not create link from {spreadsheet_link.from_node_id} to {spreadsheet_link.to_node_id}. "
-                f"Can't find one or more nodes"
-            )
-            # raise e
-        else:
-            logging.debug(
-                f"Could not create link from {spreadsheet_link.from_node_id} to {spreadsheet_link.to_node_id}."
-                f" But this link is dead, skipping this spreadsheet row"
-            )
-        return None
-
-    if not from_device or not to_device:
-        return None
+def create_link(spreadsheet_link: SpreadsheetLink, from_node: Node, to_node: Node) -> Optional[models.Link]:
+    from_device = get_representative_device_for_node(from_node, spreadsheet_link.status)
+    to_device = get_representative_device_for_node(to_node, spreadsheet_link.status)
 
     link_notes = "\n".join([spreadsheet_link.notes, spreadsheet_link.comments]).strip()
     link = models.Link(
@@ -183,6 +190,10 @@ def load_links_supplement_with_uisp(spreadsheet_links: List[SpreadsheetLink]):
             # TODO: this doesn't work for "potential" links between potential installs
             from_node = get_node_from_spreadsheet_id(spreadsheet_link.from_node_id)
             to_node = get_node_from_spreadsheet_id(spreadsheet_link.to_node_id)
+
+            for node in [from_node, to_node]:
+                if not node:
+                    raise ObjectDoesNotExist()
         except ObjectDoesNotExist:
             logging.warning(
                 f"Skipping link {spreadsheet_link.from_node_id} to {spreadsheet_link.to_node_id}. "
@@ -216,7 +227,7 @@ def load_links_supplement_with_uisp(spreadsheet_links: List[SpreadsheetLink]):
                 link.save()
         else:
             # If we don't have any possible existing links to annotate, make a brand new one
-            link = create_link(spreadsheet_link)
+            link = create_link(spreadsheet_link, from_node, to_node)
             if link:
                 link.save()
 
