@@ -166,9 +166,9 @@ class WholeMeshKML(APIView):
                                 link.from_device.altitude or DEFAULT_ALTITUDE,
                             ),
                             (
-                                link.from_device.longitude,
-                                link.from_device.latitude,
-                                link.from_device.altitude or DEFAULT_ALTITUDE,
+                                link.to_device.longitude,
+                                link.to_device.latitude,
+                                link.to_device.altitude or DEFAULT_ALTITUDE,
                             ),
                         ]
                     ),
