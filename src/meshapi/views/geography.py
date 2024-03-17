@@ -194,7 +194,7 @@ class WholeMeshKML(APIView):
                         install.node.latitude,
                         install.node.altitude or DEFAULT_ALTITUDE,
                     ),
-                    install.node.status == Node.NodeStatus.ACTIVE,
+                    False,
                     install.node.status,
                     roof_access=False,
                 )
