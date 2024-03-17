@@ -34,4 +34,5 @@ urlpatterns = [
         name="api-docs-swagger",
     ),
     path("api-docs/redoc/", SpectacularRedocView.as_view(url_name="api-docs-schema"), name="api-docs-redoc"),
+    path("silk/", include("silk.urls", namespace="silk")),
 ]
