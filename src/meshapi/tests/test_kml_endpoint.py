@@ -143,6 +143,9 @@ class TestKMLEndpoint(TestCase):
         # TODO: Actually assert real things here in a less brittle way,
         #  once fastkml is actually capable of parsing its own outputs
         assert len(kml_tree[0]) == 6  # 4 styles and 2 folders
-        assert len(kml_tree[0][4]) == 7  # 5 borough folders and "Other" + 1 for "name" tag
-        assert len(kml_tree[0][4][6]) == 7  # 6 nodes, all in the "Other" folder + 1 for "name" tag
-        assert len(kml_tree[0][5]) == 6  # 5 links + 1 for "name" tag
+        assert len(kml_tree[0][4]) == 3  # "Active" and "Inactive" node folders + 1 for "name" tag
+        assert len(kml_tree[0][4][1]) == 7  # 5 borough folders and "Other" + 1 for "name" tag
+        assert len(kml_tree[0][4][1][6]) == 13  # 6 installs and 6 NNs, all in the "Other" folder + 1 for "name" tag
+        assert len(kml_tree[0][5]) == 3  # "Active" and "Inactive" link folders + 1 for "name" tag
+        assert len(kml_tree[0][5][1]) == 5  # 4 active links + 1 for "name" tag
+        assert len(kml_tree[0][5][2]) == 2  # 1 inactive links + 1 for "name" tag

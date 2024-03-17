@@ -12,7 +12,7 @@ from rest_framework import permissions, status
 from rest_framework.negotiation import BaseContentNegotiation
 from rest_framework.views import APIView
 
-from meshapi.models import Building, Install, Link
+from meshapi.models import Building, Install, Link, Node
 
 KML_CONTENT_TYPE = "application/vnd.google-earth.kml+xml"
 KML_CONTENT_TYPE_WITH_CHARSET = f"{KML_CONTENT_TYPE}; charset=utf-8"
@@ -43,6 +43,31 @@ class IgnoreClientContentNegotiation(BaseContentNegotiation):
         Select the first renderer in the `.renderer_classes` list.
         """
         return (renderers[0], renderers[0].media_type)
+
+
+def create_placemark(identifier: str, point: Point, active: bool, status: str, roof_access: bool):
+    placemark = kml.Placemark(
+        name=str(identifier),
+        style_url=styles.StyleUrl(url="#red_dot" if active else "#grey_dot"),
+        kml_geometry=geometry.Point(
+            geometry=point,
+            altitude_mode=AltitudeMode.absolute,
+        ),
+    )
+
+    extended_data = {
+        "name": str(identifier),
+        "roofAccess": str(roof_access),
+        "marker-color": ACTIVE_COLOR if active else INACTIVE_COLOR,
+        "id": str(identifier),
+        "status": status,
+        # Leave disabled, notes can leak a lot of information & this endpoint is public
+        # "notes": install.notes,
+    }
+
+    placemark.extended_data = ExtendedData(elements=[Data(name=key, value=val) for key, val in extended_data.items()])
+
+    return placemark
 
 
 class WholeMeshKML(APIView):
@@ -86,12 +111,18 @@ class WholeMeshKML(APIView):
 
         red_line = styles.Style(
             id="red_line",
-            styles=[styles.LineStyle(color="ff0000ff", width=2), styles.PolyStyle(color="00000000")],
+            styles=[
+                styles.LineStyle(color="ff0000ff", width=2),
+                styles.PolyStyle(color="00000000", fill=False, outline=True),
+            ],
         )
 
         grey_line = styles.Style(
             id="grey_line",
-            styles=[styles.LineStyle(color="ffcccccc", width=2), styles.PolyStyle(color="00000000")],
+            styles=[
+                styles.LineStyle(color="ffcccccc", width=2),
+                styles.PolyStyle(color="00000000", fill=False, outline=True),
+            ],
         )
 
         kml_document = kml.Document(ns, styles=[grey_dot, red_dot, red_line, grey_line])
@@ -100,57 +131,80 @@ class WholeMeshKML(APIView):
         nodes_folder = kml.Folder(name="Nodes")
         kml_document.append(nodes_folder)
 
+        active_nodes_folder = kml.Folder(name="Active")
+        nodes_folder.append(active_nodes_folder)
+        inactive_nodes_folder = kml.Folder(name="Inactive")
+        nodes_folder.append(inactive_nodes_folder)
+
         links_folder = kml.Folder(name="Links")
         kml_document.append(links_folder)
 
-        folder_map: Dict[str, kml.Folder] = {}
+        active_links_folder = kml.Folder(name="Active")
+        links_folder.append(active_links_folder)
+        inactive_links_folder = kml.Folder(name="Inactive")
+        links_folder.append(inactive_links_folder)
+
+        active_folder_map: Dict[str, kml.Folder] = {}
+        inactive_folder_map: Dict[str, kml.Folder] = {}
 
         for city_name, folder_name in CITY_FOLDER_MAP.items():
-            folder_map[city_name] = kml.Folder(name=folder_name)
-            nodes_folder.append(folder_map[city_name])
+            active_folder_map[city_name] = kml.Folder(name=folder_name)
+            inactive_folder_map[city_name] = kml.Folder(name=folder_name)
+            active_nodes_folder.append(active_folder_map[city_name])
+            inactive_nodes_folder.append(inactive_folder_map[city_name])
 
-        # TODO: Should we iterate nodes instead here? Might be a an Olivier question
-        for install in Install.objects.filter(
-            ~Q(status=Install.InstallStatus.CLOSED)
-            & Q(building__longitude__isnull=False)
-            & Q(building__latitude__isnull=False)
+        mapped_nns = set()
+        for install in (
+            Install.objects.prefetch_related("node")
+            .prefetch_related("building")
+            .filter(
+                ~Q(status__in=[Install.InstallStatus.CLOSED, Install.InstallStatus.NN_REASSIGNED])
+                & Q(building__longitude__isnull=False)
+                & Q(building__latitude__isnull=False)
+            )
+            .order_by("install_number")
         ):
-            identifier = install.node.network_number if install.node else install.install_number
-            placemark = kml.Placemark(
-                name=str(identifier),
-                style_url=styles.StyleUrl(
-                    url="#red_dot" if install.status == Install.InstallStatus.ACTIVE else "#grey_dot"
-                ),
-                kml_geometry=geometry.Point(
-                    geometry=Point(
-                        install.building.longitude,
-                        install.building.latitude,
-                        install.building.altitude or DEFAULT_ALTITUDE,
-                    ),
-                    altitude_mode=AltitudeMode.absolute,
-                ),
-            )
+            if install.status == Install.InstallStatus.ACTIVE:
+                folder_map = active_folder_map
+            else:
+                folder_map = inactive_folder_map
 
-            extended_data = {
-                "name": str(identifier),
-                "roofAccess": str(install.roof_access),
-                "marker-color": ACTIVE_COLOR if install.status == Install.InstallStatus.ACTIVE else INACTIVE_COLOR,
-                "id": str(identifier),
-                "install_number": str(install.install_number),
-                "network_number": str(install.node.network_number if install.node else None),
-                "status": install.status,
-                # Leave disabled, notes can leak a lot of information & this endpoint is public
-                # "notes": install.notes,
-            }
-
-            placemark.extended_data = ExtendedData(
-                elements=[Data(name=key, value=val) for key, val in extended_data.items()]
-            )
             folder = folder_map[install.building.city if install.building.city in folder_map.keys() else None]
-            folder.append(placemark)
+
+            install_placemark = create_placemark(
+                install.install_number,
+                Point(
+                    install.building.longitude,
+                    install.building.latitude,
+                    install.building.altitude or DEFAULT_ALTITUDE,
+                ),
+                install.status == Install.InstallStatus.ACTIVE,
+                install.status,
+                install.roof_access,
+            )
+            folder.append(install_placemark)
+
+            # Add an extra placemark for the Node, once for each NN
+            # this makes searching much easier
+            if install.node and install.node.network_number not in mapped_nns:
+                node_placemark = create_placemark(
+                    install.node.network_number,
+                    Point(
+                        install.node.longitude,
+                        install.node.latitude,
+                        install.node.altitude or DEFAULT_ALTITUDE,
+                    ),
+                    False,
+                    install.node.status,
+                    roof_access=False,
+                )
+                folder.append(node_placemark)
+                mapped_nns.add(install.node.network_number)
 
         for link in (
-            Link.objects.filter(~Q(status=Link.LinkStatus.INACTIVE))
+            Link.objects.prefetch_related("from_device")
+            .prefetch_related("to_device")
+            .filter(~Q(status=Link.LinkStatus.INACTIVE))
             .annotate(highest_altitude=Greatest("from_device__altitude", "to_device__altitude"))
             .order_by(F("highest_altitude").asc(nulls_first=True))
         ):
@@ -166,9 +220,9 @@ class WholeMeshKML(APIView):
                                 link.from_device.altitude or DEFAULT_ALTITUDE,
                             ),
                             (
-                                link.from_device.longitude,
-                                link.from_device.latitude,
-                                link.from_device.altitude or DEFAULT_ALTITUDE,
+                                link.to_device.longitude,
+                                link.to_device.latitude,
+                                link.to_device.altitude or DEFAULT_ALTITUDE,
                             ),
                         ]
                     ),
@@ -194,7 +248,11 @@ class WholeMeshKML(APIView):
             placemark.extended_data = ExtendedData(
                 elements=[Data(name=key, value=val) for key, val in extended_data.items()]
             )
-            links_folder.append(placemark)
+
+            if link.status == Link.LinkStatus.ACTIVE:
+                active_links_folder.append(placemark)
+            else:
+                inactive_links_folder.append(placemark)
 
         return HttpResponse(
             kml_root.to_string(),
