@@ -1,4 +1,6 @@
-from django.db.models import Q
+from datetime import datetime
+
+from django.db.models import Count, F, Q
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import generics, permissions
 
@@ -29,7 +31,11 @@ class MapDataNodeList(generics.ListAPIView):
     def get_queryset(self):
         all_installs = []
 
-        queryset = Install.objects.filter(~Q(status__in=EXCLUDED_INSTALL_STATUSES))
+        queryset = (
+            Install.objects.select_related("building")
+            .select_related("node")
+            .filter(~Q(status__in=EXCLUDED_INSTALL_STATUSES))
+        )
 
         for install in queryset:
             all_installs.append(install)
@@ -46,8 +52,12 @@ class MapDataNodeList(generics.ListAPIView):
             ~Q(status=Node.NodeStatus.INACTIVE) & Q(installs__status__in=ALLOWED_INSTALL_STATUSES)
         ):
             if node.network_number not in covered_nns:
-                # Arbitrarily pick a representative install for the details of the "Fake" node
-                representative_install = node.installs.all()[0]
+                # Arbitrarily pick a representative install for the details of the "Fake" node,
+                # preferring active installs if possible
+                representative_install = node.installs.filter(status=Install.InstallStatus.ACTIVE).first()
+                if not representative_install:
+                    representative_install = node.installs.first()
+
                 all_installs.append(
                     Install(
                         install_number=node.network_number,
@@ -61,6 +71,45 @@ class MapDataNodeList(generics.ListAPIView):
 
         all_installs.sort(key=lambda i: i.install_number)
         return all_installs
+
+    def list(self, request, *args, **kwargs):
+        response = super().list(request, args, kwargs)
+
+        access_points = []
+        for device in Device.objects.filter(
+            Q(status=Device.DeviceStatus.ACTIVE)
+            & (~Q(node__latitude=F("latitude")) | ~Q(node__longitude=F("longitude")))
+        ):
+            install_date = (
+                int(
+                    datetime.combine(
+                        device.install_date,
+                        datetime.min.time(),
+                    ).timestamp()
+                    * 1000
+                )
+                if device.install_date
+                else None
+            )
+            ap = {
+                "id": 1_000_000 + device.id,  # Hacky but we have no choice
+                "name": device.name,
+                "status": "Installed",
+                "coordinates": [device.longitude, device.latitude, None],
+                "roofAccess": False,
+                "notes": "AP",
+                "panoramas": [],
+            }
+
+            if install_date:
+                ap["requestDate"] = install_date
+                ap["installDate"] = install_date
+
+            access_points.append(ap)
+
+        response.data.extend(access_points)
+
+        return response
 
 
 @extend_schema_view(
@@ -76,12 +125,49 @@ class MapDataLinkList(generics.ListAPIView):
     serializer_class = MapDataLinkSerializer
     pagination_class = None
     queryset = (
-        Link.objects.exclude(status__in=[Link.LinkStatus.INACTIVE])
-        .exclude(from_device__status=Device.DeviceStatus.INACTIVE)
-        .exclude(to_device__status=Device.DeviceStatus.INACTIVE)
+        Link.objects.prefetch_related("from_device__node__installs")
+        .prefetch_related("to_device__node__installs")
+        .exclude(status__in=[Link.LinkStatus.INACTIVE])
         .exclude(to_device__node__status=Node.NodeStatus.INACTIVE)
         .exclude(from_device__node__status=Node.NodeStatus.INACTIVE)
+        # TODO: Possibly re-enable the below filters? They make make the map arguably more accurate,
+        #  but less consistent with the current one by removing links between devices that are
+        #  inactive in UISP
+        # .exclude(from_device__status=Device.DeviceStatus.INACTIVE)
+        # .exclude(to_device__status=Device.DeviceStatus.INACTIVE)
     )
+
+    def list(self, request, *args, **kwargs):
+        response = super().list(request, args, kwargs)
+
+        # Slightly hacky way to show ethernet cable runs on the old map.
+        # We just look for nodes where there are installs on separate buildings
+        # and add fake link objects to connect the installs on those other buildings to
+        # the node dot
+        cable_runs = []
+        for node in (
+            Node.objects.prefetch_related("buildings__installs")
+            .annotate(num_buildings=Count("buildings"))
+            .filter(num_buildings__gt=1)
+        ):
+            for building in node.buildings.all():
+                active_installs = building.installs.filter(status=Install.InstallStatus.ACTIVE).order_by(
+                    "install_number"
+                )
+                if active_installs:
+                    from_install = active_installs.first().install_number
+                    if from_install != node.network_number:
+                        cable_runs.append(
+                            {
+                                "from": from_install,
+                                "to": node.network_number,
+                                "status": "active",
+                            }
+                        )
+
+        response.data.extend(cable_runs)
+
+        return response
 
 
 @extend_schema_view(
@@ -96,4 +182,4 @@ class MapDataSectorList(generics.ListAPIView):
     permission_classes = [permissions.AllowAny]
     serializer_class = MapDataSectorSerializer
     pagination_class = None
-    queryset = Sector.objects.filter(~Q(status__in=[Device.DeviceStatus.INACTIVE]))
+    queryset = Sector.objects.prefetch_related("node__installs").filter(~Q(status__in=[Device.DeviceStatus.INACTIVE]))

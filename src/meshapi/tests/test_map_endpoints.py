@@ -97,6 +97,18 @@ class TestViewsGetUnauthenticated(TestCase):
                 notes="Spreadsheet notes:\nHub: LiteBeamLR to SN1 plus kiosk failover",
             )
         )
+        ap_device = Device(
+            id=123456,
+            node=nodes[-1],
+            name=f"Northwest AP",
+            model="Unknown",
+            type=Device.DeviceType.AP,
+            install_date=datetime.date(2024, 1, 27),
+            status=Device.DeviceStatus.ACTIVE,
+            latitude=40.724863,
+            longitude=-73.987879,
+        )
+        ap_device.save()
 
         buildings.append(
             Building(
@@ -262,6 +274,17 @@ class TestViewsGetUnauthenticated(TestCase):
                     "roofAccess": True,
                     "panoramas": [],
                 },
+                {
+                    "id": 1123456,
+                    "name": "Northwest AP",
+                    "status": "Installed",
+                    "coordinates": [-73.987879, 40.724863, None],
+                    "requestDate": 1706331600000,
+                    "installDate": 1706331600000,
+                    "roofAccess": False,
+                    "notes": "AP",
+                    "panoramas": [],
+                },
             ],
         )
 
@@ -385,6 +408,9 @@ class TestViewsGetUnauthenticated(TestCase):
     def test_link_data(self):
         links = []
 
+        member = Member(name="Fake Name")
+        member.save()
+
         grand = Node(
             network_number=1934,
             status=Node.NodeStatus.ACTIVE,
@@ -477,6 +503,23 @@ class TestViewsGetUnauthenticated(TestCase):
             status=Node.NodeStatus.ACTIVE,
         )
         random.save()
+        random_building = Building(
+            latitude=0,
+            longitude=0,
+            address_truth_sources=[],
+            primary_node=random,
+        )
+        random_building.save()
+        random_install = Install(
+            install_number=123,
+            building=random_building,
+            node=random,
+            status=Install.InstallStatus.ACTIVE,
+            request_date=datetime.date(2015, 3, 15),
+            member=member,
+        )
+        random_install.save()
+        random.save()
         random_omni = Device(
             node=random,
             model="OmniTik",
@@ -486,6 +529,52 @@ class TestViewsGetUnauthenticated(TestCase):
             longitude=0,
         )
         random_omni.save()
+
+        random_addl_building = Building(
+            latitude=0,
+            longitude=0,
+            address_truth_sources=[],
+            primary_node=random,
+        )
+        random_addl_building.save()
+
+        random_addl_install = Install(
+            install_number=56789,
+            building=random_addl_building,
+            node=random,
+            status=Install.InstallStatus.ACTIVE,
+            request_date=datetime.date(2015, 3, 15),
+            member=member,
+        )
+        random_addl_install.save()
+
+        random_addl_install_2 = Install(
+            install_number=56790,
+            building=random_addl_building,
+            node=random,
+            status=Install.InstallStatus.ACTIVE,
+            request_date=datetime.date(2015, 3, 15),
+            member=member,
+        )
+        random_addl_install_2.save()
+
+        random_addl_building_inactive = Building(
+            latitude=0,
+            longitude=0,
+            address_truth_sources=[],
+            primary_node=random,
+        )
+        random_addl_building_inactive.save()
+
+        random_addl_install_inactive = Install(
+            install_number=56791,
+            building=random_addl_building_inactive,
+            node=random,
+            status=Install.InstallStatus.INACTIVE,
+            request_date=datetime.date(2015, 3, 15),
+            member=member,
+        )
+        random_addl_install_inactive.save()
 
         inactive = Node(
             network_number=123456,
@@ -602,6 +691,11 @@ class TestViewsGetUnauthenticated(TestCase):
                     "from": 1934,
                     "to": 123,
                     "status": "planned",
+                },
+                {
+                    "from": 56789,
+                    "to": 123,
+                    "status": "active",
                 },
             ],
         )
