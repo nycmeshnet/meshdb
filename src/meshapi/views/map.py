@@ -52,8 +52,12 @@ class MapDataNodeList(generics.ListAPIView):
             ~Q(status=Node.NodeStatus.INACTIVE) & Q(installs__status__in=ALLOWED_INSTALL_STATUSES)
         ):
             if node.network_number not in covered_nns:
-                # Arbitrarily pick a representative install for the details of the "Fake" node
-                representative_install = node.installs.all()[0]
+                # Arbitrarily pick a representative install for the details of the "Fake" node,
+                # preferring active installs if possible
+                representative_install = node.installs.filter(status=Install.InstallStatus.ACTIVE).first()
+                if not representative_install:
+                    representative_install = node.installs.first()
+
                 all_installs.append(
                     Install(
                         install_number=node.network_number,
