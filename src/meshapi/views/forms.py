@@ -1,4 +1,5 @@
 import json
+import logging
 import time
 from dataclasses import dataclass
 from datetime import date, datetime
@@ -150,16 +151,34 @@ def join_form(request):
         )
     )
 
-    # If the address is in NYC, then try to look up by BIN, otherwise fallback
-    # to address
-    existing_buildings = Building.objects.filter(bin=nyc_addr_info.bin)
+    # Try to map this address to an existing Building or group of buildings
+    all_existing_buildings_for_structure = Building.objects.filter(bin=nyc_addr_info.bin)
+    existing_exact_buildings = all_existing_buildings_for_structure.filter(street_address=nyc_addr_info.street_address)
+
+    existing_primary_nodes_for_structure = list(
+        {building.primary_node for building in all_existing_buildings_for_structure}
+    )
+    existing_nodes_for_structure = {
+        node for building in all_existing_buildings_for_structure for node in building.nodes.all()
+    }
+
+    if len(existing_exact_buildings) > 1:
+        logging.warning(
+            f"Found multiple buildings with BIN {nyc_addr_info.bin} and "
+            f"address {nyc_addr_info.street_address} this should not happen, "
+            f"and these should be consolidated"
+        )
+
+    if len(existing_primary_nodes_for_structure) > 1:
+        logging.warning(
+            f"Found multiple primary nodes for the cluster of nodes {existing_nodes_for_structure} "
+            f"at address {nyc_addr_info.street_address}. This should not happen, "
+            f"these should be consolidated"
+        )
 
     join_form_building = (
-        # TODO: This should do a normalized address lookup, in addition to BIN. To account for cases
-        #  where there are multiple addresses for a single BIN. Doing existing_buildings[0] here
-        #  picks arbitrarily in that case.
-        existing_buildings[0]
-        if len(existing_buildings) > 0
+        existing_exact_buildings[0]
+        if len(existing_exact_buildings) > 0
         else Building(
             bin=nyc_addr_info.bin if nyc_addr_info is not None else None,
             street_address=nyc_addr_info.street_address,
@@ -172,6 +191,11 @@ def join_form(request):
             address_truth_sources=[AddressTruthSource.NYCPlanningLabs],
         )
     )
+
+    if not join_form_building.primary_node:
+        join_form_building.primary_node = (
+            existing_primary_nodes_for_structure[0] if existing_primary_nodes_for_structure else None
+        )
 
     join_form_install = Install(
         status=Install.InstallStatus.REQUEST_RECEIVED,
@@ -199,6 +223,12 @@ def join_form(request):
 
     try:
         join_form_building.save()
+
+        # If this building is a new building in a shared structure of buildings with
+        # existing node(s), update the node-building relation to reflect the new building's
+        # association with the existing nodes
+        for node in existing_nodes_for_structure:
+            join_form_building.nodes.add(node)
     except IntegrityError as e:
         print(e)
         # Delete the member and bail
@@ -213,7 +243,7 @@ def join_form(request):
         print(e)
         # Delete the member, building (if we just created it), and bail
         join_form_member.delete()
-        if len(existing_buildings) == 0:
+        if len(existing_exact_buildings) == 0:
             join_form_building.delete()
         return Response(
             {"detail": "There was a problem saving your Install information"}, status=status.HTTP_400_BAD_REQUEST
