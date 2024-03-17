@@ -173,7 +173,7 @@ class WholeMeshKML(APIView):
                         ]
                     ),
                     altitude_mode=AltitudeMode.absolute,
-                    extrude=True,
+                    extrude=False,
                 ),
             )
 
