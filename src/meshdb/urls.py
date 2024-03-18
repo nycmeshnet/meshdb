@@ -19,6 +19,7 @@ from django.urls import include, path
 from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
 
 from meshapi.docs import SpectacularSwaggerInjectVarsView
+from meshdb.settings import PROFILING_ENABLED
 
 urlpatterns = [
     path("", include("meshweb.urls")),
@@ -35,3 +36,6 @@ urlpatterns = [
     ),
     path("api-docs/redoc/", SpectacularRedocView.as_view(url_name="api-docs-schema"), name="api-docs-redoc"),
 ]
+
+if PROFILING_ENABLED:
+    urlpatterns.append(path("silk/", include("silk.urls", namespace="silk")))
