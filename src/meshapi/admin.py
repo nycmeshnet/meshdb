@@ -304,31 +304,6 @@ class LinkAdmin(admin.ModelAdmin):
     list_display = ["__str__", "status", "from_device", "to_device", "description"]
     list_filter = ["status", "type"]
 
-
-#class SectorAdminForm(forms.ModelForm):
-#    class Meta:
-#        model = Link
-#        fields = "__all__"
-#        widgets = {
-#            "name": forms.TextInput(),
-#            "model": forms.TextInput(),
-#            "ssid": forms.TextInput(),
-#        }
-#
-#
-#@admin.register(Sector)
-#class SectorAdmin(admin.ModelAdmin):
-#    form = SectorAdminForm
-#    search_fields = ["name__icontains", "model__icontains", "ssid__icontains"]
-#    list_display = [
-#        "__str__",
-#        "ssid",
-#        "name",
-#        "model",
-#    ]
-#    list_filter = ["model", "install_date"]
-
-
 class NodeAdminForm(forms.ModelForm):
     class Meta:
         model = Node
@@ -359,6 +334,49 @@ class DeviceAdmin(admin.ModelAdmin):
         "model",
     ]
     list_filter = ["status", "install_date", "model",]
+    fieldsets = [
+        (
+            "Details",
+            {
+                "fields": [
+                    "name",
+                    "ssid",
+                    "status",
+                    "node",
+                ]
+            },
+        ),
+        (
+            "Location",
+            {
+                "fields": [
+                    "latitude",
+                    "longitude",
+                    "altitude",
+                ]
+            },
+        ),
+        (
+            "Dates",
+            {
+                "fields": [
+                    "install_date",
+                    "abandon_date",
+                ]
+            },
+        ),
+        (
+            "Misc",
+            {
+                "fields": [
+                    "model",
+                    "type",
+                    "uisp_id",
+                    "notes",
+                ]
+            },
+        ),
+    ]
     inlines = [ToLinkInline, FromLinkInline]
     
     def get_queryset(self, request):
