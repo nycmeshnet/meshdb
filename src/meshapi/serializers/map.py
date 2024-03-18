@@ -33,13 +33,13 @@ class JavascriptDateField(serializers.IntegerField):
 
 
 def get_install_number_from_node(node):
-    installs = node.installs.exclude(status__in=EXCLUDED_INSTALL_STATUSES).order_by("install_number")
+    installs = node.allowed_installs
     active_installs = [install for install in installs if install.status == Install.InstallStatus.ACTIVE]
     if len(active_installs):
         return active_installs[0].install_number
 
     if len(installs):
-        return installs.first().install_number
+        return installs[0].install_number
     else:
         return node.network_number
 
