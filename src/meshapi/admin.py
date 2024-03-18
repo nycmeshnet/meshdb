@@ -351,9 +351,8 @@ class NodeAdmin(admin.ModelAdmin):
 
 class DeviceAdminForm(forms.ModelForm):
     class Meta:
-        model = Device
+        model = Device 
         fields = "__all__"
-
 
 @admin.register(Device)
 class DeviceAdmin(admin.ModelAdmin):
@@ -366,3 +365,28 @@ class DeviceAdmin(admin.ModelAdmin):
         "model",
     ]
     list_filter = ["status", "install_date", "model",]
+    
+    def get_queryset(self, request):
+        # Get the base queryset
+        queryset = super().get_queryset(request)
+        # Filter out sectors
+        queryset = queryset.exclude(sector__isnull=False)
+        return queryset
+
+class SectorAdminForm(forms.ModelForm):
+    class Meta:
+        model = Sector 
+        fields = "__all__"
+
+@admin.register(Sector)
+class SectorAdmin(admin.ModelAdmin):
+    form = SectorAdminForm
+    search_fields = ["name__icontains", "model__icontains", "ssid__icontains"]
+    list_display = [
+        "__str__",
+        "ssid",
+        "name",
+        "model",
+    ]
+    list_filter = ["status", "install_date", "model",]
+    
