@@ -25,17 +25,14 @@ class InstallInline(admin.TabularInline):
             "all": ("admin/install_tabular.css",),
         }
 
-
-# This controls the list of installs reverse FK'd to Buildings and Members
-class FromBuildingInline(admin.TabularInline):
+class FromLinkInline(admin.TabularInline):
     model = Link
     extra = 0
-    # show_change_link = True
-    fields = ["status", "to_building", "description"]
+    fields = ["type", "status", "from_device", "to_device"]
+    fk_name = "from_device"
     readonly_fields = fields
     can_delete = False
     template = "admin/install_tabular.html"
-    fk_name = "from_building"
 
     def has_add_permission(self, request, obj):
         return False
@@ -45,17 +42,14 @@ class FromBuildingInline(admin.TabularInline):
             "all": ("admin/install_tabular.css",),
         }
 
-
-# This controls the list of installs reverse FK'd to Buildings and Members
-class ToBuildingInline(admin.TabularInline):
+class ToLinkInline(admin.TabularInline):
     model = Link
     extra = 0
-    # show_change_link = True
-    fields = ["status", "from_building", "description"]
+    fields = ["type", "status", "from_device", "to_device"]
+    fk_name = "to_device"
     readonly_fields = fields
     can_delete = False
     template = "admin/install_tabular.html"
-    fk_name = "to_building"
 
     def has_add_permission(self, request, obj):
         return False
@@ -365,6 +359,7 @@ class DeviceAdmin(admin.ModelAdmin):
         "model",
     ]
     list_filter = ["status", "install_date", "model",]
+    inlines = [ToLinkInline, FromLinkInline]
     
     def get_queryset(self, request):
         # Get the base queryset
@@ -389,4 +384,5 @@ class SectorAdmin(admin.ModelAdmin):
         "model",
     ]
     list_filter = ["status", "install_date", "model",]
+    inlines = [ToLinkInline, FromLinkInline]
     
