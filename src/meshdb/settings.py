@@ -32,6 +32,7 @@ SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = "DEBUG" in os.environ
+PROFILING_ENABLED = DEBUG and not os.environ.get("DISABLE_PROFILING", "False") == "True"
 
 ALLOWED_HOSTS = [
     "db.grandsvc.mesh.nycmesh.net",
@@ -86,21 +87,24 @@ INSTALLED_APPS = [
     "meshweb",
     "corsheaders",
     "drf_spectacular",
-    "silk",
 ]
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
-    "silk.middleware.SilkyMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-    "django_cprofile_middleware.middleware.ProfilerMiddleware",
 ]
+
+
+if PROFILING_ENABLED:
+    INSTALLED_APPS.append("silk")
+    MIDDLEWARE.append("silk.middleware.SilkyMiddleware")
+    MIDDLEWARE.append("django_cprofile_middleware.middleware.ProfilerMiddleware")
 
 DJANGO_CPROFILE_MIDDLEWARE_REQUIRE_STAFF = False
 
