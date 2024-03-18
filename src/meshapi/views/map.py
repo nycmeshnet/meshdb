@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from django.db.models import Count, F, Q
+from django.db.models import Count, F, Prefetch, Q
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import generics, permissions
 
@@ -48,15 +48,29 @@ class MapDataNodeList(generics.ListAPIView):
             for install in all_installs
             if install.node and install.install_number == install.node.network_number
         }
-        for node in Node.objects.filter(
-            ~Q(status=Node.NodeStatus.INACTIVE) & Q(installs__status__in=ALLOWED_INSTALL_STATUSES)
+        for node in (
+            Node.objects.filter(~Q(status=Node.NodeStatus.INACTIVE) & Q(installs__status__in=ALLOWED_INSTALL_STATUSES))
+            .prefetch_related(
+                Prefetch(
+                    "installs",
+                    queryset=Install.objects.all(),
+                    to_attr="prefetched_installs",
+                )
+            )
+            .prefetch_related(
+                Prefetch(
+                    "installs",
+                    queryset=Install.objects.filter(status=Install.InstallStatus.ACTIVE).select_related("building"),
+                    to_attr="active_installs",
+                )
+            )
         ):
             if node.network_number not in covered_nns:
                 # Arbitrarily pick a representative install for the details of the "Fake" node,
                 # preferring active installs if possible
-                representative_install = node.installs.filter(status=Install.InstallStatus.ACTIVE).first()
+                representative_install = node.active_installs[0]
                 if not representative_install:
-                    representative_install = node.installs.first()
+                    representative_install = node.prefetched_installs[0]
 
                 all_installs.append(
                     Install(
@@ -125,11 +139,23 @@ class MapDataLinkList(generics.ListAPIView):
     serializer_class = MapDataLinkSerializer
     pagination_class = None
     queryset = (
-        Link.objects.prefetch_related("from_device__node__installs")
-        .prefetch_related("to_device__node__installs")
-        .exclude(status__in=[Link.LinkStatus.INACTIVE])
+        Link.objects.exclude(status__in=[Link.LinkStatus.INACTIVE])
         .exclude(to_device__node__status=Node.NodeStatus.INACTIVE)
         .exclude(from_device__node__status=Node.NodeStatus.INACTIVE)
+        .prefetch_related(
+            Prefetch(
+                "to_device__node__installs",
+                queryset=Install.objects.exclude(status__in=EXCLUDED_INSTALL_STATUSES).order_by("install_number"),
+                to_attr="allowed_installs",
+            )
+        )
+        .prefetch_related(
+            Prefetch(
+                "from_device__node__installs",
+                queryset=Install.objects.exclude(status__in=EXCLUDED_INSTALL_STATUSES).order_by("install_number"),
+                to_attr="allowed_installs",
+            )
+        )
         # TODO: Possibly re-enable the below filters? They make make the map arguably more accurate,
         #  but less consistent with the current one by removing links between devices that are
         #  inactive in UISP
@@ -146,16 +172,19 @@ class MapDataLinkList(generics.ListAPIView):
         # the node dot
         cable_runs = []
         for node in (
-            Node.objects.prefetch_related("buildings__installs")
-            .annotate(num_buildings=Count("buildings"))
+            Node.objects.annotate(num_buildings=Count("buildings"))
             .filter(num_buildings__gt=1)
+            .prefetch_related(
+                Prefetch(
+                    "buildings__installs",
+                    queryset=Install.objects.order_by("install_number").filter(status=Install.InstallStatus.ACTIVE),
+                    to_attr="active_installs",
+                )
+            )
         ):
             for building in node.buildings.all():
-                active_installs = building.installs.filter(status=Install.InstallStatus.ACTIVE).order_by(
-                    "install_number"
-                )
-                if active_installs:
-                    from_install = active_installs.first().install_number
+                if building.active_installs:
+                    from_install = building.active_installs[0].install_number
                     if from_install != node.network_number:
                         cable_runs.append(
                             {
@@ -182,4 +211,10 @@ class MapDataSectorList(generics.ListAPIView):
     permission_classes = [permissions.AllowAny]
     serializer_class = MapDataSectorSerializer
     pagination_class = None
-    queryset = Sector.objects.prefetch_related("node__installs").filter(~Q(status__in=[Device.DeviceStatus.INACTIVE]))
+    queryset = Sector.objects.filter(~Q(status__in=[Device.DeviceStatus.INACTIVE])).prefetch_related(
+        Prefetch(
+            "node__installs",
+            queryset=Install.objects.exclude(status__in=EXCLUDED_INSTALL_STATUSES).order_by("install_number"),
+            to_attr="allowed_installs",
+        )
+    )
