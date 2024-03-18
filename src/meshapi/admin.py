@@ -314,6 +314,49 @@ class NodeAdmin(admin.ModelAdmin):
     list_display = ["__network_number__", "name", "status"] 
     inlines = [InstallInline, DeviceInline, SectorInline]
 
+device_fieldsets = [
+    (
+        "Details",
+        {
+            "fields": [
+                "name",
+                "ssid",
+                "status",
+                "node",
+            ]
+        },
+    ),
+    (
+        "Location",
+        {
+            "fields": [
+                "latitude",
+                "longitude",
+                "altitude",
+            ]
+        },
+    ),
+    (
+        "Dates",
+        {
+            "fields": [
+                "install_date",
+                "abandon_date",
+            ]
+        },
+    ),
+    (
+        "Misc",
+        {
+            "fields": [
+                "model",
+                "type",
+                "uisp_id",
+                "notes",
+            ]
+        },
+    ),
+]
 
 class DeviceAdminForm(forms.ModelForm):
     class Meta:
@@ -331,49 +374,7 @@ class DeviceAdmin(admin.ModelAdmin):
         "model",
     ]
     list_filter = ["status", "install_date", "model",]
-    fieldsets = [
-        (
-            "Details",
-            {
-                "fields": [
-                    "name",
-                    "ssid",
-                    "status",
-                    "node",
-                ]
-            },
-        ),
-        (
-            "Location",
-            {
-                "fields": [
-                    "latitude",
-                    "longitude",
-                    "altitude",
-                ]
-            },
-        ),
-        (
-            "Dates",
-            {
-                "fields": [
-                    "install_date",
-                    "abandon_date",
-                ]
-            },
-        ),
-        (
-            "Misc",
-            {
-                "fields": [
-                    "model",
-                    "type",
-                    "uisp_id",
-                    "notes",
-                ]
-            },
-        ),
-    ]
+    fieldsets = device_fieldsets
     inlines = [ToLinkInline, FromLinkInline]
     
     def get_queryset(self, request):
@@ -400,4 +401,16 @@ class SectorAdmin(admin.ModelAdmin):
     ]
     list_filter = ["status", "install_date", "model",]
     inlines = [ToLinkInline, FromLinkInline]
+    fieldsets = device_fieldsets + [
+        (
+            "Sector Attributes",
+            {
+                "fields": [
+                    "radius",
+                    "azimuth",
+                    "width",
+                ]
+            },
+        ),
+    ]
     
