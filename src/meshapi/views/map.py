@@ -142,20 +142,8 @@ class MapDataLinkList(generics.ListAPIView):
         Link.objects.exclude(status__in=[Link.LinkStatus.INACTIVE])
         .exclude(to_device__node__status=Node.NodeStatus.INACTIVE)
         .exclude(from_device__node__status=Node.NodeStatus.INACTIVE)
-        .prefetch_related(
-            Prefetch(
-                "to_device__node__installs",
-                queryset=Install.objects.exclude(status__in=EXCLUDED_INSTALL_STATUSES).order_by("install_number"),
-                to_attr="allowed_installs",
-            )
-        )
-        .prefetch_related(
-            Prefetch(
-                "from_device__node__installs",
-                queryset=Install.objects.exclude(status__in=EXCLUDED_INSTALL_STATUSES).order_by("install_number"),
-                to_attr="allowed_installs",
-            )
-        )
+        .prefetch_related("to_device__node")
+        .prefetch_related("from_device__node")
         # TODO: Possibly re-enable the below filters? They make make the map arguably more accurate,
         #  but less consistent with the current one by removing links between devices that are
         #  inactive in UISP
@@ -211,10 +199,4 @@ class MapDataSectorList(generics.ListAPIView):
     permission_classes = [permissions.AllowAny]
     serializer_class = MapDataSectorSerializer
     pagination_class = None
-    queryset = Sector.objects.filter(~Q(status__in=[Device.DeviceStatus.INACTIVE])).prefetch_related(
-        Prefetch(
-            "node__installs",
-            queryset=Install.objects.exclude(status__in=EXCLUDED_INSTALL_STATUSES).order_by("install_number"),
-            to_attr="allowed_installs",
-        )
-    )
+    queryset = Sector.objects.filter(~Q(status__in=[Device.DeviceStatus.INACTIVE])).prefetch_related("node")

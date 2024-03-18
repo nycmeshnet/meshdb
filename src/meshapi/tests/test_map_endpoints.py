@@ -395,7 +395,7 @@ class TestViewsGetUnauthenticated(TestCase):
                     "installDate": 1616299200000,
                 },
                 {
-                    "nodeId": 1126,
+                    "nodeId": 786,
                     "radius": 0.3,
                     "azimuth": 0,
                     "width": 360,
@@ -856,18 +856,18 @@ class TestViewsGetUnauthenticated(TestCase):
             json.loads(response.content.decode("UTF8")),
             [
                 {
-                    "from": 7,
+                    "from": 555,
                     "to": 99,
                     "status": "active",
                 },
                 {
                     "from": 99,
-                    "to": 104,
+                    "to": 731,
                     "status": "active",
                 },
                 {
-                    "from": 104,
-                    "to": 7,
+                    "from": 731,
+                    "to": 555,
                     "status": "active",
                 },
             ],

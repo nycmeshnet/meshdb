@@ -32,18 +32,6 @@ class JavascriptDateField(serializers.IntegerField):
         )
 
 
-def get_install_number_from_node(node):
-    installs = node.allowed_installs
-    active_installs = [install for install in installs if install.status == Install.InstallStatus.ACTIVE]
-    if len(active_installs):
-        return active_installs[0].install_number
-
-    if len(installs):
-        return installs[0].install_number
-    else:
-        return node.network_number
-
-
 class MapDataInstallSerializer(serializers.ModelSerializer):
     class Meta:
         model = Install
@@ -122,8 +110,8 @@ class MapDataLinkSerializer(serializers.ModelSerializer):
             "installDate",
         )
 
-    from_ = serializers.SerializerMethodField("get_from_install_number")
-    to = serializers.SerializerMethodField("get_to_install_number")
+    from_ = serializers.SerializerMethodField("get_from_node_number")
+    to = serializers.SerializerMethodField("get_to_node_number")
     status = serializers.SerializerMethodField("convert_status_to_spreadsheet_status")
     installDate = JavascriptDateField(source="install_date")
 
@@ -140,11 +128,11 @@ class MapDataLinkSerializer(serializers.ModelSerializer):
 
         return "active"
 
-    def get_to_install_number(self, link):
-        return get_install_number_from_node(link.to_device.node)
+    def get_to_node_number(self, link):
+        return link.to_device.node.network_number
 
-    def get_from_install_number(self, link):
-        return get_install_number_from_node(link.from_device.node)
+    def get_from_node_number(self, link):
+        return link.from_device.node.network_number
 
     def get_fields(self):
         result = super().get_fields()
@@ -187,7 +175,7 @@ class MapDataSectorSerializer(serializers.ModelSerializer):
     installDate = JavascriptDateField(source="install_date")
 
     def get_node_id(self, sector):
-        return get_install_number_from_node(sector.node)
+        return sector.node.network_number
 
     def convert_status_to_spreadsheet_status(self, sector):
         return str(sector.status).lower()
