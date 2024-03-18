@@ -32,6 +32,18 @@ class DeviceInline(BetterInline):
     fields = ["status", "type", "model"]
     readonly_fields = fields
 
+    def get_queryset(self, request):
+        # Get the base queryset
+        queryset = super().get_queryset(request)
+        # Filter out sectors
+        queryset = queryset.exclude(sector__isnull=False)
+        return queryset
+
+class SectorInline(BetterInline):
+    model = Sector
+    fields = ["status", "type", "model"]
+    readonly_fields = fields
+
 class FromLinkInline(BetterInline):
     model = Link
     fk_name = "from_device"
@@ -300,7 +312,7 @@ class NodeAdmin(admin.ModelAdmin):
     search_fields = ["network_number__iexact", "name__icontains"]
     list_filter = ["status", ("name", admin.EmptyFieldListFilter)]
     list_display = ["__network_number__", "name", "status"] 
-    inlines = [InstallInline]
+    inlines = [InstallInline, DeviceInline, SectorInline]
 
 
 class DeviceAdminForm(forms.ModelForm):
