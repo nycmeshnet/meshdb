@@ -7,58 +7,42 @@ admin.site.site_header = "MeshDB Admin"
 admin.site.site_title = "MeshDB Admin Portal"
 admin.site.index_title = "Welcome to MeshDB Admin Portal"
 
+# Inline with the typical rules we want + Formatting
+class BetterInline(admin.TabularInline):
+    extra = 0
+    can_delete = False
+    template = "admin/install_tabular.html"
+
+    def has_add_permission(self, request, obj):
+        return False
+
+    class Media:
+        css = {
+            "all": ("admin/install_tabular.css",),
+        }
 
 # This controls the list of installs reverse FK'd to Buildings and Members
-class InstallInline(admin.TabularInline):
+class InstallInline(BetterInline):
     model = Install
-    extra = 0
-    fields = ["status", "node", "member", "unit"]
+    fields = ["status", "node", "member", "building", "unit"]
     readonly_fields = fields
-    can_delete = False
-    template = "admin/install_tabular.html"
 
-    def has_add_permission(self, request, obj):
-        return False
+class DeviceInline(BetterInline):
+    model = Device 
+    fields = ["status", "type", "model"]
+    readonly_fields = fields
 
-    class Media:
-        css = {
-            "all": ("admin/install_tabular.css",),
-        }
-
-class FromLinkInline(admin.TabularInline):
+class FromLinkInline(BetterInline):
     model = Link
-    extra = 0
-    fields = ["type", "status", "from_device", "to_device"]
     fk_name = "from_device"
-    readonly_fields = fields
-    can_delete = False
-    template = "admin/install_tabular.html"
-
-    def has_add_permission(self, request, obj):
-        return False
-
-    class Media:
-        css = {
-            "all": ("admin/install_tabular.css",),
-        }
-
-class ToLinkInline(admin.TabularInline):
-    model = Link
-    extra = 0
     fields = ["type", "status", "from_device", "to_device"]
-    fk_name = "to_device"
     readonly_fields = fields
-    can_delete = False
-    template = "admin/install_tabular.html"
 
-    def has_add_permission(self, request, obj):
-        return False
-
-    class Media:
-        css = {
-            "all": ("admin/install_tabular.css",),
-        }
-
+class ToLinkInline(BetterInline):
+    model = Link
+    fk_name = "to_device"
+    fields = ["type", "status", "from_device", "to_device"]
+    readonly_fields = fields
 
 class BoroughFilter(admin.SimpleListFilter):
     title = "Borough"
@@ -316,6 +300,7 @@ class NodeAdmin(admin.ModelAdmin):
     search_fields = ["network_number__iexact", "name__icontains"]
     list_filter = ["status", ("name", admin.EmptyFieldListFilter)]
     list_display = ["__network_number__", "name", "status"] 
+    inlines = [InstallInline]
 
 
 class DeviceAdminForm(forms.ModelForm):
