@@ -21,6 +21,11 @@ class BetterInline(admin.TabularInline):
             "all": ("admin/install_tabular.css",),
         }
 
+class BuildingInline(BetterInline):
+    model = Building
+    fields = ["primary_node", "bin", "street_address", "city", "zip_code"]
+    readonly_fields = fields
+
 # This controls the list of installs reverse FK'd to Buildings and Members
 class InstallInline(BetterInline):
     model = Install
@@ -185,7 +190,6 @@ class MemberAdmin(admin.ModelAdmin):
         "installs__node__network_number__iexact",
         "installs__install_number__iexact",
     ]
-    inlines = [InstallInline]
     list_display = [
         "__str__",
         "name",
@@ -193,6 +197,44 @@ class MemberAdmin(admin.ModelAdmin):
         "stripe_email_address",
         "phone_number",
     ]
+    fieldsets = [
+        (
+            "Details",
+            {
+                "fields": [
+                    "name",
+                ]
+            },
+        ),
+        (
+            "Email",
+            {
+                "fields": [
+                    "primary_email_address",
+                    "stripe_email_address",
+                    "additional_email_addresses",
+                ]
+            },
+        ),
+        (
+            "Contact Info",
+            {
+                "fields": [
+                    "phone_number",
+                    "slack_handle",
+                ]
+            },
+        ),
+        (
+            "Misc",
+            {
+                "fields": [
+                    "notes",
+                ]
+            },
+        ),
+    ]
+    inlines = [InstallInline]
 
 
 class InstallAdminForm(forms.ModelForm):
@@ -237,8 +279,8 @@ class InstallAdmin(admin.ModelAdmin):
             "Details",
             {
                 "fields": [
-                    "member",
                     "status",
+                    "member",
                     "ticket_id",
                     "node",
                 ]
@@ -265,12 +307,12 @@ class InstallAdmin(admin.ModelAdmin):
             },
         ),
         (
-            "Notes",
+            "Misc",
             {
                 "fields": [
                     "diy",
-                    "notes",
                     "referral",
+                    "notes",
                 ]
             },
         ),
@@ -312,16 +354,54 @@ class NodeAdmin(admin.ModelAdmin):
     search_fields = ["network_number__iexact", "name__icontains"]
     list_filter = ["status", ("name", admin.EmptyFieldListFilter)]
     list_display = ["__network_number__", "name", "status"] 
-    inlines = [InstallInline, DeviceInline, SectorInline]
+    fieldsets = [
+        (
+            "Details",
+            {
+                "fields": [
+                    "status",
+                    "name",
+                ]
+            },
+        ),
+        (
+            "Location",
+            {
+                "fields": [
+                    "latitude",
+                    "longitude",
+                    "altitude",
+                ]
+            },
+        ),
+        (
+            "Dates",
+            {
+                "fields": [
+                    "install_date",
+                    "abandon_date",
+                ]
+            },
+        ),
+        (
+            "Misc",
+            {
+                "fields": [
+                    "notes",
+                ]
+            }
+        ),
+    ]
+    inlines = [InstallInline, BuildingInline, DeviceInline, SectorInline]
 
 device_fieldsets = [
     (
         "Details",
         {
             "fields": [
+                "status",
                 "name",
                 "ssid",
-                "status",
                 "node",
             ]
         },
