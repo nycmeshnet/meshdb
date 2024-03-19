@@ -196,6 +196,64 @@ class TestViewsGetUnauthenticated(TestCase):
             )
         )
 
+        nodes.append(
+            Node(
+                network_number=888,
+                status=Node.NodeStatus.ACTIVE,
+                latitude=40.724868,
+                longitude=-73.987881,
+            )
+        )
+        buildings.append(
+            Building(
+                address_truth_sources=[],
+                latitude=40.6962265,
+                longitude=-73.9917741,
+                altitude=66,
+                primary_node=nodes[-1],
+            )
+        )
+        installs.append(
+            Install(
+                install_number=1234,
+                node=nodes[-1],
+                status=Install.InstallStatus.ACTIVE,
+                request_date=datetime.date(2024, 1, 27),
+                roof_access=True,
+                building=buildings[-1],
+                member=member,
+            )
+        )
+
+        nodes.append(
+            Node(
+                network_number=1234,
+                status=Node.NodeStatus.ACTIVE,
+                latitude=40.724868,
+                longitude=-73.987881,
+            )
+        )
+        buildings.append(
+            Building(
+                address_truth_sources=[],
+                latitude=40.6962265,
+                longitude=-73.9917741,
+                altitude=66,
+                primary_node=nodes[-1],
+            )
+        )
+        installs.append(
+            Install(
+                install_number=9999,
+                node=nodes[-1],
+                status=Install.InstallStatus.ACTIVE,
+                request_date=datetime.date(2024, 1, 27),
+                roof_access=True,
+                building=buildings[-1],
+                member=member,
+            )
+        )
+
         installs.append(
             Install(
                 install_number=2134,
@@ -253,6 +311,30 @@ class TestViewsGetUnauthenticated(TestCase):
                 {
                     "id": 567,
                     "status": "NN Assigned",
+                    "coordinates": [-73.9917741, 40.6962265, 66.0],
+                    "requestDate": 1706331600000,
+                    "roofAccess": True,
+                    "panoramas": [],
+                },
+                {
+                    "id": 888,
+                    "status": "NN Assigned",
+                    "coordinates": [-73.9917741, 40.6962265, 66.0],
+                    "requestDate": 1706331600000,
+                    "roofAccess": True,
+                    "panoramas": [],
+                },
+                {
+                    "id": 1234,
+                    "status": "Installed",
+                    "coordinates": [-73.9917741, 40.6962265, 66.0],
+                    "requestDate": 1706331600000,
+                    "roofAccess": True,
+                    "panoramas": [],
+                },
+                {
+                    "id": 9999,
+                    "status": "Installed",
                     "coordinates": [-73.9917741, 40.6962265, 66.0],
                     "requestDate": 1706331600000,
                     "roofAccess": True,

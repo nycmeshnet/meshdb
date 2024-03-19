@@ -43,11 +43,7 @@ class MapDataNodeList(generics.ListAPIView):
         # We need to make sure there is an entry on the map for every NN, and since we excluded the
         # NN assigned rows in the query above, we need to go through the Node objects and
         # include the nns we haven't already covered via install num
-        covered_nns = {
-            install.install_number
-            for install in all_installs
-            if install.node and install.install_number == install.node.network_number
-        }
+        covered_nns = {install.install_number for install in all_installs}
         for node in (
             Node.objects.filter(~Q(status=Node.NodeStatus.INACTIVE) & Q(installs__status__in=ALLOWED_INSTALL_STATUSES))
             .prefetch_related(
