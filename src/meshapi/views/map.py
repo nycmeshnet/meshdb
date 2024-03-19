@@ -179,6 +179,7 @@ class MapDataLinkList(generics.ListAPIView):
         for node in (
             Node.objects.annotate(num_buildings=Count("buildings"))
             .filter(num_buildings__gt=1)
+            .filter(~Q(status=Node.NodeStatus.INACTIVE) & Q(installs__status__in=ALLOWED_INSTALL_STATUSES))
             .prefetch_related(
                 Prefetch(
                     "buildings__installs",

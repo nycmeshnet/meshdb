@@ -938,6 +938,100 @@ class TestViewsGetUnauthenticated(TestCase):
             ],
         )
 
+    def test_cable_run_links_to_invalid_nodes_are_not_created(self):
+        links = []
+
+        member = Member(name="Fake Name")
+        member.save()
+
+        grand = Node(
+            network_number=1934,
+            status=Node.NodeStatus.INACTIVE,
+            latitude=0,
+            longitude=0,
+        )
+        grand.save()
+        grand_omni = Device(
+            node=grand,
+            model="OmniTik",
+            type=Device.DeviceType.ROUTER,
+            status=Device.DeviceStatus.ACTIVE,
+            latitude=0,
+            longitude=0,
+        )
+        grand_omni.save()
+        grand_additional_device = Device(
+            node=grand,
+            model="OmniTik",
+            type=Device.DeviceType.ROUTER,
+            status=Device.DeviceStatus.ACTIVE,
+            latitude=0,
+            longitude=0,
+        )
+        grand_additional_device.save()
+
+        grand_building = Building(
+            address_truth_sources=[],
+            latitude=0,
+            longitude=0,
+            primary_node=grand,
+        )
+        grand_building.save()
+
+        Install(
+            install_number=1934,
+            status=Install.InstallStatus.ACTIVE,
+            request_date=datetime.date(2015, 3, 15),
+            node=grand,
+            member=member,
+            building=grand_building,
+        ).save()
+
+        grand_node2 = Node(
+            network_number=1938,
+            status=Node.NodeStatus.ACTIVE,
+            latitude=0,
+            longitude=0,
+        )
+        grand_node2.save()
+        grand2_omni = Device(
+            node=grand_node2,
+            model="OmniTik",
+            type=Device.DeviceType.ROUTER,
+            status=Device.DeviceStatus.ACTIVE,
+            latitude=0,
+            longitude=0,
+        )
+        grand2_omni.save()
+
+        grand_building2 = Building(
+            address_truth_sources=[],
+            latitude=0,
+            longitude=0,
+            primary_node=grand,
+        )
+        grand_building2.save()
+
+        Install(
+            install_number=1938,
+            status=Install.InstallStatus.ACTIVE,
+            request_date=datetime.date(2015, 3, 15),
+            node=grand_node2,
+            member=member,
+            building=grand_building2,
+        ).save()
+
+        for link in links:
+            link.save()
+
+        self.maxDiff = None
+        response = self.c.get("/api/v1/mapdata/links/")
+
+        self.assertEqual(
+            json.loads(response.content.decode("UTF8")),
+            [],
+        )
+
     def test_link_install_number_resolution(self):
         links = []
 
