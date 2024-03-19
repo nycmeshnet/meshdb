@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from django.db.models import Count, F, Prefetch, Q
+from django.db.models import Count, F, OuterRef, Prefetch, Q, Subquery
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import generics, permissions
 
@@ -140,6 +140,25 @@ class MapDataLinkList(generics.ListAPIView):
         .exclude(from_device__node__status=Node.NodeStatus.INACTIVE)
         .prefetch_related("to_device__node")
         .prefetch_related("from_device__node")
+        .filter(
+            # This horrible monster query exists to de-duplicate links between the same node pairs
+            # so that the map doesn't freak out. These often exist because different devices on
+            # the same nodes can be linked. This deduplication happens somewhat arbitrarily
+            # and is borrowed from https://stackoverflow.com/a/69938289
+            pk__in=Link.objects.values("from_device__node__network_number", "to_device__node__network_number")
+            .distinct()
+            .annotate(
+                pk=Subquery(
+                    Link.objects.filter(
+                        from_device__node__network_number=OuterRef("from_device__node__network_number"),
+                        to_device__node__network_number=OuterRef("to_device__node__network_number"),
+                    )
+                    .order_by("pk")
+                    .values("pk")[:1]
+                )
+            )
+            .values_list("pk", flat=True)
+        )
         # TODO: Possibly re-enable the below filters? They make make the map arguably more accurate,
         #  but less consistent with the current one by removing links between devices that are
         #  inactive in UISP
@@ -149,6 +168,8 @@ class MapDataLinkList(generics.ListAPIView):
 
     def list(self, request, *args, **kwargs):
         response = super().list(request, args, kwargs)
+
+        covered_links = {(link["from"], link["to"]) for link in response.data}
 
         # Slightly hacky way to show ethernet cable runs on the old map.
         # We just look for nodes where there are installs on separate buildings
@@ -170,13 +191,14 @@ class MapDataLinkList(generics.ListAPIView):
                 if building.active_installs:
                     from_install = building.active_installs[0].install_number
                     if from_install != node.network_number:
-                        cable_runs.append(
-                            {
-                                "from": from_install,
-                                "to": node.network_number,
-                                "status": "active",
-                            }
-                        )
+                        if (from_install, node.network_number) not in covered_links:
+                            cable_runs.append(
+                                {
+                                    "from": from_install,
+                                    "to": node.network_number,
+                                    "status": "active",
+                                }
+                            )
 
         response.data.extend(cable_runs)
 
