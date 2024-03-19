@@ -120,8 +120,6 @@ const mapStyles = [
   }
 ];
 
-let map;
-
 function getCurrentTarget(){
     let path = location.pathname.replace(/^\/admin\/meshapi\//, "");
     path = path.replace(/\/$/, "");
@@ -130,21 +128,61 @@ function getCurrentTarget(){
     return [type, id, action];
 }
 
-async function updateMapForRoute() {
+async function getNewSelectedNodes(){
     const [type, id, action] = getCurrentTarget();
 
-    if (["building"].indexOf(type) === -1) return;
-    if (!id) return;
+    let nodeId = null;
+    if (["node", "install"].indexOf(type) !== -1) nodeId = id;
 
-    const buildingResponse = await fetch(`/api/v1/buildings/${id}/`);
-    if (!buildingResponse.ok) return;
-    const building = await buildingResponse.json();
-    console.log(building);
+    if (type === "building") {
+        if (!id) return null;
+        const buildingResponse = await fetch(`/api/v1/buildings/${id}/`);
+        if (!buildingResponse.ok) return null;
+        const building = await buildingResponse.json();
+        if (building.primary_node) {
+            nodeId = building.primary_node;
+        } else if (building.installs) {
+            nodeId = building.installs[0];
+        }
+    } else if (["device", "sector"].indexOf(type) !== -1) {
+        if (!id) return null;
+        const deviceResponse = await fetch(`/api/v1/devices/${id}/`);
+        if (!deviceResponse.ok) return null;
+        const device = await deviceResponse.json();
+        nodeId = device.node;
+    } else if (type === "member") {
+        if (!id) return null;
+        const memberResponse = await fetch(`/api/v1/members/${id}/`);
+        if (!memberResponse.ok) return null;
+        const member = await memberResponse.json();
+        nodeId = member.installs.join("-");
+    } else if (type === "link") {
+        if (!id) return null;
+        const linkResponse = await fetch(`/api/v1/links/${id}/`);
+        if (!linkResponse.ok) return null;
+        const link = await linkResponse.json();
 
-    map.setCenter(new google.maps.LatLng(building.latitude, building.longitude))
-    map.setZoom(18);
+        const device1Response = await fetch(`/api/v1/devices/${link.from_device}/`);
+        if (!device1Response.ok) return null;
+        const device1 = await device1Response.json();
 
-    document.getElementById("map").getElementsByTagName("p")[0].innerHTML = [type,id];
+        const device2Response = await fetch(`/api/v1/devices/${link.to_device}/`);
+        if (!device2Response.ok) return null;
+        const device2 = await device2Response.json();
+
+        nodeId = `${device1.node}-${device2.node}`;
+    }
+
+    console.log(`${type} ${id} -> ${nodeId}`)
+
+
+    return nodeId ? `${nodeId}` : null;
+}
+
+async function updateMapForRoute() {
+    const selectedEvent = new Event("setMapNode");//, {detail: {selectedNodes: selectedNodes}});
+    selectedEvent.selectedNodes = await getNewSelectedNodes();
+    window.dispatchEvent(selectedEvent);
 }
 
 async function loadScripts(scripts) {
@@ -229,19 +267,4 @@ function start() {
     interceptLinks();
 }
 
-async function initMap() {
-    const {Map} = await google.maps.importLibrary("maps");
-
-    map = new Map(document.getElementById("map-inner"), {
-        center: {lat: 40.7211997, lng: -73.9927221},
-        zoom: 11.7,
-        styles: mapStyles,
-        streetViewControl: false,
-    });
-
-    google.maps.event.addListenerOnce( map, 'idle', function() {
-        start();
-    });
-}
-
-initMap();
+start();
