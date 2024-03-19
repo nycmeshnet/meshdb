@@ -270,6 +270,24 @@ function interceptLinks() {
     });
 }
 
+async function nodeSelectedOnMap(selectedNodes) {
+    if (!selectedNodes) return;
+    if (selectedNodes.indexOf("-") !== -1) return;
+
+    const nodeResponse = await fetch(`/api/v1/nodes/${selectedNodes}/`);
+    if (nodeResponse.ok)  {
+        window.location = `/admin/meshapi/node/${selectedNodes}/change`;
+    } else {
+        window.location = `/admin/meshapi/install/${selectedNodes}/change`;
+    }
+}
+
+function listenForMapNavigation() {
+    window.addEventListener("nodeSelectedOnMap", (event) => {
+        nodeSelectedOnMap(event.selectedNodes);
+    })
+}
+
 async function load_map() {
     const map_host = MAP_BASE_URL;
     const response = await fetch(`${map_host}/index.html`);
@@ -310,6 +328,7 @@ async function start() {
     await load_map();
     updateMapForRoute();
     interceptLinks();
+    listenForMapNavigation();
 }
 
 start();
