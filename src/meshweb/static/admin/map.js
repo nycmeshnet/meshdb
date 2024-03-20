@@ -1,124 +1,4 @@
 
-const mapStyles = [
-  {
-    "featureType": "administrative.land_parcel",
-    "elementType": "labels",
-    "stylers": [
-      {
-        "visibility": "off"
-      }
-    ]
-  },
-  {
-    "featureType": "poi",
-    "elementType": "labels.text",
-    "stylers": [
-      {
-        "visibility": "off"
-      }
-    ]
-  },
-  {
-    "featureType": "poi.attraction",
-    "elementType": "labels",
-    "stylers": [
-      {
-        "visibility": "off"
-      }
-    ]
-  },
-  {
-    "featureType": "poi.business",
-    "stylers": [
-      {
-        "visibility": "off"
-      }
-    ]
-  },
-  {
-    "featureType": "poi.medical",
-    "elementType": "labels",
-    "stylers": [
-      {
-        "visibility": "off"
-      }
-    ]
-  },
-  {
-    "featureType": "poi.park",
-    "elementType": "labels",
-    "stylers": [
-      {
-        "visibility": "on"
-      }
-    ]
-  },
-  {
-    "featureType": "poi.park",
-    "elementType": "labels.icon",
-    "stylers": [
-      {
-        "visibility": "off"
-      }
-    ]
-  },
-  {
-    "featureType": "poi.school",
-    "elementType": "labels.icon",
-    "stylers": [
-      {
-        "visibility": "off"
-      }
-    ]
-  },
-  {
-    "featureType": "poi.sports_complex",
-    "elementType": "labels.icon",
-    "stylers": [
-      {
-        "visibility": "off"
-      }
-    ]
-  },
-  {
-    "featureType": "road.highway",
-    "elementType": "geometry.fill",
-    "stylers": [
-      {
-        "color": "#ffffff"
-      },
-      {
-        "saturation": -40
-      }
-    ]
-  },
-  {
-    "featureType": "road.highway",
-    "elementType": "geometry.stroke",
-    "stylers": [
-      {
-        "visibility": "off"
-      }
-    ]
-  },
-  {
-    "featureType": "road.highway.controlled_access",
-    "elementType": "labels.icon",
-    "stylers": [
-      {
-        "visibility": "off"
-      }
-    ]
-  },
-  {
-    "featureType": "transit.station",
-    "stylers": [
-      {
-        "visibility": "off"
-      }
-    ]
-  }
-];
 
 function getCurrentTarget(){
     let path = location.pathname.replace(/^\/admin\/meshapi\//, "");
@@ -186,7 +66,12 @@ async function updateMapForRoute() {
 }
 
 async function loadScripts(scripts, destination) {
-    for (const script of scripts) {
+    const scriptsArray = [];
+    for (const script of scripts){
+        scriptsArray.push(script);
+    }
+
+    for (const script of scriptsArray) {
         const scriptLoadPromise = new Promise((resolve, reject) => {
             const scriptElement = document.createElement('script');
             if (script.src) {
@@ -197,6 +82,7 @@ async function loadScripts(scripts, destination) {
             scriptElement.onload = resolve;
             scriptElement.onerror = reject;
             destination.appendChild(scriptElement);
+            script.remove();
 
             // onload will never fire for in-lined scripts since they don't fetch(), so resolve the
             // promise right away
@@ -219,12 +105,25 @@ async function updateAdminContent() {
     const text = await response.text();
     const parser = new DOMParser();
     const doc = parser.parseFromString(text, "text/html");
-    doc.getElementById("map").replaceWith(current_map);
-
 
     // Bail if the user clicked an additional link while we could load/parse the first one
     if (location.pathname !== currentPathname) {
         return
+    }
+
+    doc.getElementById("map").replaceWith(current_map);
+
+    // Keep the elements Google Maps injected in the header, otherwise the map breaks
+    const headerElementsToKeep = [];
+    for (const el of document.getElementsByTagName("head")[0].getElementsByTagName("script")){
+        if (el.src && el.src.startsWith("https://maps.google")) headerElementsToKeep.push(el);
+    }
+    for (const el of document.getElementsByTagName("head")[0].getElementsByTagName("style")){
+        if (el.textContent.indexOf(".gm") !== -1) headerElementsToKeep.push(el);
+    }
+
+    for (const el of headerElementsToKeep){
+        doc.getElementsByTagName("head")[0].appendChild(el);
     }
 
     // Replace the whole page with the new one
@@ -233,7 +132,12 @@ async function updateAdminContent() {
 
     // Re-run other javascript to make page happy
     if (window.DateTimeShortcuts) window.removeEventListener('load', window.DateTimeShortcuts.init);
-    await loadScripts(document.head.querySelectorAll('script'), document.head);
+
+    const scriptsToReload = [];
+    for (const script of document.head.querySelectorAll('script')){
+        if (!script.src || !script.src.startsWith("https://maps.google")) scriptsToReload.push(script);
+    }
+    await loadScripts(scriptsToReload, document.head);
 
     console.log("Simulating window load...")
     dispatchEvent(new Event('load'));
