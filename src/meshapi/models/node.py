@@ -69,7 +69,7 @@ class Node(models.Model):
 
     def __str__(self):
         if self.name:
-            return str(self.name)
+            return f"NN{str(self.network_number)} ({str(self.name)})"
 
         return f"NN{str(self.network_number)}"
 
