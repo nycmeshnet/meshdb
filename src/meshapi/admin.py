@@ -68,7 +68,7 @@ class DeviceInline(BetterInline):
 
 class NonrelatedLinkInline(BetterNonrelatedInline):
     model = Link
-    fields = ["__str__", "status", "type", "from_device", "to_device"]
+    fields = ["status", "type", "from_device", "to_device"]
     readonly_fields = fields
 
     def get_form_queryset(self, obj):
