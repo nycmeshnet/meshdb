@@ -1,7 +1,10 @@
 from django.contrib import admin
 from django.contrib.admin.options import forms
+from django.db.models import Q
 
 from meshapi.models import Building, Device, Install, Link, Member, Node, Sector
+
+from nonrelated_inlines.admin import NonrelatedTabularInline
 
 admin.site.site_header = "MeshDB Admin"
 admin.site.site_title = "MeshDB Admin Portal"
@@ -9,6 +12,19 @@ admin.site.index_title = "Welcome to MeshDB Admin Portal"
 
 # Inline with the typical rules we want + Formatting
 class BetterInline(admin.TabularInline):
+    extra = 0
+    can_delete = False
+    template = "admin/install_tabular.html"
+
+    def has_add_permission(self, request, obj):
+        return False
+
+    class Media:
+        css = {
+            "all": ("admin/install_tabular.css",),
+        }
+
+class BetterNonrelatedInline(NonrelatedTabularInline):
     extra = 0
     can_delete = False
     template = "admin/install_tabular.html"
@@ -44,6 +60,20 @@ class DeviceInline(BetterInline):
         queryset = queryset.exclude(sector__isnull=False)
         return queryset
 
+class NonrelatedLinkInline(BetterNonrelatedInline):
+    model = Link
+    fields = ["__str__", "status", "type", "from_device", "to_device"]
+    readonly_fields = fields
+
+    def get_form_queryset(self, obj):
+        from_device_q = Q(from_device__in=obj.devices.all())
+        to_device_q = Q(to_device__in=obj.devices.all())
+        all_links = from_device_q | to_device_q
+        return self.model.objects.filter(all_links)
+
+    def save_new_instance(self, parent, instance):
+        pass
+
 class SectorInline(BetterInline):
     model = Sector
     fields = ["status", "type", "model"]
@@ -52,13 +82,13 @@ class SectorInline(BetterInline):
 class FromLinkInline(BetterInline):
     model = Link
     fk_name = "from_device"
-    fields = ["type", "status", "from_device", "to_device"]
+    fields = ["status", "type", "from_device", "to_device"]
     readonly_fields = fields
 
 class ToLinkInline(BetterInline):
     model = Link
     fk_name = "to_device"
-    fields = ["type", "status", "from_device", "to_device"]
+    fields = ["status", "type", "from_device", "to_device"]
     readonly_fields = fields
 
 class BoroughFilter(admin.SimpleListFilter):
@@ -114,15 +144,6 @@ class BuildingAdmin(admin.ModelAdmin):
     ]
     fieldsets = [
         (
-            "Node Details",
-            {
-                "fields": [
-                    "primary_node",
-                    "nodes",
-                ]
-            },
-        ),
-        (
             "Address Information",
             {
                 "fields": [
@@ -145,10 +166,19 @@ class BuildingAdmin(admin.ModelAdmin):
             },
         ),
         (
-            "Notes",
+            "Misc",
             {
                 "fields": [
                     "notes",
+                ]
+            },
+        ),
+        (
+            "Nodes",
+            {
+                "fields": [
+                    "primary_node",
+                    "nodes",
                 ]
             },
         ),
@@ -280,14 +310,21 @@ class InstallAdmin(admin.ModelAdmin):
             {
                 "fields": [
                     "status",
-                    "member",
                     "ticket_id",
+                    "member",
+                ]
+            },
+        ),
+        (
+            "Node",
+            {
+                "fields": [
                     "node",
                 ]
             },
         ),
         (
-            "Building Details",
+            "Building",
             {
                 "fields": [
                     "building",
@@ -342,6 +379,8 @@ class LinkAdmin(admin.ModelAdmin):
     list_display = ["__str__", "status", "from_device", "to_device", "description"]
     list_filter = ["status", "type"]
 
+    autocomplete_fields = ["from_device", "to_device"]
+
 class NodeAdminForm(forms.ModelForm):
     class Meta:
         model = Node
@@ -351,9 +390,9 @@ class NodeAdminForm(forms.ModelForm):
 @admin.register(Node)
 class NodeAdmin(admin.ModelAdmin):
     form = NodeAdminForm
-    search_fields = ["network_number__iexact", "name__icontains"]
+    search_fields = ["network_number__iexact", "name__icontains", "buildings__street_address__icontains"]
     list_filter = ["status", ("name", admin.EmptyFieldListFilter)]
-    list_display = ["__network_number__", "name", "status"] 
+    list_display = ["__network_number__", "name", "status", "address"] 
     fieldsets = [
         (
             "Details",
@@ -392,7 +431,10 @@ class NodeAdmin(admin.ModelAdmin):
             }
         ),
     ]
-    inlines = [InstallInline, BuildingInline, DeviceInline, SectorInline]
+    inlines = [InstallInline, BuildingInline, DeviceInline, SectorInline, NonrelatedLinkInline]
+
+    def address(self, obj):
+        return obj.buildings.first()
 
 device_fieldsets = [
     (
