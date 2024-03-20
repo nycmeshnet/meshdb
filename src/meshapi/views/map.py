@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from django.db.models import Count, F, Prefetch, Q
+from django.db.models import Count, F, OuterRef, Prefetch, Q, Subquery
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import generics, permissions
 
@@ -43,11 +43,7 @@ class MapDataNodeList(generics.ListAPIView):
         # We need to make sure there is an entry on the map for every NN, and since we excluded the
         # NN assigned rows in the query above, we need to go through the Node objects and
         # include the nns we haven't already covered via install num
-        covered_nns = {
-            install.install_number
-            for install in all_installs
-            if install.node and install.install_number == install.node.network_number
-        }
+        covered_nns = {install.install_number for install in all_installs}
         for node in (
             Node.objects.filter(~Q(status=Node.NodeStatus.INACTIVE) & Q(installs__status__in=ALLOWED_INSTALL_STATUSES))
             .prefetch_related(
@@ -142,19 +138,26 @@ class MapDataLinkList(generics.ListAPIView):
         Link.objects.exclude(status__in=[Link.LinkStatus.INACTIVE])
         .exclude(to_device__node__status=Node.NodeStatus.INACTIVE)
         .exclude(from_device__node__status=Node.NodeStatus.INACTIVE)
-        .prefetch_related(
-            Prefetch(
-                "to_device__node__installs",
-                queryset=Install.objects.exclude(status__in=EXCLUDED_INSTALL_STATUSES).order_by("install_number"),
-                to_attr="allowed_installs",
+        .prefetch_related("to_device__node")
+        .prefetch_related("from_device__node")
+        .filter(
+            # This horrible monster query exists to de-duplicate links between the same node pairs
+            # so that the map doesn't freak out. These often exist because different devices on
+            # the same nodes can be linked. This deduplication happens somewhat arbitrarily
+            # and is borrowed from https://stackoverflow.com/a/69938289
+            pk__in=Link.objects.values("from_device__node__network_number", "to_device__node__network_number")
+            .distinct()
+            .annotate(
+                pk=Subquery(
+                    Link.objects.filter(
+                        from_device__node__network_number=OuterRef("from_device__node__network_number"),
+                        to_device__node__network_number=OuterRef("to_device__node__network_number"),
+                    )
+                    .order_by("pk")
+                    .values("pk")[:1]
+                )
             )
-        )
-        .prefetch_related(
-            Prefetch(
-                "from_device__node__installs",
-                queryset=Install.objects.exclude(status__in=EXCLUDED_INSTALL_STATUSES).order_by("install_number"),
-                to_attr="allowed_installs",
-            )
+            .values_list("pk", flat=True)
         )
         # TODO: Possibly re-enable the below filters? They make make the map arguably more accurate,
         #  but less consistent with the current one by removing links between devices that are
@@ -166,6 +169,8 @@ class MapDataLinkList(generics.ListAPIView):
     def list(self, request, *args, **kwargs):
         response = super().list(request, args, kwargs)
 
+        covered_links = {(link["from"], link["to"]) for link in response.data}
+
         # Slightly hacky way to show ethernet cable runs on the old map.
         # We just look for nodes where there are installs on separate buildings
         # and add fake link objects to connect the installs on those other buildings to
@@ -174,6 +179,7 @@ class MapDataLinkList(generics.ListAPIView):
         for node in (
             Node.objects.annotate(num_buildings=Count("buildings"))
             .filter(num_buildings__gt=1)
+            .filter(~Q(status=Node.NodeStatus.INACTIVE) & Q(installs__status__in=ALLOWED_INSTALL_STATUSES))
             .prefetch_related(
                 Prefetch(
                     "buildings__installs",
@@ -186,13 +192,14 @@ class MapDataLinkList(generics.ListAPIView):
                 if building.active_installs:
                     from_install = building.active_installs[0].install_number
                     if from_install != node.network_number:
-                        cable_runs.append(
-                            {
-                                "from": from_install,
-                                "to": node.network_number,
-                                "status": "active",
-                            }
-                        )
+                        if (from_install, node.network_number) not in covered_links:
+                            cable_runs.append(
+                                {
+                                    "from": from_install,
+                                    "to": node.network_number,
+                                    "status": "active",
+                                }
+                            )
 
         response.data.extend(cable_runs)
 
@@ -211,10 +218,4 @@ class MapDataSectorList(generics.ListAPIView):
     permission_classes = [permissions.AllowAny]
     serializer_class = MapDataSectorSerializer
     pagination_class = None
-    queryset = Sector.objects.filter(~Q(status__in=[Device.DeviceStatus.INACTIVE])).prefetch_related(
-        Prefetch(
-            "node__installs",
-            queryset=Install.objects.exclude(status__in=EXCLUDED_INSTALL_STATUSES).order_by("install_number"),
-            to_attr="allowed_installs",
-        )
-    )
+    queryset = Sector.objects.filter(~Q(status__in=[Device.DeviceStatus.INACTIVE])).prefetch_related("node")

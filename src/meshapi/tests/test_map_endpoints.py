@@ -196,6 +196,64 @@ class TestViewsGetUnauthenticated(TestCase):
             )
         )
 
+        nodes.append(
+            Node(
+                network_number=888,
+                status=Node.NodeStatus.ACTIVE,
+                latitude=40.724868,
+                longitude=-73.987881,
+            )
+        )
+        buildings.append(
+            Building(
+                address_truth_sources=[],
+                latitude=40.6962265,
+                longitude=-73.9917741,
+                altitude=66,
+                primary_node=nodes[-1],
+            )
+        )
+        installs.append(
+            Install(
+                install_number=1234,
+                node=nodes[-1],
+                status=Install.InstallStatus.ACTIVE,
+                request_date=datetime.date(2024, 1, 27),
+                roof_access=True,
+                building=buildings[-1],
+                member=member,
+            )
+        )
+
+        nodes.append(
+            Node(
+                network_number=1234,
+                status=Node.NodeStatus.ACTIVE,
+                latitude=40.724868,
+                longitude=-73.987881,
+            )
+        )
+        buildings.append(
+            Building(
+                address_truth_sources=[],
+                latitude=40.6962265,
+                longitude=-73.9917741,
+                altitude=66,
+                primary_node=nodes[-1],
+            )
+        )
+        installs.append(
+            Install(
+                install_number=9999,
+                node=nodes[-1],
+                status=Install.InstallStatus.ACTIVE,
+                request_date=datetime.date(2024, 1, 27),
+                roof_access=True,
+                building=buildings[-1],
+                member=member,
+            )
+        )
+
         installs.append(
             Install(
                 install_number=2134,
@@ -253,6 +311,30 @@ class TestViewsGetUnauthenticated(TestCase):
                 {
                     "id": 567,
                     "status": "NN Assigned",
+                    "coordinates": [-73.9917741, 40.6962265, 66.0],
+                    "requestDate": 1706331600000,
+                    "roofAccess": True,
+                    "panoramas": [],
+                },
+                {
+                    "id": 888,
+                    "status": "NN Assigned",
+                    "coordinates": [-73.9917741, 40.6962265, 66.0],
+                    "requestDate": 1706331600000,
+                    "roofAccess": True,
+                    "panoramas": [],
+                },
+                {
+                    "id": 1234,
+                    "status": "Installed",
+                    "coordinates": [-73.9917741, 40.6962265, 66.0],
+                    "requestDate": 1706331600000,
+                    "roofAccess": True,
+                    "panoramas": [],
+                },
+                {
+                    "id": 9999,
+                    "status": "Installed",
                     "coordinates": [-73.9917741, 40.6962265, 66.0],
                     "requestDate": 1706331600000,
                     "roofAccess": True,
@@ -395,7 +477,7 @@ class TestViewsGetUnauthenticated(TestCase):
                     "installDate": 1616299200000,
                 },
                 {
-                    "nodeId": 1126,
+                    "nodeId": 786,
                     "radius": 0.3,
                     "azimuth": 0,
                     "width": 360,
@@ -700,6 +782,256 @@ class TestViewsGetUnauthenticated(TestCase):
             ],
         )
 
+    def test_links_are_deduplicated(self):
+        links = []
+
+        member = Member(name="Fake Name")
+        member.save()
+
+        grand = Node(
+            network_number=1934,
+            status=Node.NodeStatus.ACTIVE,
+            latitude=0,
+            longitude=0,
+        )
+        grand.save()
+        grand_omni = Device(
+            node=grand,
+            model="OmniTik",
+            type=Device.DeviceType.ROUTER,
+            status=Device.DeviceStatus.ACTIVE,
+            latitude=0,
+            longitude=0,
+        )
+        grand_omni.save()
+        grand_additional_device = Device(
+            node=grand,
+            model="OmniTik",
+            type=Device.DeviceType.ROUTER,
+            status=Device.DeviceStatus.ACTIVE,
+            latitude=0,
+            longitude=0,
+        )
+        grand_additional_device.save()
+
+        grand_building = Building(
+            address_truth_sources=[],
+            latitude=0,
+            longitude=0,
+            primary_node=grand,
+        )
+        grand_building.save()
+
+        Install(
+            install_number=1934,
+            status=Install.InstallStatus.ACTIVE,
+            request_date=datetime.date(2015, 3, 15),
+            node=grand,
+            member=member,
+            building=grand_building,
+        ).save()
+
+        grand_node2 = Node(
+            network_number=1938,
+            status=Node.NodeStatus.ACTIVE,
+            latitude=0,
+            longitude=0,
+        )
+        grand_node2.save()
+        grand2_omni = Device(
+            node=grand_node2,
+            model="OmniTik",
+            type=Device.DeviceType.ROUTER,
+            status=Device.DeviceStatus.ACTIVE,
+            latitude=0,
+            longitude=0,
+        )
+        grand2_omni.save()
+
+        grand_building2 = Building(
+            address_truth_sources=[],
+            latitude=0,
+            longitude=0,
+            primary_node=grand,
+        )
+        grand_building2.save()
+
+        Install(
+            install_number=1938,
+            status=Install.InstallStatus.ACTIVE,
+            request_date=datetime.date(2015, 3, 15),
+            node=grand_node2,
+            member=member,
+            building=grand_building2,
+        ).save()
+
+        sn1 = Node(
+            network_number=227,
+            status=Node.NodeStatus.ACTIVE,
+            latitude=0,
+            longitude=0,
+        )
+        sn1.save()
+        sn1_omni = Device(
+            node=sn1,
+            model="OmniTik",
+            type=Device.DeviceType.ROUTER,
+            status=Device.DeviceStatus.ACTIVE,
+            latitude=0,
+            longitude=0,
+        )
+        sn1_omni.save()
+        sn1_additional_device = Device(
+            node=sn1,
+            model="OmniTik",
+            type=Device.DeviceType.ROUTER,
+            status=Device.DeviceStatus.ACTIVE,
+            latitude=0,
+            longitude=0,
+        )
+        sn1_additional_device.save()
+
+        links.append(
+            Link(
+                from_device=sn1_omni,
+                to_device=grand_omni,
+                status=Link.LinkStatus.ACTIVE,
+                type=Link.LinkType.MMWAVE,
+            )
+        )
+        links.append(
+            Link(
+                from_device=sn1_additional_device,
+                to_device=grand_additional_device,
+                status=Link.LinkStatus.ACTIVE,
+                type=Link.LinkType.STANDARD,
+            )
+        )
+        links.append(
+            Link(
+                from_device=grand2_omni,
+                to_device=grand_omni,
+                status=Link.LinkStatus.ACTIVE,
+                type=Link.LinkType.STANDARD,
+            )
+        )
+
+        for link in links:
+            link.save()
+
+        self.maxDiff = None
+        response = self.c.get("/api/v1/mapdata/links/")
+
+        self.assertEqual(
+            json.loads(response.content.decode("UTF8")),
+            [
+                {
+                    "from": 227,
+                    "to": 1934,
+                    "status": "60GHz",
+                },
+                {
+                    "from": 1938,
+                    "to": 1934,
+                    "status": "active",
+                },
+            ],
+        )
+
+    def test_cable_run_links_to_invalid_nodes_are_not_created(self):
+        links = []
+
+        member = Member(name="Fake Name")
+        member.save()
+
+        grand = Node(
+            network_number=1934,
+            status=Node.NodeStatus.INACTIVE,
+            latitude=0,
+            longitude=0,
+        )
+        grand.save()
+        grand_omni = Device(
+            node=grand,
+            model="OmniTik",
+            type=Device.DeviceType.ROUTER,
+            status=Device.DeviceStatus.ACTIVE,
+            latitude=0,
+            longitude=0,
+        )
+        grand_omni.save()
+        grand_additional_device = Device(
+            node=grand,
+            model="OmniTik",
+            type=Device.DeviceType.ROUTER,
+            status=Device.DeviceStatus.ACTIVE,
+            latitude=0,
+            longitude=0,
+        )
+        grand_additional_device.save()
+
+        grand_building = Building(
+            address_truth_sources=[],
+            latitude=0,
+            longitude=0,
+            primary_node=grand,
+        )
+        grand_building.save()
+
+        Install(
+            install_number=1934,
+            status=Install.InstallStatus.ACTIVE,
+            request_date=datetime.date(2015, 3, 15),
+            node=grand,
+            member=member,
+            building=grand_building,
+        ).save()
+
+        grand_node2 = Node(
+            network_number=1938,
+            status=Node.NodeStatus.ACTIVE,
+            latitude=0,
+            longitude=0,
+        )
+        grand_node2.save()
+        grand2_omni = Device(
+            node=grand_node2,
+            model="OmniTik",
+            type=Device.DeviceType.ROUTER,
+            status=Device.DeviceStatus.ACTIVE,
+            latitude=0,
+            longitude=0,
+        )
+        grand2_omni.save()
+
+        grand_building2 = Building(
+            address_truth_sources=[],
+            latitude=0,
+            longitude=0,
+            primary_node=grand,
+        )
+        grand_building2.save()
+
+        Install(
+            install_number=1938,
+            status=Install.InstallStatus.ACTIVE,
+            request_date=datetime.date(2015, 3, 15),
+            node=grand_node2,
+            member=member,
+            building=grand_building2,
+        ).save()
+
+        for link in links:
+            link.save()
+
+        self.maxDiff = None
+        response = self.c.get("/api/v1/mapdata/links/")
+
+        self.assertEqual(
+            json.loads(response.content.decode("UTF8")),
+            [],
+        )
+
     def test_link_install_number_resolution(self):
         links = []
 
@@ -856,18 +1188,18 @@ class TestViewsGetUnauthenticated(TestCase):
             json.loads(response.content.decode("UTF8")),
             [
                 {
-                    "from": 7,
+                    "from": 555,
                     "to": 99,
                     "status": "active",
                 },
                 {
                     "from": 99,
-                    "to": 104,
+                    "to": 731,
                     "status": "active",
                 },
                 {
-                    "from": 104,
-                    "to": 7,
+                    "from": 731,
+                    "to": 555,
                     "status": "active",
                 },
             ],
