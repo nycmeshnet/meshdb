@@ -194,9 +194,24 @@ function listenForMapNavigation() {
 
 async function load_map() {
     const map_host = MAP_BASE_URL;
-    const response = await fetch(`${map_host}/index.html`);
-    if (!response.ok) {
-        throw new Error("Error loading map index: " + response.status + " " + response.statusText);
+
+    if (!map_host) {
+        document.getElementById("map-inner").innerHTML = "Cannot load map due to missing environment " +
+            "variable ADMIN_MAP_BASE_URL. Make sure this is set in your .env file and reload the django server";
+        document.getElementById("map-inner").style = "text-align: center; align-items: center;"
+        return;
+    }
+
+
+    const map_url = `${map_host}/index.html`;
+    let response;
+    try {
+        response = await fetch(map_url);
+    } catch (e) {
+        document.getElementById("map-inner").innerHTML = `<p>Error loading map from <a href="${map_url}">${map_url}</a>. ` +
+            "Is this host up, and serving CORS headers that allow a request from this domain?</p>";
+        document.getElementById("map-inner").style = "text-align: center; align-items: center;"
+        return;
     }
 
     const parser = new DOMParser();
