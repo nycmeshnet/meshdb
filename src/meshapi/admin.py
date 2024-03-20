@@ -1,69 +1,111 @@
 from django.contrib import admin
 from django.contrib.admin.options import forms
+from django.db.models import Q, QuerySet
 
 from meshapi.models import Building, Device, Install, Link, Member, Node, Sector
+
+from nonrelated_inlines.admin import NonrelatedTabularInline
 
 admin.site.site_header = "MeshDB Admin"
 admin.site.site_title = "MeshDB Admin Portal"
 admin.site.index_title = "Welcome to MeshDB Admin Portal"
 
 
+# Inline with the typical rules we want + Formatting
+class BetterInline(admin.TabularInline):
+    extra = 0
+    can_delete = False
+    template = "admin/install_tabular.html"
+
+    def has_add_permission(self, request, obj):
+        return False
+
+    class Media:
+        css = {
+            "all": ("admin/install_tabular.css",),
+        }
+
+
+class BetterNonrelatedInline(NonrelatedTabularInline):
+    extra = 0
+    can_delete = False
+    template = "admin/install_tabular.html"
+
+    def has_add_permission(self, request, obj):
+        return False
+
+    class Media:
+        css = {
+            "all": ("admin/install_tabular.css",),
+        }
+
+
+class NonrelatedBuildingInline(BetterNonrelatedInline):
+    model = Building
+    fields = ["primary_node", "bin", "street_address", "city", "zip_code"]
+    readonly_fields = fields
+
+    def get_form_queryset(self, obj):
+        return self.model.objects.filter(nodes=obj)
+
+    def save_new_instance(self, parent, instance):
+        pass
+
+
 # This controls the list of installs reverse FK'd to Buildings and Members
-class InstallInline(admin.TabularInline):
+class InstallInline(BetterInline):
     model = Install
-    extra = 0
-    fields = ["status", "node", "member", "unit"]
+    fields = ["status", "node", "member", "building", "unit"]
     readonly_fields = fields
-    can_delete = False
-    template = "admin/install_tabular.html"
-
-    def has_add_permission(self, request, obj):
-        return False
-
-    class Media:
-        css = {
-            "all": ("admin/install_tabular.css",),
-        }
 
 
-# This controls the list of installs reverse FK'd to Buildings and Members
-class FromBuildingInline(admin.TabularInline):
+class DeviceInline(BetterInline):
+    model = Device
+    fields = ["status", "type", "model"]
+    readonly_fields = fields
+
+    def get_queryset(self, request):
+        # Get the base queryset
+        queryset = super().get_queryset(request)
+        # Filter out sectors
+        queryset = queryset.exclude(sector__isnull=False)
+        return queryset
+
+
+class NodeLinkInline(BetterNonrelatedInline):
     model = Link
-    extra = 0
-    # show_change_link = True
-    fields = ["status", "to_building", "description"]
+    fields = ["status", "type", "from_device", "to_device"]
     readonly_fields = fields
-    can_delete = False
-    template = "admin/install_tabular.html"
-    fk_name = "from_building"
 
-    def has_add_permission(self, request, obj):
-        return False
+    def get_form_queryset(self, obj):
+        from_device_q = Q(from_device__in=obj.devices.all())
+        to_device_q = Q(to_device__in=obj.devices.all())
+        all_links = from_device_q | to_device_q
+        return self.model.objects.filter(all_links)
 
-    class Media:
-        css = {
-            "all": ("admin/install_tabular.css",),
-        }
+    def save_new_instance(self, parent, instance):
+        pass
 
 
-# This controls the list of installs reverse FK'd to Buildings and Members
-class ToBuildingInline(admin.TabularInline):
+class DeviceLinkInline(BetterNonrelatedInline):
     model = Link
-    extra = 0
-    # show_change_link = True
-    fields = ["status", "from_building", "description"]
+    fields = ["status", "type", "from_device", "to_device"]
     readonly_fields = fields
-    can_delete = False
-    template = "admin/install_tabular.html"
-    fk_name = "to_building"
 
-    def has_add_permission(self, request, obj):
-        return False
+    def get_form_queryset(self, obj):
+        from_device_q = Q(from_device=obj)
+        to_device_q = Q(to_device=obj)
+        all_links = from_device_q | to_device_q
+        return self.model.objects.filter(all_links)
 
-    class Media:
-        css = {
-            "all": ("admin/install_tabular.css",),
-        }
+    def save_new_instance(self, parent, instance):
+        pass
+
+
+class SectorInline(BetterInline):
+    model = Sector
+    fields = ["status", "type", "model"]
+    readonly_fields = fields
 
 
 class BoroughFilter(admin.SimpleListFilter):
@@ -95,7 +137,7 @@ class BoroughFilter(admin.SimpleListFilter):
 
 @admin.register(Building)
 class BuildingAdmin(admin.ModelAdmin):
-    # form = BuildingAdminForm
+    list_display = ["__str__", "street_address", "primary_node"]
     search_fields = [
         # Sometimes they have an actual name
         "nodes__name__icontains",
@@ -114,22 +156,11 @@ class BuildingAdmin(admin.ModelAdmin):
         "installs__member__phone_number__iexact",
         "installs__member__slack_handle__iexact",
     ]
-    # inlines = [InstallInline, ToBuildingInline, FromBuildingInline]
-    inlines = [InstallInline]
     list_filter = [
         BoroughFilter,
+        ("primary_node", admin.EmptyFieldListFilter),
     ]
-    list_display = ["__str__", "street_address", "primary_node"]
     fieldsets = [
-        (
-            "Node Details",
-            {
-                "fields": [
-                    "primary_node",
-                    "nodes",
-                ]
-            },
-        ),
         (
             "Address Information",
             {
@@ -153,14 +184,25 @@ class BuildingAdmin(admin.ModelAdmin):
             },
         ),
         (
-            "Notes",
+            "Misc",
             {
                 "fields": [
                     "notes",
                 ]
             },
         ),
+        (
+            "Nodes",
+            {
+                "fields": [
+                    "primary_node",
+                    "nodes",
+                ]
+            },
+        ),
     ]
+    inlines = [InstallInline]
+    filter_horizontal = ("nodes",)
 
 
 class MemberAdminForm(forms.ModelForm):
@@ -196,7 +238,6 @@ class MemberAdmin(admin.ModelAdmin):
         "installs__node__network_number__iexact",
         "installs__install_number__iexact",
     ]
-    inlines = [InstallInline]
     list_display = [
         "__str__",
         "name",
@@ -204,6 +245,44 @@ class MemberAdmin(admin.ModelAdmin):
         "stripe_email_address",
         "phone_number",
     ]
+    fieldsets = [
+        (
+            "Details",
+            {
+                "fields": [
+                    "name",
+                ]
+            },
+        ),
+        (
+            "Email",
+            {
+                "fields": [
+                    "primary_email_address",
+                    "stripe_email_address",
+                    "additional_email_addresses",
+                ]
+            },
+        ),
+        (
+            "Contact Info",
+            {
+                "fields": [
+                    "phone_number",
+                    "slack_handle",
+                ]
+            },
+        ),
+        (
+            "Misc",
+            {
+                "fields": [
+                    "notes",
+                ]
+            },
+        ),
+    ]
+    inlines = [InstallInline]
 
 
 class InstallAdminForm(forms.ModelForm):
@@ -248,15 +327,22 @@ class InstallAdmin(admin.ModelAdmin):
             "Details",
             {
                 "fields": [
-                    "member",
                     "status",
                     "ticket_id",
+                    "member",
+                ]
+            },
+        ),
+        (
+            "Node",
+            {
+                "fields": [
                     "node",
                 ]
             },
         ),
         (
-            "Building Details",
+            "Building",
             {
                 "fields": [
                     "building",
@@ -276,12 +362,12 @@ class InstallAdmin(admin.ModelAdmin):
             },
         ),
         (
-            "Notes",
+            "Misc",
             {
                 "fields": [
                     "diy",
-                    "notes",
                     "referral",
+                    "notes",
                 ]
             },
         ),
@@ -311,16 +397,146 @@ class LinkAdmin(admin.ModelAdmin):
     list_display = ["__str__", "status", "from_device", "to_device", "description"]
     list_filter = ["status", "type"]
 
+    autocomplete_fields = ["from_device", "to_device"]
+
+
+class NodeAdminForm(forms.ModelForm):
+    class Meta:
+        model = Node
+        fields = "__all__"
+
+
+@admin.register(Node)
+class NodeAdmin(admin.ModelAdmin):
+    form = NodeAdminForm
+    search_fields = ["network_number__iexact", "name__icontains", "buildings__street_address__icontains"]
+    list_filter = ["status", ("name", admin.EmptyFieldListFilter)]
+    list_display = ["__network_number__", "name", "status", "address"]
+    fieldsets = [
+        (
+            "Details",
+            {
+                "fields": [
+                    "status",
+                    "name",
+                ]
+            },
+        ),
+        (
+            "Location",
+            {
+                "fields": [
+                    "latitude",
+                    "longitude",
+                    "altitude",
+                ]
+            },
+        ),
+        (
+            "Dates",
+            {
+                "fields": [
+                    "install_date",
+                    "abandon_date",
+                ]
+            },
+        ),
+        (
+            "Misc",
+            {
+                "fields": [
+                    "notes",
+                ]
+            },
+        ),
+    ]
+    inlines = [InstallInline, NonrelatedBuildingInline, DeviceInline, SectorInline, NodeLinkInline]
+
+    def address(self, obj):
+        return obj.buildings.first()
+
+
+device_fieldsets = [
+    (
+        "Details",
+        {
+            "fields": [
+                "status",
+                "name",
+                "ssid",
+                "node",
+            ]
+        },
+    ),
+    (
+        "Location",
+        {
+            "fields": [
+                "latitude",
+                "longitude",
+                "altitude",
+            ]
+        },
+    ),
+    (
+        "Dates",
+        {
+            "fields": [
+                "install_date",
+                "abandon_date",
+            ]
+        },
+    ),
+    (
+        "Misc",
+        {
+            "fields": [
+                "model",
+                "type",
+                "uisp_id",
+                "notes",
+            ]
+        },
+    ),
+]
+
+
+class DeviceAdminForm(forms.ModelForm):
+    class Meta:
+        model = Device
+        fields = "__all__"
+
+
+@admin.register(Device)
+class DeviceAdmin(admin.ModelAdmin):
+    form = DeviceAdminForm
+    search_fields = ["name__icontains", "model__icontains", "ssid__icontains"]
+    list_display = [
+        "__str__",
+        "ssid",
+        "name",
+        "model",
+    ]
+    list_filter = [
+        "status",
+        "install_date",
+        "model",
+    ]
+    fieldsets = device_fieldsets
+    inlines = [DeviceLinkInline]
+
+    def get_queryset(self, request):
+        # Get the base queryset
+        queryset = super().get_queryset(request)
+        # Filter out sectors
+        queryset = queryset.exclude(sector__isnull=False)
+        return queryset
+
 
 class SectorAdminForm(forms.ModelForm):
     class Meta:
-        model = Link
+        model = Sector
         fields = "__all__"
-        widgets = {
-            "name": forms.TextInput(),
-            "model": forms.TextInput(),
-            "ssid": forms.TextInput(),
-        }
 
 
 @admin.register(Sector)
@@ -333,26 +549,21 @@ class SectorAdmin(admin.ModelAdmin):
         "name",
         "model",
     ]
-    list_filter = ["model", "install_date"]
-
-
-class NodeAdminForm(forms.ModelForm):
-    class Meta:
-        model = Node
-        fields = "__all__"
-
-
-@admin.register(Node)
-class NodeAdmin(admin.ModelAdmin):
-    form = SectorAdminForm
-
-
-class DeviceAdminForm(forms.ModelForm):
-    class Meta:
-        model = Device
-        fields = "__all__"
-
-
-@admin.register(Device)
-class NodeAdmin(admin.ModelAdmin):
-    form = DeviceAdminForm
+    list_filter = [
+        "status",
+        "install_date",
+        "model",
+    ]
+    inlines = [DeviceLinkInline]
+    fieldsets = device_fieldsets + [
+        (
+            "Sector Attributes",
+            {
+                "fields": [
+                    "radius",
+                    "azimuth",
+                    "width",
+                ]
+            },
+        ),
+    ]
