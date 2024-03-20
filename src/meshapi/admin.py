@@ -66,7 +66,7 @@ class DeviceInline(BetterInline):
         queryset = queryset.exclude(sector__isnull=False)
         return queryset
 
-class NonrelatedLinkInline(BetterNonrelatedInline):
+class NodeLinkInline(BetterNonrelatedInline):
     model = Link
     fields = ["status", "type", "from_device", "to_device"]
     readonly_fields = fields
@@ -80,21 +80,23 @@ class NonrelatedLinkInline(BetterNonrelatedInline):
     def save_new_instance(self, parent, instance):
         pass
 
+class DeviceLinkInline(BetterNonrelatedInline):
+    model = Link
+    fields = ["status", "type", "from_device", "to_device"]
+    readonly_fields = fields
+
+    def get_form_queryset(self, obj):
+        from_device_q = Q(from_device=obj)
+        to_device_q = Q(to_device=obj)
+        all_links = from_device_q | to_device_q
+        return self.model.objects.filter(all_links)
+
+    def save_new_instance(self, parent, instance):
+        pass
+
 class SectorInline(BetterInline):
     model = Sector
     fields = ["status", "type", "model"]
-    readonly_fields = fields
-
-class FromLinkInline(BetterInline):
-    model = Link
-    fk_name = "from_device"
-    fields = ["status", "type", "from_device", "to_device"]
-    readonly_fields = fields
-
-class ToLinkInline(BetterInline):
-    model = Link
-    fk_name = "to_device"
-    fields = ["status", "type", "from_device", "to_device"]
     readonly_fields = fields
 
 class BoroughFilter(admin.SimpleListFilter):
@@ -437,7 +439,7 @@ class NodeAdmin(admin.ModelAdmin):
             }
         ),
     ]
-    inlines = [InstallInline, NonrelatedBuildingInline, DeviceInline, SectorInline, NonrelatedLinkInline]
+    inlines = [InstallInline, NonrelatedBuildingInline, DeviceInline, SectorInline, NodeLinkInline]
 
     def address(self, obj):
         return obj.buildings.first()
@@ -503,7 +505,7 @@ class DeviceAdmin(admin.ModelAdmin):
     ]
     list_filter = ["status", "install_date", "model",]
     fieldsets = device_fieldsets
-    inlines = [ToLinkInline, FromLinkInline]
+    inlines = [DeviceLinkInline]
     
     def get_queryset(self, request):
         # Get the base queryset
@@ -528,7 +530,7 @@ class SectorAdmin(admin.ModelAdmin):
         "model",
     ]
     list_filter = ["status", "install_date", "model",]
-    inlines = [ToLinkInline, FromLinkInline]
+    inlines = [DeviceLinkInline]
     fieldsets = device_fieldsets + [
         (
             "Sector Attributes",
