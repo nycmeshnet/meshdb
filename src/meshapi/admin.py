@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.contrib.admin.options import forms
-from django.db.models import Q
+from django.db.models import Q, QuerySet
 
 from meshapi.models import Building, Device, Install, Link, Member, Node, Sector
 
@@ -37,10 +37,16 @@ class BetterNonrelatedInline(NonrelatedTabularInline):
             "all": ("admin/install_tabular.css",),
         }
 
-class BuildingInline(BetterInline):
+class NonrelatedBuildingInline(BetterNonrelatedInline):
     model = Building
     fields = ["primary_node", "bin", "street_address", "city", "zip_code"]
     readonly_fields = fields
+
+    def get_form_queryset(self, obj):
+        return self.model.objects.filter(nodes=obj)
+
+    def save_new_instance(self, parent, instance):
+        pass
 
 # This controls the list of installs reverse FK'd to Buildings and Members
 class InstallInline(BetterInline):
@@ -431,7 +437,7 @@ class NodeAdmin(admin.ModelAdmin):
             }
         ),
     ]
-    inlines = [InstallInline, BuildingInline, DeviceInline, SectorInline, NonrelatedLinkInline]
+    inlines = [InstallInline, NonrelatedBuildingInline, DeviceInline, SectorInline, NonrelatedLinkInline]
 
     def address(self, obj):
         return obj.buildings.first()
