@@ -10,6 +10,7 @@ admin.site.site_header = "MeshDB Admin"
 admin.site.site_title = "MeshDB Admin Portal"
 admin.site.index_title = "Welcome to MeshDB Admin Portal"
 
+
 # Inline with the typical rules we want + Formatting
 class BetterInline(admin.TabularInline):
     extra = 0
@@ -24,6 +25,7 @@ class BetterInline(admin.TabularInline):
             "all": ("admin/install_tabular.css",),
         }
 
+
 class BetterNonrelatedInline(NonrelatedTabularInline):
     extra = 0
     can_delete = False
@@ -37,6 +39,7 @@ class BetterNonrelatedInline(NonrelatedTabularInline):
             "all": ("admin/install_tabular.css",),
         }
 
+
 class NonrelatedBuildingInline(BetterNonrelatedInline):
     model = Building
     fields = ["primary_node", "bin", "street_address", "city", "zip_code"]
@@ -48,14 +51,16 @@ class NonrelatedBuildingInline(BetterNonrelatedInline):
     def save_new_instance(self, parent, instance):
         pass
 
+
 # This controls the list of installs reverse FK'd to Buildings and Members
 class InstallInline(BetterInline):
     model = Install
     fields = ["status", "node", "member", "building", "unit"]
     readonly_fields = fields
 
+
 class DeviceInline(BetterInline):
-    model = Device 
+    model = Device
     fields = ["status", "type", "model"]
     readonly_fields = fields
 
@@ -65,6 +70,7 @@ class DeviceInline(BetterInline):
         # Filter out sectors
         queryset = queryset.exclude(sector__isnull=False)
         return queryset
+
 
 class NodeLinkInline(BetterNonrelatedInline):
     model = Link
@@ -80,6 +86,7 @@ class NodeLinkInline(BetterNonrelatedInline):
     def save_new_instance(self, parent, instance):
         pass
 
+
 class DeviceLinkInline(BetterNonrelatedInline):
     model = Link
     fields = ["status", "type", "from_device", "to_device"]
@@ -94,10 +101,12 @@ class DeviceLinkInline(BetterNonrelatedInline):
     def save_new_instance(self, parent, instance):
         pass
 
+
 class SectorInline(BetterInline):
     model = Sector
     fields = ["status", "type", "model"]
     readonly_fields = fields
+
 
 class BoroughFilter(admin.SimpleListFilter):
     title = "Borough"
@@ -124,6 +133,7 @@ class BoroughFilter(admin.SimpleListFilter):
         elif self.value() == "staten_island":
             return queryset.filter(city="Staten Island")
         return queryset
+
 
 @admin.register(Building)
 class BuildingAdmin(admin.ModelAdmin):
@@ -192,7 +202,7 @@ class BuildingAdmin(admin.ModelAdmin):
         ),
     ]
     inlines = [InstallInline]
-    filter_horizontal = ('nodes',)
+    filter_horizontal = ("nodes",)
 
 
 class MemberAdminForm(forms.ModelForm):
@@ -389,6 +399,7 @@ class LinkAdmin(admin.ModelAdmin):
 
     autocomplete_fields = ["from_device", "to_device"]
 
+
 class NodeAdminForm(forms.ModelForm):
     class Meta:
         model = Node
@@ -400,7 +411,7 @@ class NodeAdmin(admin.ModelAdmin):
     form = NodeAdminForm
     search_fields = ["network_number__iexact", "name__icontains", "buildings__street_address__icontains"]
     list_filter = ["status", ("name", admin.EmptyFieldListFilter)]
-    list_display = ["__network_number__", "name", "status", "address"] 
+    list_display = ["__network_number__", "name", "status", "address"]
     fieldsets = [
         (
             "Details",
@@ -436,13 +447,14 @@ class NodeAdmin(admin.ModelAdmin):
                 "fields": [
                     "notes",
                 ]
-            }
+            },
         ),
     ]
     inlines = [InstallInline, NonrelatedBuildingInline, DeviceInline, SectorInline, NodeLinkInline]
 
     def address(self, obj):
         return obj.buildings.first()
+
 
 device_fieldsets = [
     (
@@ -488,10 +500,12 @@ device_fieldsets = [
     ),
 ]
 
+
 class DeviceAdminForm(forms.ModelForm):
     class Meta:
-        model = Device 
+        model = Device
         fields = "__all__"
+
 
 @admin.register(Device)
 class DeviceAdmin(admin.ModelAdmin):
@@ -503,10 +517,14 @@ class DeviceAdmin(admin.ModelAdmin):
         "name",
         "model",
     ]
-    list_filter = ["status", "install_date", "model",]
+    list_filter = [
+        "status",
+        "install_date",
+        "model",
+    ]
     fieldsets = device_fieldsets
     inlines = [DeviceLinkInline]
-    
+
     def get_queryset(self, request):
         # Get the base queryset
         queryset = super().get_queryset(request)
@@ -514,10 +532,12 @@ class DeviceAdmin(admin.ModelAdmin):
         queryset = queryset.exclude(sector__isnull=False)
         return queryset
 
+
 class SectorAdminForm(forms.ModelForm):
     class Meta:
-        model = Sector 
+        model = Sector
         fields = "__all__"
+
 
 @admin.register(Sector)
 class SectorAdmin(admin.ModelAdmin):
@@ -529,7 +549,11 @@ class SectorAdmin(admin.ModelAdmin):
         "name",
         "model",
     ]
-    list_filter = ["status", "install_date", "model",]
+    list_filter = [
+        "status",
+        "install_date",
+        "model",
+    ]
     inlines = [DeviceLinkInline]
     fieldsets = device_fieldsets + [
         (
@@ -543,4 +567,3 @@ class SectorAdmin(admin.ModelAdmin):
             },
         ),
     ]
-    
