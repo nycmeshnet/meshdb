@@ -217,6 +217,21 @@ Run `psql`
 psql -U meshdb
 ```
 
+## Admin Map
+In `.env.sample`, the admin map frontend assets are configured to pull from the production endpoint.
+(map data will still be pulled from your local database). If you wish to pull the admin map assets 
+from a local endpoint, host the map locally with:
+```sh
+# In the map repo on the meshdb-admin branch
+docker build -t meshdb-admin-map .
+docker run -p "3000:3000" meshdb-admin-map
+```
+
+then edit the relevant `.env` variable to reflect the URL of the desired endpoint:
+```sh
+ADMIN_MAP_BASE_URL=http://localhost:3000
+```
+
 ### Backups
 
 **The Quick 'n Dirty Way**
