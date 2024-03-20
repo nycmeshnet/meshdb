@@ -185,14 +185,22 @@ async function updateMapForRoute() {
     window.dispatchEvent(selectedEvent);
 }
 
-async function loadScripts(scripts) {
+async function loadScripts(scripts, destination) {
     for (const script of scripts) {
         const scriptLoadPromise = new Promise((resolve, reject) => {
             const scriptElement = document.createElement('script');
-            scriptElement.src = script.src;
+            if (script.src) {
+                scriptElement.src = script.src;
+            } else {
+                scriptElement.innerText = script.innerText;
+            }
             scriptElement.onload = resolve;
             scriptElement.onerror = reject;
-            document.head.appendChild(scriptElement);
+            destination.appendChild(scriptElement);
+
+            // onload will never fire for in-lined scripts since they don't fetch(), so resolve the
+            // promise right away
+            if (!script.src) resolve();
         });
         await scriptLoadPromise;
     }
@@ -225,7 +233,7 @@ async function updateAdminContent() {
 
     // Re-run other javascript to make page happy
     if (window.DateTimeShortcuts) window.removeEventListener('load', window.DateTimeShortcuts.init);
-    await loadScripts(document.head.querySelectorAll('script'));
+    await loadScripts(document.head.querySelectorAll('script'), document.head);
 
     console.log("Simulating window load...")
     dispatchEvent(new Event('load'));
@@ -262,7 +270,44 @@ function interceptLinks() {
     });
 }
 
-function start() {
+async function load_map() {
+    const map_host = MAP_BASE_URL;
+    const response = await fetch(`${map_host}/index.html`);
+    if (!response.ok) {
+        throw new Error("Error loading map index: " + response.status + " " + response.statusText);
+    }
+
+    const parser = new DOMParser();
+    const text = await response.text();
+    const remote_map_doc = parser.parseFromString(text, "text/html");
+
+    const map_scripts_div = document.getElementById("map-scripts");
+
+    for (const el of remote_map_doc.querySelectorAll('script')){
+        let src = el.getAttribute("src") ?? "";
+        if (src) {
+            if (!src.match(/https?:\/\//)){
+                el.src = map_host + src;
+            }
+        }
+    }
+
+    for (const el of remote_map_doc.querySelectorAll('link')){
+        let href = el.getAttribute("href") ?? "";
+        if (!href.match(/https?:\/\//)){
+            el.href = map_host + href
+        }
+    }
+
+    for (const el of remote_map_doc.querySelectorAll('link')){
+        map_scripts_div.appendChild(el);
+    }
+
+    await loadScripts(remote_map_doc.querySelectorAll('script'), map_scripts_div);
+}
+
+async function start() {
+    await load_map();
     updateMapForRoute();
     interceptLinks();
 }
