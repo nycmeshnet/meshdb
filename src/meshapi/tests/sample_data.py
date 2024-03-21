@@ -12,7 +12,7 @@ sample_building = {
     "street_address": "3333 Chom St",
     "city": "Brooklyn",
     "state": "NY",
-    "zip_code": 11111,
+    "zip_code": "11111",
     "latitude": 0.0,
     "longitude": 0.0,
     "altitude": 0.0,
