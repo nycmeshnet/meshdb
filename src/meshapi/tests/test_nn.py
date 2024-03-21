@@ -192,7 +192,7 @@ class TestFindGaps(TestCase):
 
     def add_data(self, b, m, i, index=101, create_node=False):
         i = i.copy()
-        b["zip_code"] += index
+        b["zip_code"] = str(int(b["zip_code"]) + index)
         b["address_truth_sources"] = ["NYCPlanningLabs"]
         if i["abandon_date"] == "":
             i["abandon_date"] = None
