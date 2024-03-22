@@ -45,7 +45,7 @@ class QueryFormSerializer(serializers.ModelSerializer):
 
     notes = serializers.SerializerMethodField("concat_all_notes")
 
-    def concat_all_notes(self, install):
+    def concat_all_notes(self, install: Install) -> str:
         note_sources = [notes for notes in [install.notes, install.building.notes, install.member.notes] if notes]
         if install.node and install.node.notes:
             note_sources.append(install.node.notes)

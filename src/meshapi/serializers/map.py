@@ -1,5 +1,6 @@
 import datetime
 from collections import OrderedDict
+from typing import List, Optional
 
 from rest_framework import serializers
 
@@ -13,13 +14,13 @@ ALLOWED_INSTALL_STATUSES = set(Install.InstallStatus.values) - EXCLUDED_INSTALL_
 
 
 class JavascriptDateField(serializers.IntegerField):
-    def to_internal_value(self, date_int_val: int):
+    def to_internal_value(self, date_int_val: int) -> Optional[datetime.date]:
         if date_int_val is None:
             return None
 
         return datetime.datetime.fromtimestamp(date_int_val / 1000).date()
 
-    def to_representation(self, date_val: datetime.date):
+    def to_representation(self, date_val: datetime.date) -> Optional[int]:
         if date_val is None:
             return None
 
@@ -57,21 +58,21 @@ class MapDataInstallSerializer(serializers.ModelSerializer):
     notes = serializers.SerializerMethodField("get_start_of_notes")
     panoramas = serializers.ReadOnlyField(default=[])  # FIXME: THIS WILL REMOVE ALL PANORAMAS FROM THE MAP UI
 
-    def get_building_coordinates(self, install):
+    def get_building_coordinates(self, install: Install) -> List[float]:
         building = install.building
         return [building.longitude, building.latitude, building.altitude]
 
-    def get_node_name(self, install):
+    def get_node_name(self, install: Install) -> str:
         node = install.node
         return node.name if node else None
 
-    def get_start_of_notes(self, install):
+    def get_start_of_notes(self, install: Install) -> str:
         if install.notes:
             note_parts = install.notes.split("\n")
             return note_parts[1] if len(note_parts) > 1 and note_parts[1] != "None" else None
         return None
 
-    def convert_status_to_spreadsheet_status(self, install):
+    def convert_status_to_spreadsheet_status(self, install: Install) -> str:
         if install.status == Install.InstallStatus.REQUEST_RECEIVED:
             return None
         elif install.status == Install.InstallStatus.PENDING:
@@ -89,7 +90,7 @@ class MapDataInstallSerializer(serializers.ModelSerializer):
 
         return install.status
 
-    def to_representation(self, install):
+    def to_representation(self, install: Install) -> dict:
         result = super().to_representation(install)
 
         # Remove null fields when applicable to match the existing interface
@@ -115,7 +116,7 @@ class MapDataLinkSerializer(serializers.ModelSerializer):
     status = serializers.SerializerMethodField("convert_status_to_spreadsheet_status")
     installDate = JavascriptDateField(source="install_date")
 
-    def convert_status_to_spreadsheet_status(self, link):
+    def convert_status_to_spreadsheet_status(self, link: Link) -> str:
         if link.status != Link.LinkStatus.ACTIVE:
             return str(link.status).lower()
 
@@ -128,13 +129,13 @@ class MapDataLinkSerializer(serializers.ModelSerializer):
 
         return "active"
 
-    def get_to_node_number(self, link):
+    def get_to_node_number(self, link: Link) -> int:
         return link.to_device.node.network_number
 
-    def get_from_node_number(self, link):
+    def get_from_node_number(self, link: Link) -> int:
         return link.from_device.node.network_number
 
-    def get_fields(self):
+    def get_fields(self) -> dict:
         result = super().get_fields()
         # Rename `from_` to `from`
         from_ = result.pop("from_")
@@ -145,7 +146,7 @@ class MapDataLinkSerializer(serializers.ModelSerializer):
 
         return new_fields
 
-    def to_representation(self, link):
+    def to_representation(self, link: Link) -> dict:
         result = super().to_representation(link)
 
         # Remove null fields when applicable to match the existing interface
@@ -174,13 +175,13 @@ class MapDataSectorSerializer(serializers.ModelSerializer):
     device = serializers.CharField(source="model")
     installDate = JavascriptDateField(source="install_date")
 
-    def get_node_id(self, sector):
+    def get_node_id(self, sector: Sector) -> int:
         return sector.node.network_number
 
-    def convert_status_to_spreadsheet_status(self, sector):
+    def convert_status_to_spreadsheet_status(self, sector: Sector) -> str:
         return str(sector.status).lower()
 
-    def to_representation(self, sector):
+    def to_representation(self, sector: Sector) -> dict:
         result = super().to_representation(sector)
 
         # Remove null fields when applicable to match the existing interface
