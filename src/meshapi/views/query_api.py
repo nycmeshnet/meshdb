@@ -2,7 +2,7 @@ import os
 from typing import Any, Dict, Optional
 
 from drf_spectacular.utils import extend_schema, extend_schema_view
-from meshapi.views.lookups import FilterRequiredListAPIView
+from meshapi.views.lookups import FilterRequiredListAPIView, InstallFilter
 from rest_framework import generics
 from rest_framework.views import models
 
@@ -57,4 +57,39 @@ class QueryMember(QueryFilterListAPIView):
     queryset = Install.objects.all().order_by("install_number")
     serializer_class = QueryFormSerializer 
     filterset_class = QueryMemberFilter
+
+
+
+class QueryInstallFilter(filters.FilterSet):
+    network_number = filters.NumberFilter(field_name="node__network_number", lookup_expr="exact")
+    install_number = filters.NumberFilter(field_name="install_number", lookup_expr="exact")
+
+    class Meta:
+        model = Install
+        fields = ["member", "building", "status"]
+
+@permission_classes([permissions.AllowAny])
+class QueryInstall(QueryFilterListAPIView):
+    queryset = Install.objects.all().order_by("install_number")
+    serializer_class = QueryFormSerializer
+    filterset_class = QueryInstallFilter
+
+
+class QueryBuildingFilter(filters.FilterSet):
+    street_address = filters.CharFilter(field_name="building__street_address", lookup_expr="icontains")
+    city = filters.CharFilter(field_name="building__city", lookup_expr="iexact")
+    state = filters.CharFilter(field_name="building__state", lookup_expr="iexact")
+    zip_code = filters.CharFilter(field_name="building__zip_code", lookup_expr="iexact")
+    bin = filters.CharFilter(field_name="building__bin", lookup_expr="iexact")
+
+    class Meta:
+        model = Install 
+        fields = ["bin", "zip_code"]
+
+@permission_classes([permissions.AllowAny])
+class QueryBuilding(FilterRequiredListAPIView):
+    queryset = Install.objects.all().order_by("install_number")
+    serializer_class = QueryFormSerializer 
+    filterset_class = QueryBuildingFilter 
+
 
