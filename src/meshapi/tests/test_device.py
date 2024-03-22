@@ -32,7 +32,7 @@ class TestDevice(TestCase):
                 "type": Device.DeviceType.STATION,
                 "latitude": 0.0,
                 "longitude": 0.0,
-                "node": self.node1.network_number,
+                "network_number": self.node1.network_number,
             },
         )
         code = 201
