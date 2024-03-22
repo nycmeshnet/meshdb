@@ -1,6 +1,3 @@
-from meshapi.models.building import Building
-from meshapi.models.member import Member
-from meshapi.models.node import Node
 from rest_framework import serializers
 
 from meshapi.models import Install
@@ -31,49 +28,14 @@ class QueryFormSerializer(serializers.ModelSerializer):
             "status",
         )
 
-    street_address = serializers.SerializerMethodField("find_street_address")
-    city = serializers.SerializerMethodField("find_city")
-    state = serializers.SerializerMethodField("find_state")
-    zip_code = serializers.SerializerMethodField("find_zip_code")
-    
-    def find_street_address(self, obj):
-        b = self.find_building(obj)
-        if b:
-            return b.street_address
-        return None
-
-    def find_city(self, obj):
-        b = self.find_building(obj)
-        if b:
-            return b.city
-        return None
-
-    def find_state(self, obj):
-        b = self.find_building(obj)
-        if b:
-            return b.state
-        return None
-
-    def find_zip_code(self, obj):
-        b = self.find_building(obj)
-        if b:
-            return b.zip_code
-        return None
-
-    def find_building(self, obj):
-        if type(obj) is Building:
-            return obj
-        elif type(obj) is Install:
-            return obj.building
-        elif type(obj) is Member:
-            return obj.install.building
-        elif type(obj) is Node:
-            return obj.buildings[0]
-        return None
+    street_address = serializers.CharField(source="building.street_address")
+    city = serializers.CharField(source="building.city")
+    state = serializers.CharField(source="building.state")
+    zip_code = serializers.CharField(source="building.zip_code")
 
     name = serializers.CharField(source="member.name")
 
-    network_number = serializers.IntegerField(source="node.network_number")
+    network_number = serializers.IntegerField(source="node.network_number", allow_null=True)
 
     primary_email_address = serializers.CharField(source="member.primary_email_address")
     stripe_email_address = serializers.CharField(source="member.stripe_email_address")

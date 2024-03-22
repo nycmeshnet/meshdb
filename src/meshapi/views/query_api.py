@@ -34,26 +34,27 @@ class QueryFilterListAPIView(FilterRequiredListAPIView):
         maybe_auth = self.request.headers['Authorization']
         if maybe_auth != f"Bearer {os.environ.get('QUERY_PSK')}":
             return Response({"detail": "Invalid Password"}, 403)
-        super().get(request, args, kwargs)
+        return super().get(request, *args, **kwargs)
 
-class MemberFilter(filters.FilterSet):
-    name = filters.CharFilter(field_name="name", lookup_expr="icontains")
+class QueryMemberFilter(filters.FilterSet):
+    name = filters.CharFilter(field_name="member.name", lookup_expr="icontains")
     email_address = filters.CharFilter(method="filter_on_all_emails")
-    phone_number = filters.CharFilter(field_name="phone_number", lookup_expr="icontains")
+    phone_number = filters.CharFilter(field_name="member.phone_number", lookup_expr="icontains")
 
     def filter_on_all_emails(self, queryset, name, value):
         return queryset.filter(
-            Q(primary_email_address__icontains=value)
-            | Q(stripe_email_address__icontains=value)
-            | Q(additional_email_addresses__icontains=value)
+            Q(member__primary_email_address__icontains=value)
+            | Q(member__stripe_email_address__icontains=value)
+            | Q(member__additional_email_addresses__icontains=value)
         )
 
     class Meta:
-        model = Member
+        model = Install
         fields = []
 
 @permission_classes([permissions.AllowAny])
 class QueryMember(QueryFilterListAPIView):
-    queryset = Member.objects.all().order_by("id")
+    queryset = Install.objects.all().order_by("install_number")
     serializer_class = QueryFormSerializer 
-    filterset_class = MemberFilter
+    filterset_class = QueryMemberFilter
+
