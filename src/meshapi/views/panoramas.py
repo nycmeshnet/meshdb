@@ -93,7 +93,7 @@ def set_panoramas(panos: dict[str, list[str]]) -> tuple[int, list[str]]:
                 continue
             for p in panoramas:
                 if p not in install.building.panoramas:
-                    install.building.panoramas += p
+                    install.building.panoramas.append(p)
             install.building.save()
             panoramas_saved += len(filenames)
         except Exception as e:

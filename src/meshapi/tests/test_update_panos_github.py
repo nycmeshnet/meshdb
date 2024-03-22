@@ -43,6 +43,35 @@ class TestPanoPipeline(TestCase):
         ]
         self.assertEqual(saved_panoramas, building.panoramas)
 
+    def test_update_panoramas(self):
+        # Fabricate some fake panorama photos
+        n = self.install.install_number
+        panos = {n: [f"{n}.jpg", f"{n}a.jpg"]}
+
+        panoramas.set_panoramas(panos)
+
+        # Now check that that worked.
+        building = Building.objects.get(id=self.install.building.id)
+        saved_panoramas = [
+            f"https://node-db.netlify.app/panoramas/{n}.jpg",
+            f"https://node-db.netlify.app/panoramas/{n}a.jpg",
+        ]
+        self.assertEqual(saved_panoramas, building.panoramas)
+
+        # Now add one from the previous list, and a new one.
+        panos = {n: [f"{n}.jpg", f"{n}b.jpg"]}
+
+        panoramas.set_panoramas(panos)
+
+        # Now check that that worked. We want all three
+        building = Building.objects.get(id=self.install.building.id)
+        saved_panoramas = [
+            f"https://node-db.netlify.app/panoramas/{n}.jpg",
+            f"https://node-db.netlify.app/panoramas/{n}a.jpg",
+            f"https://node-db.netlify.app/panoramas/{n}b.jpg",
+        ]
+        self.assertEqual(saved_panoramas, building.panoramas)
+
 
 class TestPanoAuthentication(TestCase):
     c = Client()
