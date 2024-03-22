@@ -29,12 +29,14 @@ Guarded by PSK
 However, we return a JSON array, rather than a CSV file
 """
 
+
 class QueryFilterListAPIView(FilterRequiredListAPIView):
     def get(self, request, *args, **kwargs):
-        maybe_auth = self.request.headers['Authorization']
+        maybe_auth = self.request.headers["Authorization"]
         if maybe_auth != f"Bearer {os.environ.get('QUERY_PSK')}":
             return Response({"detail": "Invalid Password"}, 403)
         return super().get(request, *args, **kwargs)
+
 
 class QueryMemberFilter(filters.FilterSet):
     name = filters.CharFilter(field_name="member.name", lookup_expr="icontains")
@@ -52,12 +54,12 @@ class QueryMemberFilter(filters.FilterSet):
         model = Install
         fields = []
 
+
 @permission_classes([permissions.AllowAny])
 class QueryMember(QueryFilterListAPIView):
     queryset = Install.objects.all().order_by("install_number")
-    serializer_class = QueryFormSerializer 
+    serializer_class = QueryFormSerializer
     filterset_class = QueryMemberFilter
-
 
 
 class QueryInstallFilter(filters.FilterSet):
@@ -67,6 +69,7 @@ class QueryInstallFilter(filters.FilterSet):
     class Meta:
         model = Install
         fields = ["member", "building", "status"]
+
 
 @permission_classes([permissions.AllowAny])
 class QueryInstall(QueryFilterListAPIView):
@@ -83,13 +86,12 @@ class QueryBuildingFilter(filters.FilterSet):
     bin = filters.CharFilter(field_name="building__bin", lookup_expr="iexact")
 
     class Meta:
-        model = Install 
+        model = Install
         fields = ["bin", "zip_code"]
+
 
 @permission_classes([permissions.AllowAny])
 class QueryBuilding(FilterRequiredListAPIView):
     queryset = Install.objects.all().order_by("install_number")
-    serializer_class = QueryFormSerializer 
-    filterset_class = QueryBuildingFilter 
-
-
+    serializer_class = QueryFormSerializer
+    filterset_class = QueryBuildingFilter
