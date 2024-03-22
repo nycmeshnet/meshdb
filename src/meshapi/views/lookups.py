@@ -79,7 +79,7 @@ class MemberFilter(filters.FilterSet):
     ),
 )
 class LookupMember(FilterRequiredListAPIView):
-    queryset = Member.objects.all()
+    queryset = Member.objects.all().order_by("id")
     serializer_class = MemberSerializer
     filterset_class = MemberFilter
 
@@ -128,7 +128,7 @@ class InstallFilter(filters.FilterSet):
     ),
 )
 class LookupInstall(FilterRequiredListAPIView):
-    queryset = Install.objects.all()
+    queryset = Install.objects.all().order_by("install_number")
     serializer_class = InstallSerializer
     filterset_class = InstallFilter
 
@@ -210,7 +210,7 @@ class BuildingFilter(filters.FilterSet):
     ),
 )
 class LookupBuilding(FilterRequiredListAPIView):
-    queryset = Building.objects.all()
+    queryset = Building.objects.all().order_by("id")
     serializer_class = BuildingSerializer
     filterset_class = BuildingFilter
 
@@ -261,7 +261,7 @@ class NodeFilter(filters.FilterSet):
     ),
 )
 class LookupNode(FilterRequiredListAPIView):
-    queryset = Node.objects.all()
+    queryset = Node.objects.all().order_by("network_number")
     serializer_class = NodeSerializer
     filterset_class = NodeFilter
 
@@ -324,7 +324,7 @@ class LinkFilter(filters.FilterSet):
     ),
 )
 class LookupLink(FilterRequiredListAPIView):
-    queryset = Link.objects.all()
+    queryset = Link.objects.all().order_by("id")
     serializer_class = LinkSerializer
     filterset_class = LinkFilter
 
@@ -395,7 +395,7 @@ class DeviceFilter(filters.FilterSet):
     ),
 )
 class LookupDevice(FilterRequiredListAPIView):
-    queryset = Device.objects.all()
+    queryset = Device.objects.all().order_by("id")
     serializer_class = DeviceSerializer
     filterset_class = DeviceFilter
 
@@ -463,6 +463,6 @@ class SectorFilter(DeviceFilter):
     ),
 )
 class LookupSector(FilterRequiredListAPIView):
-    queryset = Sector.objects.all()
+    queryset = Sector.objects.all().order_by("id")
     serializer_class = SectorSerializer
     filterset_class = SectorFilter
