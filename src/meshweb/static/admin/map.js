@@ -29,7 +29,7 @@ async function getNewSelectedNodes(){
         const deviceResponse = await fetch(`/api/v1/devices/${id}/`);
         if (!deviceResponse.ok) return null;
         const device = await deviceResponse.json();
-        nodeId = device.node;
+        nodeId = device.network_number;
     } else if (type === "member") {
         if (!id) return null;
         const memberResponse = await fetch(`/api/v1/members/${id}/`);
@@ -50,18 +50,16 @@ async function getNewSelectedNodes(){
         if (!device2Response.ok) return null;
         const device2 = await device2Response.json();
 
-        nodeId = `${device1.node}-${device2.node}`;
+        nodeId = `${device1.network_number}-${device2.network_number}`;
     }
-
-    console.log(`${type} ${id} -> ${nodeId}`)
-
 
     return nodeId ? `${nodeId}` : null;
 }
 
-async function updateMapForRoute() {
+async function updateMapForLocation(selectedNodes) {
     const selectedEvent = new Event("setMapNode");//, {detail: {selectedNodes: selectedNodes}});
-    selectedEvent.selectedNodes = await getNewSelectedNodes();
+    if (!selectedNodes) selectedNodes = await getNewSelectedNodes()
+    selectedEvent.selectedNodes = selectedNodes;
     window.dispatchEvent(selectedEvent);
 }
 
@@ -92,24 +90,19 @@ async function loadScripts(scripts, destination) {
     }
 }
 
-async function updateAdminContent() {
-    let currentPathname = location.pathname;
-
-    const response = await fetch(location.pathname + location.search);
+async function updateAdminContent(newUrl, updateHistory = true) {
+    const response = await fetch(newUrl);
     if (!response.ok) {
         throw new Error("Error loading new contents for page: " + response.status + " " + response.statusText);
     }
+
+    if (updateHistory) window.history.pushState(null, '', newUrl);
 
     const current_map = document.getElementById("map");
 
     const text = await response.text();
     const parser = new DOMParser();
     const doc = parser.parseFromString(text, "text/html");
-
-    // Bail if the user clicked an additional link while we could load/parse the first one
-    if (location.pathname !== currentPathname) {
-        return
-    }
 
     doc.getElementById("map").replaceWith(current_map);
 
@@ -139,15 +132,13 @@ async function updateAdminContent() {
     }
     await loadScripts(scriptsToReload, document.head);
 
-    console.log("Simulating window load...")
     dispatchEvent(new Event('load'));
 }
 
 
-function shouldNotIntercept(event) {
-    const url = new URL(event.destination.url);
+function shouldNotIntercept(target) {
+    const url = new URL(target);
 
-    if (event.downloadRequest) return true;
     if (!url.pathname.startsWith("/admin/")) return true;
     if (url.pathname.startsWith("/admin/login")) return true;
     if (url.pathname.startsWith("/admin/logout")) return true;
@@ -157,33 +148,51 @@ function shouldNotIntercept(event) {
 }
 
 function interceptLinks() {
-    navigation.addEventListener("navigate", (event) => {
+    interceptClicks(function(event, el) {
         // Exit early if this navigation shouldn't be intercepted,
         // e.g. if the navigation is cross-origin, or a download request
-        if (shouldNotIntercept(event)) return;
-
-        const url = event.destination.url;
-        event.intercept({
-            async handler() {
-                console.log("Caught navigation to " + url)
-
-                updateMapForRoute();
-                updateAdminContent();
-            },
-        });
+        if (shouldNotIntercept(el.href)) return;
+        async function handler() {
+            await updateAdminContent(el.href);
+            updateMapForLocation();
+        }
+        handler()
+        // console.log("Intercepting " + el.href)
+        event.preventDefault()
     });
+
+    window.addEventListener('popstate', function(event) {
+         async function handler() {
+            await updateAdminContent(location.href, false);
+            updateMapForLocation();
+        }
+        handler()
+        // console.log(location.href);
+        event.preventDefault()
+    }, false)
 }
 
 async function nodeSelectedOnMap(selectedNodes) {
     if (!selectedNodes) return;
     if (selectedNodes.indexOf("-") !== -1) return;
 
+    // console.log("Node selected " + selectedNodes)
+    const installResponse = await fetch(`/api/v1/installs/${selectedNodes}/`);
     const nodeResponse = await fetch(`/api/v1/nodes/${selectedNodes}/`);
-    if (nodeResponse.ok)  {
-        window.location = `/admin/meshapi/node/${selectedNodes}/change`;
+    if (installResponse.ok){
+        const installJson = await installResponse.json();
+        if (installJson.network_number)  {
+            await updateAdminContent(new URL(`/admin/meshapi/node/${installJson.network_number}/change`, document.location).href);
+            updateMapForLocation(installJson.network_number.toString());
+        } else {
+            updateAdminContent(new URL(`/admin/meshapi/install/${selectedNodes}/change`, document.location).href);
+        }
     } else {
-        window.location = `/admin/meshapi/install/${selectedNodes}/change`;
+        if (nodeResponse.ok)  {
+            updateAdminContent(new URL(`/admin/meshapi/node/${selectedNodes}/change`, document.location).href);
+        }
     }
+
 }
 
 function listenForMapNavigation() {
@@ -245,7 +254,7 @@ async function load_map() {
 
 async function start() {
     await load_map();
-    updateMapForRoute();
+    updateMapForLocation();
     interceptLinks();
     listenForMapNavigation();
 }
