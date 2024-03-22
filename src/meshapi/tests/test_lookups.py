@@ -120,15 +120,12 @@ class TestMemberLookups(TestCase):
 
     def test_empty_search(self):
         response = self.c.get("/api/v1/members/lookup/")
-        code = 200
+        code = 400
         self.assertEqual(
             code,
             response.status_code,
             f"status code incorrect. Should be {code}, but got {response.status_code}",
         )
-
-        response_objs = json.loads(response.content)["results"]
-        self.assertEqual(len(response_objs), 0)
 
     def test_invalid_search(self):
         response = self.c.get("/api/v1/members/lookup/?invalid=abc")
@@ -471,15 +468,12 @@ class TestBuildingLookups(TestCase):
 
     def test_empty_search(self):
         response = self.c.get("/api/v1/buildings/lookup/")
-        code = 200
+        code = 400
         self.assertEqual(
             code,
             response.status_code,
             f"status code incorrect. Should be {code}, but got {response.status_code}",
         )
-
-        response_objs = json.loads(response.content)["results"]
-        self.assertEqual(len(response_objs), 0)
 
     def test_invalid_search(self):
         response = self.c.get("/api/v1/buildings/lookup/?invalid=abc")
@@ -691,15 +685,12 @@ class TestInstallLookups(TestCase):
 
     def test_empty_search(self):
         response = self.c.get("/api/v1/installs/lookup/")
-        code = 200
+        code = 400
         self.assertEqual(
             code,
             response.status_code,
             f"status code incorrect. Should be {code}, but got {response.status_code}",
         )
-
-        response_objs = json.loads(response.content)["results"]
-        self.assertEqual(len(response_objs), 0)
 
     def test_invalid_search(self):
         response = self.c.get("/api/v1/installs/lookup/?invalid=abc")
@@ -947,15 +938,12 @@ class TestNodeLookups(TestCase):
 
     def test_empty_search(self):
         response = self.c.get("/api/v1/nodes/lookup/")
-        code = 200
+        code = 400
         self.assertEqual(
             code,
             response.status_code,
             f"status code incorrect. Should be {code}, but got {response.status_code}",
         )
-
-        response_objs = json.loads(response.content)["results"]
-        self.assertEqual(len(response_objs), 0)
 
     def test_invalid_search(self):
         response = self.c.get("/api/v1/nodes/lookup/?invalid=abc")
@@ -1200,15 +1188,12 @@ class TestLinkLookups(TestCase):
 
     def test_empty_search(self):
         response = self.c.get("/api/v1/links/lookup/")
-        code = 200
+        code = 400
         self.assertEqual(
             code,
             response.status_code,
             f"status code incorrect. Should be {code}, but got {response.status_code}",
         )
-
-        response_objs = json.loads(response.content)["results"]
-        self.assertEqual(len(response_objs), 0)
 
     def test_invalid_search(self):
         response = self.c.get("/api/v1/links/lookup/?invalid=abc")
@@ -1447,15 +1432,12 @@ class TestDeviceLookups(TestCase):
 
     def test_empty_search(self):
         response = self.c.get("/api/v1/devices/lookup/")
-        code = 200
+        code = 400
         self.assertEqual(
             code,
             response.status_code,
             f"status code incorrect. Should be {code}, but got {response.status_code}",
         )
-
-        response_objs = json.loads(response.content)["results"]
-        self.assertEqual(len(response_objs), 0)
 
     def test_invalid_search(self):
         response = self.c.get("/api/v1/devices/lookup/?invalid=abc")
@@ -1691,15 +1673,12 @@ class TestSectorLookups(TestCase):
 
     def test_empty_search(self):
         response = self.c.get("/api/v1/sectors/lookup/")
-        code = 200
+        code = 400
         self.assertEqual(
             code,
             response.status_code,
             f"status code incorrect. Should be {code}, but got {response.status_code}",
         )
-
-        response_objs = json.loads(response.content)["results"]
-        self.assertEqual(len(response_objs), 0)
 
     def test_invalid_search(self):
         response = self.c.get("/api/v1/sectors/lookup/?invalid=abc")
