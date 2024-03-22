@@ -23,22 +23,14 @@ class FilterRequiredListAPIView(generics.ListAPIView):
         provided_filters = set(self.request.query_params.keys())
         invalid_filters = provided_filters - possible_filters
 
+        if not provided_filters:
+            return Response({"detail": "Please provide at least one filter to use this endpoint"}, 400)
+
         # If they gave us filters that aren't actually available, bail and return a bad status
         if invalid_filters:
             return Response({"detail": f"Invalid filters provided: {list(invalid_filters)}"}, 400)
         else:
             return super().get(request, *args, **kwargs)
-
-    def get_queryset(self):
-        result = super().get_queryset()
-
-        # This is a search endpoint, if the user doesn't supply any filters,
-        # they expect that we return nothing instead of everything.
-        # If they wanted everything they'd use the appropriate list endpoint
-        if not self.request.query_params:
-            return result.none()
-
-        return result
 
 
 class MemberFilter(filters.FilterSet):
