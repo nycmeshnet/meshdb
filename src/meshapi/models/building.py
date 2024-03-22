@@ -67,7 +67,13 @@ class Building(models.Model):
         "and original spreadsheet data. However this structure can be changed by admins at any time and should not be relied on"
         "by automated systems. ",
     )
-    panoramas = JSONFormArrayField(models.URLField(), null=True, blank=True, default=list, help_text="Panoramas taken from the roof of this Building")
+    panoramas = JSONFormArrayField(
+        models.URLField(),
+        null=True,
+        blank=True,
+        default=list,
+        help_text="Panoramas taken from the roof of this Building",
+    )
 
     primary_node = models.ForeignKey(
         Node,

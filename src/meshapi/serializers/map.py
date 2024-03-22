@@ -58,9 +58,7 @@ class MapDataInstallSerializer(serializers.ModelSerializer):
     installDate = JavascriptDateField(source="install_date")
     roofAccess = serializers.BooleanField(source="roof_access")
     notes = serializers.SerializerMethodField("get_start_of_notes")
-    panoramas = serializers.SerializerMethodField(
-        "get_panorama_filename"
-    )
+    panoramas = serializers.SerializerMethodField("get_panorama_filename")
 
     def get_building_coordinates(self, install: Install) -> List[float]:
         building = install.building

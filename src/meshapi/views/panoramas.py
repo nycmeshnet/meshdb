@@ -14,11 +14,12 @@ from meshdb.celery import app as celery_app
 from celery.schedules import crontab
 
 celery_app.conf.beat_schedule = {
-    'update-panoramas-hourly': {
-        'task': 'tasks.update_panoramas_from_github',
-        'schedule': crontab(hour='*'),
+    "update-panoramas-hourly": {
+        "task": "tasks.update_panoramas_from_github",
+        "schedule": crontab(hour="*"),
     },
 }
+
 
 # Raised if we get total nonsense as a panorama title
 class BadPanoramaTitle(Exception):
