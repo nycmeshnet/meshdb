@@ -6,10 +6,13 @@ from meshapi.models import Building, Device, Install, Link, Member, Node, Sector
 class BuildingSerializer(serializers.ModelSerializer):
     class Meta:
         model = Building
-        fields = "__all__"
+        exclude = ("primary_node", "nodes")
 
     installs = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
-    nodes = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
+    network_numbers = serializers.PrimaryKeyRelatedField(source="nodes", many=True, read_only=True)
+    primary_network_number = serializers.PrimaryKeyRelatedField(
+        source="primary_node", queryset=Node.objects.all(), required=False, allow_null=True
+    )
 
 
 class MemberSerializer(serializers.ModelSerializer):
@@ -24,7 +27,11 @@ class MemberSerializer(serializers.ModelSerializer):
 class InstallSerializer(serializers.ModelSerializer):
     class Meta:
         model = Install
-        fields = "__all__"
+        exclude = ("node",)
+
+    network_number = serializers.PrimaryKeyRelatedField(
+        source="node", queryset=Node.objects.all(), required=False, allow_null=True
+    )
 
 
 class NodeSerializer(serializers.ModelSerializer):
@@ -45,7 +52,11 @@ class LinkSerializer(serializers.ModelSerializer):
 class DeviceSerializer(serializers.ModelSerializer):
     class Meta:
         model = Device
-        fields = "__all__"
+        exclude = ("node",)
+
+    network_number = serializers.PrimaryKeyRelatedField(
+        source="node", queryset=Node.objects.all(), required=True, allow_null=False
+    )
 
     links_from = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
     links_to = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
@@ -54,7 +65,11 @@ class DeviceSerializer(serializers.ModelSerializer):
 class SectorSerializer(serializers.ModelSerializer):
     class Meta:
         model = Sector
-        fields = "__all__"
+        exclude = ("node",)
+
+    network_number = serializers.PrimaryKeyRelatedField(
+        source="node", queryset=Node.objects.all(), required=True, allow_null=False
+    )
 
     links_from = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
     links_to = serializers.PrimaryKeyRelatedField(many=True, read_only=True)

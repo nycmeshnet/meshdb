@@ -30,7 +30,7 @@ class TestSector(TestCase):
             "/api/v1/sectors/",
             {
                 "model": "LAP-120",
-                "node": self.node.network_number,
+                "network_number": self.node.network_number,
                 "type": Device.DeviceType.AP,
                 "status": Device.DeviceStatus.ACTIVE,
                 "latitude": 0,
@@ -52,7 +52,7 @@ class TestSector(TestCase):
             "/api/v1/sectors/",
             {
                 "name": "Vernon",
-                "node": self.node.network_number,
+                "network_number": self.node.network_number,
                 "latitude": 0,
                 "longitude": 0,
                 "azimuth": 0,
@@ -94,4 +94,4 @@ class TestSector(TestCase):
 
         response_obj = json.loads(response.content)
         self.assertEqual(response_obj["status"], "Active")
-        self.assertEqual(response_obj["node"], node.network_number)
+        self.assertEqual(response_obj["network_number"], node.network_number)
