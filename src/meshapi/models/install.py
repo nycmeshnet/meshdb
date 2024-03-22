@@ -113,6 +113,7 @@ class Install(models.Model):
     class Meta:
         permissions = [
             ("assign_nn", "Can assign an NN to install"),
+            ("update_panoramas", "Can update panoramas"),
         ]
 
     def __str__(self):

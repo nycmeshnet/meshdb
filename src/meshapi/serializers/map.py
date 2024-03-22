@@ -1,6 +1,8 @@
 import datetime
 from collections import OrderedDict
 from typing import List, Optional
+import os
+from urllib.parse import urlparse
 
 from rest_framework import serializers
 
@@ -56,7 +58,7 @@ class MapDataInstallSerializer(serializers.ModelSerializer):
     installDate = JavascriptDateField(source="install_date")
     roofAccess = serializers.BooleanField(source="roof_access")
     notes = serializers.SerializerMethodField("get_start_of_notes")
-    panoramas = serializers.ReadOnlyField(default=[])  # FIXME: THIS WILL REMOVE ALL PANORAMAS FROM THE MAP UI
+    panoramas = serializers.SerializerMethodField("get_panorama_filename")
 
     def get_building_coordinates(self, install: Install) -> List[float]:
         building = install.building
@@ -90,7 +92,16 @@ class MapDataInstallSerializer(serializers.ModelSerializer):
 
         return install.status
 
-    def to_representation(self, install: Install) -> dict:
+    # We're storing full URLs for each pano to make the system more flexible, so to
+    # make it "map friendly", we gotta strip it down to just the filename.
+    def get_panorama_filename(self, install):
+        pano_filenames = []
+        for panorama in install.building.panoramas:
+            pano_url = urlparse(panorama)
+            pano_filenames.append(os.path.basename(pano_url.path))
+        return pano_filenames
+
+    def to_representation(self, install):
         result = super().to_representation(install)
 
         # Remove null fields when applicable to match the existing interface

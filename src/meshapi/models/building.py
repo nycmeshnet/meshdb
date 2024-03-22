@@ -1,6 +1,7 @@
 from django.contrib.postgres.fields import ArrayField
 from django.core.validators import MinValueValidator
 from django.db import models
+from django_jsonform.models.fields import ArrayField as JSONFormArrayField
 
 from meshdb.utils.spreadsheet_import.building.constants import AddressTruthSource
 
@@ -65,6 +66,13 @@ class Building(models.Model):
         "For Buidings imported from the spreadsheet, this starts with a formatted block of information about the import process"
         "and original spreadsheet data. However this structure can be changed by admins at any time and should not be relied on"
         "by automated systems. ",
+    )
+    panoramas = JSONFormArrayField(
+        models.URLField(),
+        null=True,
+        blank=True,
+        default=list,
+        help_text="Panoramas taken from the roof of this Building",
     )
 
     primary_node = models.ForeignKey(
