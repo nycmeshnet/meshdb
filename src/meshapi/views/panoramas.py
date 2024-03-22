@@ -10,6 +10,15 @@ from meshapi.permissions import HasPanoramaUpdatePermission
 
 from meshapi.util.django_pglocks import advisory_lock
 
+from meshdb.celery import app as celery_app
+from celery.schedules import crontab
+
+celery_app.conf.beat_schedule = {
+    'update-panoramas-hourly': {
+        'task': 'tasks.update_panoramas_from_github',
+        'schedule': crontab(hour='*'),
+    },
+}
 
 # Raised if we get total nonsense as a panorama title
 class BadPanoramaTitle(Exception):
@@ -20,6 +29,7 @@ class BadPanoramaTitle(Exception):
 @api_view(["GET"])
 @permission_classes([HasPanoramaUpdatePermission])
 @advisory_lock("update_panoramas_lock")
+@celery_app.task
 def update_panoramas_from_github(request):
     # Check that we have all the environment variables we need
     owner = os.environ.get("PANO_REPO_OWNER")
@@ -80,7 +90,9 @@ def set_panoramas(panos: dict[str, list[str]]) -> tuple[int, list[str]]:
                 panoramas.append(file_url)
             if install.building.panoramas == panoramas:
                 continue
-            install.building.panoramas = panoramas
+            for p in panoramas:
+                if p not in install.building.panoramas:
+                    install.building.panoramas += p
             install.building.save()
             panoramas_saved += len(filenames)
         except Exception as e:

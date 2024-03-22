@@ -1,4 +1,5 @@
 import json
+import os
 from django.forms import Widget
 from django.template import loader
 from django.utils.safestring import mark_safe
@@ -12,8 +13,6 @@ class PanoramaViewer(JSONFormWidget):
         super().__init__(schema)
 
     def pano_get_context(self, name, value, attrs=None):
-        # FIXME: Need to parse the value because Django gives it as a string
-        # for some reason
         value_as_array = json.loads(value)
         return {
             "widget": {
@@ -23,8 +22,11 @@ class PanoramaViewer(JSONFormWidget):
         }
 
     def render(self, name, value, attrs=None, renderer=None):
-        # Render the JSONFormWidget to allow editing of the panoramas
-        super_template = super().render(name, value, attrs, renderer)
+        if "DISALLOW_PANO_EDITS" in os.environ:
+            super_template = ""
+        else:
+            # Render the JSONFormWidget to allow editing of the panoramas
+            super_template = super().render(name, value, attrs, renderer)
 
         # Then, render the panoramas for viewing
         context = self.pano_get_context(name, value, attrs)

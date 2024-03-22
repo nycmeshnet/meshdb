@@ -6,7 +6,6 @@ from meshapi.models import Building, Device, Install, Link, Member, Node, Sector
 
 from nonrelated_inlines.admin import NonrelatedTabularInline
 from django.utils.safestring import mark_safe
-from django_jsonform.widgets import JSONFormWidget
 
 from meshapi.models import Building, Install, Link, Member, Sector
 from meshapi.widgets import PanoramaViewer
@@ -145,17 +144,13 @@ class BuildingAdminForm(forms.ModelForm):
         model = Building
         fields = "__all__"
         widgets = {
-            "street_address": forms.TextInput(),
-            "city": forms.TextInput(),
-            "state": forms.TextInput(),
-            "zip_code": forms.NumberInput(),
-            "node_name": forms.TextInput(),
             "panoramas": PanoramaViewer(schema={"type": "array", "items": {"type": "string"}}),
         }
 
 
 @admin.register(Building)
 class BuildingAdmin(admin.ModelAdmin):
+    form = BuildingAdminForm
     list_display = ["__str__", "street_address", "primary_node"]
     search_fields = [
         # Sometimes they have an actual name
