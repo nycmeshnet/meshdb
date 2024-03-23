@@ -52,6 +52,10 @@ ALLOWED_HOSTS = [
 CORS_ALLOWED_ORIGINS = [
     "http://forms.grandsvc.mesh.nycmesh.net",
     "https://forms.grandsvc.mesh.nycmesh.net",
+    "http://map.grandsvc.mesh.nycmesh.net",
+    "https://map.grandsvc.mesh.nycmesh.net",
+    "http://map.grandsvc.mesh",
+    "https://map.grandsvc.mesh",
     "http://forms.grandsvc.mesh",
     "https://forms.grandsvc.mesh",
     "http://127.0.0.1:3000",
