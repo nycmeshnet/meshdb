@@ -93,6 +93,7 @@ INSTALLED_APPS = [
     "drf_spectacular",
     "django_filters",
     "django_jsonform",
+    "dbbackup",
 ]
 
 MIDDLEWARE = [
@@ -148,6 +149,12 @@ DATABASES = {
         "PORT": os.environ.get("DB_PORT", 5432),
     }
 }
+
+# django-dbbackup
+# https://django-dbbackup.readthedocs.io/en/master/installation.html
+
+DBBACKUP_STORAGE = 'storages.backends.sftpstorage.SFTPStorage'
+DBBACKUP_STORAGE_OPTIONS = {'host': 'myserver'}
 
 
 # Password validation
