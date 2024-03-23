@@ -29,8 +29,8 @@ class FilterRequiredListAPIView(generics.ListAPIView):
         # If they gave us filters that aren't actually available, bail and return a bad status
         if invalid_filters:
             return Response({"detail": f"Invalid filters provided: {list(invalid_filters)}"}, 400)
-        else:
-            return super().get(request, *args, **kwargs)
+
+        return super().get(request, *args, **kwargs)
 
 
 class MemberFilter(filters.FilterSet):

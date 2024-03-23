@@ -35,7 +35,7 @@ class QueryFormSerializer(serializers.ModelSerializer):
 
     name = serializers.CharField(source="member.name")
 
-    network_number = serializers.IntegerField(source="node.network_number")
+    network_number = serializers.IntegerField(source="node.network_number", allow_null=True)
 
     primary_email_address = serializers.CharField(source="member.primary_email_address")
     stripe_email_address = serializers.CharField(source="member.stripe_email_address")

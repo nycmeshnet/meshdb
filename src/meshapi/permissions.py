@@ -42,7 +42,10 @@ class HasPanoramaUpdatePermission(HasDjangoPermission):
 # Janky
 class LegacyMeshQueryPassword(permissions.BasePermission):
     def has_permission(self, request, view):
-        if "password" in request.query_params and request.query_params["password"] == os.environ.get("QUERY_PSK"):
+        if (
+            request.headers["Authorization"]
+            and request.headers["Authorization"] == f"Bearer {os.environ.get('QUERY_PSK')}"
+        ):
             return True
 
         raise PermissionDenied("Authentication Failed.")
