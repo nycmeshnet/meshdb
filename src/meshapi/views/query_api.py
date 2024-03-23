@@ -49,7 +49,7 @@ class QueryMemberFilter(filters.FilterSet):
 
 
 class QueryMember(FilterRequiredListAPIView):
-    queryset = Install.objects.all().order_by("install_number")
+    queryset = Install.objects.all().prefetch_related("building").prefetch_related("node").prefetch_related("member").order_by("install_number")
     serializer_class = QueryFormSerializer
     filterset_class = QueryMemberFilter
     permission_classes = [LegacyMeshQueryPassword]
