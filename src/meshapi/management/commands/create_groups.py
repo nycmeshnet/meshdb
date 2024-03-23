@@ -35,12 +35,17 @@ class Command(BaseCommand):
 
             # installer
             if (
-                (act == "change" and (obj in ["install", "member", "device", "sector", "link"))
+                (act == "change" and (obj in ["install", "member", "device", "sector", "link"]))
                 or (act == "view" and obj in models)
                 or code == "assign_nn"
             ):
                 installer.permissions.add(p)
 
             # admin
-            if obj in models or act == "view" or obj in ["user", "token", "tokenproxy", "celeryserialzerhook"] or code == "assign_nn":
+            if (
+                obj in models
+                or act == "view"
+                or obj in ["user", "token", "tokenproxy", "celeryserialzerhook"]
+                or code == "assign_nn"
+            ):
                 admin.permissions.add(p)
