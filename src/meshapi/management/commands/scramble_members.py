@@ -5,6 +5,7 @@ from random import randrange
 
 from meshapi.models import Member, Install
 
+
 # Uses faker to get fake names, emails, and phone numbers
 # TODO: Instead of modifying real data, generate a completely fake database from
 # scratch :)
@@ -32,7 +33,7 @@ class Command(BaseCommand):
             for member in members:
                 member.name = fake.name()
                 member.primary_email_address = f"{member.name.replace(' ', '').lower()}@gmail.com"
-                member.stripe_email_address
+                member.stripe_email_address = ""
                 member.additional_email_addresses = []
                 member.phone_number = fake.phone_number()
                 member.slack_handle = ""
