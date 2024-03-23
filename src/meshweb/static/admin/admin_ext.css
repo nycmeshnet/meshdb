@@ -15,6 +15,12 @@
     color: black;
 }
 
+@media screen and (max-width: 600px) {
+    .warning-box {
+        display: none;
+    }
+}
+
 /* This is an override of the styles at admin/css/login.css in the admin site */
 .login #container {
     background: var(--body-bg);
@@ -32,4 +38,104 @@
     width: 28em;
     margin: auto;
     margin-top: 0px;
+}
+
+.main.shifted {
+    min-width: 975px !important;
+}
+
+/* Fixes: delete button looks weird */
+#main a {
+    box-sizing: content-box !important;
+}
+
+#map-wrapper {
+    display: flex;
+    overflow: hidden;
+    flex: 1 1 auto;
+    margin-bottom: 10px;
+    flex-shrink: 1 !important;
+}
+#map-wrapper .main {
+    display: flex;
+    flex: 1 0 auto;
+    overflow-y: auto;
+    flex-direction: row;
+    min-width: 700px;
+}
+
+#map {
+    display: flex;
+    margin-right: 10px;
+    flex: 1 1 auto;
+}
+
+@media screen and (max-width: 900px) {
+    #map {
+        display: none !important;
+    }
+}
+
+#map-inner {
+    display: flex;
+    flex-grow: 1;
+}
+
+/* Styles for the left and right resizable divs */
+.left, .right {
+    flex-grow: 0;
+    flex-shrink: 1;
+    overflow: auto;
+}
+
+/* Styles for the draggable handle */
+.handle {
+    width: 10px;
+    height: 100%;
+    margin-left: 5px;
+    margin-right: 5px;
+    cursor: ew-resize;
+    background-color: var(--secondary);
+    flex-grow: 0;
+
+    display: block;
+    text-align: center;
+    white-space: nowrap;
+}
+
+.vert-align-helper {
+    display: inline-block;
+    height: 100%;
+    vertical-align: middle;
+}
+
+.handlebar {
+    vertical-align: middle;
+    margin-left: -4px; /* IDK why this is needed CSS is voodoo */
+}
+
+
+/* Fix missing maps styles */
+.gm-control-active > img {
+    box-sizing: content-box;
+    display: none;
+    left: 50%;
+    pointer-events: none;
+    position: absolute;
+    top: 50%;
+    transform: translate(-50%,-50%);
+}
+
+.gm-control-active > img:nth-child(1) {
+    display:block;
+}
+
+.gm-control-active:hover > img:nth-child(1),
+.gm-control-active:active > img:nth-child(1) {
+    display:none;
+}
+
+.gm-control-active:hover > img:nth-child(2),
+.gm-control-active:active > img:nth-child(3) {
+    display:block;
 }

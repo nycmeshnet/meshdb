@@ -1,0 +1,17 @@
+
+{% load static %}
+
+{% load env_extras %}
+
+<div id="map">
+    <div class="handle" id="handle">
+        <span class="vert-align-helper"></span>
+        <img class="handlebar" src="{% static '/admin/map/img/handlebar.svg' %}" height="60px"/>
+    </div>
+    <div id="map-inner"></div>
+    <div id="map-scripts" style="display: none"></div>
+    <script src="{% static '/admin/intercept.js' %}"></script>
+    <script>let MAP_BASE_URL = "{% get_env_var 'ADMIN_MAP_BASE_URL' %}";</script>
+    <script src="{% static '/admin/map.js' %}"></script>
+</div>
+
