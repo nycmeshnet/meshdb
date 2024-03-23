@@ -434,8 +434,8 @@ class NodeAdminForm(forms.ModelForm):
 class NodeAdmin(admin.ModelAdmin):
     form = NodeAdminForm
     search_fields = ["network_number__iexact", "name__icontains", "buildings__street_address__icontains"]
-    list_filter = ["status", ("name", admin.EmptyFieldListFilter)]
-    list_display = ["__network_number__", "name", "status", "address"]
+    list_filter = ["status", ("name", admin.EmptyFieldListFilter), "install_date", "abandon_date"]
+    list_display = ["__network_number__", "name", "status", "address", "install_date"]
     fieldsets = [
         (
             "Details",

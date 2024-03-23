@@ -217,6 +217,22 @@ Run `psql`
 psql -U meshdb
 ```
 
+### Backups
+
+**The Quick 'n Dirty Way**
+
+Export:
+
+```
+docker exec -it meshdb-postgres-1 pg_dump -d meshdb -U meshdb >> Downloads/meshdb_dev.sql
+```
+
+Import:
+
+```
+cat ~/Downloads/meshdb_dev.sql | docker exec -i meshdb-postgres-1 psql -U meshdb
+```
+
 ## Invoke.py Commands
 
 For convenience, this package uses [invoke](https://www.pyinvoke.org/) to wrap
