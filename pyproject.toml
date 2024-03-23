@@ -30,6 +30,7 @@ dependencies = [
     "django-filter==24.1",
     # FIXME: Go back to PyPI when https://github.com/bhch/django-jsonform/pull/162 is merged
     "django-jsonform@git+https://github.com/willnilges/django-jsonform.git@51cbed42ccdaec81a35c97a919d054e2c9ca0207",
+    "faker==24.3.*",
 ]
 
 [project.optional-dependencies]
