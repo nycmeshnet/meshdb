@@ -44,6 +44,11 @@
     min-width: 975px !important;
 }
 
+/* Fixes: delete button looks weird */
+#main a {
+    box-sizing: content-box !important;
+}
+
 #map-wrapper {
     display: flex;
     overflow: hidden;
