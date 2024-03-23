@@ -15,6 +15,12 @@
     color: black;
 }
 
+@media screen and (max-width: 600px) {
+    .warning-box {
+        display: none;
+    }
+}
+
 /* This is an override of the styles at admin/css/login.css in the admin site */
 .login #container {
     background: var(--body-bg);
@@ -57,6 +63,12 @@
     display: flex;
     margin-right: 10px;
     flex: 1 1 auto;
+}
+
+@media screen and (max-width: 900px) {
+    #map {
+        display: none !important;
+    }
 }
 
 #map-inner {
