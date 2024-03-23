@@ -180,7 +180,14 @@ async function nodeSelectedOnMap(selectedNodes) {
     if (!selectedNodes) return;
     if (selectedNodes.indexOf("-") !== -1) return;
 
-    // console.log("Node selected " + selectedNodes)
+    let selectedNodeInt = parseInt(selectedNodes);
+    if (selectedNodeInt >= 1000000) {
+        selectedNodeInt -= 1000000;
+        /* Hack for APs to show correctly */
+        updateAdminContent(new URL(`/admin/meshapi/device/${selectedNodeInt}/change`, document.location).href);
+        return;
+    }
+
     const installResponse = await fetch(`/api/v1/installs/${selectedNodes}/`);
     const nodeResponse = await fetch(`/api/v1/nodes/${selectedNodes}/`);
     if (installResponse.ok){
