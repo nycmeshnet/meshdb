@@ -34,15 +34,8 @@
     margin-top: 0px;
 }
 
-@media screen and (min-width: 1600px) {
-    #map-wrapper .main {
-        max-width: 1000px;
-    }
-}
-@media screen and (max-width: 1600px) {
-    #map-wrapper .main {
-        max-width: 800px;
-    }
+.main.shifted {
+    min-width: 975px !important;
 }
 
 #map-wrapper {
@@ -57,18 +50,51 @@
     flex: 1 0 auto;
     overflow-y: auto;
     flex-direction: row;
+    min-width: 700px;
 }
 
 #map {
     display: flex;
     margin-right: 10px;
     flex: 1 1 auto;
-    flex-direction: column;
 }
 
-#map > div {
+#map-inner {
     display: flex;
     flex-grow: 1;
+}
+
+/* Styles for the left and right resizable divs */
+.left, .right {
+    flex-grow: 0;
+    flex-shrink: 1;
+    overflow: auto;
+}
+
+/* Styles for the draggable handle */
+.handle {
+    width: 10px;
+    height: 100%;
+    margin-left: 5px;
+    margin-right: 5px;
+    cursor: ew-resize;
+    background-color: var(--secondary);
+    flex-grow: 0;
+
+    display: block;
+    text-align: center;
+    white-space: nowrap;
+}
+
+.vert-align-helper {
+    display: inline-block;
+    height: 100%;
+    vertical-align: middle;
+}
+
+.handlebar {
+    vertical-align: middle;
+    margin-left: -4px; /* IDK why this is needed CSS is voodoo */
 }
 
 

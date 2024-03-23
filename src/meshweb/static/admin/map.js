@@ -1,5 +1,7 @@
 
 
+let currentSplit = 60;
+
 function getCurrentTarget(){
     let path = location.pathname.replace(/^\/admin\/meshapi\//, "");
     path = path.replace(/\/$/, "");
@@ -122,6 +124,8 @@ async function updateAdminContent(newUrl, updateHistory = true) {
     // Replace the whole page with the new one
     const newHTML = doc.getElementsByTagName("html")[0];
     document.getElementsByTagName("html")[0].replaceWith(newHTML);
+
+    setMapProportions(currentSplit);
 
     // Re-run other javascript to make page happy
     if (window.DateTimeShortcuts) window.removeEventListener('load', window.DateTimeShortcuts.init);
@@ -252,7 +256,54 @@ async function load_map() {
     await loadScripts(remote_map_doc.querySelectorAll('script'), map_scripts_div);
 }
 
+function setMapProportions(leftWidth){
+    // Apply new widths to left and right divs
+    const leftDiv = document.getElementById('main');
+    const rightDiv = document.getElementById('map');
+
+    currentSplit = leftWidth;
+    leftDiv.style.width = `${leftWidth}%`;
+    rightDiv.style.width = `${100 - leftWidth}%`;
+}
+
+
+function allowMapResize() {
+    // Event listener for mouse down on handle
+    const handle = document.getElementById('handle');
+    handle.addEventListener('mousedown', function(e) {
+        e.preventDefault();
+        window.addEventListener('mousemove', resize);
+        window.addEventListener('mouseup', stopResize);
+    });
+
+    // Function to resize divs
+    function resize(e) {
+        // Get elements
+        const container = document.getElementById('map-wrapper');
+
+        const rect = container.getBoundingClientRect();
+        const containerLeft = rect.left;
+        const containerWidth = rect.width;
+
+        // Calculate new width of left div
+        let leftWidth = ((e.clientX - containerLeft) / containerWidth) * 100;
+
+        // Ensure left div doesn't become too small or too large
+        leftWidth = Math.min(Math.max(leftWidth, 10), 90);
+
+        setMapProportions(leftWidth);
+    }
+
+    // Event listener for mouse up to stop resizing
+    function stopResize() {
+        window.removeEventListener('mousemove', resize);
+    }
+
+    setMapProportions(currentSplit);
+}
+
 async function start() {
+    allowMapResize();
     await load_map();
     updateMapForLocation();
     interceptLinks();
