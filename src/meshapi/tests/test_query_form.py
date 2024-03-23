@@ -31,8 +31,9 @@ class TestQueryForm(TestCase):
     def query(self, route, field, data):
         code = 200
         password = os.environ.get("QUERY_PSK")
-        route = f"/api/v1/query/{route}/?{field}={data}&password={password}"
-        response = self.c.get(route)
+        route = f"/api/v1/query/{route}/?{field}={data}"
+        headers = {"Authorization": f"Bearer {password}"}
+        response = self.c.get(route, headers=headers)
         self.assertEqual(
             code,
             response.status_code,
@@ -40,7 +41,7 @@ class TestQueryForm(TestCase):
         )
 
         resp_json = json.loads(response.content.decode("utf-8"))
-        self.assertEqual(len(resp_json), 1)
+        self.assertEqual(len(resp_json["results"]), 1)
 
     def test_query_address(self):
         self.query("buildings", "street_address", self.install.building.street_address)
