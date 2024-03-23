@@ -20,6 +20,7 @@ from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
 
 from rest_framework import permissions
+from meshapi.permissions import LegacyMeshQueryPassword
 
 """
 Re-implements https://docs.nycmesh.net/installs/query/
@@ -28,14 +29,6 @@ Guarded by PSK
 
 However, we return a JSON array, rather than a CSV file
 """
-
-
-class QueryFilterListAPIView(FilterRequiredListAPIView):
-    def get(self, request, *args, **kwargs):
-        maybe_auth = self.request.headers["Authorization"]
-        if maybe_auth != f"Bearer {os.environ.get('QUERY_PSK')}":
-            return Response({"detail": "Invalid Password"}, 403)
-        return super().get(request, *args, **kwargs)
 
 
 class QueryMemberFilter(filters.FilterSet):
@@ -55,27 +48,26 @@ class QueryMemberFilter(filters.FilterSet):
         fields = []
 
 
-@permission_classes([permissions.AllowAny])
-class QueryMember(QueryFilterListAPIView):
+class QueryMember(FilterRequiredListAPIView):
     queryset = Install.objects.all().order_by("install_number")
     serializer_class = QueryFormSerializer
     filterset_class = QueryMemberFilter
+    permission_classes = [LegacyMeshQueryPassword]
 
 
 class QueryInstallFilter(filters.FilterSet):
     network_number = filters.NumberFilter(field_name="node__network_number", lookup_expr="exact")
-    install_number = filters.NumberFilter(field_name="install_number", lookup_expr="exact")
 
     class Meta:
         model = Install
-        fields = ["member", "building", "status"]
+        fields = ["install_number", "member", "building", "status"]
 
 
-@permission_classes([permissions.AllowAny])
-class QueryInstall(QueryFilterListAPIView):
+class QueryInstall(FilterRequiredListAPIView):
     queryset = Install.objects.all().order_by("install_number")
     serializer_class = QueryFormSerializer
     filterset_class = QueryInstallFilter
+    permission_classes = [LegacyMeshQueryPassword]
 
 
 class QueryBuildingFilter(filters.FilterSet):
@@ -90,8 +82,8 @@ class QueryBuildingFilter(filters.FilterSet):
         fields = ["bin", "zip_code"]
 
 
-@permission_classes([permissions.AllowAny])
 class QueryBuilding(FilterRequiredListAPIView):
     queryset = Install.objects.all().order_by("install_number")
     serializer_class = QueryFormSerializer
     filterset_class = QueryBuildingFilter
+    permission_classes = [LegacyMeshQueryPassword]
