@@ -1,9 +1,10 @@
+from random import randrange
+
 from django.contrib.auth.models import Group, Permission
 from django.core.management.base import BaseCommand
 from faker import Faker
-from random import randrange
 
-from meshapi.models import Member, Install
+from meshapi.models import Install, Member
 
 
 # Uses faker to get fake names, emails, and phone numbers

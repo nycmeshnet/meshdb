@@ -1,11 +1,13 @@
 import json
 import time
-import requests
 from dataclasses import dataclass
-from validate_email import validate_email
+
 import phonenumbers
+import requests
 from geopy.geocoders import Nominatim
-from meshapi.exceptions import AddressError, AddressAPIError
+from validate_email import validate_email
+
+from meshapi.exceptions import AddressAPIError, AddressError
 from meshapi.zips import NYCZipCodes
 from meshdb.utils.spreadsheet_import.building.constants import INVALID_BIN_NUMBERS
 from meshdb.utils.spreadsheet_import.building.pelias import humanify_street_address

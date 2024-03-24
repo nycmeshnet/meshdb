@@ -1,7 +1,7 @@
 import datetime
+import os
 from collections import OrderedDict
 from typing import List, Optional
-import os
 from urllib.parse import urlparse
 
 from rest_framework import serializers

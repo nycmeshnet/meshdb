@@ -1,26 +1,21 @@
 import os
 from typing import Any, Dict, Optional
 
-from drf_spectacular.utils import extend_schema, extend_schema_view
-from meshapi.views.lookups import FilterRequiredListAPIView, InstallFilter
-from rest_framework import generics
+from django.db.models import Q
+from django_filters import rest_framework as filters
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
+from rest_framework import generics, permissions
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.response import Response
 from rest_framework.views import models
 
 from meshapi import permissions
 from meshapi.docs import map_query_filters_to_param_annotations, query_form_password_param
 from meshapi.models import Building, Install, Member
-from meshapi.serializers.query_api import QueryFormSerializer
-from django.db.models import Q
-from django_filters import rest_framework as filters
-from drf_spectacular.types import OpenApiTypes
-from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
-from rest_framework import generics
-from rest_framework.response import Response
-
-from rest_framework.decorators import api_view, permission_classes
-
-from rest_framework import permissions
 from meshapi.permissions import LegacyMeshQueryPassword
+from meshapi.serializers.query_api import QueryFormSerializer
+from meshapi.views.lookups import FilterRequiredListAPIView, InstallFilter
 
 """
 Re-implements https://docs.nycmesh.net/installs/query/
