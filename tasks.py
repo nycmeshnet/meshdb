@@ -4,7 +4,7 @@ from invoke import task
 @task
 def format(context):
     context.run("black .")
-    # context.run("isort .")
+    context.run("isort .")
 
 
 @task
