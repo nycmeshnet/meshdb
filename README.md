@@ -1,4 +1,4 @@
-# meshdb
+# MeshDB
 
 <p align="center">
   <img height="300px" src="https://github.com/andybaumgar/meshdb/assets/42927786/0f715a4e-99e3-402d-bc39-66f50eb0a94b" alt="MeshDB Logo">
@@ -9,14 +9,11 @@
 [![Python 3.11](https://img.shields.io/badge/python-3.11-blue.svg?logo=python)](https://www.python.org/downloads/release/python-3115/)
 [![Deployment Status](https://github.com/WillNilges/meshdb/actions/workflows/publish-and-deploy.yaml/badge.svg)](https://github.com/WillNilges/meshdb/actions/workflows/publish-and-deploy.yaml)
 
-Welcome to the `nth` attempt at making an API! This was started out of hatred
-for the **New Node Form**.
 
-We use `meshdb` (that's how you should refer to it) to track information about
-Buildings, Members, Installs, and Requests; Any info we need in order to get
-hardware on a rooftop near you lives in here.
+We use `MeshDB` to track information about Buildings, Members, Installs, Nodes, 
+Devices, and Links; Any info we need in order to get hardware on a rooftop near you lives in here.
 
-This project aims to provide a convenient, stable, and sane API for use with
+This project aims to provide a convenient, stable, and sane interface for use with
 robots and humans. For more information, [check the
 wiki](http://wiki.mesh.nycmesh.net/books/software-services/page/meshdb)
 
@@ -128,7 +125,7 @@ should be available at `127.0.0.1:8080`:
 curl http://127.0.0.1:8080/api/v1
 ```
 
-### Auth Tokens
+### Authentication (Permissions, Groups, and Tokens)
 
 We have very simple permission levels.
 
@@ -143,6 +140,10 @@ To determine what permissions the user has, add them to one of the pre-existing 
 
 (Superuser and Staff are DRF-specific and should be restricted to people maintaining
 the instance)
+
+For software apps, create a new users for each application with the format 
+`PersonName-ApplicationName`. Grant the minimum neccessary permissions directly on the user
+object using the admin UI.
 
 Auth tokens can be created at `/admin/authtoken/tokenproxy/`.
 
@@ -163,12 +164,12 @@ still going to need somewhere to put that database, so go ahead and boot up the
 one in your `docker-compose.yaml`
 
 ```sh
-docker compose up -d postgres
+docker compose up -d postgres pelias redis
 ```
 
 Finally, run the tests:
 ```sh
-python src/manage.py test meshapi
+python src/manage.py test meshapi meshapi_hooks
 ```
 
 ### Code Coverage
@@ -179,7 +180,7 @@ we use `coverage.py` as suggested by Django.
 To run coverage, set up your venv, then wrap the testing command like so:
 
 ```sh
-coverage run --source='.' src/manage.py test meshapi
+coverage run --source='.' src/manage.py test meshapi meshapi_hooks
 ```
 
 To see the report, 
