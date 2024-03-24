@@ -1,4 +1,3 @@
-from django.contrib.auth.models import User
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiExample, OpenApiResponse, extend_schema, extend_schema_view
 from rest_framework import generics, permissions
@@ -6,7 +5,6 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 
 from meshapi.models import Building, Device, Install, Link, Member, Node, Sector
-from meshapi.permissions import IsReadOnly
 from meshapi.serializers import (
     BuildingSerializer,
     DeviceSerializer,

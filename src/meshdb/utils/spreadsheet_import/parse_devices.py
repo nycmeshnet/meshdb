@@ -19,7 +19,6 @@ from meshdb.utils.spreadsheet_import.csv_load import (
     SpreadsheetSector,
     SpreadsheetSectorStatus,
     SpreadsheetStatus,
-    get_spreadsheet_rows,
     get_spreadsheet_sectors,
 )
 from meshdb.utils.spreadsheet_import.fetch_uisp import download_uisp_devices

@@ -6,7 +6,7 @@ import geopy.distance
 from meshapi import models
 from meshapi.exceptions import AddressError
 from meshapi.models import Building
-from meshdb.utils.spreadsheet_import.building.constants import INVALID_BIN_NUMBERS, AddressTruthSource, DatabaseAddress
+from meshdb.utils.spreadsheet_import.building.constants import INVALID_BIN_NUMBERS, DatabaseAddress
 from meshdb.utils.spreadsheet_import.building.resolve_address import AddressParser
 from meshdb.utils.spreadsheet_import.csv_load import DroppedModification, SpreadsheetRow
 

@@ -3,7 +3,7 @@ import json
 from django.contrib.auth.models import User
 from django.test import Client, TestCase
 
-from ..models import Building, Device, Node, Sector
+from ..models import Device, Node, Sector
 from .sample_data import sample_node
 
 

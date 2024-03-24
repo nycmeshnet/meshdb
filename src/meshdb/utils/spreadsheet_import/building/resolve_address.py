@@ -11,8 +11,6 @@ from meshapi.exceptions import AddressError
 from meshdb.utils.spreadsheet_import.building.constants import (
     INVALID_BIN_NUMBERS,
     LOCAL_MESH_NOMINATIM_ADDR,
-    NYC_BIN_LOOKUP_PREFIX,
-    NYC_BIN_LOOKUP_UA,
     NYC_COUNTIES,
     OSM_CITY_SUBSTITUTIONS,
     AddressParsingResult,
@@ -229,7 +227,7 @@ class AddressParser:
 
         # Empirically, the /autocomplete endpoint performs better than the /search endpoint
         # (don't ask me why)
-        nyc_planning_req = requests.get(f"https://geosearch.planninglabs.nyc/v2/autocomplete", params=query_params)
+        nyc_planning_req = requests.get("https://geosearch.planninglabs.nyc/v2/autocomplete", params=query_params)
         nyc_planning_resp = nyc_planning_req.json()
 
         closest_nyc_location = None

@@ -5,7 +5,7 @@ from django.contrib.auth.models import User
 from django.test import Client, TestCase
 
 from ..models import Building, Device, Install, Link, Member, Node, Sector
-from .sample_data import sample_building, sample_device, sample_member
+from .sample_data import sample_building, sample_member
 
 
 class TestMemberLookups(TestCase):

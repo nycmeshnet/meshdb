@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.contrib.admin.options import forms
-from django.db.models import Q, QuerySet
+from django.db.models import Q
 from django.utils.safestring import mark_safe
 from nonrelated_inlines.admin import NonrelatedTabularInline
 

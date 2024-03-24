@@ -2,7 +2,7 @@ import json
 import logging
 import time
 from dataclasses import dataclass
-from datetime import date, datetime
+from datetime import date
 from json.decoder import JSONDecodeError
 from typing import Optional
 
@@ -127,7 +127,7 @@ def join_form(request):
             print("(NYC) Something went wrong validating the address. Re-trying...")
             time.sleep(3)
     # If we run out of tries, bail.
-    if nyc_addr_info == None:
+    if nyc_addr_info is None:
         print(f"Could not parse address: {r.street_address}, {r.city}, {r.state}, {r.zip}")
         return Response(
             {"detail": "Your address could not be validated."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -401,7 +401,7 @@ def network_number_assignment(request):
         return Response({"detail": "Install Number not found"}, status=status.HTTP_404_NOT_FOUND)
 
     # Check if the install already has a network number
-    if nn_install.node != None:
+    if nn_install.node is not None:
         message = f"This Install Number ({r.install_number}) already has a Network Number ({nn_install.node.network_number}) associated with it!"
         print(message)
         return Response(

@@ -12,7 +12,7 @@ from rest_framework import permissions, status
 from rest_framework.negotiation import BaseContentNegotiation
 from rest_framework.views import APIView
 
-from meshapi.models import Building, Install, Link, Node
+from meshapi.models import Install, Link
 
 KML_CONTENT_TYPE = "application/vnd.google-earth.kml+xml"
 KML_CONTENT_TYPE_WITH_CHARSET = f"{KML_CONTENT_TYPE}; charset=utf-8"

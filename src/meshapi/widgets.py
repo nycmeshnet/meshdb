@@ -1,7 +1,6 @@
 import json
 import os
 
-from django.forms import Widget
 from django.template import loader
 from django.utils.safestring import mark_safe
 from django_jsonform.widgets import JSONFormWidget

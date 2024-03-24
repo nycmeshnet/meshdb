@@ -1,5 +1,3 @@
-import pytest
-
 from meshdb.utils.spreadsheet_import.building.pelias import humanify_street_address
 
 

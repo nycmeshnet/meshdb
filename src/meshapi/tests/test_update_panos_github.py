@@ -3,7 +3,7 @@ import os
 from django.contrib.auth.models import User
 from django.test import Client, TestCase
 
-from meshapi.models import Building, Install, Link, Member, Sector
+from meshapi.models import Building, Install, Member
 from meshapi.views import panoramas
 
 from .sample_data import sample_building, sample_install, sample_member

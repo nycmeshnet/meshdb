@@ -1,9 +1,7 @@
 import datetime
 import json
 
-from django.contrib.auth.models import Group, User
 from django.test import Client, TestCase
-from rest_framework.authtoken.models import Token
 
 from meshapi.models import Building, Device, Install, Link, Member, Node, Sector
 
@@ -106,7 +104,7 @@ class TestViewsGetUnauthenticated(TestCase):
         ap_device = Device(
             id=123456,
             node=nodes[-1],
-            name=f"Northwest AP",
+            name="Northwest AP",
             model="Unknown",
             type=Device.DeviceType.AP,
             install_date=datetime.date(2024, 1, 27),
