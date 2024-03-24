@@ -226,9 +226,11 @@ def load_access_points(spreadsheet_installs: List[SpreadsheetRow]):
                 name=f"{row.nodeName} AP" if row.nodeName else "AP",
                 model="Unknown",
                 type=Device.DeviceType.AP,
-                status=Device.DeviceStatus.ACTIVE
-                if row.status == SpreadsheetStatus.installed
-                else Device.DeviceStatus.INACTIVE,
+                status=(
+                    Device.DeviceStatus.ACTIVE
+                    if row.status == SpreadsheetStatus.installed
+                    else Device.DeviceStatus.INACTIVE
+                ),
                 latitude=row.latitude,
                 longitude=row.longitude,
                 install_date=row.installDate,
