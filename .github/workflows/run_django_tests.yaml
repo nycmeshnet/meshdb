@@ -40,21 +40,23 @@ jobs:
         run: "pip install --upgrade pip"
       - name: "Install package"
         run: pip install ".[dev]"
+      - name: "Setup .env"
+        run: |
+          echo "\n" >> .env
+          echo "DB_NAME='nycmesh-dev'" >> .env
+          echo "DB_USER='nycmesh'" >> .env
+          echo "DB_PASSWORD='abcd1234'" >> .env
+          echo "DB_HOST='localhost'" >> .env
+          echo "DB_PORT='5432'" >> .env
+          echo "DJANGO_SECRET_KEY='k7j&!u07c%%97s!^a_6%mh_wbzo*$hl4lj_6c2ee6dk)y9!k88'" >> .env
+          echo "PELIAS_ADDRESS_PARSER_URL='http://localhost:6800/parser/parse'" >> .env
+          echo "QUERY_PSK='localdev'" >> .env
+          echo "NN_ASSIGN_PSK='localdev'" >> .env
+          echo "PANO_REPO_OWNER='nycmeshnet'" >> .env
+          echo "PANO_REPO='node-db'" >> .env
+          echo "PANO_BRANCH='node-db'" >> .env
+          echo "PANO_DIR='data/panoramas'" >> .env
+          echo "PANO_HOST='https://node-db.netlify.app/panoramas/'" >> .env
+          echo "PANO_GITHUB_TOKEN='${{ secrets.PANO_GITHUB_TOKEN }}'" >> .env
       - name: Run Django Tests
-        env:
-          DB_NAME: nycmesh-dev
-          DB_USER: nycmesh
-          DB_PASSWORD: abcd1234
-          DB_HOST: localhost
-          DB_PORT: 5432
-          DJANGO_SECRET_KEY: k7j&!u07c%%97s!^a_6%mh_wbzo*$hl4lj_6c2ee6dk)y9!k88
-          PELIAS_ADDRESS_PARSER_URL: http://localhost:6800/parser/parse
-          QUERY_PSK: localdev
-          NN_ASSIGN_PSK: localdev
-          PANO_REPO_OWNER: nycmeshnet
-          PANO_REPO: node-db
-          PANO_BRANCH: master
-          PANO_DIR: data/panoramas
-          PANO_HOST: https://node-db.netlify.app/panoramas/
-          PANO_GITHUB_TOKEN: ${{ secrets.PANO_GITHUB_TOKEN }}
         run: python3 src/manage.py test meshapi meshapi_hooks
