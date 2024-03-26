@@ -54,7 +54,7 @@ jobs:
           echo "NN_ASSIGN_PSK='localdev'" >> .env
           echo "PANO_REPO_OWNER='nycmeshnet'" >> .env
           echo "PANO_REPO='node-db'" >> .env
-          echo "PANO_BRANCH='node-db'" >> .env
+          echo "PANO_BRANCH='master'" >> .env
           echo "PANO_DIR='data/panoramas'" >> .env
           echo "PANO_HOST='https://node-db.netlify.app/panoramas/'" >> .env
           echo "PANO_GITHUB_TOKEN='${{ secrets.PANO_GITHUB_TOKEN }}'" >> .env
