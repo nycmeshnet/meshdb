@@ -17,6 +17,7 @@ echo 'Staring Celery Worker...'
 celery -A meshdb worker -l INFO --detach
 
 echo 'Running Migrations...'
+python manage.py makemigrations
 python manage.py migrate
 
 echo 'Collecting Static Files...'
