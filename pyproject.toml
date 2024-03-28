@@ -45,6 +45,7 @@ dev = [
     "flask == 3.0.*",
     "django-cprofile-middleware==1.0.5",
     "django-silk==5.1.0",
+    "responses==0.25.*",
 ]
 
 [project.scripts]

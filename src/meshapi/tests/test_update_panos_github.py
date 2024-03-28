@@ -1,5 +1,7 @@
 import os
 from django.test import Client, TestCase
+
+# import responses
 from django.contrib.auth.models import User
 
 from meshapi.models import Building, Install, Link, Member, Sector
@@ -106,11 +108,11 @@ class TestPanoAuthentication(TestCase):
 class TestPanoUtils(TestCase):
     def setUp(self):
         # Check that we have all the environment variables we need
-        self.owner = os.environ.get("PANO_REPO_OWNER")
-        self.repo = os.environ.get("PANO_REPO")
-        self.branch = os.environ.get("PANO_BRANCH")
-        self.directory = os.environ.get("PANO_DIR")
-        self.host_url = os.environ.get("PANO_HOST")
+        self.owner = panoramas.PANO_REPO_OWNER
+        self.repo = panoramas.PANO_REPO
+        self.branch = panoramas.PANO_BRANCH
+        self.directory = panoramas.PANO_DIR
+        self.host_url = panoramas.PANO_HOST
         self.token = os.environ.get("PANO_GITHUB_TOKEN")
 
         if (
@@ -122,6 +124,12 @@ class TestPanoUtils(TestCase):
             or not self.token
         ):
             raise Exception("Did not find environment variables.")
+
+        # tree_url = f"https://api.github.com/repos/{self.owner}/{self.repo}/branches/{self.branch}"
+        # files_url = f"https://api.github.com/repos/{self.owner}/{self.repo}/git/trees/{tree}?recursive=1"
+
+        # responses.add(responses.GET, tree_url,
+        #          json={'error': 'not found'}, status=404)
 
     def test_parse_pano_title(self):
         test_cases = {
@@ -158,8 +166,10 @@ class TestPanoUtils(TestCase):
     # a common enough thing to disrupt tests. I guess this is designed to detect
     # flakiness
     def test_github_API(self):
-        head_tree_sha = panoramas.get_head_tree_sha(self.owner, self.repo, self.branch)
+        head_tree_sha = panoramas.get_head_tree_sha(self.owner, self.repo, self.branch, self.token)
         assert head_tree_sha is not None
 
-        panorama_files = panoramas.list_files_in_git_directory(self.owner, self.repo, self.directory, head_tree_sha)
+        panorama_files = panoramas.list_files_in_git_directory(
+            self.owner, self.repo, self.directory, head_tree_sha, self.token
+        )
         assert panorama_files is not None
