@@ -32,10 +32,10 @@ python -m venv .venv
 source .venv/bin/activate
 ```
 
-Then, install dependencies
+Then, install dependencies.
 
 ```
-pip install '.[dev]'
+pip install -e '.[dev]'
 ```
 
 Next, fill out the `.env.sample` file and load it into your environment.
@@ -83,6 +83,15 @@ your database.
 ```
 cp -R <path_to_data_dump> ./spreadsheet_data/
 ./import_spreadsheet_dump.sh
+```
+
+If you want to do work with celery, you'll need to run a worker as well as a beat.
+You can do this in two other terminals with these commands. `DEBUG` level is recommended
+for the beat to see what beats are going to run
+
+```
+celery -A meshdb worker -l INFO
+celery -A meshdb beat -s /tmp/celerybeat-schedule -l DEBUG
 ```
 
 Then, you can get crackin'
@@ -234,6 +243,60 @@ ADMIN_MAP_BASE_URL=http://localhost:3000
 ```
 
 ### Backups
+
+**The Proper Way**
+
+We have a Celery job that runs hourly in production to back up to an S3 bucket.
+
+To restore from a backup in production:
+
+1. Delete the (presumably borked) database
+
+```
+docker compose down -v
+```
+
+2. Stand up a new database. This will also run meshdb, which will run the 
+migrations for you on startup.
+
+```
+docker compose up -d
+```
+
+3. Get a shell in the meshdb container
+```
+docker exec -it meshdb-meshdb-1 bash
+```
+
+4. Restart the postgres container, dropping the volume
+```
+docker compose down -v postgres
+docker compose up -d postgres
+```
+
+5. Find the backup you want to restore
+```
+root@eefdc57a46c2:/opt/meshdb# python manage.py listbackups
+Name                                     Datetime
+default-09855fadfa7e-2024-03-29-015116.psql.bin 03/29/24 01:51:16
+default-0c9b0a412baf-2024-03-31-170000.psql.bin 03/31/24 17:00:00
+default-12db99e5ec1d-2024-03-31-142422.psql.bin 03/31/24 14:24:22
+
+...
+
+default-bd0acc253775-2024-03-31-163520.psql.bin 03/31/24 16:35:20
+```
+
+6. Restore the backup
+```
+root@eefdc57a46c2:/opt/meshdb# python manage.py dbrestore -i default-bd0acc253775-2024-03-31-163520.psql.bin   
+```
+
+Say yes
+
+```
+Are you sure you want to continue? [Y/n] y
+```
 
 **The Quick 'n Dirty Way**
 
