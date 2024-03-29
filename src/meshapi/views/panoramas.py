@@ -13,6 +13,13 @@ from meshapi.util.django_pglocks import advisory_lock
 from meshdb.celery import app as celery_app
 from celery.schedules import crontab
 
+# Config for gathering/generating panorama links
+PANO_REPO_OWNER = "nycmeshnet"
+PANO_REPO = "node-db"
+PANO_BRANCH = "master"
+PANO_DIR = "data/panoramas"
+PANO_HOST = "https://node-db.netlify.app/panoramas/"
+
 celery_app.conf.beat_schedule = {
     "update-panoramas-hourly": {
         "task": "tasks.update_panoramas_from_github",
@@ -33,23 +40,23 @@ class BadPanoramaTitle(Exception):
 @celery_app.task
 def update_panoramas_from_github(request):
     # Check that we have all the environment variables we need
-    owner = os.environ.get("PANO_REPO_OWNER")
-    repo = os.environ.get("PANO_REPO")
-    branch = os.environ.get("PANO_BRANCH")
-    directory = os.environ.get("PANO_DIR")
-    host_url = os.environ.get("PANO_HOST")
+    owner = PANO_REPO_OWNER
+    repo = PANO_REPO
+    branch = PANO_BRANCH
+    directory = PANO_DIR
+
     token = os.environ.get("PANO_GITHUB_TOKEN")
+    if token is None:
+        print("Environment variable PANO_GITHUB_TOKEN not found")
+        return Response({"detail": "Did not find environment variable"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-    if not owner or not repo or not branch or not directory or not host_url or not token:
-        return Response({"detail": "Did not find environment variables"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-    head_tree_sha = get_head_tree_sha(owner, repo, branch)
+    head_tree_sha = get_head_tree_sha(owner, repo, branch, token)
     if not head_tree_sha:
         return Response(
             {"detail": "Could not get head tree SHA from GitHub"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
 
-    panorama_files = list_files_in_git_directory(owner, repo, directory, head_tree_sha)
+    panorama_files = list_files_in_git_directory(owner, repo, directory, head_tree_sha, token)
     if not panorama_files:
         return Response({"detail": "Could not get file list from GitHub"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
@@ -74,7 +81,7 @@ def set_panoramas(panos: dict[str, list[str]]) -> tuple[int, list[str]]:
     panoramas_saved = 0
     warnings = []
 
-    host_url = os.environ.get("PANO_HOST")
+    host_url = PANO_HOST
 
     for install_number, filenames in panos.items():
         try:
@@ -156,9 +163,8 @@ def parse_pano_title(title: str):
 
 # Gets the tree-sha, which we need to use the trees API (allows us to list up to
 # 100k/7MB of data)
-def get_head_tree_sha(owner, repo, branch):
+def get_head_tree_sha(owner, repo, branch, token: str = ""):
     url = f"https://api.github.com/repos/{owner}/{repo}/branches/{branch}"
-    token = os.environ.get("PANO_GITHUB_TOKEN")
     master = requests.get(url, headers={"Authorization": f"Bearer {token}"})
     if master.status_code != 200:
         print(f"Error: Got status {master.status_code} from GitHub trying to get SHA.")
@@ -168,9 +174,8 @@ def get_head_tree_sha(owner, repo, branch):
 
 
 # Returns all the filenames, stripped of extensions and everything
-def list_files_in_git_directory(owner: str, repo: str, directory: str, tree):
+def list_files_in_git_directory(owner: str, repo: str, directory: str, tree, token: str = ""):
     url = f"https://api.github.com/repos/{owner}/{repo}/git/trees/{tree}?recursive=1"
-    token = os.environ.get("PANO_GITHUB_TOKEN")
     response = requests.get(url, headers={"Authorization": f"Bearer {token}"})
     if response.status_code != 200:
         print(f"Error: Failed to fetch GitHub directory contents. Status code: {response.status_code}")
