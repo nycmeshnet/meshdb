@@ -93,7 +93,6 @@ INSTALLED_APPS = [
     "drf_spectacular",
     "django_filters",
     "django_jsonform",
-    "dbbackup",
 ]
 
 MIDDLEWARE = [
@@ -148,18 +147,6 @@ DATABASES = {
         "HOST": os.environ.get("DB_HOST"),
         "PORT": os.environ.get("DB_PORT", 5432),
     }
-}
-
-# django-dbbackup
-# https://django-dbbackup.readthedocs.io/en/master/installation.html
-
-DBBACKUP_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
-DBBACKUP_STORAGE_OPTIONS = {
-    "access_key": os.environ.get("BACKUP_S3_ACCESS_KEY"),
-    "secret_key": os.environ.get("BACKUP_S3_SECRET_KEY"),
-    "bucket_name": os.environ.get("BBACKUP_S3_BUCKET_NAME"),
-    "default_acl": os.environ.get("BACKUP_S3_DEFAULT_ACL"),
-    "location": os.environ.get("BACKUP_S3_BASE_FOLDER"),
 }
 
 
