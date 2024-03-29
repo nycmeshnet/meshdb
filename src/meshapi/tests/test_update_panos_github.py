@@ -1,7 +1,6 @@
 import os
 from django.test import Client, TestCase
 
-# import responses
 from django.contrib.auth.models import User
 
 from meshapi.models import Building, Install, Link, Member, Sector
@@ -124,12 +123,6 @@ class TestPanoUtils(TestCase):
             or not self.token
         ):
             raise Exception("Did not find environment variables.")
-
-        # tree_url = f"https://api.github.com/repos/{self.owner}/{self.repo}/branches/{self.branch}"
-        # files_url = f"https://api.github.com/repos/{self.owner}/{self.repo}/git/trees/{tree}?recursive=1"
-
-        # responses.add(responses.GET, tree_url,
-        #          json={'error': 'not found'}, status=404)
 
     def test_parse_pano_title(self):
         test_cases = {
