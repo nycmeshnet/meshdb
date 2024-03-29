@@ -334,7 +334,9 @@ class AddressParser:
         #         else ""
         #     )
         #     old_bin_zip = normalize_whitespace_and_case(
-        #         old_bin_lookup_response["PropertyDetails"]["Zip"] if old_bin_lookup_response["PropertyDetails"] else ""
+        #         old_bin_lookup_response["PropertyDetails"]["Zip"]
+        #         if old_bin_lookup_response["PropertyDetails"]
+        #         else ""
         #     )
         #
         #     if str(new_bin) in old_alternate_bins or str(spreadsheet_bin) in new_alternate_bins:
