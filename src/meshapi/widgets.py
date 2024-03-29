@@ -1,6 +1,7 @@
 import json
 import os
-from django.forms import Widget
+
+from django.forms import widgets
 from django.template import loader
 from django.utils.safestring import mark_safe
 from django_jsonform.widgets import JSONFormWidget
@@ -34,3 +35,7 @@ class PanoramaViewer(JSONFormWidget):
 
         template = super_template + pano_template
         return mark_safe(template)
+
+
+class DeviceIPAddressWidget(widgets.TextInput):
+    template_name = "widgets/ip_address.html"
