@@ -34,6 +34,7 @@ class MapDataNodeList(generics.ListAPIView):
         queryset = (
             Install.objects.select_related("building")
             .select_related("node")
+            .prefetch_related("node__devices")
             .filter(~Q(status__in=EXCLUDED_INSTALL_STATUSES))
         )
 

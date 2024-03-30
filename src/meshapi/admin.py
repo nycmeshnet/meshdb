@@ -439,6 +439,7 @@ class NodeAdmin(admin.ModelAdmin):
             {
                 "fields": [
                     "status",
+                    "type",
                     "name",
                 ]
             },

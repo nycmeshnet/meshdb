@@ -11,6 +11,14 @@ class Node(models.Model):
         ACTIVE = "Active"
         PLANNED = "Planned"
 
+    class NodeType(models.TextChoices):
+        STANDARD = "Standard"
+        HUB = "Hub"
+        SUPERNODE = "Supernode"
+        POP = "POP"
+        AP = "AP"
+        REMOTE = "Remote"
+
     network_number = models.AutoField(
         primary_key=True,
         db_column="network_number",
@@ -25,6 +33,12 @@ class Node(models.Model):
     )
 
     status = models.CharField(choices=NodeStatus.choices, help_text="The current status of this Node")
+
+    type = models.CharField(
+        choices=NodeType.choices,
+        help_text="The type of node this is, controls the icon used on the network map",
+        default=NodeType.STANDARD,
+    )
 
     latitude = models.FloatField(
         help_text="Approximate Node latitude in decimal degrees (this will match one of the attached "
