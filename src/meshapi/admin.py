@@ -1,14 +1,11 @@
 from django.contrib import admin
 from django.contrib.admin.options import forms
 from django.db.models import Q, QuerySet
+from django.utils.safestring import mark_safe
+from nonrelated_inlines.admin import NonrelatedTabularInline
 
 from meshapi.models import Building, Device, Install, Link, Member, Node, Sector
-
-from nonrelated_inlines.admin import NonrelatedTabularInline
-from django.utils.safestring import mark_safe
-
-from meshapi.models import Building, Install, Link, Member, Sector
-from meshapi.widgets import PanoramaViewer
+from meshapi.widgets import DeviceIPAddressWidget, PanoramaViewer
 
 admin.site.site_header = "MeshDB Admin"
 admin.site.site_title = "MeshDB Admin Portal"
@@ -488,6 +485,7 @@ device_fieldsets = [
                 "status",
                 "name",
                 "ssid",
+                "ip_address",
                 "node",
             ]
         },
@@ -529,6 +527,9 @@ class DeviceAdminForm(forms.ModelForm):
     class Meta:
         model = Device
         fields = "__all__"
+        widgets = {
+            "ip_address": DeviceIPAddressWidget(),
+        }
 
 
 @admin.register(Device)
