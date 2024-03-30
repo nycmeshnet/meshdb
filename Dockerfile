@@ -16,4 +16,4 @@ COPY ./src/meshweb/static .
 
 COPY ./src .
 
-ENTRYPOINT ./entrypoint.sh && exec gunicorn 'meshdb.wsgi' --graceful-timeout 2 --bind=0.0.0.0:8081
+ENTRYPOINT ./entrypoint.sh && exec gunicorn 'meshdb.wsgi' --graceful-timeout 2 --bind=0.0.0.0:8081 --log-file /var/log/gunicorn.log
