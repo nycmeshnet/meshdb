@@ -88,7 +88,7 @@ def create_device(nn: int, uisp_device: dict, spreadsheet_sector: Optional[Sprea
     uisp_ip_address = uisp_ip_addresses[0] if uisp_ip_addresses else None
     if uisp_ip_addresses[1:]:
         logging.warning(
-            f"Discarding IP addresses: {uisp_ip_address[1:]} for UISP device: "
+            f"Discarding IP addresses: {uisp_ip_addresses[1:]} for UISP device: "
             f"{uisp_device['identification']['name']}"
         )
 
