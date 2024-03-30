@@ -75,8 +75,8 @@ class MapDataInstallSerializer(serializers.ModelSerializer):
         # Start the notes with the map display type
         synthetic_notes = []
 
-        if install.node.map_display != Node.MapDisplay.NODE:
-            synthetic_notes.append(install.node.map_display)
+        if install.node.type != Node.NodeType.STANDARD:
+            synthetic_notes.append(install.node.type)
 
         # Supplement with "Omni" if this node has an omni attached
         for device in install.node.devices.all():

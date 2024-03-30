@@ -8,7 +8,7 @@ from meshdb.utils.spreadsheet_import.csv_load import SpreadsheetRow
 
 # This function is converted roughly from
 # https://github.com/nycmeshnet/network-map/blob/a719fe14ff805a967a3d60e879e1f68ac99e4ce5/src/utils/index.js#L1
-def get_map_display(notes: str) -> Node.MapDisplay.choices:
+def get_node_type(notes: str) -> Node.NodeType.choices:
     lower_notes = notes.lower() if notes else None
     is_supernode = "supernode" in lower_notes if lower_notes else False
     is_pop = "pop" in lower_notes if lower_notes else False
@@ -18,17 +18,17 @@ def get_map_display(notes: str) -> Node.MapDisplay.choices:
     is_remote = "rem" in lower_notes if lower_notes else False
 
     if is_supernode:
-        return Node.MapDisplay.SUPERNODE
+        return Node.NodeType.SUPERNODE
     if is_pop:
-        return Node.MapDisplay.POP
+        return Node.NodeType.POP
     if is_ap:
-        return Node.MapDisplay.AP
+        return Node.NodeType.AP
     if is_hub and not_potential_hub:
-        return Node.MapDisplay.HUB
+        return Node.NodeType.HUB
     if is_remote:
-        return Node.MapDisplay.REMOTE
+        return Node.NodeType.REMOTE
 
-    return Node.MapDisplay.NODE
+    return Node.NodeType.STANDARD
 
 
 def get_or_create_node(
@@ -73,7 +73,7 @@ def get_or_create_node(
         # Set abandon date now, but it might get cleared later in the status-setting logic
         # (if there's another install connected to this node that is active)
         abandon_date=row.abandonDate,
-        map_display=get_map_display(row.notes) if row.notes else Node.MapDisplay.NODE,
+        type=get_node_type(row.notes) if row.notes else Node.NodeType.STANDARD,
         notes=f"Spreadsheet Notes:\n"
         f"{row.notes if row.notes else None}\n\n"
         f"Spreadsheet Notes2:\n"

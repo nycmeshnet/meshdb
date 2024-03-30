@@ -74,7 +74,7 @@ class TestViewsGetUnauthenticated(TestCase):
                 status=Node.NodeStatus.ACTIVE,
                 latitude=40.724868,
                 longitude=-73.987881,
-                map_display=Node.MapDisplay.HUB,
+                type=Node.NodeType.HUB,
             )
         )
         buildings.append(

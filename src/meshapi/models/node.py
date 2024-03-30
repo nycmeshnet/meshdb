@@ -11,8 +11,8 @@ class Node(models.Model):
         ACTIVE = "Active"
         PLANNED = "Planned"
 
-    class MapDisplay(models.TextChoices):
-        NODE = "Node"
+    class NodeType(models.TextChoices):
+        STANDARD = "Standard"
         HUB = "Hub"
         SUPERNODE = "Supernode"
         POP = "POP"
@@ -34,10 +34,10 @@ class Node(models.Model):
 
     status = models.CharField(choices=NodeStatus.choices, help_text="The current status of this Node")
 
-    map_display = models.CharField(
-        choices=MapDisplay.choices,
+    type = models.CharField(
+        choices=NodeType.choices,
         help_text="The icon to display for this node on the network map",
-        default=MapDisplay.NODE,
+        default=NodeType.STANDARD,
     )
 
     latitude = models.FloatField(
