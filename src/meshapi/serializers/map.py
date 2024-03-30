@@ -57,24 +57,32 @@ class MapDataInstallSerializer(serializers.ModelSerializer):
     requestDate = JavascriptDateField(source="request_date")
     installDate = JavascriptDateField(source="install_date")
     roofAccess = serializers.BooleanField(source="roof_access")
-    notes = serializers.SerializerMethodField("get_start_of_notes")
+    notes = serializers.SerializerMethodField("get_synthetic_notes")
     panoramas = serializers.SerializerMethodField("get_panorama_filename")
 
     def get_building_coordinates(self, install: Install) -> List[float]:
         building = install.building
         return [building.longitude, building.latitude, building.altitude]
 
-    def get_node_name(self, install: Install) -> str:
+    def get_node_name(self, install: Install) -> Optional[str]:
         node = install.node
         return node.name if node else None
 
-    def get_start_of_notes(self, install: Install) -> str:
-        if install.notes:
-            note_parts = install.notes.split("\n")
-            return note_parts[1] if len(note_parts) > 1 and note_parts[1] != "None" else None
-        return None
+    def get_synthetic_notes(self, install: Install) -> Optional[str]:
+        if not install.node:
+            return None
 
-    def convert_status_to_spreadsheet_status(self, install: Install) -> str:
+        # Start the notes with the map display type
+        synthetic_notes = install.node.map_display
+
+        # Supplement with "Omni" if this node has an omni attached
+        for device in install.node.devices.all():
+            if "omni" in device.model.lower():
+                synthetic_notes += " Omni"
+
+        return synthetic_notes
+
+    def convert_status_to_spreadsheet_status(self, install: Install) -> Optional[str]:
         if install.status == Install.InstallStatus.REQUEST_RECEIVED:
             return None
         elif install.status == Install.InstallStatus.PENDING:
