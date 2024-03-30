@@ -6,7 +6,7 @@ from urllib.parse import urlparse
 
 from rest_framework import serializers
 
-from meshapi.models import Install, Link, Sector
+from meshapi.models import Install, Link, Node, Sector
 
 EXCLUDED_INSTALL_STATUSES = {
     Install.InstallStatus.CLOSED,
@@ -73,14 +73,17 @@ class MapDataInstallSerializer(serializers.ModelSerializer):
             return None
 
         # Start the notes with the map display type
-        synthetic_notes = install.node.map_display
+        synthetic_notes = []
+
+        if install.node.map_display != Node.MapDisplay.NODE:
+            synthetic_notes.append(install.node.map_display)
 
         # Supplement with "Omni" if this node has an omni attached
         for device in install.node.devices.all():
             if "omni" in device.model.lower():
-                synthetic_notes += " Omni"
+                synthetic_notes.append("Omni")
 
-        return synthetic_notes
+        return " ".join(synthetic_notes) if synthetic_notes else None
 
     def convert_status_to_spreadsheet_status(self, install: Install) -> Optional[str]:
         if install.status == Install.InstallStatus.REQUEST_RECEIVED:
