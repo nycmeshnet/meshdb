@@ -36,7 +36,7 @@ class Node(models.Model):
 
     type = models.CharField(
         choices=NodeType.choices,
-        help_text="The icon to display for this node on the network map",
+        help_text="The type of node this is, controls the icon used on the network map",
         default=NodeType.STANDARD,
     )
 
