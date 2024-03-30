@@ -316,7 +316,7 @@ class TestViewsGetUnauthenticated(TestCase):
                 },
                 {
                     "id": 567,
-                    "status": "NN Assigned",
+                    "status": "NN assigned",
                     "coordinates": [-73.9917741, 40.6962265, 66.0],
                     "requestDate": 1706331600000,
                     "roofAccess": True,
@@ -324,7 +324,7 @@ class TestViewsGetUnauthenticated(TestCase):
                 },
                 {
                     "id": 888,
-                    "status": "NN Assigned",
+                    "status": "NN assigned",
                     "coordinates": [-73.9917741, 40.6962265, 66.0],
                     "requestDate": 1706331600000,
                     "roofAccess": True,

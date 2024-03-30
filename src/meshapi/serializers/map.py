@@ -1,7 +1,7 @@
 import datetime
+import os
 from collections import OrderedDict
 from typing import List, Optional
-import os
 from urllib.parse import urlparse
 
 from rest_framework import serializers
@@ -88,7 +88,7 @@ class MapDataInstallSerializer(serializers.ModelSerializer):
         elif install.status == Install.InstallStatus.CLOSED:
             return "Abandoned"
         elif install.status == Install.InstallStatus.NN_REASSIGNED:
-            return "NN Assigned"
+            return "NN assigned"
 
         return install.status
 
