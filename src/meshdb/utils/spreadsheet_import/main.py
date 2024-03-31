@@ -94,11 +94,14 @@ def main():
             install.member = member
             install.node = node
 
-            node_status_for_current_row = (
-                models.Node.NodeStatus.ACTIVE
-                if install.status == models.Install.InstallStatus.ACTIVE
-                else models.Node.NodeStatus.INACTIVE
-            )
+            node_status_for_current_row = models.Node.NodeStatus.INACTIVE
+            if install.status == models.Install.InstallStatus.ACTIVE:
+                node_status_for_current_row = models.Node.NodeStatus.ACTIVE
+            elif install.status in [
+                models.Install.InstallStatus.REQUEST_RECEIVED,
+                models.Install.InstallStatus.PENDING,
+            ]:
+                node_status_for_current_row = models.Node.NodeStatus.PLANNED
 
             member.save()
 
@@ -107,12 +110,21 @@ def main():
                     # If this is a new node, just use the new status
                     node.status = node_status_for_current_row
                 else:
-                    # If this node already exists and is ACTIVE, don't touch it since there's
-                    # an active install for another row tied to it
-                    # However if it's INACTIVE, there's a chance this row is an active install which
-                    # would make the node active, so use the new status
-                    if node.status == models.Node.NodeStatus.INACTIVE:
-                        node.status = node_status_for_current_row
+                    # If this node already exists and is ACTIVE, or is active on the current install
+                    # mark the node active, since any active install makes a node active
+                    # However, if the existing node is not active and the current install is not ACTIVE,
+                    # override any potential PLANNED status that was previously set on the node
+                    # with INACTIVE since this is probably and abandoned node with an extra install
+                    # request hanging off the side.
+                    # Otherwise, don't touch the existing status, which allows a node with only
+                    # REQUEST_RECEIVED installs to show as PLANNED
+                    if (
+                        node.status == models.Node.NodeStatus.ACTIVE
+                        or node_status_for_current_row == models.Node.NodeStatus.ACTIVE
+                    ):
+                        node.status = models.Node.NodeStatus.ACTIVE
+                    elif node_status_for_current_row == models.Node.NodeStatus.INACTIVE:
+                        node.status = models.Node.NodeStatus.INACTIVE
 
                 if node.status == models.Node.NodeStatus.ACTIVE:
                     # If we have any active installs, clear any previously marked abandon date since
