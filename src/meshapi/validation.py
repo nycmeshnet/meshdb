@@ -1,12 +1,11 @@
 import json
-import time
-import requests
 from dataclasses import dataclass
-from validate_email import validate_email
+
 import phonenumbers
-from geopy.geocoders import Nominatim
-from meshapi.exceptions import AddressError, AddressAPIError
-from meshapi.zips import NYCZipCodes
+import requests
+from validate_email import validate_email
+
+from meshapi.exceptions import AddressAPIError, AddressError
 from meshdb.utils.spreadsheet_import.building.constants import INVALID_BIN_NUMBERS
 from meshdb.utils.spreadsheet_import.building.pelias import humanify_street_address
 
@@ -61,7 +60,7 @@ class NYCAddressInfo:
                 "text": self.address,
                 "size": 1,
             }
-            nyc_planning_req = requests.get(f"https://geosearch.planninglabs.nyc/v2/search", params=query_params)
+            nyc_planning_req = requests.get("https://geosearch.planninglabs.nyc/v2/search", params=query_params)
             nyc_planning_resp = json.loads(nyc_planning_req.content.decode("utf-8"))
         except Exception as e:
             print(f"Got exception querying geosearch.planninglabs.nyc: {e}")
@@ -107,7 +106,7 @@ class NYCAddressInfo:
             "$select": "heightroof,groundelev",
             "$limit": 1,
         }
-        nyc_dataset_req = requests.get(f"https://data.cityofnewyork.us/resource/qb5r-6dgf.json", params=query_params)
+        nyc_dataset_req = requests.get("https://data.cityofnewyork.us/resource/qb5r-6dgf.json", params=query_params)
         nyc_dataset_resp = json.loads(nyc_dataset_req.content.decode("utf-8"))
 
         if len(nyc_dataset_resp) == 0:

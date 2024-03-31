@@ -3,8 +3,8 @@ import json
 from django.contrib.auth.models import Permission, User
 from django.test import Client, TestCase
 
-from meshapi.models import Building, Install, Link, Member, Node, Sector
-from meshapi.tests.sample_data import sample_building, sample_install, sample_member, sample_node
+from meshapi.models import Building, Install, Member
+from meshapi.tests.sample_data import sample_building, sample_install, sample_member
 
 
 def setup_objects():

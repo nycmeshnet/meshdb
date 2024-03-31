@@ -1,17 +1,16 @@
 import os
 from pathlib import Path
+
 import requests
-from rest_framework import permissions
+from celery.schedules import crontab
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.views import status
-from meshapi.models import Building, Install
+
+from meshapi.models import Install
 from meshapi.permissions import HasPanoramaUpdatePermission
-
 from meshapi.util.django_pglocks import advisory_lock
-
 from meshdb.celery import app as celery_app
-from celery.schedules import crontab
 
 # Config for gathering/generating panorama links
 PANO_REPO_OWNER = "nycmeshnet"

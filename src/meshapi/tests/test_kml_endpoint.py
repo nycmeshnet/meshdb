@@ -1,13 +1,9 @@
 import datetime
-import json
 
-from django.contrib.auth.models import Group, User
 from django.test import Client, TestCase
-from fastkml import kml
 from lxml import etree
-from rest_framework.authtoken.models import Token
 
-from meshapi.models import Building, Device, Install, Link, Member, Node, Sector
+from meshapi.models import Building, Device, Install, Link, Member, Node
 
 
 def create_building_install_node_and_device(member_ref, nn):

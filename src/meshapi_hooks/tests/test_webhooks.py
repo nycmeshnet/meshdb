@@ -175,7 +175,7 @@ class TestMeshAPIWebhooks(TransactionTestCase):
                 timeout=HTTP_CALL_WAITING_TIME * 5,  # Wait extra time before giving up, for the retries to happen
             )
             assert False, "/webhook HTTP endpoint shouldn't have been called (only /bad-webhook)"
-        except queue.Empty as e:
+        except queue.Empty:
             pass
 
         # We have failed once, check that we have recorded this failure in the hook object
@@ -196,7 +196,7 @@ class TestMeshAPIWebhooks(TransactionTestCase):
                 timeout=HTTP_CALL_WAITING_TIME * 5,  # Wait extra time before giving up, for the retries to happen
             )
             assert False, "/webhook HTTP endpoint shouldn't have been called (only /bad-webhook)"
-        except queue.Empty as e:
+        except queue.Empty:
             pass
 
         # We have failed once, check that we have recorded this failure in the hook object
@@ -234,7 +234,7 @@ class TestMeshAPIWebhooks(TransactionTestCase):
         # so they should be able to see the email, etc
         assert flask_request["data"]["member"] == self.member_obj.id
         assert flask_request["data"]["install_number"] == install_obj.install_number
-        assert flask_request["data"]["network_number"] == None
+        assert flask_request["data"]["network_number"] is None
 
         assert flask_request["hook"]["event"] == "install.created"
         assert flask_request["hook"]["target"] == "http://localhost:8091/webhook"

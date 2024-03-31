@@ -6,7 +6,7 @@ import geopy.distance
 from meshapi import models
 from meshapi.exceptions import AddressError
 from meshapi.models import Building
-from meshdb.utils.spreadsheet_import.building.constants import INVALID_BIN_NUMBERS, AddressTruthSource, DatabaseAddress
+from meshdb.utils.spreadsheet_import.building.constants import INVALID_BIN_NUMBERS, DatabaseAddress
 from meshdb.utils.spreadsheet_import.building.resolve_address import AddressParser
 from meshdb.utils.spreadsheet_import.csv_load import DroppedModification, SpreadsheetRow
 
@@ -174,9 +174,11 @@ def get_or_create_building(
                 DroppedModification(
                     [row.id],
                     row.id,
-                    address_result.discovered_bin
-                    if address_result.discovered_bin
-                    else address_result.address.street_address,
+                    (
+                        address_result.discovered_bin
+                        if address_result.discovered_bin
+                        else address_result.address.street_address
+                    ),
                     "lat_long_discrepancy_vs_spreadsheet",
                     str(address_result.discovered_lat_lon),
                     str((row.latitude, row.longitude)),
