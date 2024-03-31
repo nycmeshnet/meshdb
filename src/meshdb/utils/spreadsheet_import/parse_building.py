@@ -163,7 +163,8 @@ def get_or_create_building(
 
     try:
         address_result = address_parser.parse_address(row, add_dropped_edit)
-    except AddressError as e:
+    except AddressError:
+        logging.exception("AddressError while parsing address")
         return None
 
     distance_warning = ""
