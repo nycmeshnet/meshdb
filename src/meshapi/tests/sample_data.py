@@ -47,3 +47,19 @@ sample_install = {
     "member": 1,
     "notes": "Referral: Read about it on the internet",
 }
+
+sample_address_response = {
+    "features": [
+        {
+            "geometry": {"coordinates": [-73.98492, 40.716245]},
+            "properties": {
+                "postalcode": 10002,
+                "housenumber": "151",
+                "street": "Broome St",
+                "borough": "Manhattan",
+                "region_a": "NY",
+                "addendum": {"pad": {"bin": 1234}},
+            },
+        }
+    ]
+}

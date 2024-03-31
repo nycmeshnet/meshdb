@@ -68,8 +68,8 @@ class NYCAddressInfo:
                 timeout=DEFAULT_EXTERNAL_API_TIMEOUT_SECONDS,
             )
             nyc_planning_resp = json.loads(nyc_planning_req.content.decode("utf-8"))
-        except Exception as e:
-            logging.exception(f"Got exception querying geosearch.planninglabs.nyc")
+        except Exception:
+            logging.exception("Got exception querying geosearch.planninglabs.nyc")
             raise AddressAPIError
 
         if len(nyc_planning_resp["features"]) == 0:
@@ -130,6 +130,6 @@ class NYCAddressInfo:
             logging.warning(
                 f"(NYC) DOB BIN ({self.bin}) not found in NYC OpenData while trying to query for altitude information"
             )
-        except Exception as e:
+        except Exception:
             self.altitude = INVALID_ALTITUDE
-            logging.warning(f"An error occurred while trying to find ({self.bin}) in NYC OpenData: {e}")
+            logging.exception(f"An error occurred while trying to find ({self.bin}) in NYC OpenData")
