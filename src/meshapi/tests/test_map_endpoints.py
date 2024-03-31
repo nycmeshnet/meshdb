@@ -175,7 +175,7 @@ class TestViewsGetUnauthenticated(TestCase):
         nodes.append(
             Node(
                 network_number=567,
-                status=Node.NodeStatus.ACTIVE,
+                status=Node.NodeStatus.PLANNED,
                 latitude=40.724868,
                 longitude=-73.987881,
             )
@@ -193,7 +193,7 @@ class TestViewsGetUnauthenticated(TestCase):
             Install(
                 install_number=15657,
                 node=nodes[-1],
-                status=Install.InstallStatus.ACTIVE,
+                status=Install.InstallStatus.REQUEST_RECEIVED,
                 request_date=datetime.date(2024, 1, 27),
                 roof_access=True,
                 building=buildings[-1],
@@ -354,7 +354,6 @@ class TestViewsGetUnauthenticated(TestCase):
                 },
                 {
                     "id": 15657,
-                    "status": "Installed",
                     "coordinates": [-73.9917741, 40.6962265, 66.0],
                     "requestDate": 1706331600000,
                     "roofAccess": True,
