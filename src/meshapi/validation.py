@@ -69,7 +69,7 @@ class NYCAddressInfo:
             )
             nyc_planning_resp = json.loads(nyc_planning_req.content.decode("utf-8"))
         except Exception as e:
-            logging.error(f"Got exception querying geosearch.planninglabs.nyc: {e}")
+            logging.exception(f"Got exception querying geosearch.planninglabs.nyc")
             raise AddressAPIError
 
         if len(nyc_planning_resp["features"]) == 0:
