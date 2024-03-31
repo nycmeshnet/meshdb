@@ -62,7 +62,7 @@ class MapDataNodeList(generics.ListAPIView):
                 )
             )
         ):
-            if node.network_number not in covered_nns:
+            if node.network_number not in covered_nns and len(node.active_installs) > 0:
                 # Arbitrarily pick a representative install for the details of the "Fake" node,
                 # preferring active installs if possible
                 representative_install = node.active_installs[0]
