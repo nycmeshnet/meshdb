@@ -10,7 +10,15 @@ from meshapi.models import Building, Install, Member, Node
 from meshapi.views import JoinFormRequest
 
 from .sample_data import sample_building, sample_node
-from .sample_join_form_data import *
+from .sample_join_form_data import (
+    bronx_join_form_submission,
+    jefferson_join_form_submission,
+    kings_join_form_submission,
+    non_nyc_join_form_submission,
+    queens_join_form_submission,
+    richmond_join_form_submission,
+    valid_join_form_submission,
+)
 from .util import TestThread
 
 # Grab a reference to the original Install.__init__ function, so that when it gets mocked

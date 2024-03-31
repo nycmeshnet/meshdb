@@ -7,7 +7,6 @@ from typing import Callable, List, Optional, Tuple
 import phonenumbers
 from django.db.models import Q
 from nameparser import HumanName
-from validate_email import validate_email
 
 from meshapi import models
 from meshapi.models import Member
