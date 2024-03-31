@@ -1,5 +1,5 @@
-from django.db import models
+from django.db import models  # noqa: F401
 
 # drf-hooks looks in this file for hook objects, but it feels weird to inline
 # it here, so we import it instead
-from .hooks import CelerySerializerHook
+from .hooks import CelerySerializerHook  # noqa: F401
