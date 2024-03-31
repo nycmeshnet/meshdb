@@ -1,17 +1,17 @@
 import os
 from pathlib import Path
+
 import requests
-from rest_framework import permissions
+from celery.schedules import crontab
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.views import status
-from meshapi.models import Building, Install
+
+from meshapi.models import Install
 from meshapi.permissions import HasPanoramaUpdatePermission
-
+from meshapi.util.constants import DEFAULT_EXTERNAL_API_TIMEOUT_SECONDS
 from meshapi.util.django_pglocks import advisory_lock
-
 from meshdb.celery import app as celery_app
-from celery.schedules import crontab
 
 # Config for gathering/generating panorama links
 PANO_REPO_OWNER = "nycmeshnet"
@@ -165,7 +165,9 @@ def parse_pano_title(title: str):
 # 100k/7MB of data)
 def get_head_tree_sha(owner, repo, branch, token: str = ""):
     url = f"https://api.github.com/repos/{owner}/{repo}/branches/{branch}"
-    master = requests.get(url, headers={"Authorization": f"Bearer {token}"})
+    master = requests.get(
+        url, headers={"Authorization": f"Bearer {token}"}, timeout=DEFAULT_EXTERNAL_API_TIMEOUT_SECONDS
+    )
     if master.status_code != 200:
         print(f"Error: Got status {master.status_code} from GitHub trying to get SHA.")
         return None
@@ -176,7 +178,9 @@ def get_head_tree_sha(owner, repo, branch, token: str = ""):
 # Returns all the filenames, stripped of extensions and everything
 def list_files_in_git_directory(owner: str, repo: str, directory: str, tree, token: str = ""):
     url = f"https://api.github.com/repos/{owner}/{repo}/git/trees/{tree}?recursive=1"
-    response = requests.get(url, headers={"Authorization": f"Bearer {token}"})
+    response = requests.get(
+        url, headers={"Authorization": f"Bearer {token}"}, timeout=DEFAULT_EXTERNAL_API_TIMEOUT_SECONDS
+    )
     if response.status_code != 200:
         print(f"Error: Failed to fetch GitHub directory contents. Status code: {response.status_code}")
         return None
