@@ -72,7 +72,9 @@ def convert_osm_city_village_suburb_nonsense(osm_raw_addr: dict) -> Tuple[str, s
             else (
                 osm_raw_addr["town"]
                 if "town" in osm_raw_addr
-                else osm_raw_addr["village"] if "village" in osm_raw_addr else None
+                else osm_raw_addr["village"]
+                if "village" in osm_raw_addr
+                else None
             )
         ),
         osm_raw_addr["ISO3166-2-lvl4"].split("-")[1] if "ISO3166-2-lvl4" in osm_raw_addr else None,
