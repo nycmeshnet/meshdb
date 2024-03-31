@@ -1,7 +1,7 @@
-FROM python:3.11-bullseye
+FROM python:3.11-bookworm
 
 # For healthcheck
-RUN apt-get -y update; apt-get -y install netcat
+RUN apt-get -y update; apt-get -y install netcat-openbsd postgresql-client-15
 
 WORKDIR /opt/meshdb
 

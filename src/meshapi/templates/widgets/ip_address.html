@@ -1,0 +1,14 @@
+{% load i18n static %}
+<div class="related-widget-wrapper">
+    {% include "django/forms/widgets/input.html" %}
+    {% block links %}
+    {% spaceless %}
+    <a class="related-widget-wrapper-link view-related"
+         {% if widget.value %}href="http://{{ widget.value }}"{% endif %}
+         target="_blank"
+         title="{% blocktranslate %}Navigate to device IP address{% endblocktranslate %}">
+        <img src="{% static 'admin/img/icon-viewlink.svg' %}" alt="{% translate 'Navigate' %}">
+      </a>
+    {% endspaceless %}
+    {% endblock %}
+</div>

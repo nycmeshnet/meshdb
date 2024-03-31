@@ -104,6 +104,14 @@ class Device(models.Model):
         help_text="The SSID being broadcast by this device",
     )
 
+    ip_address = models.GenericIPAddressField(
+        default=None,
+        blank=True,
+        null=True,
+        help_text="The IP address of this device within the 10.x network",
+        protocol="ipv4",
+    )
+
     def __str__(self):
         if self.name:
             return self.name

@@ -34,3 +34,7 @@ class PanoramaViewer(JSONFormWidget):
 
         template = super_template + pano_template
         return mark_safe(template)
+
+
+class DeviceIPAddressWidget(widgets.TextInput):
+    template_name = "widgets/ip_address.html"

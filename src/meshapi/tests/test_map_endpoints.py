@@ -72,6 +72,7 @@ class TestViewsGetUnauthenticated(TestCase):
                 status=Node.NodeStatus.ACTIVE,
                 latitude=40.724868,
                 longitude=-73.987881,
+                type=Node.NodeType.HUB,
             )
         )
         buildings.append(
@@ -291,7 +292,6 @@ class TestViewsGetUnauthenticated(TestCase):
                     "requestDate": 1426392000000,
                     "installDate": 1627185600000,
                     "roofAccess": False,
-                    "notes": "Peter",
                     "panoramas": ["2.jpg"],
                 },
                 {
@@ -302,7 +302,7 @@ class TestViewsGetUnauthenticated(TestCase):
                     "requestDate": 1426392000000,
                     "installDate": 1413259200000,
                     "roofAccess": False,
-                    "notes": "Hub: LiteBeamLR to SN1 plus kiosk failover",
+                    "notes": "Hub",
                     "panoramas": ["3.jpg", "3a.jpg", "3b.jpg"],
                 },
                 {
@@ -314,7 +314,7 @@ class TestViewsGetUnauthenticated(TestCase):
                 },
                 {
                     "id": 567,
-                    "status": "NN Assigned",
+                    "status": "NN assigned",
                     "coordinates": [-73.9917741, 40.6962265, 66.0],
                     "requestDate": 1706331600000,
                     "roofAccess": True,
@@ -322,7 +322,7 @@ class TestViewsGetUnauthenticated(TestCase):
                 },
                 {
                     "id": 888,
-                    "status": "NN Assigned",
+                    "status": "NN assigned",
                     "coordinates": [-73.9917741, 40.6962265, 66.0],
                     "requestDate": 1706331600000,
                     "roofAccess": True,

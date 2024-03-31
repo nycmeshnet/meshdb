@@ -77,6 +77,20 @@ def create_device(nn: int, uisp_device: dict, spreadsheet_sector: Optional[Sprea
         )
         return
 
+    uisp_ip_addresses = list(
+        set(
+            addr.split("/")[0]
+            for addr in uisp_device["ipAddressList"] + [uisp_device["ipAddress"]]
+            if addr and not addr.startswith("169") and not addr.startswith("192")
+        )
+    )
+    uisp_ip_address = uisp_ip_addresses[0] if uisp_ip_addresses else None
+    if uisp_ip_addresses[1:]:
+        logging.warning(
+            f"Discarding IP addresses: {uisp_ip_addresses[1:]} for UISP device: "
+            f"{uisp_device['identification']['name']}"
+        )
+
     if spreadsheet_sector:
         if not uisp_model:
             uisp_model = spreadsheet_sector.device
@@ -98,6 +112,7 @@ def create_device(nn: int, uisp_device: dict, spreadsheet_sector: Optional[Sprea
             uisp_id=uisp_device["identification"]["id"],
             model=uisp_model,
             type=uisp_device["identification"]["role"],
+            ip_address=uisp_ip_address,
             status=status,
             latitude=node.latitude,
             longitude=node.longitude,
@@ -128,6 +143,7 @@ def create_device(nn: int, uisp_device: dict, spreadsheet_sector: Optional[Sprea
             uisp_id=uisp_device["identification"]["id"],
             model=uisp_model,
             type=uisp_device["identification"]["role"],
+            ip_address=uisp_ip_address,
             status=status,
             latitude=node.latitude,
             longitude=node.longitude,
