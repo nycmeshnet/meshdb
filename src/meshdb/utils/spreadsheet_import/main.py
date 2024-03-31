@@ -19,8 +19,6 @@ from meshapi import models
 from meshdb.utils.spreadsheet_import.building.resolve_address import AddressParser
 from meshdb.utils.spreadsheet_import.csv_load import (
     DroppedModification,
-    SpreadsheetLinkStatus,
-    SpreadsheetSectorStatus,
     get_spreadsheet_links,
     get_spreadsheet_rows,
     get_spreadsheet_sectors,
@@ -29,7 +27,7 @@ from meshdb.utils.spreadsheet_import.csv_load import (
 )
 from meshdb.utils.spreadsheet_import.parse_building import get_or_create_building
 from meshdb.utils.spreadsheet_import.parse_install import create_install, normalize_install_to_primary_building_node
-from meshdb.utils.spreadsheet_import.parse_link import create_link, load_links_supplement_with_uisp
+from meshdb.utils.spreadsheet_import.parse_link import load_links_supplement_with_uisp
 from meshdb.utils.spreadsheet_import.parse_member import get_or_create_member
 from meshdb.utils.spreadsheet_import.parse_node import get_or_create_node, normalize_building_node_links
 

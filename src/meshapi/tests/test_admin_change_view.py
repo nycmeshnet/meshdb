@@ -1,7 +1,7 @@
 from django.contrib.auth.models import User
 from django.test import Client, TestCase
 
-from meshapi.models import Building, Device, Install, Link, Member, Node, Sector
+from meshapi.models import Building, Device, Install, Link, Member, Node
 
 from .sample_data import sample_building, sample_device, sample_install, sample_member, sample_node
 

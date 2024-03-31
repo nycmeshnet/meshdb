@@ -186,7 +186,7 @@ class TestJoinForm(TestCase):
 
         con = json.loads(response.content.decode("utf-8"))
 
-        self.assertEqual("555-555-5555 is not a valid phone number", con["detail"], f"Content is wrong")
+        self.assertEqual("555-555-5555 is not a valid phone number", con["detail"], "Content is wrong")
 
     def test_bad_email_join_form(self):
         # Name, email, phone, location, apt, rooftop, referral

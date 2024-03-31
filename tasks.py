@@ -4,14 +4,14 @@ from invoke import task
 @task
 def format(context):
     context.run("black .")
-    # context.run("isort .")
+    context.run("isort .")
 
 
 @task
 def lint(context):
     context.run("black . --check")
-    # context.run("isort . --check")
-    # context.run("flake8 meshdb tests unit_tests")
+    context.run("isort . --check")
+    # context.run("flake8 src")
     # context.run("mypy meshdb")
 
 

@@ -12,9 +12,8 @@ django.setup()
 
 from meshapi import models
 from meshapi.models import Device, Install, Link, Node
-from meshdb.utils.spreadsheet_import.building.lookup import get_building_from_node_id
 from meshdb.utils.spreadsheet_import.csv_load import SpreadsheetLink, SpreadsheetLinkStatus, get_spreadsheet_links
-from meshdb.utils.spreadsheet_import.fetch_uisp import download_uisp_devices, download_uisp_links
+from meshdb.utils.spreadsheet_import.fetch_uisp import download_uisp_links
 
 
 def convert_spreadsheet_link_type(status: SpreadsheetLinkStatus) -> Link.LinkType:
