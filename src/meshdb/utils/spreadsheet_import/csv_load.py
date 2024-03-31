@@ -238,7 +238,7 @@ def print_dropped_edit_report(
                     "ModifiedProperty",
                     "DatabaseValue",
                     "DroppedValue",
-                ]
+                ],
                 # + list(csv_reader.fieldnames),
             )
             csv_writer.writeheader()

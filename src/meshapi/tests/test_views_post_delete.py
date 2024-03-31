@@ -37,13 +37,13 @@ class TestViewsPostDeleteUnauthenticated(TestCase):
         assert_correct_response(self, response, 403)
 
     def test_views_delete_unauthenticated(self):
-        response = self.c.delete(f"/api/v1/installs/1/")
+        response = self.c.delete("/api/v1/installs/1/")
         assert_correct_response(self, response, 403)
 
-        response = self.c.delete(f"/api/v1/members/1/")
+        response = self.c.delete("/api/v1/members/1/")
         assert_correct_response(self, response, 403)
 
-        response = self.c.delete(f"/api/v1/buildings/1/")
+        response = self.c.delete("/api/v1/buildings/1/")
         assert_correct_response(self, response, 403)
 
 
@@ -122,13 +122,13 @@ class TestViewsPostDeleteInstaller(TestCase):
         assert install.notes.endswith("\n abcdef")
 
     def test_views_delete_installer(self):
-        response = self.c.delete(f"/api/v1/installs/1/")
+        response = self.c.delete("/api/v1/installs/1/")
         assert_correct_response(self, response, 403)
 
-        response = self.c.delete(f"/api/v1/members/1/")
+        response = self.c.delete("/api/v1/members/1/")
         assert_correct_response(self, response, 403)
 
-        response = self.c.delete(f"/api/v1/buildings/1/")
+        response = self.c.delete("/api/v1/buildings/1/")
         assert_correct_response(self, response, 403)
 
 

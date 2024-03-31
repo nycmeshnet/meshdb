@@ -29,8 +29,8 @@ class SpectacularSwaggerInjectVarsView(SpectacularSwaggerView):
             deepLinking: true,
             onComplete: ui_onComplete,
             plugins: [LogoutViaDjango],
-        }}; 
-        const logoutURL = "{reverse("rest_framework:logout")}"; 
+        }};
+        const logoutURL = "{reverse("rest_framework:logout")}";
         """
         if session_id:
             response.data["settings"] += 'const sessionID = "{session_id}";'

@@ -3,8 +3,8 @@ import json
 from django.contrib.auth.models import User
 from django.test import Client, TestCase
 
-from ..models import Building, Device, Link, Node
-from .sample_data import sample_device, sample_node
+from ..models import Node
+from .sample_data import sample_node
 
 
 class TestNode(TestCase):

@@ -4,7 +4,7 @@ from django.db.models import Count, F, OuterRef, Prefetch, Q, Subquery
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import generics, permissions
 
-from meshapi.models import Building, Device, Install, Link, Node, Sector
+from meshapi.models import Device, Install, Link, Node, Sector
 from meshapi.serializers import (
     ALLOWED_INSTALL_STATUSES,
     EXCLUDED_INSTALL_STATUSES,
