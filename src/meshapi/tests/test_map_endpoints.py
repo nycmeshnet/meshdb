@@ -314,7 +314,6 @@ class TestViewsGetUnauthenticated(TestCase):
                 },
                 {
                     "id": 567,
-                    "status": "NN assigned",
                     "coordinates": [-73.9917741, 40.6962265, 66.0],
                     "requestDate": 1706331600000,
                     "roofAccess": True,
