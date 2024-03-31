@@ -145,10 +145,13 @@ def get_or_create_member(
     row: SpreadsheetRow,
     add_dropped_edit: Optional[Callable[[DroppedModification], None]] = None,
 ) -> Tuple[models.Member, bool]:
+    def nop(*args, **kwargs):
+        return None
+
     if not add_dropped_edit:
         # Use a no-op function if our caller doesn't specify a destination
         # for dropped edits, to avoid runtime errors
-        add_dropped_edit = lambda x: None
+        add_dropped_edit = nop
 
     primary_emails = parse_emails(row.email)
     stripe_emails = parse_emails(row.stripeEmail)
