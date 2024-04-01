@@ -121,14 +121,18 @@ def diff_new_member_against_existing(
         )
         diff_notes += f"\nDropped name change from install #{row_id}: {new_member.name}"
 
-    if existing_member.phone_number != new_member.phone_number and new_member.phone_number:
+    if (
+        existing_member.phone_number != new_member.phone_number
+        and new_member.phone_number
+        and existing_member.phone_number
+    ):
         add_dropped_edit(
             DroppedModification(
                 list(install.install_number for install in existing_member.installs.all()),
                 row_id,
                 existing_member.primary_email_address,
                 "member.phone_number",
-                existing_member.phone_number if existing_member.phone_number else "",
+                existing_member.phone_number,
                 new_member.phone_number,
             )
         )
@@ -227,6 +231,9 @@ def get_or_create_member(
                 ),
                 add_dropped_edit,
             )
+
+            if formatted_phone_number and not existing_members[0].phone_number:
+                existing_members[0].phone_number = formatted_phone_number
 
             # TODO: Don't forget to remove me if we remove the previous use of contact notes above
             if row.contactNotes:
