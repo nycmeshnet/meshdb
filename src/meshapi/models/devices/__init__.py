@@ -1,2 +1,2 @@
-from .device import *  # noqa: F401,F403
-from .sector import *  # noqa: F401,F403
+from .device import *
+from .sector import *
