@@ -6,6 +6,7 @@ import inflect
 import requests
 from django.conf import os
 
+from meshapi.util.constants import DEFAULT_EXTERNAL_API_TIMEOUT_SECONDS
 from meshdb.utils.spreadsheet_import.building.constants import DatabaseAddress, NormalizedAddressVariant
 from meshdb.utils.spreadsheet_import.building.us_state_codes import convert_state_name_to_code
 
@@ -31,7 +32,9 @@ def call_pelias_parser(address_str: str) -> List[Tuple[float, dict, dict]]:
     if bowery_detected:
         bowery_word_end = re.search(pattern, address_str).end()
 
-    response = requests.get(PELIAS_ADDRESS_PARSER_URL, params={"text": modified_addr})
+    response = requests.get(
+        PELIAS_ADDRESS_PARSER_URL, params={"text": modified_addr}, timeout=DEFAULT_EXTERNAL_API_TIMEOUT_SECONDS
+    )
     output = []
 
     for solution in response.json()["solutions"]:
@@ -154,7 +157,9 @@ def humanify_street_address(dob_address_str: str) -> str:
     :param dob_address_str: The address (line 1 only) string to convert
     :return: A softened version of the input string
     """
-    response = requests.get(PELIAS_ADDRESS_PARSER_URL, params={"text": dob_address_str})
+    response = requests.get(
+        PELIAS_ADDRESS_PARSER_URL, params={"text": dob_address_str}, timeout=DEFAULT_EXTERNAL_API_TIMEOUT_SECONDS
+    )
 
     best_score = 0
     best_solution = None
