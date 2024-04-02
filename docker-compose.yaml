@@ -29,6 +29,14 @@ services:
     image:
       redis
 
+  pgadmin:
+    networks:
+      - api
+    image: dpage/pgadmin4
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD}
+
   pelias:
     networks:
       - api
@@ -64,6 +72,10 @@ services:
       - api
     expose:
       - 80
+    # Useful for debugging, but should be commented out otherwise.
+    #ports:
+    #  - 80:80
+    #   - 443:443
     image: nginx
     labels:
       - "traefik.enable=true"
