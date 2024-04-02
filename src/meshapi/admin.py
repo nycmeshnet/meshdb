@@ -142,9 +142,7 @@ class BuildingAdminForm(forms.ModelForm):
         fields = "__all__"
         widgets = {
             "panoramas": PanoramaViewer(schema={"type": "array", "items": {"type": "string"}}),
-            "bin": forms.NumberInput(attrs = {
-                "style": "width:21ch"
-            })
+            "bin": forms.NumberInput(attrs={"style": "width:21ch"}),
         }
 
 
