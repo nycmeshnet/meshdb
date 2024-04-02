@@ -106,21 +106,21 @@ def normalize_building_node_links(building: models.Building, node: models.Node):
         if b.primary_node:
             established_primary_nodes.add(b.primary_node)
 
-    established_primary_nodes = list(established_primary_nodes)
+    established_primary_nodes = sorted(list(established_primary_nodes), key=lambda node: node.install_date)
 
     for b in buildings_in_cluster:
         for n in nodes_in_cluster:
             b.nodes.add(n)
 
-        if not b.primary_node:
-            if len(established_primary_nodes):
-                if len(established_primary_nodes) > 1:
-                    logging.error(
-                        f"Detected multiple primary nodes in the same cluster: "
-                        f"{established_primary_nodes}. These should be consolidated"
-                    )
-                b.primary_node = established_primary_nodes[0]
-            else:
-                b.primary_node = node
+        if len(established_primary_nodes):
+            if len(established_primary_nodes) > 1:
+                logging.error(
+                    f"Detected multiple primary nodes in the same cluster: "
+                    f"{established_primary_nodes}. These will be consolidated "
+                    f"to the oldest node: {established_primary_nodes[0]}."
+                )
+            b.primary_node = established_primary_nodes[0]
+        else:
+            b.primary_node = node
 
-            b.save()
+        b.save()
