@@ -69,8 +69,8 @@ class MapDataInstallSerializer(serializers.ModelSerializer):
         # to prevent showing the same name on multiple map dots. For the NN != install number
         # case we add extra fake install objects with install_number = NN so that we can still
         # see the node name
-        node = install.node if install.node.network_number == install.install_number else None
-        return node.name if node else None
+        node = install.node
+        return node.name if node and install.node.network_number == install.install_number else None
 
     def get_synthetic_notes(self, install: Install) -> Optional[str]:
         if not install.node:
