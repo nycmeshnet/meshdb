@@ -93,6 +93,7 @@ INSTALLED_APPS = [
     "drf_spectacular",
     "django_filters",
     "django_jsonform",
+    "dbbackup",
 ]
 
 MIDDLEWARE = [
@@ -149,6 +150,21 @@ DATABASES = {
     }
 }
 
+# django-dbbackup
+# https://django-dbbackup.readthedocs.io/en/master/installation.html
+
+DBBACKUP_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
+DBBACKUP_STORAGE_OPTIONS = {
+    "bucket_name": os.environ.get("BACKUP_S3_BUCKET_NAME"),
+    "location": os.environ.get("BACKUP_S3_BASE_FOLDER"),
+}
+
+DBBACKUP_CONNECTORS = {
+    "default": {
+        # "SINGLE_TRANSACTION": False,
+        "IF_EXISTS": True
+    }
+}
 
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
