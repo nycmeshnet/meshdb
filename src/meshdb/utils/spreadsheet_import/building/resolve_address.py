@@ -177,6 +177,12 @@ class AddressParser:
 
         if address.city:
             address.city = address.city.replace("Manhattan", "New York")
+            address.city = address.city.title()
+
+        # If the state looks like a state code, uppercase it,
+        # since the user might not have when they entered it originally on the form
+        if address.state and len(address.state) == 2:
+            address.state = address.state.upper()
 
         return AddressParsingResult(address, None, None, sources)
 
