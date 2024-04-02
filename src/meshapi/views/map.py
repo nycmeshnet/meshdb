@@ -70,6 +70,7 @@ class MapDataNodeList(generics.ListAPIView):
                 all_installs.append(
                     Install(
                         install_number=node.network_number,
+                        node=node,
                         status=Install.InstallStatus.NN_REASSIGNED
                         if node.status == node.NodeStatus.ACTIVE
                         else Install.InstallStatus.REQUEST_RECEIVED,
