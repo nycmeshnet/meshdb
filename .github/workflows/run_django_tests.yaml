@@ -8,7 +8,7 @@ jobs:
     runs-on: ubuntu-latest
     services:
       postgres:
-        image: postgres:latest
+        image: docker.io/postgres:15-bookworm
         env:
           POSTGRES_DB: nycmesh-dev
           POSTGRES_USER: nycmesh
