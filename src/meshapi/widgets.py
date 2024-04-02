@@ -39,6 +39,3 @@ class PanoramaViewer(JSONFormWidget):
 
 class DeviceIPAddressWidget(widgets.TextInput):
     template_name = "widgets/ip_address.html"
-
-class BinNumberWidget(widgets.NumberInput):
-    template_name = "widgets/bin_number.html"

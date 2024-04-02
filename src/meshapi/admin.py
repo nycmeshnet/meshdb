@@ -5,7 +5,7 @@ from django.utils.safestring import mark_safe
 from nonrelated_inlines.admin import NonrelatedTabularInline
 
 from meshapi.models import Building, Device, Install, Link, Member, Node, Sector
-from meshapi.widgets import DeviceIPAddressWidget, PanoramaViewer, BinNumberWidget
+from meshapi.widgets import DeviceIPAddressWidget, PanoramaViewer
 
 admin.site.site_header = "MeshDB Admin"
 admin.site.site_title = "MeshDB Admin Portal"
@@ -142,7 +142,9 @@ class BuildingAdminForm(forms.ModelForm):
         fields = "__all__"
         widgets = {
             "panoramas": PanoramaViewer(schema={"type": "array", "items": {"type": "string"}}),
-            "bin": BinNumberWidget()
+            "bin": forms.NumberInput(attrs = {
+                "style": "width:21ch"
+            })
         }
 
 
