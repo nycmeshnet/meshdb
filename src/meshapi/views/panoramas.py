@@ -2,7 +2,6 @@ import os
 from pathlib import Path
 
 import requests
-from celery.schedules import crontab
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.views import status
@@ -20,25 +19,38 @@ PANO_BRANCH = "master"
 PANO_DIR = "data/panoramas"
 PANO_HOST = "https://node-db.netlify.app/panoramas/"
 
-celery_app.conf.beat_schedule = {
-    "update-panoramas-hourly": {
-        "task": "tasks.update_panoramas_from_github",
-        "schedule": crontab(hour="*"),
-    },
-}
-
 
 # Raised if we get total nonsense as a panorama title
 class BadPanoramaTitle(Exception):
     pass
 
 
+class GitHubError(Exception):
+    pass
+
+
 # View called to make MeshDB refresh the panoramas.
-@api_view(["GET"])
+@api_view(["POST"])
 @permission_classes([HasPanoramaUpdatePermission])
+def update_panoramas(request):
+    try:
+        panoramas_saved, warnings = sync_github_panoramas()
+        return Response(
+            {
+                "detail": f"Saved {panoramas_saved} panoramas. Got {len(warnings)} warnings.",
+                "saved": panoramas_saved,
+                "warnings": len(warnings),
+                "warn_install_nums": warnings,
+            },
+            status=status.HTTP_200_OK,
+        )
+    except (ValueError, GitHubError) as e:
+        print(e)
+        return Response({"detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
 @advisory_lock("update_panoramas_lock")
-@celery_app.task
-def update_panoramas_from_github(request):
+def sync_github_panoramas() -> tuple[int, list[str]]:
     # Check that we have all the environment variables we need
     owner = PANO_REPO_OWNER
     repo = PANO_REPO
@@ -47,34 +59,18 @@ def update_panoramas_from_github(request):
 
     token = os.environ.get("PANO_GITHUB_TOKEN")
     if token is None:
-        print("Environment variable PANO_GITHUB_TOKEN not found")
-        return Response({"detail": "Did not find environment variable"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        raise ValueError("Environment variable PANO_GITHUB_TOKEN not found")
 
     head_tree_sha = get_head_tree_sha(owner, repo, branch, token)
     if not head_tree_sha:
-        return Response(
-            {"detail": "Could not get head tree SHA from GitHub"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
-        )
+        raise GitHubError("Could not get head tree SHA from GitHub")
 
     panorama_files = list_files_in_git_directory(owner, repo, directory, head_tree_sha, token)
     if not panorama_files:
-        return Response({"detail": "Could not get file list from GitHub"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-    print(panorama_files)
+        raise GitHubError("Could not get file list from GitHub")
 
     panos = build_pano_dict(panorama_files)
-
-    panoramas_saved, warnings = set_panoramas(panos)
-
-    return Response(
-        {
-            "detail": f"Saved {panoramas_saved} panoramas. Got {len(warnings)} warnings.",
-            "saved": panoramas_saved,
-            "warnings": len(warnings),
-            "warn_install_nums": warnings,
-        },
-        status=status.HTTP_200_OK,
-    )
+    return set_panoramas(panos)
 
 
 def set_panoramas(panos: dict[str, list[str]]) -> tuple[int, list[str]]:
