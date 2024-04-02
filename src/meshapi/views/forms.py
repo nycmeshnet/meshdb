@@ -84,7 +84,8 @@ def join_form(request):
     request_json = json.loads(request.body)
     try:
         r = JoinFormRequest(**request_json)
-    except TypeError as e:
+    except TypeError:
+        logging.exception("TypeError while processing JoinForm")
         return Response({"detail": "Got incomplete form request"}, status=status.HTTP_400_BAD_REQUEST)
 
     if not r.ncl:

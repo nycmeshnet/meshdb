@@ -313,10 +313,13 @@ class AddressParser:
         row: SpreadsheetRow,
         add_dropped_edit: Optional[Callable[[DroppedModification], None]] = None,
     ) -> AddressParsingResult:
+        def nop(*args, **kwargs):
+            return None
+
         if not add_dropped_edit:
             # Use a no-op function if our caller doesn't specify a destination
             # for dropped edits, to avoid runtime errors
-            add_dropped_edit = lambda x: None
+            add_dropped_edit = nop
 
         input_address = row.address.strip(
             "., "  # Leading / trailing whitespace and punctuation can cause issues
