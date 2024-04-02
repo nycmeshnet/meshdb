@@ -17,7 +17,7 @@ class Building(models.Model):
     necessarily unique. In the case of a structure with multiple street addresses, we create a
     "Building" object for each address, but these "Building" objects will all share a BIN.
     """
-
+    
     bin = models.IntegerField(
         blank=True,
         null=True,
