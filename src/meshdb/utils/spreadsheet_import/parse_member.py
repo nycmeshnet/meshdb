@@ -7,7 +7,6 @@ from typing import Callable, List, Optional, Tuple
 import phonenumbers
 from django.db.models import Q
 from nameparser import HumanName
-from validate_email import validate_email
 
 from meshapi import models
 from meshapi.models import Member
@@ -21,20 +20,20 @@ EMAIL_REPLACEMENTS = {
     "<": "",
     ">": "",
     ",": " ",
-    "\/": " ",
+    r"\/": " ",
     "gmailcom": "gmail.com",
-    "\.\.@gmail\.com": "@gmail.com",
-    "\.\.\.": ".",
-    "\.@gmail\.com": "@gmail.com",
-    "@ gmail\.com": "@gmail.com",
-    "@@gmail\.com": "@gmail.com",
-    "@yahoo\.\.com": "@yahoo.com",
-    "&gmail\.com": "@gmail.com",
+    r"\.\.@gmail\.com": "@gmail.com",
+    r"\.\.\.": ".",
+    r"\.@gmail\.com": "@gmail.com",
+    r"@ gmail\.com": "@gmail.com",
+    r"@@gmail\.com": "@gmail.com",
+    r"@yahoo\.\.com": "@yahoo.com",
+    r"&gmail\.com": "@gmail.com",
     "gmail$": "gmail.com",
-    " \.net$": ".net",
-    "\. net$": ".net",
-    " @hotmail\.com": "@hotmail.com",
-    "@ hotmail\.com": "@hotmail.com",
+    r" \.net$": ".net",
+    r"\. net$": ".net",
+    r" @hotmail\.com": "@hotmail.com",
+    r"@ hotmail\.com": "@hotmail.com",
 }
 
 
@@ -146,10 +145,13 @@ def get_or_create_member(
     row: SpreadsheetRow,
     add_dropped_edit: Optional[Callable[[DroppedModification], None]] = None,
 ) -> Tuple[models.Member, bool]:
+    def nop(*args, **kwargs):
+        return None
+
     if not add_dropped_edit:
         # Use a no-op function if our caller doesn't specify a destination
         # for dropped edits, to avoid runtime errors
-        add_dropped_edit = lambda x: None
+        add_dropped_edit = nop
 
     primary_emails = parse_emails(row.email)
     stripe_emails = parse_emails(row.stripeEmail)
