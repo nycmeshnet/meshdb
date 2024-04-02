@@ -65,8 +65,12 @@ class MapDataInstallSerializer(serializers.ModelSerializer):
         return [building.longitude, building.latitude, building.altitude]
 
     def get_node_name(self, install: Install) -> Optional[str]:
+        # Only include the node name if this is an old-school "node as install" situation
+        # to prevent showing the same name on multiple map dots. For the NN != install number
+        # case we add extra fake install objects with install_number = NN so that we can still
+        # see the node name
         node = install.node
-        return node.name if node else None
+        return node.name if node and install.node.network_number == install.install_number else None
 
     def get_synthetic_notes(self, install: Install) -> Optional[str]:
         if not install.node:

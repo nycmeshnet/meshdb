@@ -175,6 +175,7 @@ class TestViewsGetUnauthenticated(TestCase):
         nodes.append(
             Node(
                 network_number=567,
+                name="Fancy Node",
                 status=Node.NodeStatus.PLANNED,
                 latitude=40.724868,
                 longitude=-73.987881,
@@ -314,6 +315,7 @@ class TestViewsGetUnauthenticated(TestCase):
                 },
                 {
                     "id": 567,
+                    "name": "Fancy Node",
                     "coordinates": [-73.9917741, 40.6962265, 66.0],
                     "requestDate": 1706331600000,
                     "roofAccess": True,
