@@ -11,3 +11,8 @@ class AddressError(MeshDBError):
 # borked.
 class AddressAPIError(MeshDBError):
     pass
+
+
+# Used when something goes wrong with NYC Open Data
+class OpenDataAPIError(MeshDBError):
+    pass

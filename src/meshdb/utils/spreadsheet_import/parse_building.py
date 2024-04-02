@@ -151,6 +151,9 @@ def get_or_create_building(
     address_parser: Optional[AddressParser] = None,
     add_dropped_edit: Optional[Callable[[DroppedModification], None]] = None,
 ) -> Optional[models.Building]:
+    def nop(*args, **kwargs):
+        return None
+
     dob_bin = row.bin if row.bin and row.bin > 0 and row.bin not in INVALID_BIN_NUMBERS else None
 
     if not address_parser:
@@ -159,11 +162,12 @@ def get_or_create_building(
     if not add_dropped_edit:
         # Use a no-op function if our caller doesn't specify a destination
         # for dropped edits, to avoid runtime errors
-        add_dropped_edit = lambda x: None
+        add_dropped_edit = nop
 
     try:
         address_result = address_parser.parse_address(row, add_dropped_edit)
-    except AddressError as e:
+    except AddressError:
+        logging.exception("AddressError while parsing address")
         return None
 
     distance_warning = ""

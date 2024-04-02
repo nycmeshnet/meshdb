@@ -8,6 +8,7 @@ from geopy import Location, Nominatim
 from geopy.exc import GeocoderUnavailable
 
 from meshapi.exceptions import AddressError
+from meshapi.util.constants import DEFAULT_EXTERNAL_API_TIMEOUT_SECONDS
 from meshdb.utils.spreadsheet_import.building.constants import (
     INVALID_BIN_NUMBERS,
     LOCAL_MESH_NOMINATIM_ADDR,
@@ -31,7 +32,7 @@ PELIAS_SCORE_WARNING_THRESHOLD = 0.5
 def get_geolocator() -> Nominatim:
     try:
         requests.get(f"http://{LOCAL_MESH_NOMINATIM_ADDR}", timeout=1)
-        return Nominatim(domain=LOCAL_MESH_NOMINATIM_ADDR, scheme="http", timeout=5)
+        return Nominatim(domain=LOCAL_MESH_NOMINATIM_ADDR, scheme="http", timeout=DEFAULT_EXTERNAL_API_TIMEOUT_SECONDS)
     except requests.exceptions.RequestException:
         logging.warning("Using public OSM endpoint. Is the local OSM endpoint running?")
         return Nominatim(user_agent="andrew@nycmesh.net")
@@ -229,7 +230,11 @@ class AddressParser:
 
         # Empirically, the /autocomplete endpoint performs better than the /search endpoint
         # (don't ask me why)
-        nyc_planning_req = requests.get("https://geosearch.planninglabs.nyc/v2/autocomplete", params=query_params)
+        nyc_planning_req = requests.get(
+            "https://geosearch.planninglabs.nyc/v2/autocomplete",
+            params=query_params,
+            timeout=DEFAULT_EXTERNAL_API_TIMEOUT_SECONDS,
+        )
         nyc_planning_resp = nyc_planning_req.json()
 
         closest_nyc_location = None
@@ -308,10 +313,13 @@ class AddressParser:
         row: SpreadsheetRow,
         add_dropped_edit: Optional[Callable[[DroppedModification], None]] = None,
     ) -> AddressParsingResult:
+        def nop(*args, **kwargs):
+            return None
+
         if not add_dropped_edit:
             # Use a no-op function if our caller doesn't specify a destination
             # for dropped edits, to avoid runtime errors
-            add_dropped_edit = lambda x: None
+            add_dropped_edit = nop
 
         input_address = row.address.strip(
             "., "  # Leading / trailing whitespace and punctuation can cause issues
