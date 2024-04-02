@@ -13,8 +13,9 @@ echo 'DB started'
 # are executed as soon as celery starts
 # FIXME: This makes testing locally a bit awkward, since this isn't started by "manage.py runserver"
 #  maybe there's a way to do this better?
-echo 'Staring Celery Worker...'
-celery -A meshdb worker -l INFO --detach
+echo 'Starting Celery Worker...'
+celery -A meshdb worker -l DEBUG -f /var/log/meshdb-celery.log &
+celery -A meshdb beat -l DEBUG -f /var/log/meshdb-celery-beat.log -s /tmp/celerybeat-schedule &
 
 echo 'Running Migrations...'
 python manage.py makemigrations
