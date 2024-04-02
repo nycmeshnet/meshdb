@@ -109,12 +109,13 @@ class DroppedModification:
 
 def get_spreadsheet_rows(
     form_responses_path: str,
-) -> Tuple[List[SpreadsheetRow], Dict[int, str]]:
+) -> Tuple[List[SpreadsheetRow], List[SpreadsheetRow], Dict[int, str]]:
     with open(form_responses_path, "r") as input_file:
         csv_reader = csv.DictReader(input_file)
 
         skipped_rows: Dict[int, str] = {}
-        nodes: List[SpreadsheetRow] = []
+        installs: List[SpreadsheetRow] = []
+        reassigned_nns: List[SpreadsheetRow] = []
 
         for i, row in enumerate(csv_reader):
             # Last row is placeholder
@@ -140,11 +141,16 @@ def get_spreadsheet_rows(
             except ValueError:
                 abandon_date = None
 
+            node_status = SpreadsheetStatus(row["Status"].replace("dupe", "Dupe"))
+
             re_assigned_as_nn = False
             try:
                 nn = row["NN"].lower().strip()
-                re_assigned_as_nn = nn.startswith("x-")
-                nn = int(nn) if nn is not None and nn != "" and not re_assigned_as_nn else None
+                re_assigned_as_nn = nn.startswith("x-") or node_status == SpreadsheetStatus.nnAssigned
+                if re_assigned_as_nn:
+                    nn = node_id
+                else:
+                    nn = int(nn) if nn is not None and nn != "" else None
             except (KeyError, ValueError):
                 nn = None
 
@@ -159,7 +165,7 @@ def get_spreadsheet_rows(
                 secondEmail=row["2nd profile email"].lower().strip(),
                 phone=row["Phone"],
                 roofAccess=row["Rooftop Access"] == "I have Rooftop access",
-                status=SpreadsheetStatus(row["Status"].replace("dupe", "Dupe")),
+                status=node_status,
                 installDate=install_date,
                 abandonDate=abandon_date,
                 nodeName=row["nodeName"],
@@ -181,12 +187,12 @@ def get_spreadsheet_rows(
                 continue
 
             if re_assigned_as_nn:
-                skipped_rows[node_id] = "Reassigned as NN for another row"
+                reassigned_nns.append(node)
                 continue
 
-            nodes.append(node)
+            installs.append(node)
 
-        return nodes, skipped_rows
+        return installs, reassigned_nns, skipped_rows
 
 
 def print_failure_report(skipped_rows: Dict[int, str], original_input_file: str, fname_overide: str = None) -> None:

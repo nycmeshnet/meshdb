@@ -43,6 +43,9 @@ def get_or_create_node(
     if len(existing_nodes):
         node = existing_nodes[0]
 
+        if not node.name and row.nodeName:
+            node.name = row.nodeName
+
         if not node.install_date or (row.installDate and row.installDate < node.install_date):
             node.install_date = row.installDate
 
