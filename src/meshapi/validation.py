@@ -1,11 +1,13 @@
 import json
+import logging
 from dataclasses import dataclass
 
 import phonenumbers
 import requests
 from validate_email import validate_email
 
-from meshapi.exceptions import AddressAPIError, AddressError
+from meshapi.exceptions import AddressAPIError, AddressError, OpenDataAPIError
+from meshapi.util.constants import DEFAULT_EXTERNAL_API_TIMEOUT_SECONDS, INVALID_ALTITUDE
 from meshdb.utils.spreadsheet_import.building.constants import INVALID_BIN_NUMBERS
 from meshdb.utils.spreadsheet_import.building.pelias import humanify_street_address
 
@@ -60,10 +62,14 @@ class NYCAddressInfo:
                 "text": self.address,
                 "size": 1,
             }
-            nyc_planning_req = requests.get("https://geosearch.planninglabs.nyc/v2/search", params=query_params)
+            nyc_planning_req = requests.get(
+                "https://geosearch.planninglabs.nyc/v2/search",
+                params=query_params,
+                timeout=DEFAULT_EXTERNAL_API_TIMEOUT_SECONDS,
+            )
             nyc_planning_resp = json.loads(nyc_planning_req.content.decode("utf-8"))
-        except Exception as e:
-            print(f"Got exception querying geosearch.planninglabs.nyc: {e}")
+        except Exception:
+            logging.exception("Got exception querying geosearch.planninglabs.nyc")
             raise AddressAPIError
 
         if len(nyc_planning_resp["features"]) == 0:
@@ -101,17 +107,29 @@ class NYCAddressInfo:
 
         # Now that we have the bin, we can definitively get the height from
         # NYC OpenData
-        query_params = {
-            "$where": f"bin={self.bin}",
-            "$select": "heightroof,groundelev",
-            "$limit": 1,
-        }
-        nyc_dataset_req = requests.get("https://data.cityofnewyork.us/resource/qb5r-6dgf.json", params=query_params)
-        nyc_dataset_resp = json.loads(nyc_dataset_req.content.decode("utf-8"))
+        try:
+            query_params = {
+                "$where": f"bin={self.bin}",
+                "$select": "heightroof,groundelev",
+                "$limit": 1,
+            }
+            nyc_dataset_req = requests.get(
+                "https://data.cityofnewyork.us/resource/qb5r-6dgf.json",
+                params=query_params,
+                timeout=DEFAULT_EXTERNAL_API_TIMEOUT_SECONDS,
+            )
+            nyc_dataset_resp = json.loads(nyc_dataset_req.content.decode("utf-8"))
 
-        if len(nyc_dataset_resp) == 0:
-            raise AddressAPIError(
+            if len(nyc_dataset_resp) == 0:
+                logging.warning(f"Empty response from nyc open data about altitude of ({self.bin})")
+                raise OpenDataAPIError
+            else:
+                self.altitude = float(nyc_dataset_resp[0]["heightroof"]) + float(nyc_dataset_resp[0]["groundelev"])
+        except OpenDataAPIError:
+            self.altitude = INVALID_ALTITUDE
+            logging.warning(
                 f"(NYC) DOB BIN ({self.bin}) not found in NYC OpenData while trying to query for altitude information"
             )
-
-        self.altitude = float(nyc_dataset_resp[0]["heightroof"]) + float(nyc_dataset_resp[0]["groundelev"])
+        except Exception:
+            self.altitude = INVALID_ALTITUDE
+            logging.exception(f"An error occurred while trying to find ({self.bin}) in NYC OpenData")
