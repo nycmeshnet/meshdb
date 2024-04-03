@@ -25,6 +25,7 @@ class Install(models.Model):
         Node,
         blank=True,
         null=True,
+        db_column="network_number",
         related_name="installs",
         on_delete=models.PROTECT,
         help_text="The node this install is associated with, the integer value of this field is "
