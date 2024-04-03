@@ -79,6 +79,7 @@ form_err_response_schema = inline_serializer("ErrorResponse", fields={"detail": 
 )
 @api_view(["POST"])
 @permission_classes([permissions.AllowAny])
+@transaction.atomic
 @advisory_lock("join_form_lock")
 def join_form(request):
     request_json = json.loads(request.body)
