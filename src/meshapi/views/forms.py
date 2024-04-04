@@ -119,7 +119,7 @@ def join_form(request):
         # If the user has given us an invalid address. Tell them to buzz
         # off.
         except AddressError as e:
-            print(e)
+            logging.exception("AddressError when validating address")
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         # If we get any other error, then there was probably an issue
         # using the API, and we should wait a bit and re-try

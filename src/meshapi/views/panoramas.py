@@ -45,8 +45,8 @@ def update_panoramas(request):
             status=status.HTTP_200_OK,
         )
     except (ValueError, GitHubError) as e:
-        print(e)
-        return Response({"detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        logging.exception("Error when syncing panoramas")
+        return Response({"detail": str(type(e).__name__)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 @advisory_lock("update_panoramas_lock")
