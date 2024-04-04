@@ -123,13 +123,12 @@ def join_form(request):
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         # If we get any other error, then there was probably an issue
         # using the API, and we should wait a bit and re-try
-        except (AddressAPIError, Exception) as e:
-            print(e)
-            print("(NYC) Something went wrong validating the address. Re-trying...")
+        except (AddressAPIError, Exception):
+            logging.exception("(NYC) Something went wrong validating the address. Re-trying...")
             time.sleep(3)
     # If we run out of tries, bail.
     if nyc_addr_info is None:
-        print(f"Could not parse address: {r.street_address}, {r.city}, {r.state}, {r.zip}")
+        logging.warn(f"Could not parse address: {r.street_address}, {r.city}, {r.state}, {r.zip}")
         return Response(
             {"detail": "Your address could not be validated."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
@@ -215,8 +214,8 @@ def join_form(request):
 
     try:
         join_form_member.save()
-    except IntegrityError as e:
-        print(e)
+    except IntegrityError:
+        logging.exception("Error saving member from join form")
         return Response(
             {"detail": "There was a problem saving your Member information"},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -230,8 +229,8 @@ def join_form(request):
         # association with the existing nodes
         for node in existing_nodes_for_structure:
             join_form_building.nodes.add(node)
-    except IntegrityError as e:
-        print(e)
+    except IntegrityError:
+        logging.exception("Error saving building from join form")
         # Delete the member and bail
         join_form_member.delete()
         return Response(
@@ -240,8 +239,8 @@ def join_form(request):
 
     try:
         join_form_install.save()
-    except IntegrityError as e:
-        print(e)
+    except IntegrityError:
+        logging.exception("Error saving install from join form")
         # Delete the member, building (if we just created it), and bail
         join_form_member.delete()
         if len(existing_exact_buildings) == 0:
@@ -250,7 +249,7 @@ def join_form(request):
             {"detail": "There was a problem saving your Install information"}, status=status.HTTP_400_BAD_REQUEST
         )
 
-    print(
+    logging.info(
         f"JoinForm submission success. building_id: {join_form_building.id}, member_id: {join_form_member.id}, install_number: {join_form_install.install_number}"
     )
 
@@ -388,8 +387,8 @@ def network_number_assignment(request):
             del request_json["password"]
 
         r = NetworkNumberAssignmentRequest(**request_json)
-    except (TypeError, JSONDecodeError) as e:
-        print(f"NN Request failed. Could not decode request: {e}")
+    except (TypeError, JSONDecodeError):
+        logging.exception("NN Request failed. Could not decode request")
         return Response({"detail": "Got incomplete request"}, status=status.HTTP_400_BAD_REQUEST)
 
     try:
@@ -397,14 +396,14 @@ def network_number_assignment(request):
         # rows related to the Install object at hand, so that for example, the attached building
         # isn't changed underneath us
         nn_install = Install.objects.select_for_update().select_related().get(install_number=r.install_number)
-    except Exception as e:
-        print(f'NN Request failed. Could not get Install w/ Install Number "{r.install_number}": {e}')
+    except Exception:
+        logging.exception(f'NN Request failed. Could not get Install w/ Install Number "{r.install_number}"')
         return Response({"detail": "Install Number not found"}, status=status.HTTP_404_NOT_FOUND)
 
     # Check if the install already has a network number
     if nn_install.node is not None:
         message = f"This Install Number ({r.install_number}) already has a Network Number ({nn_install.node.network_number}) associated with it!"
-        print(message)
+        logging.warn(message)
         return Response(
             {
                 "detail": message,
@@ -446,8 +445,8 @@ def network_number_assignment(request):
         nn_install.node.save()
         nn_building.save()
         nn_install.save()
-    except IntegrityError as e:
-        print(e)
+    except IntegrityError:
+        logging.exception("NN Request failed. Could not save node number.")
         return Response(
             {"detail": "NN Request failed. Could not save node number."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )

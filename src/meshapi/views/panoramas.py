@@ -1,3 +1,4 @@
+import logging
 import os
 from pathlib import Path
 
@@ -10,7 +11,6 @@ from meshapi.models import Install
 from meshapi.permissions import HasPanoramaUpdatePermission
 from meshapi.util.constants import DEFAULT_EXTERNAL_API_TIMEOUT_SECONDS
 from meshapi.util.django_pglocks import advisory_lock
-from meshdb.celery import app as celery_app
 
 # Config for gathering/generating panorama links
 PANO_REPO_OWNER = "nycmeshnet"
@@ -84,7 +84,7 @@ def set_panoramas(panos: dict[str, list[str]]) -> tuple[int, list[str]]:
             install: Install = Install.objects.get(install_number=int(install_number))
             panoramas = []
             if not install:
-                print(
+                logging.warn(
                     f"Warning: Could not add panorama to building (Install #{install_number}). Install does not exist."
                 )
                 warnings.append(install_number)
@@ -99,8 +99,8 @@ def set_panoramas(panos: dict[str, list[str]]) -> tuple[int, list[str]]:
                     install.building.panoramas.append(p)
             install.building.save()
             panoramas_saved += len(filenames)
-        except Exception as e:
-            print(f"Warning: Could not add panorama to building (Install #{install_number}): {e}")
+        except Exception:
+            logging.exception(f"Warning: Could not add panorama to building (Install #{install_number})")
             warnings.append(install_number)
     return panoramas_saved, warnings
 
@@ -110,8 +110,8 @@ def build_pano_dict(files: list[str]):
     for f in files:
         try:
             number, label = parse_pano_title(Path(f).stem)
-        except BadPanoramaTitle as e:
-            print(e)
+        except BadPanoramaTitle:
+            logging.exception("Error due to panorama title")
             continue
         if number not in panos:
             panos[number] = [f]
@@ -165,7 +165,7 @@ def get_head_tree_sha(owner, repo, branch, token: str = ""):
         url, headers={"Authorization": f"Bearer {token}"}, timeout=DEFAULT_EXTERNAL_API_TIMEOUT_SECONDS
     )
     if master.status_code != 200:
-        print(f"Error: Got status {master.status_code} from GitHub trying to get SHA.")
+        logging.error(f"Error: Got status {master.status_code} from GitHub trying to get SHA.")
         return None
     master = master.json()
     return master["commit"]["commit"]["tree"]["sha"]
@@ -178,7 +178,7 @@ def list_files_in_git_directory(owner: str, repo: str, directory: str, tree, tok
         url, headers={"Authorization": f"Bearer {token}"}, timeout=DEFAULT_EXTERNAL_API_TIMEOUT_SECONDS
     )
     if response.status_code != 200:
-        print(f"Error: Failed to fetch GitHub directory contents. Status code: {response.status_code}")
+        logging.error(f"Error: Failed to fetch GitHub directory contents. Status code: {response.status_code}")
         return None
     files = []
     tree = response.json()
