@@ -252,7 +252,7 @@ To restore from a backup in production:
 
 1. Get a shell in the meshdb container
 ```
-docker exec -it meshdb-meshdb-1 bash
+$ docker exec -it meshdb-meshdb-1 bash
 ```
 
 2. Find the backup you want to restore
@@ -268,17 +268,12 @@ default-12db99e5ec1d-2024-03-31-142422.psql.bin 03/31/24 14:24:22
 default-bd0acc253775-2024-03-31-163520.psql.bin 03/31/24 16:35:20
 ```
 
-3. Flush the old database
+3. In a separate terminal, drop the old database
 ```
-root@eefdc57a46c2:/opt/meshdb# python manage.py flush
-```
-
-4. Run migrations
-```
-root@eefdc57a46c2:/opt/meshdb# python manage.py migrate
+$ echo 'drop database meshdb; create database meshdb;' | docker exec -i meshdb-postgres-1 psql -U meshdb -d postgres
 ```
 
-5. Restore the backup
+4. Restore the backup
 ```
 root@eefdc57a46c2:/opt/meshdb# python manage.py dbrestore -i default-bd0acc253775-2024-03-31-163520.psql.bin   
 ```
