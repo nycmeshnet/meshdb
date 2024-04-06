@@ -53,6 +53,7 @@ def get_existing_building(
 
 def diff_new_building_against_existing(
     row_id: int,
+    row_status: str,
     existing_building: models.Building,
     new_building: models.Building,
     add_dropped_edit: Callable[[DroppedModification], None],
@@ -63,6 +64,7 @@ def diff_new_building_against_existing(
             DroppedModification(
                 list(install.install_number for install in existing_building.installs.all()),
                 row_id,
+                row_status,
                 existing_building.street_address,
                 "building.bin",
                 str(existing_building.bin) if existing_building.bin else "",
@@ -80,6 +82,7 @@ def diff_new_building_against_existing(
             DroppedModification(
                 list(install.install_number for install in existing_building.installs.all()),
                 row_id,
+                row_status,
                 str(existing_building.bin) if existing_building.bin else existing_building.street_address,
                 "building.street_address",
                 existing_building.street_address if existing_building.street_address else "",
@@ -97,6 +100,7 @@ def diff_new_building_against_existing(
             DroppedModification(
                 list(install.install_number for install in existing_building.installs.all()),
                 row_id,
+                row_status,
                 str(existing_building.bin) if existing_building.bin else existing_building.street_address,
                 "building.city",
                 existing_building.city if existing_building.city else "",
@@ -114,6 +118,7 @@ def diff_new_building_against_existing(
             DroppedModification(
                 list(install.install_number for install in existing_building.installs.all()),
                 row_id,
+                row_status,
                 str(existing_building.bin) if existing_building.bin else existing_building.street_address,
                 "building.state",
                 existing_building.state if existing_building.state else "",
@@ -131,6 +136,7 @@ def diff_new_building_against_existing(
             DroppedModification(
                 list(install.install_number for install in existing_building.installs.all()),
                 row_id,
+                row_status,
                 str(existing_building.bin) if existing_building.bin else existing_building.street_address,
                 "building.zip_code",
                 existing_building.zip_code if existing_building.zip_code else "",
@@ -178,6 +184,7 @@ def get_or_create_building(
                 DroppedModification(
                     [row.id],
                     row.id,
+                    row.status.value,
                     row.address,
                     "lat_long_discrepancy_vs_spreadsheet",
                     str((row.latitude, row.longitude)),
@@ -210,6 +217,7 @@ def get_or_create_building(
     if existing_building:
         diff_notes = diff_new_building_against_existing(
             row.id,
+            row.status.value,
             existing_building,
             models.Building(
                 bin=address_result.discovered_bin or dob_bin,

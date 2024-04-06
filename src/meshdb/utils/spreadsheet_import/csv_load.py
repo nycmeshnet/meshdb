@@ -101,6 +101,7 @@ class SpreadsheetSector:
 class DroppedModification:
     original_row_ids: List[int]
     new_row_id: int
+    row_status: str
     deduplication_value: str
     modified_property: str
     database_value: str
@@ -240,6 +241,7 @@ def print_dropped_edit_report(
                 [
                     "OriginalRowID(s)",
                     "DroppedRowID",
+                    "DroppedRowSpreadsheetStatus",
                     "DeduplicationValue",
                     "ModifiedProperty",
                     "DatabaseValue",
@@ -255,6 +257,7 @@ def print_dropped_edit_report(
                         new_fields = {}
                         new_fields["OriginalRowID(s)"] = ", ".join(str(row_id) for row_id in edit.original_row_ids)
                         new_fields["DroppedRowID"] = edit.new_row_id
+                        new_fields["DroppedRowSpreadsheetStatus"] = edit.row_status
                         new_fields["DeduplicationValue"] = edit.deduplication_value
                         new_fields["ModifiedProperty"] = edit.modified_property
                         new_fields["DatabaseValue"] = edit.database_value
