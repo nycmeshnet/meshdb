@@ -1,5 +1,22 @@
-<div style='display:flex; flex-direction: row; width:100%; overflow-x:auto; max-height:300px; padding-left: 10px;'>
-	{% for panorama in widget.value %}
-		<a href="{{ panorama }}" target="_blank"><img src="{{ panorama }}" style="margin-right:10px"/></a>
-	{% endfor %}
+<script src="https://unpkg.com/flickity@2/dist/flickity.pkgd.min.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/flickity@2/dist/flickity.min.css">
+<div class="main-gallery" data-flickity='{ "wrapAround": true, "cellAlign": "left" }' style="width:100%; min-height:100px; max-height:300px;">
+
 </div>
+
+<div class="carousel">
+  <div class="carousel-cell">
+    <img data-flickity-lazyload="orange-tree.jpg" />
+  </div>
+  <div class="carousel-cell">
+    <img data-flickity-lazyload="tulip.jpg" />
+  </div>
+  ...
+
+  {% for panorama in widget.value %}
+  <div class="gallery-cell">
+  	<a href="{{ panorama }}" target="_blank"><img src="{{ panorama }}"/></a>
+  </div>
+  {% endfor %}
+</div>
+

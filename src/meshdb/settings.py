@@ -41,6 +41,7 @@ ALLOWED_HOSTS = [
     "db.mesh",
     "db.nycmesh.net",
     "127.0.0.1",
+    "10.0.2.2",
     "meshdb",
     "nginx",
     "host.docker.internal",
