@@ -189,6 +189,14 @@ def main():
                 for building in building_candidates:
                     node.buildings.add(building)
 
+        for node in models.Node.objects.all():
+            if not node.installs.all():
+                # If we don't have any installs associated with this node, it is not
+                # active or planned, mark it as INACTIVE
+                logging.warning(f"Found node imported without installs (NN{node.network_number}), marking INACTIVE")
+                node.status = models.Node.NodeStatus.INACTIVE
+                node.save()
+
         # Create an AP device for each access point install
         load_access_points(rows)
 
