@@ -1,22 +1,15 @@
 <script src="https://unpkg.com/flickity@2/dist/flickity.pkgd.min.js"></script>
 <link rel="stylesheet" href="https://unpkg.com/flickity@2/dist/flickity.min.css">
-<div class="main-gallery" data-flickity='{ "wrapAround": true, "cellAlign": "left" }' style="width:100%; min-height:100px; max-height:300px;">
 
-</div>
-
-<div class="carousel">
-  <div class="carousel-cell">
-    <img data-flickity-lazyload="orange-tree.jpg" />
+<div class="main-carousel" data-flickity='{ "wrapAround": true }'>
+  {% if widget.value|length == 0 %}
+  <div class="no-panos">
+  	<p>There are no panoramas.</p>
   </div>
-  <div class="carousel-cell">
-    <img data-flickity-lazyload="tulip.jpg" />
-  </div>
-  ...
-
+  {% endif %}
   {% for panorama in widget.value %}
-  <div class="gallery-cell">
+  <div class="carousel-cell">
   	<a href="{{ panorama }}" target="_blank"><img src="{{ panorama }}"/></a>
   </div>
   {% endfor %}
 </div>
-
