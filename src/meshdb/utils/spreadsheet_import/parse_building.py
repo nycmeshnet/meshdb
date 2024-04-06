@@ -178,14 +178,10 @@ def get_or_create_building(
                 DroppedModification(
                     [row.id],
                     row.id,
-                    (
-                        address_result.discovered_bin
-                        if address_result.discovered_bin
-                        else address_result.address.street_address
-                    ),
+                    row.address,
                     "lat_long_discrepancy_vs_spreadsheet",
-                    str(address_result.discovered_lat_lon),
                     str((row.latitude, row.longitude)),
+                    str(address_result.discovered_lat_lon),
                 )
             )
             distance_warning = (
