@@ -1,6 +1,5 @@
 from typing import List
 
-from django.contrib.postgres.fields import ArrayField
 from django.db import models
 from django.db.models.fields import EmailField
 from django_jsonform.models.fields import ArrayField as JSONFormArrayField

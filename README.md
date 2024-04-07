@@ -250,31 +250,12 @@ We have a Celery job that runs hourly in production to back up to an S3 bucket.
 
 To restore from a backup in production:
 
-1. Delete the (presumably borked) database
-
+1. Get a shell in the meshdb container
 ```
-docker compose down -v
-```
-
-2. Stand up a new database. This will also run meshdb, which will run the 
-migrations for you on startup.
-
-```
-docker compose up -d
+$ docker exec -it meshdb-meshdb-1 bash
 ```
 
-3. Get a shell in the meshdb container
-```
-docker exec -it meshdb-meshdb-1 bash
-```
-
-4. Restart the postgres container, dropping the volume
-```
-docker compose down -v postgres
-docker compose up -d postgres
-```
-
-5. Find the backup you want to restore
+2. Find the backup you want to restore
 ```
 root@eefdc57a46c2:/opt/meshdb# python manage.py listbackups
 Name                                     Datetime
@@ -287,15 +268,14 @@ default-12db99e5ec1d-2024-03-31-142422.psql.bin 03/31/24 14:24:22
 default-bd0acc253775-2024-03-31-163520.psql.bin 03/31/24 16:35:20
 ```
 
-6. Restore the backup
+3. In a separate terminal, drop the old database
+```
+$ echo 'drop database meshdb; create database meshdb;' | docker exec -i meshdb-postgres-1 psql -U meshdb -d postgres
+```
+
+4. Restore the backup
 ```
 root@eefdc57a46c2:/opt/meshdb# python manage.py dbrestore -i default-bd0acc253775-2024-03-31-163520.psql.bin   
-```
-
-Say yes
-
-```
-Are you sure you want to continue? [Y/n] y
 ```
 
 **The Quick 'n Dirty Way**

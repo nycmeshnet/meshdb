@@ -100,6 +100,7 @@ def parse_phone(input_phone: str) -> Optional[phonenumbers.PhoneNumber]:
 
 def diff_new_member_against_existing(
     row_id: int,
+    row_status: str,
     existing_member: models.Member,
     new_member: models.Member,
     add_dropped_edit: Callable[[DroppedModification], None],
@@ -110,6 +111,7 @@ def diff_new_member_against_existing(
             DroppedModification(
                 list(install.install_number for install in existing_member.installs.all()),
                 row_id,
+                row_status,
                 existing_member.primary_email_address,
                 "member.name",
                 existing_member.name if existing_member.name else "",
@@ -130,6 +132,7 @@ def diff_new_member_against_existing(
             DroppedModification(
                 list(install.install_number for install in existing_member.installs.all()),
                 row_id,
+                row_status,
                 existing_member.primary_email_address,
                 "member.phone_number",
                 existing_member.phone_number,
@@ -224,6 +227,7 @@ def get_or_create_member(
 
             diff_notes = diff_new_member_against_existing(
                 row.id,
+                row.status.value,
                 existing_members[0],
                 models.Member(
                     name=row.name,

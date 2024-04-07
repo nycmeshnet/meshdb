@@ -18,7 +18,6 @@ class Command(BaseCommand):
             "link",
             "sector",
         ]
-        groups = ["admin", "installer", "readonly"]
         all_permissions = Permission.objects.all()
 
         admin, _ = Group.objects.get_or_create(name="Admin")
