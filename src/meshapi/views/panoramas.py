@@ -10,7 +10,6 @@ from meshapi.models import Install
 from meshapi.permissions import HasPanoramaUpdatePermission
 from meshapi.util.constants import DEFAULT_EXTERNAL_API_TIMEOUT_SECONDS
 from meshapi.util.django_pglocks import advisory_lock
-from meshdb.celery import app as celery_app
 
 # Config for gathering/generating panorama links
 PANO_REPO_OWNER = "nycmeshnet"
