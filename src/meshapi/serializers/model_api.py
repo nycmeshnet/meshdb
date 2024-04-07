@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from rest_framework.validators import UniqueValidator
 
 from meshapi.models import Building, Device, Install, Link, Member, Node, Sector
 
@@ -39,6 +40,12 @@ class NodeSerializer(serializers.ModelSerializer):
         model = Node
         fields = "__all__"
 
+    network_number = serializers.IntegerField(
+        required=False,
+        allow_null=False,
+        validators=[UniqueValidator(queryset=Node.objects.all())],
+        read_only=True,
+    )
     buildings = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
     devices = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
 

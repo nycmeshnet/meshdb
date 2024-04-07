@@ -1,8 +1,7 @@
 from django.core.validators import MaxValueValidator
 from django.db import models
 
-NETWORK_NUMBER_MIN = 101
-NETWORK_NUMBER_MAX = 8192
+from meshapi.util.network_number import NETWORK_NUMBER_MAX, get_next_available_network_number
 
 
 class Node(models.Model):
@@ -19,7 +18,7 @@ class Node(models.Model):
         AP = "AP"
         REMOTE = "Remote"
 
-    network_number = models.AutoField(
+    network_number = models.IntegerField(
         primary_key=True,
         db_column="network_number",
         validators=[MaxValueValidator(NETWORK_NUMBER_MAX)],
@@ -80,6 +79,12 @@ class Node(models.Model):
         "and original spreadsheet data. However this structure can be changed by admins at any time and should not be relied on"
         "by automated systems. ",
     )
+
+    def save(self, *args, **kwargs):
+        if not self.network_number:
+            self.network_number = get_next_available_network_number()
+
+        super().save(*args, **kwargs)
 
     def __str__(self):
         if self.name:
