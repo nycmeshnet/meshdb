@@ -3,7 +3,7 @@ import os
 import sys
 import time
 from collections import defaultdict
-from typing import List
+from typing import Dict, List
 
 import django
 
@@ -16,6 +16,7 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "meshdb.settings")
 django.setup()
 
 from meshapi import models
+from meshdb.utils.spreadsheet_import.building.constants import INVALID_BIN_NUMBERS
 from meshdb.utils.spreadsheet_import.building.resolve_address import AddressParser
 from meshdb.utils.spreadsheet_import.csv_load import (
     DroppedModification,
@@ -29,7 +30,7 @@ from meshdb.utils.spreadsheet_import.parse_building import get_or_create_buildin
 from meshdb.utils.spreadsheet_import.parse_install import create_install, normalize_install_to_primary_building_node
 from meshdb.utils.spreadsheet_import.parse_link import load_links_supplement_with_uisp
 from meshdb.utils.spreadsheet_import.parse_member import get_or_create_member
-from meshdb.utils.spreadsheet_import.parse_node import get_or_create_node, normalize_building_node_links
+from meshdb.utils.spreadsheet_import.parse_node import get_node_type, get_or_create_node, normalize_building_node_links
 
 
 def main():
@@ -51,20 +52,42 @@ def main():
 
     form_responses_path, links_path, sectors_path = sys.argv[1:4]
 
-    rows, skipped = get_spreadsheet_rows(form_responses_path)
+    rows, reassigned_rows, skipped = get_spreadsheet_rows(form_responses_path)
     logging.info(f'Loaded {len(rows)} rows from "{form_responses_path}"')
 
-    member_duplicate_counts = defaultdict(lambda: 1)
-
-    addr_parser = AddressParser()
-
-    dropped_modifications: List[DroppedModification] = []
-
-    max_install_num = max(row.id for row in rows)
-
-    start_time = time.time()
-    logging.info(f"Processing install # {rows[0].id}/{max_install_num}...")
     try:
+        logging.info(f"Creating {len(reassigned_rows)} nodes for rows marked 'NN Reassigned'...")
+
+        nn_bin_map: Dict[int, int] = {}
+        for row in reassigned_rows:
+            node = models.Node(
+                network_number=row.id,
+                name=row.nodeName if row.nodeName else None,
+                latitude=row.latitude,
+                longitude=row.longitude,
+                altitude=row.altitude,
+                status=models.Node.NodeStatus.PLANNED,  # This will get overridden later
+                type=get_node_type(row.notes) if row.notes else models.Node.NodeType.STANDARD,
+                notes=f"Spreadsheet Notes:\n"
+                f"{row.notes if row.notes else None}\n\n"
+                f"Spreadsheet Notes2:\n"
+                f"{row.notes2 if row.notes2 else None}\n\n",
+            )
+            node.save()
+            dob_bin = row.bin if row.bin and row.bin > 0 and row.bin not in INVALID_BIN_NUMBERS else None
+            if dob_bin:
+                nn_bin_map[node.network_number] = dob_bin
+
+        member_duplicate_counts = defaultdict(lambda: 1)
+
+        addr_parser = AddressParser()
+
+        dropped_modifications: List[DroppedModification] = []
+
+        max_install_num = max(row.id for row in rows)
+
+        start_time = time.time()
+        logging.info(f"Processing install # {rows[0].id}/{max_install_num}...")
         for i, row in enumerate(rows):
             if (i + 2) % 100 == 0:
                 logging.info(
@@ -145,6 +168,34 @@ def main():
         # are associated with the same node when applicable)
         for install in models.Install.objects.all():
             normalize_install_to_primary_building_node(install)
+
+        # Confirm that the appropriate NN -> Building relations have been formed via the Install
+        # import that we would expect from the NN only rows
+        for nn, _bin in nn_bin_map.items():
+            node = models.Node.objects.get(network_number=nn)
+            building_match = node.buildings.filter(bin=_bin)
+            if not building_match:
+                logging.warning(
+                    f"Warning, from NN data, expected NN{nn} to be connected to at least one building "
+                    f"with DOB number {_bin} but no such connection was found. Adding it now..."
+                )
+                building_candidates = models.Building.objects.filter(bin=_bin)
+                if len(building_candidates) == 0:
+                    logging.error(
+                        f"Found no buildings with DOB BIN {_bin}, but this BIN is specified in "
+                        f"spreadsheet row #{nn}. Is this BIN correct?"
+                    )
+                    continue
+                for building in building_candidates:
+                    node.buildings.add(building)
+
+        for node in models.Node.objects.all():
+            if not node.installs.all():
+                # If we don't have any installs associated with this node, it is not
+                # active or planned, mark it as INACTIVE
+                logging.warning(f"Found node imported without installs (NN{node.network_number}), marking INACTIVE")
+                node.status = models.Node.NodeStatus.INACTIVE
+                node.save()
 
         # Create an AP device for each access point install
         load_access_points(rows)
