@@ -40,7 +40,7 @@ class PanoramaViewer(JSONFormWidget):
         css = {
             "all": ("widgets/panorama_viewer.css", "widgets/flickity.min.css"),
         }
-        js = [ "widgets/flickity.pkgd.min.js" ]
+        js = ["widgets/flickity.pkgd.min.js"]
 
 
 class DeviceIPAddressWidget(widgets.TextInput):
