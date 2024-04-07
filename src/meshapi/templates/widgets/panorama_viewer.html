@@ -1,5 +1,17 @@
-<div style='display:flex; flex-direction: row; width:100%; overflow-x:auto; max-height:300px; padding-left: 10px;'>
-	{% for panorama in widget.value %}
-		<a href="{{ panorama }}" target="_blank"><img src="{{ panorama }}" style="margin-right:10px"/></a>
-	{% endfor %}
+<!--https://flickity.metafizzy.co/-->
+<!--integrity generated with https://www.srihash.org/-->
+<script src="https://unpkg.com/flickity@2/dist/flickity.pkgd.min.js" integrity="sha384-6ma6pGRLjeu6PkX+yOaR0dUGt6OQl9evbv3H2kdLWwIXtUztaQrWUlbRBPVpDH4B" crossorigin="anonymous"></script>
+<link rel="stylesheet" href="https://unpkg.com/flickity@2/dist/flickity.min.css">
+
+<div class="main-carousel" data-flickity='{ "wrapAround": true }'>
+  {% if widget.value|length == 0 %}
+  <div class="no-panos">
+  	<p>There are no panoramas.</p>
+  </div>
+  {% endif %}
+  {% for panorama in widget.value %}
+  <div class="carousel-cell">
+  	<a href="{{ panorama }}" target="_blank"><img src="{{ panorama }}"/></a>
+  </div>
+  {% endfor %}
 </div>
