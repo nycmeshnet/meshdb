@@ -1,6 +1,9 @@
 from typing import Optional
 
-from meshapi.models import NETWORK_NUMBER_MAX, NETWORK_NUMBER_MIN, Install, Node
+from django.apps import apps
+
+NETWORK_NUMBER_MIN = 101
+NETWORK_NUMBER_MAX = 8192
 
 
 def get_next_available_network_number() -> int:
@@ -11,6 +14,11 @@ def get_next_available_network_number() -> int:
     to any other installs for any reason
     :return: the integer for the next available network number
     """
+
+    # Since the contents of this file are used in the models.* files, imports get very circular very quick,
+    # so we use Django's lazy-loading feature to get references to the model types without imports
+    Install = apps.get_model("meshapi.Install")
+    Node = apps.get_model("meshapi.Node")
 
     defined_nns = set(
         Install.objects.exclude(status=Install.InstallStatus.REQUEST_RECEIVED, node__isnull=True).values_list(

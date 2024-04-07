@@ -1,10 +1,7 @@
 from django.core.validators import MaxValueValidator
 from django.db import models
 
-from meshapi.util.network_number import get_next_available_network_number
-
-NETWORK_NUMBER_MIN = 101
-NETWORK_NUMBER_MAX = 8192
+from meshapi.util.network_number import NETWORK_NUMBER_MAX, get_next_available_network_number
 
 
 class Node(models.Model):
