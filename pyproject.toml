@@ -72,7 +72,9 @@ disallow_untyped_defs = true
 disallow_incomplete_defs = true
 warn_unused_configs = true
 exclude = [
-    "^src/meshdb/utils/spreadsheet_import/.*"
+    "^src/meshdb/utils/spreadsheet_import/.*",
+    "^src/meshapi/tests/.*",
+    "^src/meshapi_hooks/tests/.*",
 ]
 
 
