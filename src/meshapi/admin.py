@@ -167,6 +167,8 @@ class BuildingAdmin(admin.ModelAdmin):
         "installs__member__primary_email_address__icontains",
         "installs__member__phone_number__iexact",
         "installs__member__slack_handle__iexact",
+        # Notes
+        "notes__icontains",
     ]
     list_filter = [
         BoroughFilter,
@@ -259,6 +261,8 @@ class MemberAdmin(admin.ModelAdmin):
         # Search by network number
         "installs__node__network_number__iexact",
         "installs__install_number__iexact",
+        # Notes
+        "notes__icontains",
     ]
     list_display = [
         "__str__",
@@ -342,6 +346,8 @@ class InstallAdmin(admin.ModelAdmin):
         "member__primary_email_address__icontains",
         "member__phone_number__iexact",
         "member__slack_handle__iexact",
+        # Notes
+        "notes__icontains",
     ]
     autocomplete_fields = ["building", "member"]
     fieldsets = [
@@ -415,6 +421,7 @@ class LinkAdmin(admin.ModelAdmin):
         "to_device__node__buildings__street_address__icontains",
         "from_device__node__network_number__iexact",
         "to_device__node__network_number__iexact",
+        "notes__icontains",
     ]
     list_display = ["__str__", "status", "from_device", "to_device", "description"]
     list_filter = ["status", "type"]
@@ -431,7 +438,12 @@ class NodeAdminForm(forms.ModelForm):
 @admin.register(Node)
 class NodeAdmin(admin.ModelAdmin):
     form = NodeAdminForm
-    search_fields = ["network_number__iexact", "name__icontains", "buildings__street_address__icontains"]
+    search_fields = [
+        "network_number__iexact",
+        "name__icontains",
+        "buildings__street_address__icontains",
+        "notes__icontains",
+    ]
     list_filter = ["status", ("name", admin.EmptyFieldListFilter), "install_date", "abandon_date"]
     list_display = ["__network_number__", "name", "status", "address", "install_date"]
     fieldsets = [
@@ -537,7 +549,7 @@ class DeviceAdminForm(forms.ModelForm):
 @admin.register(Device)
 class DeviceAdmin(admin.ModelAdmin):
     form = DeviceAdminForm
-    search_fields = ["name__icontains", "model__icontains", "ssid__icontains"]
+    search_fields = ["name__icontains", "model__icontains", "ssid__icontains", "notes__icontains"]
     list_display = [
         "__str__",
         "ssid",
@@ -569,7 +581,7 @@ class SectorAdminForm(forms.ModelForm):
 @admin.register(Sector)
 class SectorAdmin(admin.ModelAdmin):
     form = SectorAdminForm
-    search_fields = ["name__icontains", "model__icontains", "ssid__icontains"]
+    search_fields = ["name__icontains", "model__icontains", "ssid__icontains", "notes__icontains"]
     list_display = [
         "__str__",
         "ssid",
