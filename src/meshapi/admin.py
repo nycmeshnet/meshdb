@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.contrib.admin.helpers import AdminField
 from django.contrib.admin.options import forms
 from django.db.models import Q
 from django.utils.safestring import mark_safe
@@ -41,16 +42,23 @@ class BetterNonrelatedInline(NonrelatedTabularInline):
         }
 
 
+# Inline to allow viewing a Node's buildings
 class NonrelatedBuildingInline(BetterNonrelatedInline):
     model = Building
-    fields = ["primary_node", "bin", "street_address", "city", "zip_code"]
+    fields = ["primary_node", "bin", "street_address", "city", "zip_code", "panoramas"]
     readonly_fields = fields
+    add_button = True
+    template = "admin/building_tabular.html"
 
     def get_form_queryset(self, obj):
         return self.model.objects.filter(nodes=obj)
 
     def save_new_instance(self, parent, instance):
         pass
+
+    def add_field(self):
+        return "<p>chom</p>"
+        return AdminField(self.form, "ADD", False)
 
 
 # This controls the list of installs reverse FK'd to Buildings and Members
@@ -148,7 +156,7 @@ class BuildingAdminForm(forms.ModelForm):
 
 @admin.register(Building)
 class BuildingAdmin(admin.ModelAdmin):
-    form = BuildingAdminForm
+    # List View options
     list_display = ["__str__", "street_address", "primary_node"]
     search_fields = [
         # Sometimes they have an actual name
@@ -172,6 +180,10 @@ class BuildingAdmin(admin.ModelAdmin):
         BoroughFilter,
         ("primary_node", admin.EmptyFieldListFilter),
     ]
+
+    # Change View Options
+    form = BuildingAdminForm
+    autocomplete_fields = ["primary_node"]
     fieldsets = [
         (
             "Address Information",
@@ -320,7 +332,6 @@ class InstallAdminForm(forms.ModelForm):
 class InstallAdmin(admin.ModelAdmin):
     form = InstallAdminForm
     list_filter = [
-        ("node", admin.EmptyFieldListFilter),
         "status",
         "request_date",
         "install_date",
@@ -343,7 +354,7 @@ class InstallAdmin(admin.ModelAdmin):
         "member__phone_number__iexact",
         "member__slack_handle__iexact",
     ]
-    autocomplete_fields = ["building", "member"]
+    autocomplete_fields = ["building", "member", "node"]
     fieldsets = [
         (
             "Details",

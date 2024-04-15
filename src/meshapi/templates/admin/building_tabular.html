@@ -51,6 +51,22 @@
         {% for fieldset in inline_admin_form %}
           {% for line in fieldset %}
             {% for field in line %}
+              {% if field.field.name == "panoramas" %}
+                <div>
+                  <div class="main-carousel" data-flickity='{ "wrapAround": true }'>
+                    {% if widget.value|length == 0 %}
+                    <div class="no-panos">
+                      <p>There are no panoramas.</p>
+                    </div>
+                    {% endif %}
+                    {% for panorama in field.contents %}
+                    <div class="carousel-cell">
+                      <a href="{{ panorama }}" target="_blank"><img src="{{ panorama }}"/></a>
+                    </div>
+                    {% endfor %}
+                  </div>
+                </div>
+              {% endif %}
               <td class="{% if field.field.name %}field-{{ field.field.name }}{% endif %}{% if field.field.is_hidden %} hidden{% endif %}">
               {% if field.is_readonly %}
                   <p>{{ field.contents }}</p>
@@ -76,7 +92,11 @@
     {% if inline_admin_formset.opts.add_button %}
     <p>{{ inline_admin_formset.opts }}</p>
     <p>{{ inline_admin_formset.opts.model }}</p>
-    <p>{{ inline_admin_form.opts.model }}</p>
+    <p>path: {{ request.path }}</p>
+    <p>uri: {{ request.build_absolute_uri }}</p>
+    <p>get: {{ request.get_absolute_url }}</p>
+    <p>Chom: {{ inline_admin_form.opts.model.add_url }}</p>
+    <p>{{ inline_admin_formset.opts.model }}</p>
     <a href="{{ inline_admin_formset.opts.model.add_url }}" class="addlink">Add</a>
     {% endif %}
   </div>
