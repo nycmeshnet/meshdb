@@ -401,6 +401,21 @@ class InstallAdmin(admin.ModelAdmin):
         ),
     ]
 
+    def get_search_results(self, request, queryset, search_term):
+        queryset, may_have_duplicates = super().get_search_results(
+            request,
+            queryset,
+            search_term,
+        )
+        try:
+            upper_search = search_term.upper()
+            if len(upper_search) > 2 and upper_search[:2] == "NN":
+                search_term_as_int = int(upper_search[2:])
+                queryset |= self.model.objects.filter(node_id=search_term_as_int)
+        except ValueError:
+            pass
+        return queryset, may_have_duplicates
+
 
 class LinkAdminForm(forms.ModelForm):
     class Meta:
