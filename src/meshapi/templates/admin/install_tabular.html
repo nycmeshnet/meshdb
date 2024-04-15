@@ -70,5 +70,16 @@
      </tbody>
    </table>
 </fieldset>
+  <div>
+    <p>test</p>
+    {% if inline_admin_formset.opts.add_button %}
+    <p>{{ inline_admin_formset.opts }}</p>
+    <p>{{ inline_admin_formset.opts.model }}</p>
+    <p>{{ inline_admin_form.opts.model }}</p>
+    <p>{% url 'request.get_host()' %}</p>
+    <p>{% url 'admin:meshapi_building_add' %}</p>
+    <a href="{{ inline_admin_formset.opts.model.add_url }}" class="addlink">Add</a>
+    {% endif %}
+  </div>
   </div>
 </div>

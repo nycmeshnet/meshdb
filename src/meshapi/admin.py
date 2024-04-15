@@ -46,6 +46,8 @@ class NonrelatedBuildingInline(BetterNonrelatedInline):
     fields = ["primary_node", "bin", "street_address", "city", "zip_code"]
     readonly_fields = fields
 
+    add_button = True
+
     def get_form_queryset(self, obj):
         return self.model.objects.filter(nodes=obj)
 
