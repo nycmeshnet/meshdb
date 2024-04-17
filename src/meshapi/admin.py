@@ -48,7 +48,11 @@ class NonrelatedBuildingInline(BetterNonrelatedInline):
 
     add_button = True
 
+    # Hack to get the NN
+    network_number = None
+
     def get_form_queryset(self, obj):
+        self.network_number = obj.pk
         return self.model.objects.filter(nodes=obj)
 
     def save_new_instance(self, parent, instance):
