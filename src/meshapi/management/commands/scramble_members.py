@@ -1,10 +1,11 @@
-from random import randrange
+from datetime import datetime, timedelta
+from random import randint, randrange
 
 from django.core.management.base import BaseCommand
 from django.db import transaction
 from faker import Faker
 
-from meshapi.models import Install, Member
+from meshapi.models import Install, Member, install
 from meshapi.models.building import Building
 from meshapi.models.devices.device import Device
 from meshapi.models.link import Link
@@ -31,7 +32,7 @@ class Command(BaseCommand):
 
     @transaction.atomic
     def handle(self, *args, **options):
-        print("Scrambling database with fake information...")
+        print("Scrambling database with fake information")
         fake = Faker()
         if not options["skip_members"]:
             members = Member.objects.all()
@@ -45,7 +46,6 @@ class Command(BaseCommand):
                 member.slack_handle = ""
                 member.notes = fake.text()
                 member.save()
-                # print(f"{member.id} - {member.name}")
 
         if not options["skip_installs"]:
             print("Scrambling installs...")
@@ -53,32 +53,51 @@ class Command(BaseCommand):
             for install in installs:
                 install.unit = randrange(100)
                 install.notes = fake.text()
+                install.request_date, install.install_date, install.abandon_date = self.fuzz_dates(install.request_date, install.install_date, install.abandon_date)
                 install.save()
-                # print(install.install_number)
 
-        print("Scrambling all other notes...")
+        print("Scrambling all other notes and dates")
+
+        print("Scrambling buildings...")
         buildings = Building.objects.all()
         for building in buildings:
             building.notes = fake.text()
             building.save()
-            # print(building)
 
+        print("Scrambling devices...")
         devices = Device.objects.all()
         for device in devices:
             device.notes = fake.text()
+            _, device.install_date, device.abandon_date = self.fuzz_dates(None, device.install_date, device.abandon_date)
             device.save()
-            # print(device)
 
+        print("Scrambling links...")
         links = Link.objects.all()
         for link in links:
             link.notes = fake.text()
+            _, link.install_date, link.abandon_date = self.fuzz_dates(None, link.install_date, link.abandon_date)
             link.save()
-            # print(link)
 
+        print("Scrambling nodes...")
         nodes = Node.objects.all()
         for node in nodes:
             node.notes = fake.text()
+            _, node.install_date, node.abandon_date = self.fuzz_dates(None, node.install_date, node.abandon_date)
             node.save()
-            # print(node)
 
         print("Done")
+
+    @staticmethod
+    def fuzz_dates(request_date, install_date, abandon_date):
+        if request_date:
+            # Make it happen sooner so that there's no way the request date is
+            # now beyond the install/abandon date.
+            request_date -= timedelta(days=randint(14,100))
+
+        if install_date:
+            install_date += timedelta(days=randint(14,100))
+
+        if abandon_date:
+            abandon_date += timedelta(days=randint(100, 200))
+
+        return request_date, install_date, abandon_date
