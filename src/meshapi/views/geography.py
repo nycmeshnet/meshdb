@@ -14,6 +14,7 @@ from rest_framework.views import APIView
 
 from meshapi.models import Install, Link
 from meshapi.models.devices.device import Device
+from meshapi.models.node import Node
 
 KML_CONTENT_TYPE = "application/vnd.google-earth.kml+xml"
 KML_CONTENT_TYPE_WITH_CHARSET = f"{KML_CONTENT_TYPE}; charset=utf-8"
@@ -209,15 +210,21 @@ class WholeMeshKML(APIView):
             .annotate(highest_altitude=Greatest("from_device__altitude", "to_device__altitude"))
             .order_by(F("highest_altitude").asc(nulls_first=True))
         ):
+            # Logic to decide if this link should show up as active or not
+            mark_active: bool = (
+                # Link must be active
+                link.status == Link.LinkStatus.ACTIVE
+                # And the devices
+                and link.from_device.status == Device.DeviceStatus.ACTIVE
+                and link.to_device.status == Device.DeviceStatus.ACTIVE
+                # And the device's nodes
+                and link.from_device.node.status == Node.NodeStatus.ACTIVE
+                and link.to_device.node.status == Node.NodeStatus.ACTIVE
+            )
+            node_label: str = f"{str(link.from_device.node)}-{str(link.to_device.node)}"
             placemark = kml.Placemark(
                 name=f"Links-{link.id}",
-                style_url=styles.StyleUrl(
-                    url="#red_line"
-                    if link.status == Link.LinkStatus.ACTIVE
-                    and link.from_device.status == Device.DeviceStatus.ACTIVE
-                    and link.to_device.status == Device.DeviceStatus.ACTIVE
-                    else "#grey_line"
-                ),
+                style_url=styles.StyleUrl(url="#red_line" if mark_active else "#grey_line"),
                 kml_geometry=geometry.LineString(
                     geometry=LineString(
                         [
@@ -242,8 +249,8 @@ class WholeMeshKML(APIView):
             to_identifier = link.to_device.node.network_number
 
             extended_data = {
-                "name": f"Links-{link.id}",
-                "stroke": ACTIVE_COLOR if link.status == Link.LinkStatus.ACTIVE else INACTIVE_COLOR,
+                "name": f"Links-{link.id}-{node_label}",
+                "stroke": ACTIVE_COLOR if mark_active else INACTIVE_COLOR,
                 "fill": "#000000",
                 "fill-opacity": "0",
                 "from": str(from_identifier),
@@ -256,11 +263,7 @@ class WholeMeshKML(APIView):
                 elements=[Data(name=key, value=val) for key, val in extended_data.items()]
             )
 
-            if (
-                link.status == Link.LinkStatus.ACTIVE
-                and link.from_device.status == Device.DeviceStatus.ACTIVE
-                and link.to_device.status == Device.DeviceStatus.ACTIVE
-            ):
+            if mark_active:
                 active_links_folder.append(placemark)
             else:
                 inactive_links_folder.append(placemark)
