@@ -1,5 +1,7 @@
 from django.db.models import Q
 from django_filters import rest_framework as filters
+from drf_spectacular.utils import extend_schema, extend_schema_view
+from meshapi.docs import query_form_password_param
 
 from meshapi.models import Install
 from meshapi.permissions import LegacyMeshQueryPassword
@@ -32,6 +34,15 @@ class QueryMemberFilter(filters.FilterSet):
         fields = []
 
 
+@extend_schema_view(
+    get=extend_schema(
+        tags=["Legacy Query Form"],
+        parameters=[query_form_password_param],# + map_query_filters_to_param_annotations(MEMBER_FILTERS),
+        summary="Query & filter based on Member attributes. "
+        "Results are returned as flattened spreadsheet row style output",
+        auth=[],
+    ),
+)
 class QueryMember(FilterRequiredListAPIView):
     queryset = (
         Install.objects.all()
@@ -53,6 +64,15 @@ class QueryInstallFilter(filters.FilterSet):
         fields = ["install_number", "member", "building", "status"]
 
 
+@extend_schema_view(
+    get=extend_schema(
+        tags=["Legacy Query Form"],
+        parameters=[query_form_password_param],# + map_query_filters_to_param_annotations(INSTALL_FILTERS),
+        summary="Query & filter based on Install attributes. "
+        "Results are returned as flattened spreadsheet row style output",
+        auth=[],
+    ),
+)
 class QueryInstall(FilterRequiredListAPIView):
     queryset = (
         Install.objects.all()
@@ -78,6 +98,15 @@ class QueryBuildingFilter(filters.FilterSet):
         fields = ["bin", "zip_code"]
 
 
+@extend_schema_view(
+    get=extend_schema(
+        tags=["Legacy Query Form"],
+        parameters=[query_form_password_param],# + map_query_filters_to_param_annotations(BUILDING_FILTERS),
+        summary="Query & filter based on Building attributes. "
+        "Results are returned as flattened spreadsheet row style output",
+        auth=[],
+    ),
+)
 class QueryBuilding(FilterRequiredListAPIView):
     queryset = (
         Install.objects.all()
