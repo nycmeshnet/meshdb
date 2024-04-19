@@ -19,6 +19,7 @@ def index(request):
         ],
         "Volunteer Tools": [
             ("/admin", "Admin Panel"),
+            ("/api/v1/geography/whole-mesh.kml", "KML Download"),
             ("https://forms.grandsvc.mesh.nycmesh.net/", "Other Forms"),
         ],
         "Developer Tools": [
