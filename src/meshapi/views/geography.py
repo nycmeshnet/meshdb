@@ -13,6 +13,7 @@ from rest_framework.negotiation import BaseContentNegotiation
 from rest_framework.views import APIView
 
 from meshapi.models import Install, Link
+from meshapi.models.devices.device import Device
 
 KML_CONTENT_TYPE = "application/vnd.google-earth.kml+xml"
 KML_CONTENT_TYPE_WITH_CHARSET = f"{KML_CONTENT_TYPE}; charset=utf-8"
@@ -210,7 +211,13 @@ class WholeMeshKML(APIView):
         ):
             placemark = kml.Placemark(
                 name=f"Links-{link.id}",
-                style_url=styles.StyleUrl(url="#red_line" if link.status == Link.LinkStatus.ACTIVE else "#grey_line"),
+                style_url=styles.StyleUrl(
+                    url="#red_line"
+                    if link.status == Link.LinkStatus.ACTIVE
+                    and link.from_device.status == Device.DeviceStatus.ACTIVE
+                    and link.to_device.status == Device.DeviceStatus.ACTIVE
+                    else "#grey_line"
+                ),
                 kml_geometry=geometry.LineString(
                     geometry=LineString(
                         [
@@ -249,7 +256,11 @@ class WholeMeshKML(APIView):
                 elements=[Data(name=key, value=val) for key, val in extended_data.items()]
             )
 
-            if link.status == Link.LinkStatus.ACTIVE:
+            if (
+                link.status == Link.LinkStatus.ACTIVE
+                and link.from_device.status == Device.DeviceStatus.ACTIVE
+                and link.to_device.status == Device.DeviceStatus.ACTIVE
+            ):
                 active_links_folder.append(placemark)
             else:
                 inactive_links_folder.append(placemark)
