@@ -1,8 +1,8 @@
 from django.db.models import Q
 from django_filters import rest_framework as filters
 from drf_spectacular.utils import extend_schema, extend_schema_view
-from meshapi.docs import query_form_password_param
 
+from meshapi.docs import query_form_password_param
 from meshapi.models import Install
 from meshapi.permissions import LegacyMeshQueryPassword
 from meshapi.serializers.query_api import QueryFormSerializer
@@ -37,7 +37,7 @@ class QueryMemberFilter(filters.FilterSet):
 @extend_schema_view(
     get=extend_schema(
         tags=["Legacy Query Form"],
-        parameters=[query_form_password_param],# + map_query_filters_to_param_annotations(MEMBER_FILTERS),
+        parameters=[query_form_password_param],
         summary="Query & filter based on Member attributes. "
         "Results are returned as flattened spreadsheet row style output",
         auth=[],
@@ -67,7 +67,7 @@ class QueryInstallFilter(filters.FilterSet):
 @extend_schema_view(
     get=extend_schema(
         tags=["Legacy Query Form"],
-        parameters=[query_form_password_param],# + map_query_filters_to_param_annotations(INSTALL_FILTERS),
+        parameters=[query_form_password_param],
         summary="Query & filter based on Install attributes. "
         "Results are returned as flattened spreadsheet row style output",
         auth=[],
@@ -101,7 +101,7 @@ class QueryBuildingFilter(filters.FilterSet):
 @extend_schema_view(
     get=extend_schema(
         tags=["Legacy Query Form"],
-        parameters=[query_form_password_param],# + map_query_filters_to_param_annotations(BUILDING_FILTERS),
+        parameters=[query_form_password_param],
         summary="Query & filter based on Building attributes. "
         "Results are returned as flattened spreadsheet row style output",
         auth=[],
