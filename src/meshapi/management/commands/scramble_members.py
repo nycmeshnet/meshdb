@@ -53,7 +53,9 @@ class Command(BaseCommand):
             for install in installs:
                 install.unit = randrange(100)
                 install.notes = fake.text()
-                install.request_date, install.install_date, install.abandon_date = self.fuzz_dates(install.request_date, install.install_date, install.abandon_date)
+                install.request_date, install.install_date, install.abandon_date = self.fuzz_dates(
+                    install.request_date, install.install_date, install.abandon_date
+                )
                 install.save()
 
         print("Scrambling all other notes and dates")
@@ -68,7 +70,9 @@ class Command(BaseCommand):
         devices = Device.objects.all()
         for device in devices:
             device.notes = fake.text()
-            _, device.install_date, device.abandon_date = self.fuzz_dates(None, device.install_date, device.abandon_date)
+            _, device.install_date, device.abandon_date = self.fuzz_dates(
+                None, device.install_date, device.abandon_date
+            )
             device.save()
 
         print("Scrambling links...")
@@ -92,10 +96,10 @@ class Command(BaseCommand):
         if request_date:
             # Make it happen sooner so that there's no way the request date is
             # now beyond the install/abandon date.
-            request_date -= timedelta(days=randint(14,100))
+            request_date -= timedelta(days=randint(14, 100))
 
         if install_date:
-            install_date += timedelta(days=randint(14,100))
+            install_date += timedelta(days=randint(14, 100))
 
         if abandon_date:
             abandon_date += timedelta(days=randint(100, 200))
