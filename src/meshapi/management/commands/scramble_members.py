@@ -64,6 +64,17 @@ class Command(BaseCommand):
         buildings = Building.objects.all()
         for building in buildings:
             building.notes = fake.text()
+            # Fuzz the street address, if possible
+            if building.street_address:
+                address = building.street_address.split(" ")
+                if len(address) > 0:
+                    try:
+                        fuzzed_street_number = str(int(address[0]) + randint(1,20))
+                        street_name = " ".join(address[1:])
+                        building.street_address = f"{fuzzed_street_number} {street_name}"
+                    except ValueError:
+                        pass
+
             building.save()
 
         print("Scrambling devices...")
