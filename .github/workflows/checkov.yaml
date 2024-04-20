@@ -5,9 +5,18 @@ on:
 jobs:
   checkov-job:
     permissions:
-      contents: read
-      security-events: write
       actions: read
+      checks: none
+      contents: read
+      deployments: none
+      discussions: none
+      id-token: none
+      issues: none
+      packages: none
+      pages: none
+      repository-projects: none
+      security-events: write
+      statuses: none
     runs-on: ubuntu-latest
     name: checkov-action
     steps:
