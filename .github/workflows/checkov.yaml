@@ -1,8 +1,12 @@
+name: Checkov
+
 on:
   push:
     branches: [ "main", "james/checkov" ]
   workflow_dispatch:
+
 permissions: read-all
+
 jobs:
   checkov-job:
     permissions:
