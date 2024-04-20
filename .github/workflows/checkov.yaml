@@ -4,6 +4,10 @@ on:
   workflow_dispatch:
 jobs:
   checkov-job:
+    permissions:
+      contents: read
+      security-events: write
+      actions: read
     runs-on: ubuntu-latest
     name: checkov-action
     steps:
