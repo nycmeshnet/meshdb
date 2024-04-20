@@ -2,7 +2,7 @@ name: Checkov
 
 on:
   push:
-    branches: [ "main", "james/checkov" ]
+    branches: [ "main" ]
   workflow_dispatch:
 
 permissions: read-all
