@@ -2,19 +2,12 @@ on:
   push:
     branches: [ "main", "james/checkov" ]
   workflow_dispatch:
+permissions: read-all
 jobs:
   checkov-job:
     permissions:
       actions: read
-      checks: none
       contents: read
-      deployments: none
-      discussions: none
-      id-token: none
-      issues: none
-      packages: none
-      pages: none
-      repository-projects: none
       security-events: write
       statuses: none
     runs-on: ubuntu-latest
