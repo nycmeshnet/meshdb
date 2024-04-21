@@ -65,7 +65,8 @@ class MemberFilter(filters.FilterSet):
                 "email_address",
                 OpenApiTypes.STR,
                 OpenApiParameter.QUERY,
-                description="Filter members by any of the email address fields using case-insensitve substring matching",
+                description="Filter members by any of the email address fields using case-insensitve "
+                "substring matching",
                 required=False,
             ),
             OpenApiParameter(

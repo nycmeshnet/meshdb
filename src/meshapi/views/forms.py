@@ -104,7 +104,8 @@ def join_form(request):
     if not NYCZipCodes.match_zip(r.zip):
         return Response(
             {
-                "detail": "Non-NYC registrations are not supported at this time. Check back later, or email support@nycmesh.net"
+                "detail": "Non-NYC registrations are not supported at this time. Check back later, "
+                "or email support@nycmesh.net"
             },
             status=status.HTTP_400_BAD_REQUEST,
         )
@@ -250,7 +251,8 @@ def join_form(request):
         )
 
     logging.info(
-        f"JoinForm submission success. building_id: {join_form_building.id}, member_id: {join_form_member.id}, install_number: {join_form_install.install_number}"
+        f"JoinForm submission success. building_id: {join_form_building.id}, "
+        f"member_id: {join_form_member.id}, install_number: {join_form_install.install_number}"
     )
 
     return Response(
@@ -347,7 +349,8 @@ def network_number_assignment(request):
 
     # Check if the install already has a network number
     if nn_install.node is not None:
-        message = f"This Install Number ({r.install_number}) already has a Network Number ({nn_install.node.network_number}) associated with it!"
+        message = f"This Install Number ({r.install_number}) already has a "
+        f"Network Number ({nn_install.node.network_number}) associated with it!"
         logging.warn(message)
         return Response(
             {

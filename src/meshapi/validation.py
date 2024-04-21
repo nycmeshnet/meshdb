@@ -86,7 +86,8 @@ class NYCAddressInfo:
         found_zip = int(nyc_planning_resp["features"][0]["properties"]["postalcode"])
         if found_zip != zip:
             raise AddressError(
-                f"(NYC) Could not find address '{street_address}, {city}, {state} {zip}'. Zip code ({zip}) is probably not within city limits"
+                f"(NYC) Could not find address '{street_address}, {city}, {state} {zip}'. "
+                f"Zip code ({zip}) is probably not within city limits"
             )
 
         addr_props = nyc_planning_resp["features"][0]["properties"]

@@ -49,8 +49,8 @@ class Building(models.Model):
             choices=list((src.value, src.name) for src in AddressTruthSource),
         ),
         help_text="A list of strings that answers the question: How was the content of"
-        "the street address, city, state, and ZIP fields determined? This is useful in understanding the level of validation "
-        "applied to spreadsheet imported data. Possible values are: "
+        "the street address, city, state, and ZIP fields determined? This is useful in "
+        "understanding the level of validation applied to spreadsheet imported data. Possible values are: "
         f"{', '.join(src.value for src in AddressTruthSource)}. Check the import script for details",
     )
 
@@ -64,9 +64,9 @@ class Building(models.Model):
         blank=True,
         null=True,
         help_text="A free-form text description of this building, to track any additional information. "
-        "For Buidings imported from the spreadsheet, this starts with a formatted block of information about the import process"
-        "and original spreadsheet data. However this structure can be changed by admins at any time and should not be relied on"
-        "by automated systems. ",
+        "For Buidings imported from the spreadsheet, this starts with a formatted block of information about "
+        "the import process and original spreadsheet data. However this structure can be changed by admins at "
+        "any time and should not be relied on by automated systems. ",
     )
     panoramas = JSONFormArrayField(
         models.URLField(),
