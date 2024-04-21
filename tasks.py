@@ -11,7 +11,7 @@ def format(context):
 def lint(context):
     context.run("black . --check")
     context.run("isort . --check")
-    # context.run("flake8 src")
+    context.run("flake8 src")
     # context.run("mypy meshdb")
 
 

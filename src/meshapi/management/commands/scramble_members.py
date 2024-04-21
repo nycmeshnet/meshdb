@@ -1,11 +1,11 @@
-from datetime import datetime, timedelta
+from datetime import timedelta
 from random import randint, randrange
 
 from django.core.management.base import BaseCommand
 from django.db import transaction
 from faker import Faker
 
-from meshapi.models import Install, Member, install
+from meshapi.models import Install, Member
 from meshapi.models.building import Building
 from meshapi.models.devices.device import Device
 from meshapi.models.link import Link
