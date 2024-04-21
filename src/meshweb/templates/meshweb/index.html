@@ -10,51 +10,7 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"
     integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
   <link rel="shortcut icon" href="{% static 'meshweb/favicon.png' %}" />
-  <style>
-    .max-width-container {
-      max-width: 1200px !important;
-      padding: 0em 3em;
-      /* margin: 0 auto;  */
-      /* padding: 10em;  */
-    }
-
-    a {
-      color: inherit !important;
-    }
-
-    body {
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: stretch;
-    }
-
-    footer,
-    nav {
-      --bs-bg-opacity: 1;
-      background-color: #f4f4f4 !important;
-    }
-
-    footer {
-      width: 100%;
-      left: 0;
-      bottom: 0;
-      flex-grow: 1;
-    }
-
-    footer a {
-      text-decoration: none;
-    }
-
-    .links {
-      display: flex;
-      justify-content: center !important;
-      column-gap: 3rem;
-      row-gap: 2rem;
-      flex-wrap: wrap;
-      align-content: flex-start;
-    }
-  </style>
+  <link rel="stylesheet" href="{% static 'meshweb/styles.css' %}" />
 </head>
 
 <body>
@@ -105,19 +61,17 @@
         It can be used to track Installs, Members, and Buildings in the mesh.
       </p>
       <p>Reach out on Slack if you need access.</p>
-      <b>Here are some links to various services provided by this server:</b>
-      <div style=" display:flex; flex-direction: row; justify-content: space-between; margin-top: 20px" class="links">
-        <a href="https://forms.grandsvc.mesh.nycmesh.net/join/">Join Our Community Network!</a>
-        <a href="/admin">Admin Panel</a>
-        <a href="https://forms.grandsvc.mesh.nycmesh.net/">Other Forms</a>
-        <a href="/api/v1/">MeshDB Data API</a>
-        <a href="/api-docs/swagger/">API Documentation (Swagger)</a>
-        <a href="/api-docs/redoc/">API Documentation (Redoc)</a>
-        <a href="https://los.grandsvc.mesh.nycmesh.net/">Line of Sight Tool</a>
-        <a href="https://map.grandsvc.mesh.nycmesh.net">Map</a>
-        <a href="https://github.com/nycmeshnet/meshdb">Source Code</a>
+      <hr>
+      <div style="display:flex; flex-direction: row; justify-content: space-between; margin-top: 20px" class="links">
+        {% for category, tools in links.items %}
+        <div class="toolList">
+          <h3>{{ category }}</h3>
+          {% for link, description in tools %}
+          <a href={{ link }}>{{ description }}</a>
+          {% endfor %}
+        </div>
+        {% endfor %}
       </div>
-
     </div>
   </div>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"

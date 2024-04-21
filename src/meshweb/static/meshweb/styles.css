@@ -1,0 +1,49 @@
+.max-width-container {
+  max-width: 1200px !important;
+  padding: 0em 3em;
+  /* margin: 0 auto;  */
+  /* padding: 10em;  */
+}
+
+a {
+  color: inherit !important;
+}
+
+body {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+footer,
+nav {
+  --bs-bg-opacity: 1;
+  background-color: #f4f4f4 !important;
+}
+
+footer {
+  width: 100%;
+  left: 0;
+  bottom: 0;
+  flex-grow: 1;
+}
+
+footer a {
+  text-decoration: none;
+}
+
+.links {
+  display: flex;
+  justify-content: center !important;
+  column-gap: 3rem;
+  row-gap: 2rem;
+  flex-wrap: wrap;
+  align-content: flex-start;
+}
+
+.toolList {
+  display: flex; 
+  flex-direction: column;
+  line-height: 3em;
+}
