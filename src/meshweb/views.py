@@ -3,7 +3,6 @@ from drf_spectacular.utils import extend_schema
 from rest_framework import permissions
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.filters import loader
-from rest_framework.request import Request
 
 
 # Home view
