@@ -1,3 +1,4 @@
+from argparse import ArgumentParser
 from datetime import timedelta
 from random import randint, randrange
 
@@ -18,7 +19,7 @@ from meshapi.models.node import Node
 class Command(BaseCommand):
     help = "Updates all members with fake name, email, and phone number. Clears notes."
 
-    def add_arguments(self, parser):
+    def add_arguments(self, parser: ArgumentParser) -> None:
         parser.add_argument(
             "--skip-members",
             action="store_true",

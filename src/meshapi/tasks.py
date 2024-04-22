@@ -17,7 +17,7 @@ def run_database_backup():
 
 
 @celery_app.task
-def run_update_panoramas():
+def run_update_panoramas() -> None:
     sync_github_panoramas()
 
 

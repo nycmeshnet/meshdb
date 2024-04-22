@@ -103,7 +103,7 @@ class Building(models.Model):
         if self.primary_node and self.primary_node not in self.nodes.all():
             self.nodes.add(self.primary_node)
 
-    def __str__(self):
+    def __str__(self) -> str:
         if self.street_address:
             addr_str = str(self.street_address)
             if self.city:

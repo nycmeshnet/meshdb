@@ -24,7 +24,7 @@ class Sector(Device):
         ],
     )
 
-    def __str__(self):
+    def __str__(self) -> str:
         if self.name:
             return self.name
         return f"MeshDB Sector ID {self.id}"

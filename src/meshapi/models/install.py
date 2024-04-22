@@ -117,5 +117,5 @@ class Install(models.Model):
             ("update_panoramas", "Can update panoramas"),
         ]
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"#{str(self.install_number)}"

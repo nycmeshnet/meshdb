@@ -12,7 +12,7 @@ from meshdb.utils.spreadsheet_import.building.constants import INVALID_BIN_NUMBE
 from meshdb.utils.spreadsheet_import.building.pelias import humanify_street_address
 
 
-def validate_email_address(email_address):
+def validate_email_address(email_address: str) -> bool:
     return validate_email(
         email_address=email_address,
         check_format=True,
@@ -24,7 +24,7 @@ def validate_email_address(email_address):
 
 
 # Expects country code!!!!
-def validate_phone_number(phone_number):
+def validate_phone_number(phone_number: str) -> bool:
     try:
         parsed = phonenumbers.parse(phone_number, None)
         if not phonenumbers.is_possible_number(parsed):

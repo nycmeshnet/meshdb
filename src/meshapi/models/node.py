@@ -80,17 +80,17 @@ class Node(models.Model):
         "should not be relied on by automated systems. ",
     )
 
-    def save(self, *args, **kwargs):
+    def save(self, *args, **kwargs) -> None:
         if not self.network_number:
             self.network_number = get_next_available_network_number()
 
         super().save(*args, **kwargs)
 
-    def __str__(self):
+    def __str__(self) -> str:
         if self.name:
             return f"NN{str(self.network_number)} ({str(self.name)})"
 
         return f"NN{str(self.network_number)}"
 
-    def __network_number__(self):
+    def __network_number__(self) -> str:
         return f"NN{str(self.network_number)}"

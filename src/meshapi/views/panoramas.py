@@ -4,6 +4,7 @@ from pathlib import Path
 
 import requests
 from rest_framework.decorators import api_view, permission_classes
+from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import status
 
@@ -32,7 +33,7 @@ class GitHubError(Exception):
 # View called to make MeshDB refresh the panoramas.
 @api_view(["POST"])
 @permission_classes([HasPanoramaUpdatePermission])
-def update_panoramas(request):
+def update_panoramas(request: Request) -> Response:
     try:
         panoramas_saved, warnings = sync_github_panoramas()
         return Response(
