@@ -42,6 +42,7 @@ Next, fill out the `.env.sample` file and load it into your environment.
 
 ```
 cp .env.sample .env
+nano .env # Or your favorite text editor, fill in the blank variables
 ```
 You're gonna need a `DJANGO_SECRET_KEY`:
 
