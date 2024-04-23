@@ -40,6 +40,9 @@ pip install -e '.[dev]'
 
 Next, fill out the `.env.sample` file and load it into your environment.
 
+```
+cp .env.sample .env
+```
 You're gonna need a `DJANGO_SECRET_KEY`:
 
 ### Generating `DJANGO_SECRET_KEY`
