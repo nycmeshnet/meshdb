@@ -1,8 +1,11 @@
+from typing import Any
+
 from django.db.models import Q
 from django_filters import rest_framework as filters
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
 from rest_framework import generics
+from rest_framework.request import Request
 from rest_framework.response import Response
 
 from meshapi.models import Building, Device, Install, Link, Member, Node, Sector
@@ -18,7 +21,7 @@ from meshapi.serializers import (
 
 
 class FilterRequiredListAPIView(generics.ListAPIView):
-    def get(self, request, *args, **kwargs):
+    def get(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         possible_filters = set(self.filterset_class.base_filters.keys())
         provided_filters = set(self.request.query_params.keys())
         invalid_filters = provided_filters - possible_filters

@@ -8,7 +8,7 @@ from meshdb.celery import app as celery_app
 
 
 @celery_app.task
-def run_database_backup():
+def run_database_backup() -> None:
     if not os.environ.get("AWS_ACCESS_KEY_ID") or not os.environ.get("AWS_SECRET_ACCESS_KEY"):
         print("Could not run backup. Missing AWS credentials!")
         return

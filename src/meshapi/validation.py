@@ -46,7 +46,7 @@ class NYCAddressInfo:
     zip: int
     longitude: float
     latitude: float
-    altitude: float
+    altitude: float | None
     bin: int | None
 
     def __init__(self, street_address: str, city: str, state: str, zip: int):
@@ -60,7 +60,7 @@ class NYCAddressInfo:
             # This one always returns a "best effort" search
             query_params = {
                 "text": self.address,
-                "size": 1,
+                "size": "1",
             }
             nyc_planning_req = requests.get(
                 "https://geosearch.planninglabs.nyc/v2/search",
@@ -112,7 +112,7 @@ class NYCAddressInfo:
             query_params = {
                 "$where": f"bin={self.bin}",
                 "$select": "heightroof,groundelev",
-                "$limit": 1,
+                "$limit": "1",
             }
             nyc_dataset_req = requests.get(
                 "https://data.cityofnewyork.us/resource/qb5r-6dgf.json",
