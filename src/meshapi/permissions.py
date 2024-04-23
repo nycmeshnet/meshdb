@@ -24,7 +24,7 @@ class IsReadOnly(BasePermission):
 class HasDjangoPermission(BasePermission):
     django_permission: str | None = None
 
-    def has_permission(self, request, view: Any) -> bool:
+    def has_permission(self, request: Request, view: Any) -> bool:
         if not self.django_permission:
             raise NotImplementedError(
                 "You must subclass HasDjangoPermission and specify the django_permission attribute"

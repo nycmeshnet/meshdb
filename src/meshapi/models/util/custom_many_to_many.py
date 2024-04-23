@@ -12,6 +12,7 @@ but don't want to make an additional through model and have to compromise on the
 """
 
 from functools import partial
+from typing import Any
 
 from django.core.exceptions import ImproperlyConfigured
 from django.db.models import ManyToManyField
@@ -88,7 +89,9 @@ def create_custom_column_name_many_to_many_intermediary_model(field, klass):
 
 class CustomColumnNameManyToManyField(ManyToManyField):
     # CHANGED FROM ORIGINAL: The following init method was added from original ManyToManyField() class
-    def __init__(self, *args, db_from_column_name=None, db_to_column_name=None, **kwargs):
+    def __init__(
+        self, *args: Any, db_from_column_name: str | None = None, db_to_column_name: str | None = None, **kwargs: Any
+    ):
         if db_from_column_name is None or db_to_column_name is None:
             raise ImproperlyConfigured(
                 "CustomColumnNameManyToManyField requires that you specify either db_from_column_name, "

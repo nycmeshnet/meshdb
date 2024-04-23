@@ -101,9 +101,9 @@ class NYCAddressInfo:
 
         # TODO (willnilges): Bail if no BIN. Given that we're guaranteeing this is NYC, if
         # there is no BIN, then we've really foweled something up
-        self.bin = addr_props["addendum"]["pad"]["bin"]
-        if int(self.bin) in INVALID_BIN_NUMBERS:
+        if int(addr_props["addendum"]["pad"]["bin"]) in INVALID_BIN_NUMBERS:
             raise AddressAPIError
+        self.bin = addr_props["addendum"]["pad"]["bin"]
         self.longitude, self.latitude = nyc_planning_resp["features"][0]["geometry"]["coordinates"]
 
         # Now that we have the bin, we can definitively get the height from

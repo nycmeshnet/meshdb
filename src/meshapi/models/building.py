@@ -1,3 +1,5 @@
+from typing import Any
+
 from django.contrib.postgres.fields import ArrayField
 from django.core.validators import MinValueValidator
 from django.db import models
@@ -96,7 +98,7 @@ class Building(models.Model):
         related_name="buildings",
     )
 
-    def save(self, *args, **kwargs):
+    def save(self, *args: Any, **kwargs: Any) -> None:
         super().save(*args, **kwargs)
 
         # Ensure primary_node is always contained in nodes

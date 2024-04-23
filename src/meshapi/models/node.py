@@ -1,3 +1,5 @@
+from typing import Any
+
 from django.core.validators import MaxValueValidator
 from django.db import models
 
@@ -80,7 +82,7 @@ class Node(models.Model):
         "should not be relied on by automated systems. ",
     )
 
-    def save(self, *args, **kwargs) -> None:
+    def save(self, *args: Any, **kwargs: Any) -> None:
         if not self.network_number:
             self.network_number = get_next_available_network_number()
 
