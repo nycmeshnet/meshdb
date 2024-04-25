@@ -26,6 +26,14 @@ you can use Django's tools. You'll also need Python 3.11, and pip, of course.
 
 Firstly, fork this repo.
 
+> [!NOTE]
+> If you cloned nycmeshnet/meshdb, you can change your origin by doing the following:
+> ```
+> git remote remove origin
+> git remote add origin https://github.com/<your_username>/meshdb
+> git remote add upstream https://github.com/nycmeshnet/meshdb
+> ```
+
 For safety, create a venv
 
 ```
