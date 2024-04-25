@@ -24,6 +24,8 @@ wiki](https://wiki.mesh.nycmesh.net/books/services-software/chapter/meshdb)
 The production environment relies on Nginx and Gunicorn, but for development,
 you can use Django's tools. You'll also need Python 3.11, and pip, of course.
 
+Firstly, fork this repo.
+
 For safety, create a venv
 
 ```
