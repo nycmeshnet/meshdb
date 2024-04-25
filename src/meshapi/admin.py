@@ -18,7 +18,7 @@ class BetterInline(admin.TabularInline):
     can_delete = False
     template = "admin/install_tabular.html"
 
-    def has_add_permission(self, request, obj):
+    def has_add_permission(self, request, obj) -> bool:
         return False
 
     class Media:
@@ -32,7 +32,7 @@ class BetterNonrelatedInline(NonrelatedTabularInline):
     can_delete = False
     template = "admin/install_tabular.html"
 
-    def has_add_permission(self, request, obj):
+    def has_add_permission(self, request, obj) -> bool:
         return False
 
     class Media:

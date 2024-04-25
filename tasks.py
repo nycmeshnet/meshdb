@@ -11,10 +11,10 @@ def format(context):
 def lint(context):
     context.run("black . --check")
     context.run("isort . --check")
-    # context.run("flake8 src")
-    # context.run("mypy meshdb")
+    context.run("flake8 src")
+    # context.run("mypy src")
 
 
 @task
-def unit_test(context):
-    context.run("pytest unit_tests/")
+def test(context):
+    context.run("python src/manage.py test meshapi meshapi_hooks")

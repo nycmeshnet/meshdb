@@ -12,6 +12,7 @@ but don't want to make an additional through model and have to compromise on the
 """
 
 from functools import partial
+from typing import Any
 
 from django.core.exceptions import ImproperlyConfigured
 from django.db.models import ManyToManyField
@@ -37,7 +38,8 @@ def create_custom_column_name_many_to_many_intermediary_model(field, klass):
     name = "%s_%s" % (klass._meta.object_name, field.name)
     lazy_related_operation(set_managed, klass, to_model, name)
 
-    # CHANGED FROM ORIGINAL: The following two lines are changed from the original django create_many_to_many_intermediary_model function
+    # CHANGED FROM ORIGINAL: The following two lines are changed from the original django
+    # screate_many_to_many_intermediary_model function
     to = getattr(field, "_to_column_name") or make_model_tuple(to_model)[1]
     from_ = getattr(field, "_from_column_name") or klass._meta.model_name
     if to == from_:
@@ -87,10 +89,13 @@ def create_custom_column_name_many_to_many_intermediary_model(field, klass):
 
 class CustomColumnNameManyToManyField(ManyToManyField):
     # CHANGED FROM ORIGINAL: The following init method was added from original ManyToManyField() class
-    def __init__(self, *args, db_from_column_name=None, db_to_column_name=None, **kwargs):
+    def __init__(
+        self, *args: Any, db_from_column_name: str | None = None, db_to_column_name: str | None = None, **kwargs: Any
+    ):
         if db_from_column_name is None or db_to_column_name is None:
             raise ImproperlyConfigured(
-                "CustomColumnNameManyToManyField requires that you specify either db_from_column_name, db_to_column_name, or both."
+                "CustomColumnNameManyToManyField requires that you specify either db_from_column_name, "
+                "db_to_column_name, or both."
             )
         self._from_column_name = db_from_column_name
         self._to_column_name = db_to_column_name
@@ -135,7 +140,8 @@ class CustomColumnNameManyToManyField(ManyToManyField):
                 lazy_related_operation(resolve_through_model, cls, self.remote_field.through, field=self)
             elif not cls._meta.swapped:
                 self.remote_field.through = (
-                    # CHANGED FROM ORIGINAL: The following line was changed from the original django ManyToManyField class
+                    # CHANGED FROM ORIGINAL: The following line was changed from the original
+                    # django ManyToManyField class
                     create_custom_column_name_many_to_many_intermediary_model(self, cls)
                 )
 

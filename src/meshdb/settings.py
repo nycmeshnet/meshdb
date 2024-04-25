@@ -260,20 +260,24 @@ SPECTACULAR_SETTINGS = {
         {"name": "Buildings", "description": "Buildings on the mesh and their location data, one per street address"},
         {
             "name": "Installs",
-            "description": "Installs, one corresponding to each household that is either already on the mesh, or wishes to join the mesh",
+            "description": "Installs, one corresponding to each household that is either already on the mesh, "
+            "or wishes to join the mesh",
         },
         {
             "name": "Nodes",
-            "description": "Nodes, one corresponding to each collection of devices with the same network number, the installs that use those devices, and the buildings that house them",
+            "description": "Nodes, one corresponding to each collection of devices with the same network number, "
+            "the installs that use those devices, and the buildings that house them",
         },
         {"name": "Links", "description": "Network links between devices"},
         {
             "name": "Devices",
-            "description": "Devices, one corresponding to each physical device on the mesh (routers, aps, cpes, etc.). Includes all Sectors",
+            "description": "Devices, one corresponding to each physical device on the mesh (routers, aps, cpes, etc.). "
+            "Includes all Sectors",
         },
         {
             "name": "Sectors",
-            "description": 'Special devices with antennas with broad coverage of a radial "slice" of land area. See https://docs.nycmesh.net/hardware/liteap/',
+            "description": 'Special devices with antennas with broad coverage of a radial "slice" of land area. '
+            "See https://docs.nycmesh.net/hardware/liteap/",
         },
         {"name": "Geographic & KML Data", "description": "Endpoints for geographic and KML data export"},
         {

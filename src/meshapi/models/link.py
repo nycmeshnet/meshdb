@@ -62,7 +62,7 @@ class Link(models.Model):
         default=None, blank=True, null=True, help_text="The UUID used to indentify this link in UISP (if applicable)"
     )
 
-    def __str__(self):
+    def __str__(self) -> str:
         if self.from_device.node.network_number and self.to_device.node.network_number:
             return f"NN{self.from_device.node.network_number} → NN{self.to_device.node.network_number}"
         return f"MeshDB Link ID {self.id}"

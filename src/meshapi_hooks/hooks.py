@@ -22,14 +22,14 @@ class CelerySerializerHook(AbstractHook):
         "This should not be modified by administrators",
     )
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f'Webhook for delivery of "{self.event}" event to {self.user}'
 
     class Meta:
         verbose_name = "Webhook Target"
         verbose_name_plural = "Webhook Targets"
 
-    def deliver_hook(self, serialized_hook):
+    def deliver_hook(self, serialized_hook) -> None:
         # Inline import to prevent circular import loop
         from meshapi_hooks.tasks import deliver_webhook_task
 
