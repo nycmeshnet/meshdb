@@ -1,3 +1,5 @@
+from argparse import ArgumentParser
+
 from django.contrib.auth.models import Group, Permission
 from django.core.management.base import BaseCommand
 
@@ -5,10 +7,10 @@ from django.core.management.base import BaseCommand
 class Command(BaseCommand):
     help = "Creates basic MeshDB groups"
 
-    def add_arguments(self, parser):
+    def add_arguments(self, parser: ArgumentParser) -> None:
         pass
 
-    def handle(self, *args, **options):
+    def handle(self, *args, **options) -> None:
         models = [
             "building",
             "member",

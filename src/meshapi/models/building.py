@@ -1,3 +1,5 @@
+from typing import Any
+
 from django.contrib.postgres.fields import ArrayField
 from django.core.validators import MinValueValidator
 from django.db import models
@@ -49,8 +51,8 @@ class Building(models.Model):
             choices=list((src.value, src.name) for src in AddressTruthSource),
         ),
         help_text="A list of strings that answers the question: How was the content of"
-        "the street address, city, state, and ZIP fields determined? This is useful in understanding the level of validation "
-        "applied to spreadsheet imported data. Possible values are: "
+        "the street address, city, state, and ZIP fields determined? This is useful in "
+        "understanding the level of validation applied to spreadsheet imported data. Possible values are: "
         f"{', '.join(src.value for src in AddressTruthSource)}. Check the import script for details",
     )
 
@@ -64,9 +66,9 @@ class Building(models.Model):
         blank=True,
         null=True,
         help_text="A free-form text description of this building, to track any additional information. "
-        "For Buidings imported from the spreadsheet, this starts with a formatted block of information about the import process"
-        "and original spreadsheet data. However this structure can be changed by admins at any time and should not be relied on"
-        "by automated systems. ",
+        "For Buidings imported from the spreadsheet, this starts with a formatted block of information about "
+        "the import process and original spreadsheet data. However this structure can be changed by admins at "
+        "any time and should not be relied on by automated systems. ",
     )
     panoramas = JSONFormArrayField(
         models.URLField(),
@@ -96,14 +98,14 @@ class Building(models.Model):
         related_name="buildings",
     )
 
-    def save(self, *args, **kwargs):
+    def save(self, *args: Any, **kwargs: Any) -> None:
         super().save(*args, **kwargs)
 
         # Ensure primary_node is always contained in nodes
         if self.primary_node and self.primary_node not in self.nodes.all():
             self.nodes.add(self.primary_node)
 
-    def __str__(self):
+    def __str__(self) -> str:
         if self.street_address:
             addr_str = str(self.street_address)
             if self.city:

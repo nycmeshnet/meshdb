@@ -1,11 +1,12 @@
-from datetime import datetime, timedelta
+from argparse import ArgumentParser
+from datetime import timedelta
 from random import randint, randrange
 
 from django.core.management.base import BaseCommand
 from django.db import transaction
 from faker import Faker
 
-from meshapi.models import Install, Member, install
+from meshapi.models import Install, Member
 from meshapi.models.building import Building
 from meshapi.models.devices.device import Device
 from meshapi.models.link import Link
@@ -18,7 +19,7 @@ from meshapi.models.node import Node
 class Command(BaseCommand):
     help = "Updates all members with fake name, email, and phone number. Clears notes."
 
-    def add_arguments(self, parser):
+    def add_arguments(self, parser: ArgumentParser) -> None:
         parser.add_argument(
             "--skip-members",
             action="store_true",

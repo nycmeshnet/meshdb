@@ -10,10 +10,10 @@ from django_jsonform.widgets import JSONFormWidget
 class PanoramaViewer(JSONFormWidget):
     pano_template_name = "widgets/panorama_viewer.html"
 
-    def __init__(self, schema):
+    def __init__(self, schema: dict):
         super().__init__(schema)
 
-    def pano_get_context(self, name, value, attrs=None):
+    def pano_get_context(self, name, value, attrs=None) -> dict:
         value_as_array = json.loads(value)
         return {
             "widget": {

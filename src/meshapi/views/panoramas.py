@@ -1,9 +1,11 @@
 import logging
 import os
 from pathlib import Path
+from typing import Union
 
 import requests
 from rest_framework.decorators import api_view, permission_classes
+from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import status
 
@@ -32,7 +34,7 @@ class GitHubError(Exception):
 # View called to make MeshDB refresh the panoramas.
 @api_view(["POST"])
 @permission_classes([HasPanoramaUpdatePermission])
-def update_panoramas(request):
+def update_panoramas(request: Request) -> Response:
     try:
         panoramas_saved, warnings = sync_github_panoramas()
         return Response(
@@ -105,7 +107,7 @@ def set_panoramas(panos: dict[str, list[str]]) -> tuple[int, list[str]]:
     return panoramas_saved, warnings
 
 
-def build_pano_dict(files: list[str]):
+def build_pano_dict(files: list[str]) -> dict:
     panos = {}
     for f in files:
         try:
@@ -123,7 +125,7 @@ def build_pano_dict(files: list[str]):
 # This is awful. Maybe there are easy ways to generalize some cases like stripping
 # spaces, but for now I would rather explicitly handle these cases until I have
 # better tests.
-def parse_pano_title(title: str):
+def parse_pano_title(title: str) -> tuple[str, str]:
     if len(title) <= 0:
         raise BadPanoramaTitle("Got title of length 0")
 
@@ -159,7 +161,7 @@ def parse_pano_title(title: str):
 
 # Gets the tree-sha, which we need to use the trees API (allows us to list up to
 # 100k/7MB of data)
-def get_head_tree_sha(owner, repo, branch, token: str = ""):
+def get_head_tree_sha(owner: str, repo: str, branch: str, token: str = "") -> str | None:
     url = f"https://api.github.com/repos/{owner}/{repo}/branches/{branch}"
     master = requests.get(
         url, headers={"Authorization": f"Bearer {token}"}, timeout=DEFAULT_EXTERNAL_API_TIMEOUT_SECONDS
@@ -167,12 +169,14 @@ def get_head_tree_sha(owner, repo, branch, token: str = ""):
     if master.status_code != 200:
         logging.error(f"Error: Got status {master.status_code} from GitHub trying to get SHA.")
         return None
-    master = master.json()
-    return master["commit"]["commit"]["tree"]["sha"]
+    master_json = master.json()
+    return master_json["commit"]["commit"]["tree"]["sha"]
 
 
 # Returns all the filenames, stripped of extensions and everything
-def list_files_in_git_directory(owner: str, repo: str, directory: str, tree, token: str = ""):
+def list_files_in_git_directory(
+    owner: str, repo: str, directory: str, tree: str, token: str = ""
+) -> Union[list[str], None]:
     url = f"https://api.github.com/repos/{owner}/{repo}/git/trees/{tree}?recursive=1"
     response = requests.get(
         url, headers={"Authorization": f"Bearer {token}"}, timeout=DEFAULT_EXTERNAL_API_TIMEOUT_SECONDS
@@ -181,8 +185,8 @@ def list_files_in_git_directory(owner: str, repo: str, directory: str, tree, tok
         logging.error(f"Error: Failed to fetch GitHub directory contents. Status code: {response.status_code}")
         return None
     files = []
-    tree = response.json()
-    for item in tree["tree"]:
+    tree_res = response.json()
+    for item in tree_res["tree"]:
         if item["type"] == "blob" and directory in item["path"]:
             files.append(os.path.basename(item["path"]))
     return files
