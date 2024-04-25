@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import List
 
 from django.db.models import Count, F, OuterRef, Prefetch, Q, Subquery
 from drf_spectacular.utils import extend_schema, extend_schema_view
@@ -28,7 +29,7 @@ class MapDataNodeList(generics.ListAPIView):
     serializer_class = MapDataInstallSerializer
     pagination_class = None
 
-    def get_queryset(self):
+    def get_queryset(self) -> List[Install]:
         all_installs = []
 
         queryset = (

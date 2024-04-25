@@ -1,5 +1,5 @@
 import json
-from typing import Optional
+from typing import Any, Optional
 
 from django.conf import os
 from django.contrib.auth import PermissionDenied
@@ -7,6 +7,7 @@ from django.contrib.auth.models import User
 from django.db.models import Model
 from rest_framework import permissions
 from rest_framework.permissions import BasePermission
+from rest_framework.request import Request
 
 
 class IsReadOnly(BasePermission):
@@ -16,14 +17,14 @@ class IsReadOnly(BasePermission):
         permission_classes = [permissions.DjangoModelPermissions | IsReadOnly]
     """
 
-    def has_permission(self, request, view):
+    def has_permission(self, request: Request, view: Any) -> bool:
         return bool(request.method in permissions.SAFE_METHODS)
 
 
 class HasDjangoPermission(BasePermission):
-    django_permission = None
+    django_permission: str | None = None
 
-    def has_permission(self, request, view):
+    def has_permission(self, request: Request, view: Any) -> bool:
         if not self.django_permission:
             raise NotImplementedError(
                 "You must subclass HasDjangoPermission and specify the django_permission attribute"
@@ -41,7 +42,7 @@ class HasPanoramaUpdatePermission(HasDjangoPermission):
 
 # Janky
 class LegacyMeshQueryPassword(permissions.BasePermission):
-    def has_permission(self, request, view):
+    def has_permission(self, request: Request, view: Any) -> bool:
         if (
             request.headers["Authorization"]
             and request.headers["Authorization"] == f"Bearer {os.environ.get('QUERY_PSK')}"
@@ -52,7 +53,7 @@ class LegacyMeshQueryPassword(permissions.BasePermission):
 
 
 class LegacyNNAssignmentPassword(permissions.BasePermission):
-    def has_permission(self, request, view):
+    def has_permission(self, request: Request, view: Any) -> bool:
         request_json = json.loads(request.body)
         if "password" in request_json and request_json["password"] == os.environ.get("NN_ASSIGN_PSK"):
             return True
@@ -60,7 +61,7 @@ class LegacyNNAssignmentPassword(permissions.BasePermission):
         raise PermissionDenied("Authentication Failed.")
 
 
-def check_has_model_view_permission(user: Optional[User], model: Model):
+def check_has_model_view_permission(user: Optional[User], model: Model) -> bool:
     if not user:
         # Unauthenticated requests do not have permission by default
         return False

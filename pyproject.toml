@@ -35,6 +35,7 @@ dependencies = [
     "django-dbbackup@git+https://github.com/willnilges/django-dbbackup.git@62048411ff5beac4beac1578f686824214f1f33a",
     "django-storages==1.14.*",
     "boto3==1.34.*",
+    "six==1.16.0",
 ]
 
 [project.optional-dependencies]
@@ -49,6 +50,8 @@ dev = [
     "flask == 3.0.*",
     "django-cprofile-middleware==1.0.5",
     "django-silk==5.1.0",
+    "types-requests==2.31.*",
+    "types-six==1.16.0.*",
 ]
 
 [project.scripts]
@@ -75,6 +78,7 @@ exclude = [
     "^src/meshdb/utils/spreadsheet_import/.*",
     "^src/meshapi/tests/.*",
     "^src/meshapi_hooks/tests/.*",
+    "^src/meshapi/migrations/.*",
 ]
 
 

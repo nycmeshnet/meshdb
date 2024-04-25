@@ -1,3 +1,5 @@
+from typing import Any
+
 from django.core.validators import MaxValueValidator
 from django.db import models
 
@@ -75,22 +77,22 @@ class Node(models.Model):
         blank=True,
         null=True,
         help_text="A free-form text description of this Node, to track any additional information. "
-        "For Nodes imported from the spreadsheet, this starts with a formatted block of information about the import process"
-        "and original spreadsheet data. However this structure can be changed by admins at any time and should not be relied on"
-        "by automated systems. ",
+        "For Nodes imported from the spreadsheet, this starts with a formatted block of information about the import "
+        "process and original spreadsheet data. However this structure can be changed by admins at any time and "
+        "should not be relied on by automated systems. ",
     )
 
-    def save(self, *args, **kwargs):
+    def save(self, *args: Any, **kwargs: Any) -> None:
         if not self.network_number:
             self.network_number = get_next_available_network_number()
 
         super().save(*args, **kwargs)
 
-    def __str__(self):
+    def __str__(self) -> str:
         if self.name:
             return f"NN{str(self.network_number)} ({str(self.name)})"
 
         return f"NN{str(self.network_number)}"
 
-    def __network_number__(self):
+    def __network_number__(self) -> str:
         return f"NN{str(self.network_number)}"

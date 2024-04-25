@@ -30,9 +30,9 @@ class Member(models.Model):
         blank=True,
         null=True,
         help_text="A free-form text description of how to contact this member, to track any additional information. "
-        "For Members imported from the spreadsheet, this starts with a formatted block of information about the import process"
-        "and original spreadsheet data. However this structure can be changed by admins at any time and should not be relied on"
-        "by automated systems. ",
+        "For Members imported from the spreadsheet, this starts with a formatted block of information about the "
+        "import process and original spreadsheet data. However this structure can be changed by admins at any "
+        "time and should not be relied on by automated systems. ",
     )
 
     def __str__(self) -> str:
