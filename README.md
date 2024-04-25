@@ -94,7 +94,7 @@ your database.
 > This is _real member data_. DO NOT share this database with anyone under any
 > circumstances.
 
-```
+```sh
 cp -R <path_to_data_dump> ./spreadsheet_data/
 ./import_spreadsheet_dump.sh
 ```
@@ -118,6 +118,15 @@ You should now be able to access the API:
 ```sh
 curl http://127.0.0.1:8000/api/v1/    # Should echo "We're Meshin" to indicate 200 status
 ```
+
+When you're done, you can stop the server with `Ctrl+C`, and run `docker compose down` to take down the containers.
+
+> [!NOTE]
+> To spin things back up again later, just run:
+> ```sh
+> docker-compose up -d postgres pelias redis
+> python src/manage.py runserver
+> ```
 
 ### Prod Environment
 
