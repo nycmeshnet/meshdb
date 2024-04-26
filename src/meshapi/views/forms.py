@@ -10,6 +10,7 @@ from django.db.models import Q
 from drf_spectacular.utils import OpenApiResponse, extend_schema, extend_schema_view, inline_serializer
 from rest_framework import permissions, serializers, status
 from rest_framework.decorators import api_view, permission_classes
+from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework_dataclasses.serializers import DataclassSerializer
 
@@ -80,7 +81,7 @@ form_err_response_schema = inline_serializer("ErrorResponse", fields={"detail": 
 @api_view(["POST"])
 @permission_classes([permissions.AllowAny])
 @advisory_lock("join_form_lock")
-def join_form(request):
+def join_form(request: Request) -> Response:
     request_json = json.loads(request.body)
     try:
         r = JoinFormRequest(**request_json)
@@ -104,7 +105,8 @@ def join_form(request):
     if not NYCZipCodes.match_zip(r.zip):
         return Response(
             {
-                "detail": "Non-NYC registrations are not supported at this time. Check back later, or email support@nycmesh.net"
+                "detail": "Non-NYC registrations are not supported at this time. Check back later, "
+                "or email support@nycmesh.net"
             },
             status=status.HTTP_400_BAD_REQUEST,
         )
@@ -250,7 +252,8 @@ def join_form(request):
         )
 
     logging.info(
-        f"JoinForm submission success. building_id: {join_form_building.id}, member_id: {join_form_member.id}, install_number: {join_form_install.install_number}"
+        f"JoinForm submission success. building_id: {join_form_building.id}, "
+        f"member_id: {join_form_member.id}, install_number: {join_form_install.install_number}"
     )
 
     return Response(
@@ -320,7 +323,7 @@ nn_form_success_schema = inline_serializer(
 @permission_classes([HasNNAssignPermission | LegacyNNAssignmentPassword])
 @transaction.atomic
 @advisory_lock("nn_assignment_lock")
-def network_number_assignment(request):
+def network_number_assignment(request: Request) -> Response:
     """
     Takes an install number, and assigns the install a network number,
     deduping using the other buildings in our database.
@@ -347,7 +350,8 @@ def network_number_assignment(request):
 
     # Check if the install already has a network number
     if nn_install.node is not None:
-        message = f"This Install Number ({r.install_number}) already has a Network Number ({nn_install.node.network_number}) associated with it!"
+        message = f"This Install Number ({r.install_number}) already has a "
+        f"Network Number ({nn_install.node.network_number}) associated with it!"
         logging.warn(message)
         return Response(
             {

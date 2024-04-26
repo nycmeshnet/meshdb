@@ -1,7 +1,10 @@
+from typing import Any
+
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiExample, OpenApiResponse, extend_schema, extend_schema_view
 from rest_framework import generics, permissions
 from rest_framework.decorators import api_view, permission_classes
+from rest_framework.request import Request
 from rest_framework.response import Response
 
 from meshapi.models import Building, Device, Install, Link, Member, Node, Sector
@@ -30,7 +33,7 @@ from meshapi.serializers import (
 )
 @api_view(["GET"])
 @permission_classes([permissions.AllowAny])
-def api_root(request, format=None):
+def api_root(request: Request, format: Any = None) -> Response:
     """
     This endpoint can be used by clients to determine the health status of this API. This API always
     returns 200 status codes, accepts no input, and has no side effects. It always returns the

@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
-def main():
+def main() -> None:
     """Run administrative tasks."""
     os.environ.setdefault("DJANGO_SETTINGS_MODULE", "meshdb.settings")
     try:

@@ -113,7 +113,7 @@ class Device(models.Model):
         protocol="ipv4",
     )
 
-    def __str__(self):
+    def __str__(self) -> str:
         if self.name:
             return self.name
         return f"MeshDB Device ID {self.id}"

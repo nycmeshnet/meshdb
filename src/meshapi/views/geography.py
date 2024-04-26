@@ -2,7 +2,7 @@ from typing import Dict
 
 from django.db.models import F, Q
 from django.db.models.functions import Greatest
-from django.http import HttpResponse
+from django.http import HttpRequest, HttpResponse
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from fastkml import Data, ExtendedData, geometry, kml, styles
@@ -47,7 +47,7 @@ class IgnoreClientContentNegotiation(BaseContentNegotiation):
         return (renderers[0], renderers[0].media_type)
 
 
-def create_placemark(identifier: str, point: Point, active: bool, status: str, roof_access: bool):
+def create_placemark(identifier: str, point: Point, active: bool, status: str, roof_access: bool) -> kml.Placemark:
     placemark = kml.Placemark(
         name=str(identifier),
         style_url=styles.StyleUrl(url="#red_dot" if active else "#grey_dot"),
@@ -87,7 +87,7 @@ class WholeMeshKML(APIView):
             )
         },
     )
-    def get(self, request):
+    def get(self, request: HttpRequest) -> HttpResponse:
         kml_root = kml.KML()
         ns = "{http://www.opengis.net/kml/2.2}"
 
