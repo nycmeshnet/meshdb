@@ -41,6 +41,11 @@ class BetterNonrelatedInline(NonrelatedTabularInline):
         }
 
 
+class MembershipInline(admin.TabularInline):
+    model = Building.nodes.through
+    extra = 0
+    autocomplete_fields = ["building_id"]
+
 class NonrelatedBuildingInline(BetterNonrelatedInline):
     model = Building
     fields = ["primary_node", "bin", "street_address", "city", "zip_code"]
@@ -506,7 +511,7 @@ class NodeAdmin(admin.ModelAdmin):
             },
         ),
     ]
-    inlines = [InstallInline, NonrelatedBuildingInline, DeviceInline, SectorInline, NodeLinkInline]
+    inlines = [InstallInline, MembershipInline, NonrelatedBuildingInline, DeviceInline, SectorInline, NodeLinkInline]
 
     def address(self, obj):
         return obj.buildings.first()
