@@ -46,11 +46,26 @@ class NonrelatedBuildingInline(BetterNonrelatedInline):
     fields = ["primary_node", "bin", "street_address", "city", "zip_code"]
     readonly_fields = fields
 
+    add_button = True
+
+    # Hack to get the NN
+    network_number = None
+
     def get_form_queryset(self, obj):
+        self.network_number = obj.pk
         return self.model.objects.filter(nodes=obj)
 
     def save_new_instance(self, parent, instance):
         pass
+
+
+class BuildingMembershipInline(admin.TabularInline):
+    model = Building.nodes.through
+    extra = 0
+    autocomplete_fields = ["building_id"]
+    classes = ["collapse"]
+    verbose_name = "Building"
+    verbose_name_plural = "Edit Related Buildings"
 
 
 # This controls the list of installs reverse FK'd to Buildings and Members
@@ -500,7 +515,14 @@ class NodeAdmin(admin.ModelAdmin):
             },
         ),
     ]
-    inlines = [InstallInline, NonrelatedBuildingInline, DeviceInline, SectorInline, NodeLinkInline]
+    inlines = [
+        InstallInline,
+        NonrelatedBuildingInline,
+        BuildingMembershipInline,
+        DeviceInline,
+        SectorInline,
+        NodeLinkInline,
+    ]
 
     def address(self, obj):
         return obj.buildings.first()
