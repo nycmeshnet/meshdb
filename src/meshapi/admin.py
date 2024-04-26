@@ -41,11 +41,6 @@ class BetterNonrelatedInline(NonrelatedTabularInline):
         }
 
 
-class MembershipInline(admin.TabularInline):
-    model = Building.nodes.through
-    extra = 0
-    autocomplete_fields = ["building_id"]
-
 class NonrelatedBuildingInline(BetterNonrelatedInline):
     model = Building
     fields = ["primary_node", "bin", "street_address", "city", "zip_code"]
@@ -62,6 +57,15 @@ class NonrelatedBuildingInline(BetterNonrelatedInline):
 
     def save_new_instance(self, parent, instance):
         pass
+
+
+class BuildingMembershipInline(admin.TabularInline):
+    model = Building.nodes.through
+    extra = 0
+    autocomplete_fields = ["building_id"]
+    classes = ["collapse"]
+    verbose_name = "Building"
+    verbose_name_plural = "Edit Related Buildings"
 
 
 # This controls the list of installs reverse FK'd to Buildings and Members
@@ -511,7 +515,14 @@ class NodeAdmin(admin.ModelAdmin):
             },
         ),
     ]
-    inlines = [InstallInline, MembershipInline, NonrelatedBuildingInline, DeviceInline, SectorInline, NodeLinkInline]
+    inlines = [
+        InstallInline,
+        NonrelatedBuildingInline,
+        BuildingMembershipInline,
+        DeviceInline,
+        SectorInline,
+        NodeLinkInline,
+    ]
 
     def address(self, obj):
         return obj.buildings.first()
