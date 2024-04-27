@@ -1,0 +1,135 @@
+from django.contrib import admin
+from django.contrib.admin.options import forms
+from django.db.models import Q
+from django.utils.safestring import mark_safe
+from nonrelated_inlines.admin import NonrelatedTabularInline
+
+from meshapi.models import Building, Device, Install, Link, Member, Node, Sector
+from meshapi.widgets import DeviceIPAddressWidget, PanoramaViewer
+from meshapi.admin.inlines import InstallInline
+
+admin.site.site_header = "MeshDB Admin"
+admin.site.site_title = "MeshDB Admin Portal"
+admin.site.index_title = "Welcome to MeshDB Admin Portal"
+
+
+class BoroughFilter(admin.SimpleListFilter):
+    title = "Borough"
+    parameter_name = "borough"
+
+    def lookups(self, request, model_admin):
+        return (
+            ("bronx", ("The Bronx")),
+            ("manhattan", ("Manhattan")),
+            ("brooklyn", ("Brooklyn")),
+            ("queens", ("Queens")),
+            ("staten_island", ("Staten Island")),
+        )
+
+    def queryset(self, request, queryset):
+        if self.value() == "bronx":
+            return queryset.filter(city="Bronx")
+        elif self.value() == "manhattan":
+            return queryset.filter(city="New York")
+        elif self.value() == "brooklyn":
+            return queryset.filter(city="Brooklyn")
+        elif self.value() == "queens":
+            return queryset.filter(city="Queens")
+        elif self.value() == "staten_island":
+            return queryset.filter(city="Staten Island")
+        return queryset
+
+
+class BuildingAdminForm(forms.ModelForm):
+    class Meta:
+        model = Building
+        fields = "__all__"
+        widgets = {
+            "panoramas": PanoramaViewer(schema={"type": "array", "items": {"type": "string"}}),
+            "bin": forms.NumberInput(attrs={"style": "width:21ch"}),
+        }
+
+
+@admin.register(Building)
+class BuildingAdmin(admin.ModelAdmin):
+    form = BuildingAdminForm
+    list_display = ["__str__", "street_address", "primary_node"]
+    search_fields = [
+        # Sometimes they have an actual name
+        "nodes__name__icontains",
+        # Address info
+        "street_address__icontains",
+        "city__icontains",
+        "state__icontains",
+        "zip_code__iexact",
+        "bin__iexact",
+        # Search by NN
+        "nodes__network_number__iexact",
+        "installs__install_number__iexact",
+        # Search by Member info
+        "installs__member__name__icontains",
+        "installs__member__primary_email_address__icontains",
+        "installs__member__phone_number__iexact",
+        "installs__member__slack_handle__iexact",
+        # Notes
+        "notes__icontains",
+    ]
+    list_filter = [
+        BoroughFilter,
+        ("primary_node", admin.EmptyFieldListFilter),
+    ]
+    fieldsets = [
+        (
+            "Address Information",
+            {
+                "fields": [
+                    "street_address",
+                    "city",
+                    "state",
+                    "zip_code",
+                ]
+            },
+        ),
+        (
+            "NYC Information",
+            {
+                "fields": [
+                    "bin",
+                    "latitude",
+                    "longitude",
+                    "altitude",
+                ]
+            },
+        ),
+        (
+            "Misc",
+            {
+                "fields": [
+                    "notes",
+                    "panoramas",
+                ]
+            },
+        ),
+        (
+            "Nodes",
+            {
+                "fields": [
+                    "primary_node",
+                    "nodes",
+                ]
+            },
+        ),
+    ]
+    inlines = [InstallInline]
+    filter_horizontal = ("nodes",)
+
+    # This is probably a bad idea because you'll have to load a million panos
+    # and OOM your computer
+    # Need to find a way to "thumbnail-ize" them on the server side, probably.
+    @mark_safe
+    def thumb(self, obj):
+        return f"<img src='{obj.get_thumb()}' width='50' height='50' />"
+
+    thumb.__name__ = "Thumbnail"
+
+
