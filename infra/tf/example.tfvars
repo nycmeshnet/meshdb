@@ -1,0 +1,7 @@
+meshdb_proxmox_host             = ""
+meshdb_proxmox_node             = "jon"
+meshdb_proxmox_template_image   = "ubuntu-cloud"
+meshdb_proxmox_storage_location = "local-lvm"
+meshdb_env_name                 = "garfield"
+meshdb_local_user               = "ubuntu"
+meshdb_local_password           = ""
