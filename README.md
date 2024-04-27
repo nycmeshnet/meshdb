@@ -124,6 +124,7 @@ When you're done, you can stop the server with `Ctrl+C`, and run `docker compose
 > [!NOTE]
 > To spin things back up again later, just run:
 > ```sh
+> source .venv/bin/activate
 > docker-compose up -d postgres pelias redis
 > python src/manage.py runserver
 > ```
