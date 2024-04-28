@@ -24,11 +24,11 @@ spec:
         {{- end }}
     spec:
       securityContext:
-        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+        {{- toYaml .Values.redis.podSecurityContext | nindent 8 }}
       containers:
         - name: {{ .Chart.Name }}-redis
           securityContext:
-            {{- toYaml .Values.securityContext | nindent 12 }}
+            {{- toYaml .Values.redis.securityContext | nindent 12 }}
           image: "redis:latest"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
@@ -36,7 +36,7 @@ spec:
               containerPort: {{ .Values.redis.port }}
               protocol: TCP
           resources:
-            {{- toYaml .Values.resources | nindent 12 }}
+            {{- toYaml .Values.redis.resources | nindent 12 }}
           {{ if eq .Values.redis.liveness_probe "true" }}
           livenessProbe:
             exec:
@@ -49,15 +49,15 @@ spec:
             initialDelaySeconds: 2
             timeoutSeconds: 3
           {{ end }}
-      {{- with .Values.nodeSelector }}
+      {{- with .Values.redis.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with .Values.affinity }}
+      {{- with .Values.redis.affinity }}
       affinity:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with .Values.tolerations }}
+      {{- with .Values.redis.tolerations }}
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}

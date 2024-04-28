@@ -24,11 +24,11 @@ spec:
         {{- end }}
     spec:
       securityContext:
-        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+        {{- toYaml .Values.pg.podSecurityContext | nindent 8 }}
       containers:
         - name: {{ .Chart.Name }}-postgres
           securityContext:
-            {{- toYaml .Values.securityContext | nindent 12 }}
+            {{- toYaml .Values.pg.securityContext | nindent 12 }}
           image: postgres:15-bookworm
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
@@ -36,7 +36,7 @@ spec:
               containerPort: {{ .Values.pg.port }}
               protocol: TCP
           resources:
-            {{- toYaml .Values.resources | nindent 12 }}
+            {{- toYaml .Values.pg.resources | nindent 12 }}
           {{ if eq .Values.pg.liveness_probe "true" }}
           livenessProbe:
             exec:
@@ -71,15 +71,15 @@ spec:
         - name: pg-data-vol
           persistentVolumeClaim:
             claimName: {{ .Values.pg.pvc_name }}
-      {{- with .Values.nodeSelector }}
+      {{- with .Values.pg.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with .Values.affinity }}
+      {{- with .Values.pg.affinity }}
       affinity:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with .Values.tolerations }}
+      {{- with .Values.pg.tolerations }}
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}

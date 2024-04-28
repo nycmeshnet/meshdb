@@ -24,11 +24,11 @@ spec:
         {{- end }}
     spec:
       securityContext:
-        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+        {{- toYaml .Values.pelias.podSecurityContext | nindent 8 }}
       containers:
         - name: {{ .Chart.Name }}-pelias
           securityContext:
-            {{- toYaml .Values.securityContext | nindent 12 }}
+            {{- toYaml .Values.pelias.securityContext | nindent 12 }}
           image: "pelias/parser"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
@@ -36,16 +36,16 @@ spec:
               containerPort: {{ .Values.pelias.port }}
               protocol: TCP
           resources:
-            {{- toYaml .Values.resources | nindent 12 }}
-      {{- with .Values.nodeSelector }}
+            {{- toYaml .Values.pelias.resources | nindent 12 }}
+      {{- with .Values.pelias.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with .Values.affinity }}
+      {{- with .Values.pelias.affinity }}
       affinity:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with .Values.tolerations }}
+      {{- with .Values.pelias.tolerations }}
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}

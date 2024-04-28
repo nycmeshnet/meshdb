@@ -24,11 +24,11 @@ spec:
         {{- end }}
     spec:
       securityContext:
-        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+        {{- toYaml .Values.meshweb.podSecurityContext | nindent 8 }}
       containers:
         - name: {{ .Chart.Name }}-meshweb
           securityContext:
-            {{- toYaml .Values.securityContext | nindent 12 }}
+            {{- toYaml .Values.meshweb.securityContext | nindent 12 }}
           image: "{{ .Values.meshweb.image.repository }}:{{ .Values.meshweb.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
@@ -162,20 +162,20 @@ spec:
           readinessProbe:
             {{- toYaml .Values.readinessProbe | nindent 12 }}
           resources:
-            {{- toYaml .Values.resources | nindent 12 }}
+            {{- toYaml .Values.meshweb.resources | nindent 12 }}
       volumes:
         - name: static-content-vol
           persistentVolumeClaim:
             claimName: {{ .Values.meshweb.static_pvc_name }}
-      {{- with .Values.nodeSelector }}
+      {{- with .Values.meshweb.meshweb.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with .Values.affinity }}
+      {{- with .Values.meshweb.affinity }}
       affinity:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with .Values.tolerations }}
+      {{- with .Values.meshweb.tolerations }}
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}

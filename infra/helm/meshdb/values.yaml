@@ -9,7 +9,31 @@ pg:
   user: meshdb
   port: "5432"
   pvc_name: "meshdb-postgres-pvc"
+  pvc_size: "20Gi"
   liveness_probe: "true"
+  podSecurityContext: {}
+  # fsGroup: 2000
+  securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+  resources: {}
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+  nodeSelector: {}
+  affinity: {}
+  tolerations: []
 
 meshweb:
   port: 8081
@@ -19,14 +43,27 @@ meshweb:
   disable_profiling: "True"
   disable_pano_edits: "True"
   static_pvc_name: "meshdb-static-pvc"
+  static_pvc_size: "1Gi"
   liveness_probe: "true"
   image:
     repository: willnilges/meshdb
     tag: main
+  podSecurityContext: {}
+  securityContext: {}
+  resources: {}
+  nodeSelector: {}
+  affinity: {}
+  tolerations: []
 
 nginx:
   server_name: "db.nycmesh.net"
   port: 80
+  podSecurityContext: {}
+  securityContext: {}
+  resources: {}
+  nodeSelector: {}
+  affinity: {}
+  tolerations: []
 
 uisp:
   url: "https://uisp.mesh.nycmesh.net/nms"
@@ -35,14 +72,24 @@ uisp:
 redis:
   liveness_probe: "true"
   port: 6379
+  podSecurityContext: {}
+  securityContext: {}
+  resources: {}
+  nodeSelector: {}
+  affinity: {}
+  tolerations: []
 
 pelias:
   port: 6800
+  podSecurityContext: {}
+  securityContext: {}
+  resources: {}
+  nodeSelector: {}
+  affinity: {}
+  tolerations: []
 
 map:
   base_url: "http://admin-map.grandsvc.mesh.nycmesh.net"
-
-replicaCount: 1
 
 image:
   pullPolicy: Always
@@ -64,51 +111,9 @@ fullnameOverride: "meshdb"
 podAnnotations: {}
 podLabels: {}
 
-podSecurityContext: {}
-  # fsGroup: 2000
-
-securityContext: {}
-  # capabilities:
-  #   drop:
-  #   - ALL
-  # readOnlyRootFilesystem: true
-  # runAsNonRoot: true
-  # runAsUser: 1000
-
-resources: {}
-  # We usually recommend not to specify default resources and to leave this as a conscious
-  # choice for the user. This also increases chances charts run on environments with little
-  # resources, such as Minikube. If you do want to specify resources, uncomment the following
-  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
-  # limits:
-  #   cpu: 100m
-  #   memory: 128Mi
-  # requests:
-  #   cpu: 100m
-  #   memory: 128Mi
-
 autoscaling:
   enabled: false
   minReplicas: 1
   maxReplicas: 100
   targetCPUUtilizationPercentage: 80
   # targetMemoryUtilizationPercentage: 80
-
-# Additional volumes on the output Deployment definition.
-volumes: []
-# - name: foo
-#   secret:
-#     secretName: mysecret
-#     optional: false
-
-# Additional volumeMounts on the output Deployment definition.
-volumeMounts: []
-# - name: foo
-#   mountPath: "/etc/foo"
-#   readOnly: true
-
-nodeSelector: {}
-
-tolerations: []
-
-affinity: {}

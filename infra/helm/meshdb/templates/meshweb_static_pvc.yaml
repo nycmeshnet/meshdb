@@ -9,4 +9,4 @@ spec:
   storageClassName: longhorn
   resources:
     requests:
-      storage: 1Gi
+      storage: {{ .Values.meshweb.static_pvc_size }}

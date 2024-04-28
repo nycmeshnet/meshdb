@@ -25,11 +25,11 @@ spec:
         {{- end }}
     spec:
       securityContext:
-        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+        {{- toYaml .Values.nginx.podSecurityContext | nindent 8 }}
       containers:
         - name: {{ .Chart.Name }}-nginx
           securityContext:
-            {{- toYaml .Values.securityContext | nindent 12 }}
+            {{- toYaml .Values.nginx.securityContext | nindent 12 }}
           image: "nginx:latest"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
@@ -45,7 +45,7 @@ spec:
               mountPath: /var/www/html/static
               readOnly: true
           resources:
-            {{- toYaml .Values.resources | nindent 12 }}
+            {{- toYaml .Values.nginx.resources | nindent 12 }}
       volumes:
         - name: nginx-conf
           configMap:
@@ -56,15 +56,15 @@ spec:
         - name: static-data-vol
           persistentVolumeClaim:
             claimName: {{ .Values.meshweb.static_pvc_name }}
-      {{- with .Values.nodeSelector }}
+      {{- with .Values.nginx.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with .Values.affinity }}
+      {{- with .Values.nginx.affinity }}
       affinity:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with .Values.tolerations }}
+      {{- with .Values.nginx.tolerations }}
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}

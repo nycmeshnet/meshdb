@@ -9,4 +9,4 @@ spec:
   storageClassName: longhorn
   resources:
     requests:
-      storage: 20Gi
+      storage: {{ .Values.pg.pvc_size }}
