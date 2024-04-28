@@ -2,6 +2,7 @@ from .admin import *
 from .building import *
 from .device import *
 from .inlines import *
+from .install import *
 from .link import *
 from .member import *
 from .node import *
