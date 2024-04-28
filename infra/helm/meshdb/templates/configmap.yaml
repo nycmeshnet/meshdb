@@ -1,0 +1,30 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: meshdbconfig
+  namespace: {{ .Values.meshdb_app_namespace }}
+data:
+  DB_NAME: {{ .Values.pg.dbname }}
+  DB_USER: {{ .Values.pg.user | quote }}
+  DB_HOST: {{ include "meshdb.fullname" . }}-postgres.{{ .Values.meshdb_app_namespace }}.svc.cluster.local
+  DB_PORT: {{ .Values.pg.port | quote }}
+  # Backups
+  BACKUP_S3_BUCKET_NAME: {{ .Values.meshweb.backup_s3_bucket_name | quote }}
+  BACKUP_S3_BASE_FOLDER: {{ .Values.meshweb.backup_s3_base_folder | quote }}
+
+  CELERY_BROKER: "redis://{{ include "meshdb.fullname" . }}-redis.{{ .Values.meshdb_app_namespace }}.svc.cluster.local:{{ .Values.redis.port }}/0"
+
+  # Change to pelias:3000 when using full docker-compose
+  PELIAS_ADDRESS_PARSER_URL: {{ include "meshdb.fullname" . }}-pelias.{{ .Values.meshdb_app_namespace }}.svc.cluster.local
+
+  # Comment this out to enter prod mode
+  DEBUG: {{ .Values.meshweb.enable_debug | quote }}
+  DISABLE_PROFILING: {{ .Values.meshweb.disable_profiling | quote }}
+
+  # Comment this out to allow edits to the panoramas in the admin panel
+  DISABLE_PANO_EDITS: {{ .Values.meshweb.disable_pano_edits | quote }}
+
+  UISP_URL: {{ .Values.uisp.url | quote }}
+  UISP_USER: {{ .Values.uisp.user | quote }}
+
+  ADMIN_MAP_BASE_URL: {{ .Values.map.base_url | quote }}

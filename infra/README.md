@@ -16,7 +16,7 @@ echo "disable: servicelb" >> /etc/rancher/k3s/config.yaml
 7. Install metallb on master node
 
 ```
-IP_RANGE="10.70.90.71/32"
+IP_RANGE="10.70.90.80/29"
 cat <<EOF > /var/lib/rancher/k3s/server/manifests/metallb.yaml
 apiVersion: v1
 kind: Namespace
@@ -68,7 +68,11 @@ NODE_TOKEN="$(cat /var/lib/rancher/k3s/server/node-token)"
 
 target_host="$1"
 
-ssh -t ubuntu@$target_host "curl -sfL https://get.k3s.io>k3s; sudo bash k3s --server https://${MASTER_IP}:6443 --token $NODE_TOKEN"
+ssh -t ubuntu@$target_host "curl -sfL https://get.k3s.io>k3s; sudo bash k3s --server https://${MASTER_IP}:6443 --token $NODE_TOKEN;sudo apt-get update && sudo apt-get install nfs-common -y"
 ```
 
-9. Install helm chart...
+9. Install longhorn `kubectl apply -f https://raw.githubusercontent.com/longhorn/longhorn/v1.6.0/deploy/longhorn.yaml`
+
+10. `kubectl create namespace meshdbdev0 && helm template . -f values.yaml -f secret.values.yaml | kubectl apply -f -`
+
+11. If you need a superuser: `kubectl exec -it -n meshdbdev0 service/meshdb-meshweb bash` and `python manage.py createsuperuser`

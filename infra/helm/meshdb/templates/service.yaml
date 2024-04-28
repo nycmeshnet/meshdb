@@ -1,0 +1,81 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "meshdb.fullname" . }}-nginx
+  namespace: {{ .Values.meshdb_app_namespace }}
+  labels:
+    {{- include "meshdb.labels" . | nindent 4 }}
+spec:
+  type: LoadBalancer
+  ports:
+    - port: {{ .Values.nginx.port }}
+      targetPort: {{ .Values.nginx.port }}
+      protocol: TCP
+      name: nginx
+  selector:
+    app: meshdb-nginx-app
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "meshdb.fullname" . }}-postgres
+  namespace: {{ .Values.meshdb_app_namespace }}
+  labels:
+    {{- include "meshdb.labels" . | nindent 4 }}
+spec:
+  ports:
+    - port: {{ .Values.pg.port }}
+      targetPort: {{ .Values.pg.port }}
+      protocol: TCP
+      name: postgres
+  selector:
+    app: meshdb-postgres-app
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "meshdb.fullname" . }}-redis
+  namespace: {{ .Values.meshdb_app_namespace }}
+  labels:
+    {{- include "meshdb.labels" . | nindent 4 }}
+spec:
+  ports:
+    - port: {{ .Values.redis.port }}
+      targetPort: {{ .Values.redis.port }}
+      protocol: TCP
+      name: redis
+  selector:
+    app: meshdb-redis-app
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "meshdb.fullname" . }}-pelias
+  namespace: {{ .Values.meshdb_app_namespace }}
+  labels:
+    {{- include "meshdb.labels" . | nindent 4 }}
+spec:
+  ports:
+    - port: {{ .Values.pelias.port }}
+      targetPort: {{ .Values.pelias.port }}
+      protocol: TCP
+      name: pelias
+  selector:
+    app: meshdb-pelias-app
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "meshdb.fullname" . }}-meshweb
+  namespace: {{ .Values.meshdb_app_namespace }}
+  labels:
+    {{- include "meshdb.labels" . | nindent 4 }}
+spec:
+  ports:
+    - port: {{ .Values.meshweb.port }}
+      targetPort: {{ .Values.meshweb.port }}
+      protocol: TCP
+      name: meshweb-service
+  selector:
+    app: meshdb-meshweb-app
+
