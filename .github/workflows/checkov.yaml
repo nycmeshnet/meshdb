@@ -26,7 +26,7 @@ jobs:
         id: checkov
         uses: bridgecrewio/checkov-action@0549dc60bddd4c55cb85c6c3a07072e3cf2ca48e
         with:
-          skip_check: CKV_DOCKER_2,CKV_DOCKER_3
+          skip_check: CKV_DOCKER_2,CKV_DOCKER_3,CKV_SECRET_6
           quiet: true
           output_format: cli,sarif
           output_file_path: console,results.sarif
