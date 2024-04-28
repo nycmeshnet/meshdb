@@ -167,7 +167,7 @@ spec:
         - name: static-content-vol
           persistentVolumeClaim:
             claimName: {{ .Values.meshweb.static_pvc_name }}
-      {{- with .Values.meshweb.meshweb.nodeSelector }}
+      {{- with .Values.meshweb.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
       {{- end }}
