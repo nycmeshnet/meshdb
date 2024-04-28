@@ -51,3 +51,19 @@ jobs:
         if_key_exists: fail # replace / ignore / fail; optional (defaults to fail)
     - name: Pull new Docker image
       run: ssh ${{ secrets.GRANDSVC_SSH_TARGET }} "cd ${{ secrets.GRANDSVC_PROJECT_PATH }} && git pull && docker compose pull && docker compose up -d"
+  
+  deploy_to_dev0:
+    name: Deploy to dev0
+    needs: push_to_registry
+    runs-on: ubuntu-latest
+    steps:
+    - name: Install SSH key
+      uses: shimataro/ssh-key-action@d4fffb50872869abe2d9a9098a6d9c5aa7d16be4 # v2
+      with:
+        key: ${{ secrets.DEV0_KEY }}
+        name: id_ed25519 # optional
+        known_hosts: ${{ secrets.DEV0_KNOWN_HOSTS }}
+        #config: ${{ secrets.CONFIG }} # ssh_config; optional
+        if_key_exists: fail # replace / ignore / fail; optional (defaults to fail)
+    - name: Pull new Docker image
+      run: ssh ${{ secrets.DEV0_SSH_TARGET }} "cd ${{ secrets.DEV0_PROJECT_PATH }} && git pull && cd infra/helm/meshdb && helm template . -f values.yaml -f ${{ secrets.DEV0_HELM_SECRETS_PATH }} | kubectl apply -f -"
