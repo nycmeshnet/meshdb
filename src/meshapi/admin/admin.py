@@ -1,4 +1,5 @@
 from django.contrib import admin
+
 from meshapi.admin.inlines import *
 
 admin.site.site_header = "MeshDB Admin"
@@ -49,4 +50,3 @@ device_fieldsets = [
         },
     ),
 ]
-

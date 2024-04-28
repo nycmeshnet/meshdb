@@ -1,12 +1,8 @@
 from django.contrib import admin
 from django.contrib.admin.options import forms
-from django.db.models import Q
-from django.utils.safestring import mark_safe
-from nonrelated_inlines.admin import NonrelatedTabularInline
 
-from meshapi.models import Building, Device, Install, Link, Member, Node, Sector
-from meshapi.widgets import DeviceIPAddressWidget, PanoramaViewer
 from meshapi.admin.inlines import *
+from meshapi.models import Node
 
 admin.site.site_header = "MeshDB Admin"
 admin.site.site_title = "MeshDB Admin Portal"
@@ -80,6 +76,3 @@ class NodeAdmin(admin.ModelAdmin):
 
     def address(self, obj):
         return obj.buildings.first()
-
-
-

@@ -1,12 +1,8 @@
 from django.contrib import admin
 from django.contrib.admin.options import forms
-from django.db.models import Q
-from django.utils.safestring import mark_safe
-from nonrelated_inlines.admin import NonrelatedTabularInline
 
-from meshapi.models import Building, Device, Install, Link, Member, Node, Sector
-from meshapi.widgets import DeviceIPAddressWidget, PanoramaViewer
 from meshapi.admin.inlines import *
+from meshapi.models import Member
 
 
 class MemberAdminForm(forms.ModelForm):
@@ -89,5 +85,3 @@ class MemberAdmin(admin.ModelAdmin):
         ),
     ]
     inlines = [InstallInline]
-
-

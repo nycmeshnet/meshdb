@@ -1,12 +1,10 @@
 from django.contrib import admin
-from django.contrib.admin.options import forms
 from django.db.models import Q
-from django.utils.safestring import mark_safe
 from nonrelated_inlines.admin import NonrelatedTabularInline
 
-from meshapi.models import Building, Device, Install, Link, Member, Node, Sector
-from meshapi.widgets import DeviceIPAddressWidget, PanoramaViewer
 from meshapi.admin.inlines import *
+from meshapi.models import Building, Device, Install, Link, Sector
+
 
 # Inline with the typical rules we want + Formatting
 class BetterInline(admin.TabularInline):
@@ -63,6 +61,7 @@ class BuildingMembershipInline(admin.TabularInline):
     verbose_name = "Building"
     verbose_name_plural = "Edit Related Buildings"
 
+
 class DeviceInline(BetterInline):
     model = Device
     fields = ["status", "type", "model"]
@@ -112,11 +111,8 @@ class SectorInline(BetterInline):
     readonly_fields = fields
 
 
-
 # This controls the list of installs reverse FK'd to Buildings and Members
 class InstallInline(BetterInline):
     model = Install
     fields = ["status", "node", "member", "building", "unit"]
     readonly_fields = fields
-
-

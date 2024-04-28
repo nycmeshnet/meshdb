@@ -1,10 +1,11 @@
 from django.contrib import admin
 from django.contrib.admin.options import forms
 
-from meshapi.models import Device
-from meshapi.admin.inlines import DeviceLinkInline
 from meshapi.admin.admin import device_fieldsets
+from meshapi.admin.inlines import DeviceLinkInline
+from meshapi.models import Device
 from meshapi.widgets import DeviceIPAddressWidget
+
 
 class DeviceAdminForm(forms.ModelForm):
     class Meta:
@@ -39,5 +40,3 @@ class DeviceAdmin(admin.ModelAdmin):
         # Filter out sectors
         queryset = queryset.exclude(sector__isnull=False)
         return queryset
-
-

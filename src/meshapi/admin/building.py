@@ -1,16 +1,10 @@
 from django.contrib import admin
 from django.contrib.admin.options import forms
-from django.db.models import Q
 from django.utils.safestring import mark_safe
-from nonrelated_inlines.admin import NonrelatedTabularInline
 
-from meshapi.models import Building, Device, Install, Link, Member, Node, Sector
-from meshapi.widgets import DeviceIPAddressWidget, PanoramaViewer
 from meshapi.admin.inlines import InstallInline
-
-admin.site.site_header = "MeshDB Admin"
-admin.site.site_title = "MeshDB Admin Portal"
-admin.site.index_title = "Welcome to MeshDB Admin Portal"
+from meshapi.models import Building
+from meshapi.widgets import PanoramaViewer
 
 
 class BoroughFilter(admin.SimpleListFilter):
@@ -131,5 +125,3 @@ class BuildingAdmin(admin.ModelAdmin):
         return f"<img src='{obj.get_thumb()}' width='50' height='50' />"
 
     thumb.__name__ = "Thumbnail"
-
-
