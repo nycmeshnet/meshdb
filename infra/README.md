@@ -5,73 +5,34 @@
 3. `terraform plan --var-file=your.tfvars`
 4. `terraform apply --var-file=your.tfvars`
 5. Login via serial and figure out the IPs that were recieved from DHCP
-6. SSH into the master node and setup
-```
-curl -sfL https://get.k3s.io | sh -s - server --cluster-init --disable servicelb
-
-echo "cluster-init: true" >> /etc/rancher/k3s/config.yaml
-echo "disable: servicelb" >> /etc/rancher/k3s/config.yaml
-```
-
-7. Install metallb on master node
+6. One time provisioning for the master node
 
 ```
-IP_RANGE="10.70.90.80/29"
-cat <<EOF > /var/lib/rancher/k3s/server/manifests/metallb.yaml
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: metallb-system
----
-apiVersion: helm.cattle.io/v1
-kind: HelmChart
-metadata:
-  name: metallb
-  namespace: metallb-system
-spec:
-  repo: https://metallb.github.io/metallb
-  chart: metallb
-  targetNamespace: metallb-system
+target_host="<MGR IP>"
+scp infra/mgr_provision.sh ubuntu@$target_host:/home/ubuntu/mgr_provision.sh
+ssh -t ubuntu@$target_host "sudo bash /home/ubuntu/mgr_provision.sh"
+```
 
----
-apiVersion: metallb.io/v1beta1
-kind: IPAddressPool
-metadata:
-  name: pool-1
-  namespace: metallb-system
-spec:
-  addresses:
-  - $IP_RANGE
-
----
-apiVersion: metallb.io/v1beta1
-kind: L2Advertisement
-metadata:
-  name: k3s-l2
-  namespace: metallb-system
-spec:
-  ipAddressPools:
-  - pool-1
-EOF
-
+7. Set the IP range for metallb, such as `10.70.90.80/29`, in `/opt/meshdb_mgmt/cluster_local.tfvars` and then deploy metallb and longhorn from the manager
+```
+cd /opt/meshdb_mgmt/meshdb/infra/cluster/
+cat ../../cluster_local.tfvars
+terraform init
+terraform plan --var-file=../../cluster_local.tfvars
+terraform apply --var-file=../../cluster_local.tfvars
 ```
 
 8. Setup each node (from the manager)
 
-`bash setup_node.sh <NODE IP>`
-
 ```
-#!/bin/bash
-# setup_node.sh
-MASTER_IP="$(ip addr show eth0 | grep "inet\b" | awk '{print $2}' | cut -d/ -f1)"
-NODE_TOKEN="$(cat /var/lib/rancher/k3s/server/node-token)"
+cd /opt/meshdb_mgmt/meshdb/infra/
+declare -a target_nodes=("10.70.90.XX" "10.70.90.YY" "10.70.90.ZZ")
 
-target_host="$1"
-
-ssh -t ubuntu@$target_host "curl -sfL https://get.k3s.io>k3s; sudo bash k3s --server https://${MASTER_IP}:6443 --token $NODE_TOKEN;sudo apt-get update && sudo apt-get install nfs-common -y"
+for n in "${target_nodes[@]}"
+do
+  bash setup_node.sh $n
+done
 ```
-
-9. Install longhorn `kubectl apply -f https://raw.githubusercontent.com/longhorn/longhorn/v1.6.0/deploy/longhorn.yaml`
 
 10. `kubectl create namespace meshdbdev0 && helm template . -f values.yaml -f secret.values.yaml | kubectl apply -f -`
 
