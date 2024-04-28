@@ -2,7 +2,6 @@ from django.contrib import admin
 from django.db.models import Q
 from nonrelated_inlines.admin import NonrelatedTabularInline
 
-from meshapi.admin.inlines import *
 from meshapi.models import Building, Device, Install, Link, Sector
 
 

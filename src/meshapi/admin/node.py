@@ -1,7 +1,14 @@
 from django.contrib import admin
 from django.contrib.admin.options import forms
 
-from meshapi.admin.inlines import *
+from meshapi.admin.inlines import (
+    BuildingMembershipInline,
+    DeviceInline,
+    InstallInline,
+    NodeLinkInline,
+    NonrelatedBuildingInline,
+    SectorInline,
+)
 from meshapi.models import Node
 
 admin.site.site_header = "MeshDB Admin"

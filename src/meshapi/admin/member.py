@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.admin.options import forms
 
-from meshapi.admin.inlines import *
+from meshapi.admin.inlines import InstallInline
 from meshapi.models import Member
 
 
