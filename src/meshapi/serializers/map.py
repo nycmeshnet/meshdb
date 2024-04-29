@@ -109,14 +109,14 @@ class MapDataInstallSerializer(serializers.ModelSerializer):
 
     # We're storing full URLs for each pano to make the system more flexible, so to
     # make it "map friendly", we gotta strip it down to just the filename.
-    def get_panorama_filename(self, install):
+    def get_panorama_filename(self, install: Install) -> List[str]:
         pano_filenames = []
         for panorama in install.building.panoramas:
             pano_url = urlparse(panorama)
             pano_filenames.append(os.path.basename(pano_url.path))
         return pano_filenames
 
-    def to_representation(self, install):
+    def to_representation(self, install: Install) -> dict:
         result = super().to_representation(install)
 
         # Remove null fields when applicable to match the existing interface
