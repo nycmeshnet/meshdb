@@ -1,0 +1,6 @@
+<fieldset class="module {{ inline_admin_formset.classes }}">
+<h2>Panoramas</h2>
+<div>
+  {% include 'widgets/panorama_viewer.html' with widget=inline_admin_formset.opts.all_panoramas %}
+</div>
+</fieldset>

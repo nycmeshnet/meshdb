@@ -7,6 +7,7 @@ from meshapi.admin.inlines import (
     InstallInline,
     NodeLinkInline,
     NonrelatedBuildingInline,
+    PanoramaInline,
     SectorInline,
 )
 from meshapi.models import Node
@@ -73,6 +74,7 @@ class NodeAdmin(admin.ModelAdmin):
         ),
     ]
     inlines = [
+        PanoramaInline,
         InstallInline,
         NonrelatedBuildingInline,
         BuildingMembershipInline,
