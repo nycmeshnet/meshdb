@@ -62,6 +62,8 @@ services:
     build:
       context: .
       dockerfile: ./Dockerfile
+    labels:
+      com.datadoghq.ad.logs: '[{"source": "meshdb", "service": "meshdb"}]'
 
   nginx:
     depends_on:
