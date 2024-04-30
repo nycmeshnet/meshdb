@@ -109,6 +109,7 @@ class NodeLinkInline(BetterNonrelatedInline):
         all_links = from_device_q | to_device_q
         return self.model.objects.filter(all_links)
 
+
 class DeviceLinkInline(BetterNonrelatedInline):
     model = Link
     fields = ["status", "type", "from_device", "to_device"]
@@ -119,6 +120,7 @@ class DeviceLinkInline(BetterNonrelatedInline):
         to_device_q = Q(to_device=obj)
         all_links = from_device_q | to_device_q
         return self.model.objects.filter(all_links)
+
 
 class SectorInline(BetterInline):
     model = Sector
