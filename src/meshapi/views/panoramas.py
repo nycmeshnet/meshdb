@@ -10,6 +10,8 @@ from rest_framework.response import Response
 from rest_framework.views import status
 
 from meshapi.models import Install
+from meshapi.models.building import Building
+from meshapi.models.node import Node
 from meshapi.permissions import HasPanoramaUpdatePermission
 from meshapi.util.constants import DEFAULT_EXTERNAL_API_TIMEOUT_SECONDS
 from meshapi.util.django_pglocks import advisory_lock
@@ -76,6 +78,19 @@ def sync_github_panoramas() -> tuple[int, list[str]]:
 
 
 def set_panoramas(panos: dict[str, list[str]]) -> tuple[int, list[str]]:
+    def build_panorama_list(building: Building, filenames: list[str]):
+        panoramas = []
+        for filename in filenames:
+            file_url = f"{host_url}{filename}"
+            panoramas.append(file_url)
+        if building.panoramas == panoramas:
+            return
+        # Add new panoramas
+        for p in panoramas:
+            if p not in building.panoramas:
+                building.panoramas.append(p)
+        building.save()
+
     panoramas_saved = 0
     warnings = []
 
@@ -84,25 +99,31 @@ def set_panoramas(panos: dict[str, list[str]]) -> tuple[int, list[str]]:
     for install_number, filenames in panos.items():
         try:
             install: Install = Install.objects.get(install_number=int(install_number))
-            panoramas = []
-            if not install:
-                logging.warn(
-                    f"Warning: Could not add panorama to building (Install #{install_number}). Install does not exist."
-                )
-                warnings.append(install_number)
-                continue
-            for filename in filenames:
-                file_url = f"{host_url}{filename}"
-                panoramas.append(file_url)
-            if install.building.panoramas == panoramas:
-                continue
-            for p in panoramas:
-                if p not in install.building.panoramas:
-                    install.building.panoramas.append(p)
-            install.building.save()
+
+            build_panorama_list(install.building, filenames)
             panoramas_saved += len(filenames)
+        except Install.DoesNotExist:
+            logging.warning(f"Install #{install_number} Does not exist")
+            # OK, let's see if that Install # is actually an NN.
+            logging.info("Checking if it's an NN...")
+            try:
+                node: Node = Node.objects.get(network_number=int(install_number))
+                node_installs = node.installs.all()
+                if len(node_installs) == 0:
+                    # This should never happen
+                    logging.error(f"NN{install_number} exists, but has no installs.")
+                    continue
+                # Get the first install from the node and use its building. Can't
+                # really do any better than that.
+                install: Install = node_installs[0]
+
+                build_panorama_list(install.building, filenames)
+                panoramas_saved += len(filenames)
+            except Node.DoesNotExist:
+                logging.error("Could not find corresponding NN.")
+                warnings.append(install_number)
         except Exception:
-            logging.exception(f"Warning: Could not add panorama to building (Install #{install_number})")
+            logging.exception(f"Could not add panorama to building (Install #{install_number})")
             warnings.append(install_number)
     return panoramas_saved, warnings
 
