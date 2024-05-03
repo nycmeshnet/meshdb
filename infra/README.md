@@ -10,7 +10,7 @@ terraform plan --var-file=your.tfvars
 terraform apply --var-file=your.tfvars
 ```
 4. Login via serial and figure out the IPs that were recieved from DHCP
-5. One time provisioning for the master node
+5. One time provisioning for the manager node
 
 ```
 target_host="<MGR IP>"
