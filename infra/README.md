@@ -1,6 +1,10 @@
 # Meshdb Environment Setup
 
-1. Configure a user for the [proxmox provider](https://registry.terraform.io/providers/Telmate/proxmox/latest/docs) and setup env vars.
+These instructions will set up a 4 node k3s cluster on proxmox.
+- 1 "manager" node for control plane and to be used for deployments.
+- 3 "agent" nodes to run services.
+
+1. Configure a user for the [proxmox provider](https://registry.terraform.io/providers/Telmate/proxmox/latest/docs) and set up env vars.
 2. Setup tfvars + ssh keys
 ```
 cd meshdb/infra/tf/
@@ -13,7 +17,7 @@ terraform init
 terraform plan --var-file=your_env.tfvars
 terraform apply --var-file=your_env.tfvars
 ```
-4. Login via serial and figure out the IPs that were recieved from DHCP
+4. Login via serial and figure out the IPs that were received from DHCP
 5. One time provisioning for the manager node
 
 ```
