@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, List
 
 from django.db.models import Q
 from django_filters import rest_framework as filters
@@ -50,7 +50,7 @@ class MemberFilter(filters.FilterSet):
 
     class Meta:
         model = Member
-        fields = []
+        fields: List[Any] = []
 
 
 @extend_schema_view(

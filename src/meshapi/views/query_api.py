@@ -1,3 +1,5 @@
+from typing import Any, List
+
 from django.db.models import Q
 from django_filters import rest_framework as filters
 from drf_spectacular.utils import extend_schema, extend_schema_view
@@ -31,7 +33,7 @@ class QueryMemberFilter(filters.FilterSet):
 
     class Meta:
         model = Install
-        fields = []
+        fields: List[Any] = []
 
 
 @extend_schema_view(

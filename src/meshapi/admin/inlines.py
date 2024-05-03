@@ -1,3 +1,5 @@
+from typing import Any
+
 from django.contrib import admin
 from django.db.models import Q
 from nonrelated_inlines.admin import NonrelatedTabularInline
@@ -44,14 +46,14 @@ class PanoramaInline(BetterNonrelatedInline):
     readonly_fields = fields
     template = "admin/node_panorama_viewer.html"
 
-    all_panoramas = []
+    all_panoramas: dict[str, list[Any]] = {}
 
     def get_form_queryset(self, obj):
         buildings = self.model.objects.filter(nodes=obj)
-        self.all_panoramas = []
+        panoramas = []
         for b in buildings:
-            self.all_panoramas += b.panoramas
-        self.all_panoramas = {"value": self.all_panoramas}
+            panoramas += b.panoramas
+        self.all_panoramas = {"value": panoramas}
         return buildings
 
     class Media:
