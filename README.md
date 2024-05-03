@@ -34,7 +34,19 @@ Firstly, fork this repo.
 > git remote add upstream https://github.com/nycmeshnet/meshdb
 > ```
 
-For safety, create a venv
+#### Dev Container
+
+If you would like to develop in a [Dev Container](https://code.visualstudio.com/docs/devcontainers/containers)
+
+1. Make sure you have VS Code installed.
+2. Install the Dev Containers extension: `ms-vscode-remote.remote-containers`
+3. [Open the repo folder in the container](https://code.visualstudio.com/docs/devcontainers/containers#_quick-start-open-an-existing-folder-in-a-container).
+4. In a different shell, outside of VS Code, start the other containers: `docker compose up -d postgres pelias redis` (as below).
+5. Continue on the VS Code terminal (where your project is opened) follow normal developer setup.
+
+#### Host
+
+If you are not using a Dev Container, for safety, create a venv
 
 ```
 python --version # Make sure this is python 3.11.x before continuing
@@ -47,6 +59,8 @@ Then, install dependencies.
 ```
 pip install -e '.[dev]'
 ```
+
+### Set Environment Variables
 
 Next, fill out the `.env.sample` file and load it into your environment.
 
