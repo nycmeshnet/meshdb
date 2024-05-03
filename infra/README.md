@@ -2,12 +2,16 @@
 
 1. Configure a user for the [proxmox provider](https://registry.terraform.io/providers/Telmate/proxmox/latest/docs) and setup env vars.
 2. Setup tfvars + ssh keys
-3. Create the VMs that will host k3s
 ```
 cd meshdb/infra/tf/
+cp example.tfvars your_env.tfvars
+# Modify your_env.tfvars to meet your needs
+```
+3. Create the VMs that will host k3s
+```
 terraform init
-terraform plan --var-file=your.tfvars
-terraform apply --var-file=your.tfvars
+terraform plan --var-file=your_env.tfvars
+terraform apply --var-file=your_env.tfvars
 ```
 4. Login via serial and figure out the IPs that were recieved from DHCP
 5. One time provisioning for the manager node
