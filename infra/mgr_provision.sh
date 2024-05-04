@@ -23,7 +23,6 @@ cd ..
 # Setup secret files (will need to be modified)
 cp meshdb/infra/helm/meshdb/secret.values.yaml ./secret.values.yaml
 cp meshdb/infra/helm/meshdb/values.yaml ./values.yaml
-cp meshdb/infra/tf/example.tfvars ./local.tfvars
 
 # Setup k3s
 curl -sfL https://get.k3s.io | sh -s - server --cluster-init --disable servicelb
