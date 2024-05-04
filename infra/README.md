@@ -10,6 +10,8 @@ These instructions will set up a 4 node k3s cluster on proxmox.
 cd meshdb/infra/tf/
 cp example.tfvars your_env.tfvars
 # Modify your_env.tfvars to meet your needs
+ENV_NAME="garfield" # Matching meshdb_env_name
+ssh-keygen -t ed25519 -f ./meshdb$ENV_NAME
 ```
 3. Create the VMs that will host k3s
 ```
