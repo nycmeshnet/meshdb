@@ -4,7 +4,7 @@ These instructions will set up a 4 node k3s cluster on proxmox.
 - 1 "manager" node for control plane and to be used for deployments.
 - 3 "agent" nodes to run services.
 
-1. Configure a user for the [proxmox provider](https://registry.terraform.io/providers/Telmate/proxmox/latest/docs) and set up env vars.
+1. Configure a user for the [proxmox provider](https://registry.terraform.io/providers/Telmate/proxmox/latest/docs) and set up env vars. Create an API key in Proxmox, and disable Privilege Separation.
 2. Setup tfvars + ssh keys
 ```
 cd meshdb/infra/tf/
