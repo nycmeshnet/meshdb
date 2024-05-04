@@ -14,12 +14,6 @@ wget https://releases.hashicorp.com/terraform/1.8.2/terraform_1.8.2_linux_amd64.
 unzip terraform_*
 mv terraform /usr/bin/
 
-# JBO TODO REMOVE DEBUG
-cd meshdb
-git checkout james/infra_updates
-cd ..
-# END DEBUG
-
 # Setup secret files (will need to be modified)
 cp meshdb/infra/helm/meshdb/secret.values.yaml ./secret.values.yaml
 cp meshdb/infra/helm/meshdb/values.yaml ./values.yaml
