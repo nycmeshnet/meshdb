@@ -9,7 +9,7 @@ terraform {
 
 provider "proxmox" {
   # Configuration options
-  pm_api_url = "https://${vars.meshdb_proxmox_host}:8006/api2/json"
+  pm_api_url = "https://${var.meshdb_proxmox_host}:8006/api2/json"
   # TODO: Setup cert
   pm_tls_insecure = true
   pm_debug = true
