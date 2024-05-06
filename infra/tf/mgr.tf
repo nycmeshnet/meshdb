@@ -9,10 +9,10 @@ resource "proxmox_vm_qemu" "meshdbdevmgr" {
   sockets = 1
   memory  = 2560
   os_type = "cloud-init"
-  agent = 0
+  agent = 1
   cloudinit_cdrom_storage = var.meshdb_proxmox_storage_location
-  ciuser = var.meshdb_local_user
-  cipassword = var.meshdb_local_password
+  ciuser = "${var.meshdb_local_user}"
+  cipassword = "${var.meshdb_local_password}"
 
   scsihw = "virtio-scsi-pci"
 
@@ -34,7 +34,7 @@ resource "proxmox_vm_qemu" "meshdbdevmgr" {
     model = "virtio"
   }
 
-  ipconfig0 = "ip=dhcp"
+  ipconfig0 = "ip=${var.meshdb_ips[0]}/${var.meshdb_networkrange},gw=${var.meshdb_gateway}"
 
   ssh_user = "root"
   ssh_private_key = file("${path.module}/meshdb${var.meshdb_env_name}")
@@ -47,4 +47,54 @@ resource "proxmox_vm_qemu" "meshdbdevmgr" {
   }
   
   tags = "meshdb${var.meshdb_env_name}"
+}
+
+resource "null_resource" "mgr_config_files" {
+  connection {
+    type     = "ssh"
+    user     = "${var.meshdb_local_user}"
+    #password = "${var.meshdb_local_password}"
+    private_key = file("${path.module}/meshdb${var.meshdb_env_name}")
+    host     = "${var.meshdb_ips[0]}"
+  }
+
+  provisioner "file" {
+    source      = "${path.module}/mgr_provision.sh"
+    destination = "/home/${var.meshdb_local_user}/mgr_provision.sh"
+  }
+
+  provisioner "file" {
+    source      = "${path.module}/setup_node.sh"
+    destination = "/home/${var.meshdb_local_user}/setup_node.sh"
+  }
+
+  provisioner "file" {
+    source      = "${path.module}/meshdb${var.meshdb_env_name}"
+    destination = "/home/${var.meshdb_local_user}/.ssh/id_rsa"
+  }
+
+  provisioner "file" {
+    source      = "${path.module}/meshdb${var.meshdb_env_name}.pub"
+    destination = "/home/${var.meshdb_local_user}/.ssh/id_rsa.pub"
+  }
+
+  provisioner "remote-exec" {
+    inline = [
+      "sudo bash /home/${var.meshdb_local_user}/mgr_provision.sh"
+    ]
+  }
+
+  provisioner "remote-exec" {
+    inline = [<<EOT
+      %{ for ip in slice(var.meshdb_ips, 1, 4) ~}
+      bash /home/${var.meshdb_local_user}/setup_node.sh ${ip} ${var.meshdb_local_user}
+      %{ endfor ~}
+      EOT
+    ]
+  }
+
+  depends_on = [
+    proxmox_vm_qemu.meshdbdevmgr,
+    proxmox_vm_qemu.meshdbnode
+  ]
 }

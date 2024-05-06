@@ -3,6 +3,16 @@ variable "meshdb_proxmox_host" {
   description = "ip/domain of the proxmox server"
 }
 
+variable "meshdb_proxmox_token_id" {
+  type        = string
+  description = "proxmox server token id"
+}
+
+variable "meshdb_proxmox_token_secret" {
+  type        = string
+  description = "proxmox server token secret"
+}
+
 variable "meshdb_proxmox_node" {
   type        = string
   description = "target node on the proxmox server"
@@ -36,4 +46,18 @@ variable "meshdb_local_password" {
   type        = string
   description = "password for the local user"
   sensitive   = true
+}
+
+variable "meshdb_ips" {
+  description  = "static IPs to use for nodes"
+}
+
+variable "meshdb_gateway" {
+  description  = "default gateway to use for nodes"
+  default      = "10.70.90.1"
+}
+
+variable "meshdb_networkrange" {
+  description  = "network range to use for nodes"
+  default      = "24"
 }

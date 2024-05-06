@@ -15,10 +15,10 @@ resource "proxmox_vm_qemu" "meshdbnode" {
   sockets = 1
   memory  = 2560
   os_type = "cloud-init"
-  agent = 0
+  agent = 1
   cloudinit_cdrom_storage = var.meshdb_proxmox_storage_location
-  ciuser = var.meshdb_local_user
-  cipassword = var.meshdb_local_password
+  ciuser = "${var.meshdb_local_user}"
+  cipassword = "${var.meshdb_local_password}"
 
   scsihw = "virtio-scsi-pci"
 
@@ -40,10 +40,10 @@ resource "proxmox_vm_qemu" "meshdbnode" {
     model = "virtio"
   }
 
-  ipconfig0 = "ip=dhcp"
+  ipconfig0 = "ip=${var.meshdb_ips[each.value.name]}/${var.meshdb_networkrange},gw=${var.meshdb_gateway}"
 
-  #ssh_user = "root"
-  #ssh_private_key = file("${path.module}/meshdb${var.meshdb_env_name}")
+  ssh_user = "root"
+  ssh_private_key = file("${path.module}/meshdb${var.meshdb_env_name}")
 
   sshkeys = file("${path.module}/meshdb${var.meshdb_env_name}.pub")
 

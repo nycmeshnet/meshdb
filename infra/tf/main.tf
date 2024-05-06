@@ -13,6 +13,6 @@ provider "proxmox" {
   # TODO: Setup cert
   pm_tls_insecure = true
   pm_debug = true
-  pm_api_token_id =  ${var.meshdb_proxmox_token_id}
-  pm_api_token_secret = ${var.meshdb_proxmox_token_secret}
+  pm_api_token_id =  "${var.meshdb_proxmox_token_id}"
+  pm_api_token_secret = "${var.meshdb_proxmox_token_secret}"
 }
