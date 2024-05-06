@@ -53,7 +53,6 @@ resource "null_resource" "mgr_config_files" {
   connection {
     type     = "ssh"
     user     = "${var.meshdb_local_user}"
-    #password = "${var.meshdb_local_password}"
     private_key = file("${path.module}/meshdb${var.meshdb_env_name}")
     host     = "${var.meshdb_ips[0]}"
   }

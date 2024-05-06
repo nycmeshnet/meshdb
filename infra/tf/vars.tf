@@ -61,3 +61,8 @@ variable "meshdb_networkrange" {
   description  = "network range to use for nodes"
   default      = "24"
 }
+
+variable "meshdb_metallb_range" {
+  type         = string
+  description  = "ip range for metallb"
+}
