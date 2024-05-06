@@ -20,19 +20,9 @@ terraform plan --var-file=your_env.tfvars
 terraform apply --var-file=your_env.tfvars
 ```
 4. SSH into the manager node
-5. Set the IP range for metallb, such as `10.70.90.80/29`, in `/opt/meshdb_mgmt/meshdb/infra/cluster/metallb_extra.yaml` and then deploy metallb and longhorn from the manager
-```
-cd /opt/meshdb_mgmt/meshdb/infra/cluster/
-terraform init
-terraform plan
-terraform apply
-# update address block in /opt/meshdb_mgmt/meshdb/infra/cluster/metallb_extra.yaml
-kubectl apply -f /opt/meshdb_mgmt/meshdb/infra/cluster/metallb_extra.yaml
-```
+5. Update values + secrets in `/opt/meshdb_mgmt/values.yaml` and `/opt/meshdb_mgmt/secret.values.yaml`
 
-6. Update values + secrets in `/opt/meshdb_mgmt/values.yaml` and `/opt/meshdb_mgmt/secret.values.yaml`
-
-7. Deploy helm chart. Create the namespace you indicated in `/opt/meshdb_mgmt/values.yaml`
+6. Deploy helm chart. Create the namespace you indicated in `/opt/meshdb_mgmt/values.yaml`
 
 ```
 your_ns="meshdbdev0"
@@ -42,4 +32,4 @@ helm template . -f ../../../../values.yaml -f ../../../../secret.values.yaml | k
 kubectl get all -n $your_ns
 ```
 
-8. If you need a superuser: `kubectl exec -it -n meshdbdev0 service/meshdb-meshweb bash` and `python manage.py createsuperuser`
+7. If you need a superuser: `kubectl exec -it -n meshdbdev0 service/meshdb-meshweb bash` and `python manage.py createsuperuser`
