@@ -6,7 +6,7 @@ metadata:
 spec:
   accessModes:
     - ReadWriteOnce
-  storageClassName: longhorn
+  storageClassName: longhorn-crypto-global
   resources:
     requests:
       storage: {{ .Values.pg.pvc_size }}

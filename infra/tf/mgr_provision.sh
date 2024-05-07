@@ -6,7 +6,8 @@ mkdir -p $MGMT_DIR
 cd $MGMT_DIR
 
 # Clone the repo
-apt-get update && apt-get install -y git unzip
+apt-get update && apt-get install -y git unzip cryptsetup
+sudo modprobe dm_crypt
 git clone https://github.com/nycmeshnet/meshdb.git
 
 # Install tf
