@@ -53,5 +53,9 @@ resource "proxmox_vm_qemu" "meshdbnode" {
   }
   
   tags = "meshdb${var.meshdb_env_name}"
+
+  depends_on = [
+    null_resource.ssh_key
+  ]
 }
 

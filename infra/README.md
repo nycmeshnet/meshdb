@@ -5,13 +5,11 @@ These instructions will set up a 4 node k3s cluster on proxmox.
 - 3 "agent" nodes to run services.
 
 1. Clone this repository
-2. Setup tfvars + ssh keys. See [proxmox provider](https://registry.terraform.io/providers/Telmate/proxmox/latest/docs) and set up env vars. Create an API key in Proxmox, and disable Privilege Separation.
+2. Set up tfvars. See [proxmox provider](https://registry.terraform.io/providers/Telmate/proxmox/latest/docs). Create an API key in Proxmox, and disable Privilege Separation.
 ```
 cd meshdb/infra/tf/
 cp example.tfvars your_env.tfvars
 # Modify your_env.tfvars to meet your needs
-ENV_NAME="garfield" # Matching meshdb_env_name
-ssh-keygen -t ed25519 -f ./meshdb$ENV_NAME -C meshdb${lsENV_NAME}@db.mesh.nycmesh.net
 ```
 3. Create the VMs that will host k3s
 ```

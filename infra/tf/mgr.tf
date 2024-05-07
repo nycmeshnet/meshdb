@@ -1,3 +1,9 @@
+resource "null_resource" "ssh_key" {
+  provisioner "local-exec" {
+    command = "bash ${path.module}/gen_ssh_key.sh ${var.meshdb_env_name}"
+  }
+}
+
 resource "proxmox_vm_qemu" "meshdbdevmgr" {
   name        = "meshdb${var.meshdb_env_name}mgr"
   desc        = "managment server for meshdb ${var.meshdb_env_name}"
@@ -47,6 +53,10 @@ resource "proxmox_vm_qemu" "meshdbdevmgr" {
   }
   
   tags = "meshdb${var.meshdb_env_name}"
+
+  depends_on = [
+    null_resource.ssh_key
+  ]
 }
 
 resource "null_resource" "mgr_config_files" {
