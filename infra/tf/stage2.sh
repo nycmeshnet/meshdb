@@ -1,3 +1,7 @@
+#!/bin/bash
+
+set -e
+
 metallb_addr="$1"
 
 cd /opt/meshdb_mgmt/
@@ -9,7 +13,7 @@ sleep 10
 
 terraform init
 terraform plan
-terraform apply
+terraform apply -auto-approve
 
 sed -i -e "s/METALLB_ADDR_RANGE/${metallb_addr}/g" metallb_extra.yaml
 terraform init

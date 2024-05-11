@@ -1,12 +1,16 @@
 #!/bin/bash
 
+set -e
+
 # Create meshdb_mgmt directory
 MGMT_DIR="/opt/meshdb_mgmt"
 mkdir -p $MGMT_DIR
 cd $MGMT_DIR
 
-# Clone the repo
-apt-get update && apt-get install -y git unzip
+# Clone the repo, wait for package lock up to 3 times.
+for i in {0..3}; do
+    apt-get update && apt-get -o DPkg::Lock::Timeout=60 install -y git unzip && break
+done
 git clone https://github.com/nycmeshnet/meshdb.git
 
 # Install tf
