@@ -1,5 +1,5 @@
 provider "kubernetes" {
-  config_path = "/etc/rancher/k3s/k3s.yaml"
+  config_path = "${path.module}/../tf/k3s.yaml"
 }
 
 # Create metallb-system
