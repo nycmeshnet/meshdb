@@ -27,7 +27,15 @@ terraform init
 terraform apply
 ```
 
-5. Update values + secrets in `meshdb/infra/helm/meshdb/values.yaml` and `meshdb/infra/helm/meshdb/secret.values.yaml`
+5. Create and update values + secrets in `values.yaml` and `secret.values.yaml`
+
+```
+cd meshdb/infra/helm/meshdb/
+cp example.secret.values.yaml secret.values.yaml
+cp example.values.yaml values.yaml
+nano secret.values.yaml
+nano values.yaml
+```
 
 6. Render the helm chart
 

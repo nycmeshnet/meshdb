@@ -4,7 +4,7 @@ resource "null_resource" "ssh_key" {
   }
 }
 
-resource "proxmox_vm_qemu" "meshdbdevmgr" {
+resource "proxmox_vm_qemu" "meshdbmgr" {
   name        = "meshdb${var.meshdb_env_name}mgr"
   desc        = "managment server for meshdb ${var.meshdb_env_name}"
   target_node = var.meshdb_proxmox_node
@@ -123,7 +123,7 @@ resource "null_resource" "mgr_config_files" {
   */
 
   depends_on = [
-    proxmox_vm_qemu.meshdbdevmgr,
+    proxmox_vm_qemu.meshdbmgr,
     proxmox_vm_qemu.meshdbnode
   ]
 }

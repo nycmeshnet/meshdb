@@ -27,7 +27,7 @@ resource "null_resource" "workers_k3s" {
   }
 
   depends_on = [
-    proxmox_vm_qemu.meshdbdevmgr,
+    proxmox_vm_qemu.meshdbmgr,
     proxmox_vm_qemu.meshdbnode,
     null_resource.mgr_config_files,
   ]

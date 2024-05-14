@@ -1,6 +1,6 @@
 output "mgr_ip" {
     description = "IP address of the managment node"
-    value       = proxmox_vm_qemu.meshdbdevmgr.default_ipv4_address
+    value       = proxmox_vm_qemu.meshdbmgr.default_ipv4_address
 }
 
 output "worker_ips" {
