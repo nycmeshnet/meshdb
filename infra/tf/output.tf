@@ -1,10 +1,13 @@
 output "mgr_ip" {
     description = "IP address of the managment node"
-    value       = proxmox_vm_qemu.meshdbmgr.default_ipv4_address
+    value = {
+        for k, mgr in proxmox_vm_qemu.meshdbmgr : k => mgr.default_ipv4_address
+    }
 }
 
 output "worker_ips" {
+    description = "IP address of the worker node"
     value = {
-        for k, meshdbnode in proxmox_vm_qemu.meshdbnode : k => meshdbnode.default_ipv4_address
-  }
+        for k, node in proxmox_vm_qemu.meshdbnode : k => node.default_ipv4_address
+    }
 }

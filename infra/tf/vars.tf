@@ -48,6 +48,10 @@ variable "meshdb_local_password" {
   sensitive   = true
 }
 
+variable "meshdb_mgr_ips" {
+  description  = "static IPs to use for managers"
+}
+
 variable "meshdb_ips" {
   description  = "static IPs to use for nodes"
 }

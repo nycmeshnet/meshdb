@@ -21,11 +21,11 @@ module "k3s" {
   ]
 
   servers = {
-    for i in range(length(proxmox_vm_qemu.meshdbmgr)) :
-    proxmox_vm_qemu.meshdbmgr[i].name => {
-      ip = proxmox_vm_qemu.meshdbmgr[i].default_ipv4_address
+    for instance in proxmox_vm_qemu.meshdbmgr :
+    instance.name => {
+      ip = instance.default_ipv4_address
       connection = {
-        host        = proxmox_vm_qemu.meshdbmgr[i].default_ipv4_address
+        host        = instance.default_ipv4_address
         # TODO: Try to use tls_private_key?
         #private_key = trimspace(tls_private_key.ed25519_provisioning.private_key_pem)
         private_key = file("${path.module}/meshdb${var.meshdb_env_name}")
@@ -34,17 +34,17 @@ module "k3s" {
         #"--disable-cloud-controller",
         #"--tls-san ${hcloud_server.control_planes[0].ipv4_address}",
       ]
-      annotations = { "server_id" : i } // theses annotations will not be managed by this module
+      #annotations = { "server_id" : 230 } // theses annotations will not be managed by this module
     }
   }
 
   agents = {
-    for i in range(length(proxmox_vm_qemu.meshdbnode)) :
-    "${proxmox_vm_qemu.meshdbnode[i].name}_node" => {
-      name = proxmox_vm_qemu.meshdbnode[i].name
-      ip   = hcloud_server_network.agents_network[i].ip
+    for instance in proxmox_vm_qemu.meshdbnode :
+    instance.name => {
+      name = instance.name
+      ip   = instance.default_ipv4_address
       connection = {
-        host        = proxmox_vm_qemu.meshdbnode[i].default_ipv4_address
+        host        = instance.default_ipv4_address
         # TODO: Try to use tls_private_key?
         #private_key = trimspace(tls_private_key.ed25519_provisioning.private_key_pem)
         private_key = file("${path.module}/meshdb${var.meshdb_env_name}")
@@ -55,3 +55,4 @@ module "k3s" {
     }
   }
 }
+

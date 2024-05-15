@@ -7,8 +7,10 @@ meshdb_local_user               = "debian"
 meshdb_local_password           = "MeshMesh9999"
 meshdb_proxmox_token_id         = "meshdbdev-terraform-prov@pve!james-test"
 meshdb_proxmox_token_secret     = ""
-meshdb_ips                      = [
+meshdb_ctl_ips                  = [
   "10.70.90.X",
+]
+meshdb_ips                      = [
   "10.70.90.Y",
   "10.70.90.Z",
   "10.70.90.A",

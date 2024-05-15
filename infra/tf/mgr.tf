@@ -5,7 +5,9 @@ resource "null_resource" "ssh_key" {
 }
 
 resource "proxmox_vm_qemu" "meshdbmgr" {
-  name        = "meshdb${var.meshdb_env_name}mgr"
+  count       = 1
+
+  name        = "meshdb${var.meshdb_env_name}mgr${count.index}"
   desc        = "managment server for meshdb ${var.meshdb_env_name}"
   target_node = var.meshdb_proxmox_node
 
@@ -40,7 +42,7 @@ resource "proxmox_vm_qemu" "meshdbmgr" {
     model = "virtio"
   }
 
-  ipconfig0 = "ip=${var.meshdb_ips[0]}/${var.meshdb_networkrange},gw=${var.meshdb_gateway}"
+  ipconfig0 = "ip=${var.meshdb_mgr_ips[0]}/${var.meshdb_networkrange},gw=${var.meshdb_gateway}"
 
   ssh_user = "root"
   ssh_private_key = file("${path.module}/meshdb${var.meshdb_env_name}")

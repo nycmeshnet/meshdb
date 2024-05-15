@@ -1,12 +1,8 @@
 resource "proxmox_vm_qemu" "meshdbnode" {
-  for_each = {
-    "node1" = { name = "1" }
-    "node2" = { name = "2" }
-    "node3" = { name = "3" }
-  }
+  count = 3
 
-  name        = "meshdb${var.meshdb_env_name}node${each.value.name}"
-  desc        = "node ${each.value.name} for meshdb ${var.meshdb_env_name}"
+  name        = "meshdb${var.meshdb_env_name}node${count.index}"
+  desc        = "node ${count.index} for meshdb ${var.meshdb_env_name}"
   target_node = var.meshdb_proxmox_node
 
   clone = var.meshdb_proxmox_template_image
@@ -40,7 +36,7 @@ resource "proxmox_vm_qemu" "meshdbnode" {
     model = "virtio"
   }
 
-  ipconfig0 = "ip=${var.meshdb_ips[each.value.name]}/${var.meshdb_networkrange},gw=${var.meshdb_gateway}"
+  ipconfig0 = "ip=${var.meshdb_ips[count.index]}/${var.meshdb_networkrange},gw=${var.meshdb_gateway}"
 
   ssh_user = "root"
   ssh_private_key = file("${path.module}/meshdb${var.meshdb_env_name}")
