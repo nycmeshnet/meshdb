@@ -1,4 +1,5 @@
 from argparse import ArgumentParser
+from typing import Any
 
 from django.contrib.auth.models import Group, Permission
 from django.core.management.base import BaseCommand
@@ -10,7 +11,7 @@ class Command(BaseCommand):
     def add_arguments(self, parser: ArgumentParser) -> None:
         pass
 
-    def handle(self, *args, **options) -> None:
+    def handle(self, *args: Any, **options: Any) -> None:
         models = [
             "building",
             "member",

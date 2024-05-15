@@ -1,6 +1,6 @@
 import json
 from textwrap import dedent
-from typing import Dict, Optional
+from typing import Dict, List, Optional
 
 from django.urls import reverse
 from drf_spectacular.authentication import SessionScheme
@@ -74,7 +74,7 @@ query_form_password_param = OpenApiParameter(
 )
 
 
-def map_query_filters_to_param_annotations(query_filters: Dict[str, Optional[str]]):
+def map_query_filters_to_param_annotations(query_filters: Dict[str, Optional[str]]) -> List[OpenApiParameter]:
     param_annotations = []
     for param_name, filter_strategy in query_filters.items():
         filter_strategy_human_readable = {

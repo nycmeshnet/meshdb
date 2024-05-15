@@ -1,6 +1,7 @@
 from argparse import ArgumentParser
-from datetime import timedelta
+from datetime import date, timedelta
 from random import randint, randrange
+from typing import Any, Tuple
 
 from django.core.management.base import BaseCommand
 from django.db import transaction
@@ -32,7 +33,7 @@ class Command(BaseCommand):
         )
 
     @transaction.atomic
-    def handle(self, *args, **options):
+    def handle(self, *args: Any, **options: Any) -> None:
         print("Scrambling database with fake information")
         fake = Faker()
         if not options["skip_members"]:
@@ -104,7 +105,7 @@ class Command(BaseCommand):
         print("Done")
 
     @staticmethod
-    def fuzz_dates(request_date, install_date, abandon_date):
+    def fuzz_dates(request_date: date | None, install_date: date, abandon_date: date) -> Tuple[date | None, date, date]:
         if request_date:
             # Make it happen sooner so that there's no way the request date is
             # now beyond the install/abandon date.

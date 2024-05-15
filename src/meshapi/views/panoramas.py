@@ -78,7 +78,7 @@ def sync_github_panoramas() -> tuple[int, list[str]]:
 
 
 def set_panoramas(panos: dict[str, list[str]]) -> tuple[int, list[str]]:
-    def build_panorama_list(building: Building, filenames: list[str]):
+    def build_panorama_list(building: Building, filenames: list[str]) -> None:
         panoramas = []
         for filename in filenames:
             file_url = f"{host_url}{filename}"
