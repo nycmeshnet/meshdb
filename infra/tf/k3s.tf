@@ -15,7 +15,6 @@ module "k3s" {
   managed_fields = ["label", "taint"] // ignore annotations
 
   global_flags = [
-    "--disable servicelb"
     #"--flannel-iface ens10",
     #"--kubelet-arg cloud-provider=external" // required to use https://github.com/hetznercloud/hcloud-cloud-controller-manager
   ]
@@ -29,8 +28,11 @@ module "k3s" {
         # TODO: Try to use tls_private_key?
         #private_key = trimspace(tls_private_key.ed25519_provisioning.private_key_pem)
         private_key = file("${path.module}/meshdb${var.meshdb_env_name}")
+        user     = "debian"
       }
       flags = [
+        "--disable servicelb",
+        "--write-kubeconfig-mode 644",
         #"--disable-cloud-controller",
         #"--tls-san ${hcloud_server.control_planes[0].ipv4_address}",
       ]
@@ -48,6 +50,8 @@ module "k3s" {
         # TODO: Try to use tls_private_key?
         #private_key = trimspace(tls_private_key.ed25519_provisioning.private_key_pem)
         private_key = file("${path.module}/meshdb${var.meshdb_env_name}")
+        user     = "debian"
+
       }
 
       #labels = { "node.kubernetes.io/pool" = proxmox_vm_qemu.meshdbnode[i].labels.nodepool }
