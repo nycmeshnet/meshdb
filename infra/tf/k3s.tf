@@ -15,8 +15,6 @@ module "k3s" {
   managed_fields = ["label", "taint"] // ignore annotations
 
   global_flags = [
-    #"--flannel-iface ens10",
-    #"--kubelet-arg cloud-provider=external" // required to use https://github.com/hetznercloud/hcloud-cloud-controller-manager
   ]
 
   servers = {
@@ -33,10 +31,7 @@ module "k3s" {
       flags = [
         "--disable servicelb",
         "--write-kubeconfig-mode 644",
-        #"--disable-cloud-controller",
-        #"--tls-san ${hcloud_server.control_planes[0].ipv4_address}",
       ]
-      #annotations = { "server_id" : 230 } // theses annotations will not be managed by this module
     }
   }
 
@@ -51,11 +46,7 @@ module "k3s" {
         #private_key = trimspace(tls_private_key.ed25519_provisioning.private_key_pem)
         private_key = file("${path.module}/meshdb${var.meshdb_env_name}")
         user     = "debian"
-
       }
-
-      #labels = { "node.kubernetes.io/pool" = proxmox_vm_qemu.meshdbnode[i].labels.nodepool }
-      #taints = { "dedicated" : proxmox_vm_qemu.meshdbnode[i].labels.nodepool == "gpu" ? "gpu:NoSchedule" : null }
     }
   }
 }
