@@ -11,3 +11,8 @@ output "worker_ips" {
         for k, node in proxmox_vm_qemu.meshdbnode : k => node.default_ipv4_address
     }
 }
+
+resource "local_file" "kubeconfig" {
+    content = module.k3s.kube_config
+    filename = "k3s.yaml"
+}
