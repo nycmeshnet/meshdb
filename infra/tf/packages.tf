@@ -2,7 +2,8 @@
 
 locals {
   packages = "open-iscsi"
-  command = "sleep 60; sudo apt -o DPkg::Lock::Timeout=180 update && sudo apt -o DPkg::Lock::Timeout=180 install -y ${local.packages}"
+  # Kind of kludgy, but will attempt to install packages several times before failing.
+  command = "for i in {0..12}; do echo install packages...; sleep 10; sudo apt -o DPkg::Lock::Timeout=180 update && sudo apt -o DPkg::Lock::Timeout=180 install -y ${local.packages} && break; done"
 }
 
 resource "null_resource" "mgr_packages" {
