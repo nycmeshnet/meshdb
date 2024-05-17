@@ -29,6 +29,7 @@ terraform apply
 
 5. Create and update values + secrets in `values.yaml` and `secret.values.yaml`
 
+
 ```
 cd meshdb/infra/helm/meshdb/
 cp example.secret.values.yaml secret.values.yaml
@@ -43,6 +44,8 @@ nano values.yaml
 cd meshdb/infra/helm/meshdb
 helm template . -f values.yaml -f secret.values.yaml > meshdb.yaml
 ```
+
+<!--TODO: Have helm create NS and update instns to kubectl apply file-->
 
 7. Deploy MeshDB!
 
