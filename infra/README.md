@@ -20,6 +20,8 @@ terraform plan -var-file=your_env.tfvars
 terraform apply -var-file=your_env.tfvars
 ```
 
+<!--ansible-galaxy collection install cloud.terraform-->
+
 4. Apply supporting infrastructure (metallb and longhorn)
 ```
 cd meshdb/infra/cluster
