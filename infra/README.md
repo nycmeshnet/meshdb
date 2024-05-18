@@ -42,6 +42,9 @@ nano values.yaml
 
 6. Render the helm chart
 
+<!--TODO: Use helm install for everything-->
+<!-- helm install --kubeconfig='../../tf/k3s.yaml' -f values.yaml -f secret.values.yaml meshdb ./ -->
+
 ```
 cd meshdb/infra/helm/meshdb
 helm template . -f values.yaml -f secret.values.yaml > meshdb.yaml
