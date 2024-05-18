@@ -6,7 +6,6 @@ metadata:
   labels:
     {{- include "meshdb.labels" . | nindent 4 }}
 spec:
-  type: LoadBalancer
   ports:
     - port: {{ .Values.nginx.port }}
       targetPort: {{ .Values.nginx.port }}
