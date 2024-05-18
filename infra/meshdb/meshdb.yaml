@@ -1,8 +1,0 @@
-apiVersion: helm.cattle.io/v1
-kind: HelmChart
-metadata:
-  name: meshdb 
-  namespace: meshdb
-spec:
-  chart: meshdb-0.1.0.tgz # TODO: Template version
-  targetNamespace: meshdb

@@ -4,8 +4,6 @@ module "k3s" {
   depends_on_    = [
     proxmox_vm_qemu.meshdbmgr,
     proxmox_vm_qemu.meshdbnode,
-    null_resource.mgr_packages,
-    null_resource.worker_packages,
   ]
   k3s_version    = "latest"
   cluster_domain = "cluster.local"
