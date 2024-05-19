@@ -244,7 +244,7 @@ def get_or_create_member(
                 if not existing_members[0].notes:
                     existing_members[0].notes = ""
 
-                existing_members[0].notes += f"Spreadsheet Contact Notes:\n{row.contactNotes}\n\n"
+                existing_members[0].notes += f"\nSpreadsheet Contact Notes:\n{row.contactNotes}\n\n"
 
             if diff_notes:
                 if not existing_members[0].notes:
