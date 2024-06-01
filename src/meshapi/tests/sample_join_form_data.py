@@ -68,7 +68,7 @@ bronx_join_form_submission = {
     "email": "rsmith@gmail.com",
     "phone": "+1585-758-3425",  # CSH's phone number :P
     "street_address": "250 Bedford Park Blvd W",
-    "parsed_street_address": "250 Bedford Park Boulevard West",
+    "parsed_street_address": "250 Bedford Park Bl West",
     "city": "Bronx",
     "state": "NY",
     "zip": 10468,
