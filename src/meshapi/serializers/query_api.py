@@ -21,6 +21,7 @@ class QueryFormSerializer(serializers.ModelSerializer):
             "zip_code",
             "name",
             "phone_number",
+            "additional_phone_numbers",
             "primary_email_address",
             "stripe_email_address",
             "additional_email_addresses",
@@ -36,6 +37,9 @@ class QueryFormSerializer(serializers.ModelSerializer):
 
     name = serializers.CharField(source="member.name")
     phone_number = serializers.CharField(source="member.phone_number")
+    additional_phone_numbers = serializers.ListField(
+        source="member.additional_phone_numbers", child=serializers.CharField()
+    )
 
     network_number = serializers.IntegerField(source="node.network_number", allow_null=True)
 

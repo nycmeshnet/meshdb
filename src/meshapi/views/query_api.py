@@ -22,7 +22,7 @@ However, we return a JSON array, rather than a CSV file
 class QueryMemberFilter(filters.FilterSet):
     name = filters.CharFilter(field_name="member.name", lookup_expr="icontains")
     email_address = filters.CharFilter(method="filter_on_all_emails")
-    phone_number = filters.CharFilter(field_name="member.phone_number", lookup_expr="icontains")
+    phone_number = filters.CharFilter(method="filter_on_all_phone_numbers")
 
     def filter_on_all_emails(self, queryset: QuerySet[Member], field_name: str, value: str) -> QuerySet[Member]:
         return queryset.filter(
@@ -30,6 +30,9 @@ class QueryMemberFilter(filters.FilterSet):
             | Q(member__stripe_email_address__icontains=value)
             | Q(member__additional_email_addresses__icontains=value)
         )
+
+    def filter_on_all_phone_numbers(self, queryset, name, value):
+        return queryset.filter(Q(phone_number__icontains=value) | Q(additional_phone_numbers__icontains=value))
 
     class Meta:
         model = Install
