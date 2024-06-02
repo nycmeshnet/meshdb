@@ -89,12 +89,11 @@ def normalize_building_node_links(building: models.Building, node: models.Node):
     Scan the node <-> building relations for the given node and building to make sure all buildings
      in the cluster refer to all nodes in the cluster and vice versa
 
-     Also sets the correct primary_node pointer for each Building, selecting any existing primary
-     nodes in the cluster first, and then falling back to the node at hand
+     Also sets the correct primary_node pointer for each Building, by electing the oldest active node
+     (or the oldest node if no active nodes exist)
     """
     buildings_in_cluster = {building}
     nodes_in_cluster = {node}
-    established_primary_nodes = set()
 
     # These loops will not correctly crawl deep or strange node <-> building
     # relationship structures but should be fine for simple flat clusters
@@ -106,24 +105,19 @@ def normalize_building_node_links(building: models.Building, node: models.Node):
         for n in b.nodes.all():
             nodes_in_cluster.add(n)
 
-        if b.primary_node:
-            established_primary_nodes.add(b.primary_node)
+    active_nodes = [node for node in nodes_in_cluster if node.status == node.NodeStatus.ACTIVE]
 
-    established_primary_nodes = sorted(list(established_primary_nodes), key=lambda node: node.install_date)
+    primary_node = [
+        node
+        for node in sorted(
+            active_nodes if active_nodes else nodes_in_cluster,
+            key=lambda node: node.install_date,
+        )
+    ][0]
 
     for b in buildings_in_cluster:
         for n in nodes_in_cluster:
             b.nodes.add(n)
 
-        if len(established_primary_nodes):
-            if len(established_primary_nodes) > 1:
-                logging.error(
-                    f"Detected multiple primary nodes in the same cluster: "
-                    f"{established_primary_nodes}. These will be consolidated "
-                    f"to the oldest node: {established_primary_nodes[0]}."
-                )
-            b.primary_node = established_primary_nodes[0]
-        else:
-            b.primary_node = node
-
+        b.primary_node = primary_node
         b.save()
