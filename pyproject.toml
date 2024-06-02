@@ -91,6 +91,7 @@ exclude = [
 
 [[tool.mypy.overrides]]
 module = [
+    "meshdb.utils.spreadsheet_import.*",
     "meshapi.models.util.custom_many_to_many",
     "meshapi.util.django_pglocks",
     "meshapi.docs",
