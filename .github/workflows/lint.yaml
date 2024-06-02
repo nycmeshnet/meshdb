@@ -19,7 +19,5 @@ jobs:
         run: "python --version"
       - name: "Install package"
         run: pip install ".[dev]"
-      - name: "env debug"
-        run: env
       - name: "Run lint checks"
         run: invoke lint
