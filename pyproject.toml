@@ -34,6 +34,9 @@ dependencies = [
     # FIXME: Go back to PyPI when https://github.com/jazzband/django-dbbackup/pull/515 or https://github.com/jazzband/django-dbbackup/pull/511 is merged
     "django-dbbackup@git+https://github.com/willnilges/django-dbbackup.git@62048411ff5beac4beac1578f686824214f1f33a",
     "django-storages==1.14.*",
+    "django-stubs[compatible-mypy]==5.0.*",
+    "djangorestframework-stubs[compatible-mypy]==3.15.*",
+    "django-filter-stubs==0.1.*",
     "boto3==1.34.*",
     "six==1.16.0",
 ]
@@ -66,6 +69,7 @@ where = ["src"]
 
 
 [tool.mypy]
+plugins = ["mypy_django_plugin.main", "mypy_drf_plugin.main"]
 check_untyped_defs = true
 show_error_codes = true
 pretty = true
@@ -79,7 +83,13 @@ exclude = [
     "^src/meshapi/tests/.*",
     "^src/meshapi_hooks/tests/.*",
     "^src/meshapi/migrations/.*",
+    "^src/meshapi/util/django_pglocks.py",
+    "^src/meshapi/models/util/custom_many_to_many.py",
+    "^src/meshapi/docs.py"
 ]
+
+[tool.django-stubs]
+django_settings_module = "meshdb.settings"
 
 
 [tool.black]

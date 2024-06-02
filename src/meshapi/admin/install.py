@@ -1,5 +1,9 @@
+from typing import Tuple
+
+from django import forms
 from django.contrib import admin
-from django.contrib.admin.options import forms
+from django.db.models import QuerySet
+from django.http import HttpRequest
 
 from meshapi.models import Install
 
@@ -94,7 +98,9 @@ class InstallAdmin(admin.ModelAdmin):
         ),
     ]
 
-    def get_search_results(self, request, queryset, search_term):
+    def get_search_results(
+        self, request: HttpRequest, queryset: QuerySet[Install], search_term: str
+    ) -> Tuple[QuerySet[Install], bool]:
         queryset, may_have_duplicates = super().get_search_results(
             request,
             queryset,

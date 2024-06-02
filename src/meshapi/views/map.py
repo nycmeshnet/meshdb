@@ -1,9 +1,11 @@
 from datetime import datetime
-from typing import List
+from typing import Any, Dict, List, cast
 
-from django.db.models import Count, F, OuterRef, Prefetch, Q, Subquery
+from django.db.models import Count, F, OuterRef, Prefetch, Q, QuerySet, Subquery
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import generics, permissions
+from rest_framework.request import Request
+from rest_framework.response import Response
 
 from meshapi.models import Device, Install, Link, Node, Sector
 from meshapi.serializers import (
@@ -29,7 +31,7 @@ class MapDataNodeList(generics.ListAPIView):
     serializer_class = MapDataInstallSerializer
     pagination_class = None
 
-    def get_queryset(self) -> List[Install]:
+    def get_queryset(self) -> List[Install]:  # type: ignore[override]
         all_installs = []
 
         queryset = (
@@ -42,11 +44,17 @@ class MapDataNodeList(generics.ListAPIView):
         for install in queryset:
             all_installs.append(install)
 
+        class CustomNodeWithPrefetchedInstalls(Node):
+            active_installs: QuerySet[Install]
+            prefetched_installs: QuerySet[Install]
+
         # We need to make sure there is an entry on the map for every NN, and since we excluded the
         # NN assigned rows in the query above, we need to go through the Node objects and
         # include the nns we haven't already covered via install num
         covered_nns = {install.install_number for install in all_installs}
-        for node in (
+
+        active_nodes_with_prefetched_installs = cast(
+            QuerySet[CustomNodeWithPrefetchedInstalls],
             Node.objects.filter(~Q(status=Node.NodeStatus.INACTIVE) & Q(installs__status__in=ALLOWED_INSTALL_STATUSES))
             .prefetch_related(
                 Prefetch(
@@ -61,8 +69,10 @@ class MapDataNodeList(generics.ListAPIView):
                     queryset=Install.objects.filter(status=Install.InstallStatus.ACTIVE).select_related("building"),
                     to_attr="active_installs",
                 )
-            )
-        ):
+            ),
+        )
+
+        for node in active_nodes_with_prefetched_installs:
             if node.network_number not in covered_nns:
                 # Arbitrarily pick a representative install for the details of the "Fake" node,
                 # preferring active installs if possible
@@ -85,7 +95,7 @@ class MapDataNodeList(generics.ListAPIView):
         all_installs.sort(key=lambda i: i.install_number)
         return all_installs
 
-    def list(self, request, *args, **kwargs):
+    def list(self, request: Request, *args: List[Any], **kwargs: Dict[str, Any]) -> Response:
         response = super().list(request, args, kwargs)
 
         access_points = []
@@ -169,8 +179,8 @@ class MapDataLinkList(generics.ListAPIView):
         # .exclude(to_device__status=Device.DeviceStatus.INACTIVE)
     )
 
-    def list(self, request, *args, **kwargs):
-        response = super().list(request, args, kwargs)
+    def list(self, request: Request, *args: List[Any], **kwargs: Dict[str, Any]) -> Response:
+        response = super().list(request, *args, **kwargs)
 
         covered_links = {(link["from"], link["to"]) for link in response.data}
 
@@ -179,7 +189,15 @@ class MapDataLinkList(generics.ListAPIView):
         # and add fake link objects to connect the installs on those other buildings to
         # the node dot
         cable_runs = []
-        for node in (
+
+        class CustomBuildingWithPrefetchedActiveInstalls(Node):
+            active_installs: QuerySet[Install]
+
+        class CustomNodeWithPrefetchedActiveInstalls(Node):
+            buildings: QuerySet[CustomBuildingWithPrefetchedActiveInstalls]  # type: ignore[assignment]
+
+        active_nodes_with_prefetched_installs = cast(
+            QuerySet[CustomNodeWithPrefetchedActiveInstalls],
             Node.objects.annotate(num_buildings=Count("buildings"))
             .filter(num_buildings__gt=1)
             .filter(~Q(status=Node.NodeStatus.INACTIVE) & Q(installs__status__in=ALLOWED_INSTALL_STATUSES))
@@ -189,8 +207,10 @@ class MapDataLinkList(generics.ListAPIView):
                     queryset=Install.objects.order_by("install_number").filter(status=Install.InstallStatus.ACTIVE),
                     to_attr="active_installs",
                 )
-            )
-        ):
+            ),
+        )
+
+        for node in active_nodes_with_prefetched_installs:
             for building in node.buildings.all():
                 if building.active_installs:
                     from_install = building.active_installs[0].install_number

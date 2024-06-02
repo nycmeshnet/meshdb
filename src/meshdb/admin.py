@@ -1,8 +1,11 @@
+from typing import Any, List, Optional
+
 from django.contrib import admin
+from django.http import HttpRequest
 
 
 class MeshDBAdminSite(admin.AdminSite):
-    def get_app_list(self, request, app_label=None):
+    def get_app_list(self, request: HttpRequest, app_label: Optional[str] = None) -> List[Any]:
         """Reorder the apps in the admin site.
 
         By default, django admin apps are order alphabetically.

@@ -1,5 +1,6 @@
 import json
 import os
+from typing import Any, Dict, Optional
 
 from django.forms import widgets
 from django.template import loader
@@ -13,7 +14,7 @@ class PanoramaViewer(JSONFormWidget):
     def __init__(self, schema: dict):
         super().__init__(schema)
 
-    def pano_get_context(self, name, value, attrs=None) -> dict:
+    def pano_get_context(self, name: str, value: str) -> dict:
         value_as_array = json.loads(value)
         return {
             "widget": {
@@ -22,7 +23,9 @@ class PanoramaViewer(JSONFormWidget):
             }
         }
 
-    def render(self, name, value, attrs=None, renderer=None):
+    def render(
+        self, name: str, value: str, attrs: Optional[Dict[str, Any]] = None, renderer: Optional[Any] = None
+    ) -> str:
         if "DISALLOW_PANO_EDITS" in os.environ:
             super_template = ""
         else:
@@ -30,7 +33,7 @@ class PanoramaViewer(JSONFormWidget):
             super_template = super().render(name, value, attrs, renderer)
 
         # Then, render the panoramas for viewing
-        context = self.pano_get_context(name, value, attrs)
+        context = self.pano_get_context(name, value)
         pano_template = loader.get_template(self.pano_template_name).render(context)
 
         template = super_template + pano_template

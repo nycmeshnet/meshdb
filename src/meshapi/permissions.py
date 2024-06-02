@@ -1,11 +1,11 @@
 import json
+import os
 from typing import Any, Optional
 
-from django.conf import os
-from django.contrib.auth import PermissionDenied
 from django.contrib.auth.models import User
 from django.db.models import Model
 from rest_framework import permissions
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import BasePermission
 from rest_framework.request import Request
 
@@ -29,7 +29,7 @@ class HasDjangoPermission(BasePermission):
             raise NotImplementedError(
                 "You must subclass HasDjangoPermission and specify the django_permission attribute"
             )
-        return request.user and request.user.has_perm(self.django_permission)
+        return bool(request.user) and request.user.has_perm(self.django_permission)
 
 
 class HasNNAssignPermission(HasDjangoPermission):

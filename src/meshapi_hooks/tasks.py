@@ -1,5 +1,7 @@
+from typing import Any, Dict
+
 import requests
-from celery import shared_task
+from celery import Task, shared_task
 from celery.exceptions import MaxRetriesExceededError
 
 from meshapi_hooks.hooks import CelerySerializerHook
@@ -8,7 +10,7 @@ HTTP_ATTEMPT_COUNT_PER_DELIVERY_ATTEMPT = 4
 
 
 @shared_task(bind=True, max_retries=HTTP_ATTEMPT_COUNT_PER_DELIVERY_ATTEMPT - 1)
-def deliver_webhook_task(self, hook_id, payload):
+def deliver_webhook_task(self: Task, hook_id: int, payload: Dict[str, Any]) -> None:
     """Deliver the payload to the hook target"""
     hook = CelerySerializerHook.objects.get(id=hook_id)
     try:
