@@ -88,6 +88,11 @@ exclude = '''(?x)(
     |src/meshapi/models/util/custom_many_to_many.py
     |src/meshapi/docs.py
 )'''
+
+[[tool.mypy.overrides]]
+module = "meshapi.models.util.custom_many_to_many"
+follow_imports = "skip"
+
 #exclude = [
 #    "src/meshdb/utils/spreadsheet_import/.*",
 #    "src/meshapi/tests/.*",
