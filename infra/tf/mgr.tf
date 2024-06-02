@@ -1,9 +1,3 @@
-resource "null_resource" "ssh_key" {
-  provisioner "local-exec" {
-    command = "bash ${path.module}/gen_ssh_key.sh ${var.meshdb_env_name}"
-  }
-}
-
 resource "proxmox_vm_qemu" "meshdbmgr" {
   count       = 1
 
@@ -55,8 +49,4 @@ resource "proxmox_vm_qemu" "meshdbmgr" {
   }
   
   tags = "meshdb${var.meshdb_env_name}"
-
-  depends_on = [
-    null_resource.ssh_key
-  ]
 }

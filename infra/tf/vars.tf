@@ -56,6 +56,10 @@ variable "meshdb_ips" {
   description  = "static IPs to use for nodes"
 }
 
+variable "meshdb_lb_ip" {
+  description  = "static IP to use for k8s lb"
+}
+
 variable "meshdb_gateway" {
   description  = "default gateway to use for nodes"
   default      = "10.70.90.1"
