@@ -1,7 +1,7 @@
 from datetime import datetime
-from typing import Any, Dict, List, cast
+from typing import Any, Dict, List
 
-from django.db.models import Count, F, OuterRef, Prefetch, Q, QuerySet, Subquery
+from django.db.models import Count, F, OuterRef, Prefetch, Q, Subquery
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import generics, permissions
 from rest_framework.request import Request
@@ -68,7 +68,10 @@ class MapDataNodeList(generics.ListAPIView):
             if node.network_number not in covered_nns:
                 # Arbitrarily pick a representative install for the details of the "Fake" node,
                 # preferring active installs if possible
-                representative_install = (node.active_installs or node.prefetched_installs)[0]  # type: ignore[attr-defined]
+                representative_install = (
+                    node.active_installs  # type: ignore[attr-defined]
+                    or node.prefetched_installs  # type: ignore[attr-defined]
+                )[0]
 
                 all_installs.append(
                     Install(
@@ -194,9 +197,10 @@ class MapDataLinkList(generics.ListAPIView):
                 )
             )
         ):
-            for building in node.buildings.all():  # type: ignore[attr-defined]
-                if building.active_installs:
-                    from_install = building.active_installs[0].install_number
+            for building in node.buildings.all():
+                active_installs = building.active_installs  # type: ignore[attr-defined]
+                if active_installs:
+                    from_install = active_installs[0].install_number
                     if from_install != node.network_number:
                         if (from_install, node.network_number) not in covered_links:
                             cable_runs.append(
