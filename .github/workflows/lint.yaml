@@ -19,5 +19,7 @@ jobs:
         run: "python --version"
       - name: "Install package"
         run: pip install ".[dev]"
+      - name: "mypy debug"
+        run: mypy src/ --config-file=pyproject.toml --show-config
       - name: "Run lint checks"
         run: invoke lint
