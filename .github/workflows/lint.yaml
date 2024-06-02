@@ -20,6 +20,6 @@ jobs:
       - name: "Install package"
         run: pip install ".[dev]"
       - name: "env debug"
-        run: ls -R
+        run: env
       - name: "Run lint checks"
         run: invoke lint
