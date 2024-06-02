@@ -80,10 +80,10 @@ disallow_incomplete_defs = true
 warn_unused_configs = true
 files = [ "src/" ]
 exclude = [
-    "src/meshdb/utils/spreadsheet_import/.*",
     "src/meshapi/tests/.*",
     "src/meshapi_hooks/tests/.*",
     "src/meshapi/migrations/.*",
+    "src/meshdb/utils/spreadsheet_import/.*",
     "src/meshapi/util/django_pglocks.py",
     "src/meshapi/models/util/custom_many_to_many.py",
     "src/meshapi/docs.py"
@@ -92,8 +92,8 @@ exclude = [
 [[tool.mypy.overrides]]
 module = [
     "meshdb.utils.spreadsheet_import.*",
-    "meshapi.models.util.custom_many_to_many",
     "meshapi.util.django_pglocks",
+    "meshapi.models.util.custom_many_to_many",
     "meshapi.docs",
 ]
 follow_imports = "skip"
