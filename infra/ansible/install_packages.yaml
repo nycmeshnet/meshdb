@@ -1,12 +1,10 @@
 - name: Install packages on each node 
   hosts: mgrs:workers 
   tasks:
-    #- name: Install packages on each node
-    #  ansible.builtin.apt:
-    #    pkg:
-    #    - open-iscsi
-    #    - nfs-common
     - name: Install packages on each node
-      ansible.builtin.shell: |
-        sudo apt-get -o DPkg::Lock::Timeout=60 update && sudo apt-get install -y -o DPkg::Lock::Timeout=60 open-iscsi nfs-common
-
+      ansible.builtin.apt:
+        pkg:
+          - open-iscsi
+          - nfs-common
+        update_cache: true
+      become: true

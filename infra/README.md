@@ -11,6 +11,7 @@ These instructions will set up a 4 node k3s cluster on proxmox.
 cd meshdb/infra/tf/
 cp example.tfvars your_env.tfvars
 # Modify your_env.tfvars to meet your needs
+bash gen_ssh_key.sh dev0
 ```
 
 3. Create the k3s cluster
@@ -20,14 +21,21 @@ terraform plan -var-file=your_env.tfvars
 terraform apply -var-file=your_env.tfvars
 ```
 
-<!--ansible-galaxy collection install cloud.terraform-->
+4. Setup ansible, build the inventory, run the playbook using the keyfile generated in 2.
+```
+cd meshdb/infra/ansible
+ansible-galaxy collection install cloud.
+ansible-playbook -i inventory.yaml install_packages.yaml -v --key-file ../infra/tf/meshdbdev0
+```
 
-4. Apply supporting infrastructure (metallb and longhorn)
+<!-- 5. Install the `meshdb-cluster` chart.
+
 ```
-cd meshdb/infra/cluster
-terraform init
-terraform apply
-```
+cd meshdb/infra/helm/meshdb-cluster
+# Modify values.yaml to meet your needs
+helm template . -f values.yaml > meshdb-cluster.yaml
+kubectl apply -f meshdb-cluster.yaml
+``` -->
 
 5. Create and update values + secrets in `values.yaml` and `secret.values.yaml`
 
