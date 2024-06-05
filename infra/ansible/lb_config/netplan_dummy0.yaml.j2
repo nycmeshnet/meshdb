@@ -1,0 +1,9 @@
+network:
+  version: 2
+  renderer: networkd
+  ethernets:
+    lo:
+      dhcp4: no
+      dhcp6: no
+      addresses:
+        - {{ EXTERNAL_LISTEN_IP }}/32

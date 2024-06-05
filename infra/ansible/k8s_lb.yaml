@@ -1,0 +1,74 @@
+- name: Setup k8s-lb
+  hosts: k8s-lb
+  vars_files:
+    - k8s_lb_config.yaml
+  tasks:
+    - name: Install deps
+      ansible.builtin.apt:
+        update_cache: true
+        pkg:
+          - iptables-persistent
+
+    - name: dummy0 interface
+      ansible.builtin.template:
+        src: ./lb_config/netplan_dummy0.yaml.j2
+        dest: /etc/netplan/dummy0.yaml
+        mode: "640"
+    
+    - name: eth0 interface
+      ansible.builtin.template:
+        src: ./lb_config/netplan_50_cloud_init.yaml.j2
+        dest: /etc/netplan/50-cloud-init.yaml
+        mode: "640"
+      
+    - name: Install frr
+      ansible.builtin.apt:
+        update_cache: true
+        pkg:
+          - frr
+
+    - name: Enable ospfd
+      ansible.builtin.lineinfile:
+        path: /etc/frr/daemons
+        search_string: ospfd=no
+        line: "ospfd=yes"
+    
+    - name: Config template frr
+      ansible.builtin.template:
+        src: ./lb_config/frr.conf.j2
+        dest: /etc/frr/frr.conf
+
+    - name: Iptables rules
+      ansible.builtin.template:
+        src: ./lb_config/iptables.j2
+        dest: /etc/iptables/rules.v4
+    
+    - name: Restore iptables rules
+      ansible.builtin.command:
+        cmd: "bash -c '/sbin/iptables-restore < /etc/iptables/rules.v4 && touch /tmp/firewall_set'"
+        creates: /tmp/firewall_set
+    
+    - name: Restore iptables rules
+      ansible.builtin.command:
+        cmd: "bash -c 'netplan apply && touch /tmp/netplan_applied'"
+        creates: /tmp/netplan_applied
+
+    - name: Restart and enable iptables service
+      ansible.builtin.service:
+        name: netfilter-persistent
+        state: restarted
+        enabled: true
+
+    - name: Restart and enable frr service
+      ansible.builtin.service:
+        name: frr
+        state: restarted
+        enabled: true
+
+    - name: net.ipv4.ip_forward
+      ansible.posix.sysctl:
+        name: net.ipv4.ip_forward
+        value: '1'
+        sysctl_set: true
+        state: present
+        reload: true

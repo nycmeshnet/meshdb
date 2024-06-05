@@ -12,6 +12,13 @@ output "worker_ips" {
     }
 }
 
+output "lb_ip" {
+    description = "IP address of the lb"
+    value = {
+        "0" = var.meshdb_lb_ip
+    }
+}
+
 #locals {
 #    concatenated_ips = concat(
 #        [for mgr in proxmox_vm_qemu.meshdbmgr : mgr.default_ipv4_address],

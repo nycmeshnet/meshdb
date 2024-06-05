@@ -15,4 +15,5 @@ meshdb_ips                      = [
   "10.70.90.Z",
   "10.70.90.A",
 ]
+meshdb_lb_ip                    = "10.70.90.B"
 meshdb_metallb_range            = "10.70.90.80/29"
