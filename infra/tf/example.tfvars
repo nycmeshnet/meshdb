@@ -17,3 +17,5 @@ meshdb_ips                      = [
 ]
 meshdb_lb_ip                    = "10.70.90.B"
 meshdb_metallb_range            = "10.70.90.80/29"
+meshdb_external_ip              = "1.2.3.4"
+meshdb_net_block                = "10.70.90.0"

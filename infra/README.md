@@ -24,8 +24,9 @@ terraform apply -var-file=your_env.tfvars
 4. Setup ansible, build the inventory, run the playbook using the keyfile generated in 2.
 ```
 cd meshdb/infra/ansible
-ansible-galaxy collection install cloud.
-ansible-playbook -i inventory.yaml install_packages.yaml -v --key-file ../infra/tf/meshdbdev0
+ansible-galaxy collection install cloud.terraform
+ansible-playbook -i inventory.yaml install_packages.yaml -v --key-file ../tf/meshdbdev0
+ansible-playbook -i inventory.yaml k8s_lb.yaml -v --key-file ../tf/meshdbdev0
 ```
 
 <!-- 5. Install the `meshdb-cluster` chart.

@@ -70,7 +70,17 @@ variable "meshdb_networkrange" {
   default      = "24"
 }
 
+variable "meshdb_net_block" {
+  description  = "network range to use for intneral networking"
+  default      = "10.70.90.0"
+}
+
 variable "meshdb_metallb_range" {
   type         = string
   description  = "ip range for metallb"
+}
+
+variable "meshdb_external_ip" {
+  type         = string
+  description  = "external ip for meshdb, assigned to the lb vm"
 }

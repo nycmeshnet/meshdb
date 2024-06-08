@@ -7,11 +7,11 @@ network:
     version: 2
     ethernets:
         eth0:
-            dhcp4: false
-            dhcp6: false
+            dhcp4: no
+            dhcp6: no
             addresses: [ "{{ inventory_hostname }}/{{ INTERNAL_NETWORK_RANGE }}" ]
             nameservers:
-                addresses: [ "10.10.10.10", "10.10.10.11" ]
+                addresses: [ "10.10.10.10", "10.10.10.11", "8.8.8.8" ]
             match:
-                macaddress: {{ INTERNAL_NETWORK_MAC_ADDRESS }}
+                macaddress: {{ hostvars[inventory_hostname].ansible_default_ipv4.macaddress }}
             set-name: eth0

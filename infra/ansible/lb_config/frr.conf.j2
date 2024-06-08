@@ -11,7 +11,7 @@ interface eth0
 exit
 !
 router ospf
- network {{ INTERNAL_NETWORK_RANGE }} area 0
+ network {{ INTERNAL_NETWORK_BLOCK }} area 0
  network {{ EXTERNAL_LISTEN_IP }}/32 area 0
 exit
 !

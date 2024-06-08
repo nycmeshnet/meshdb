@@ -1,69 +1,98 @@
 - name: Setup k8s-lb
-  hosts: k8s-lb
-  vars_files:
-    - k8s_lb_config.yaml
+  hosts: lb
   tasks:
     - name: Install deps
       ansible.builtin.apt:
         update_cache: true
         pkg:
           - iptables-persistent
+      become: true
 
     - name: dummy0 interface
       ansible.builtin.template:
         src: ./lb_config/netplan_dummy0.yaml.j2
         dest: /etc/netplan/dummy0.yaml
-        mode: "640"
+        mode: "600"
+      become: true
     
     - name: eth0 interface
       ansible.builtin.template:
         src: ./lb_config/netplan_50_cloud_init.yaml.j2
         dest: /etc/netplan/50-cloud-init.yaml
-        mode: "640"
+        mode: "600"
+      become: true
       
     - name: Install frr
       ansible.builtin.apt:
         update_cache: true
         pkg:
           - frr
+      become: true
 
     - name: Enable ospfd
       ansible.builtin.lineinfile:
         path: /etc/frr/daemons
         search_string: ospfd=no
         line: "ospfd=yes"
+      become: true
     
     - name: Config template frr
       ansible.builtin.template:
         src: ./lb_config/frr.conf.j2
         dest: /etc/frr/frr.conf
+      become: true
+
+    - name: Install haproxy
+      ansible.builtin.apt:
+        update_cache: true
+        pkg:
+          - haproxy
+      become: true
+
+    - name: Config template haproxy
+      ansible.builtin.template:
+        src: ./lb_config/haproxy.cfg
+        dest: /etc/haproxy/haproxy.cfg
+      become: true
 
     - name: Iptables rules
       ansible.builtin.template:
         src: ./lb_config/iptables.j2
         dest: /etc/iptables/rules.v4
+      become: true
     
     - name: Restore iptables rules
       ansible.builtin.command:
         cmd: "bash -c '/sbin/iptables-restore < /etc/iptables/rules.v4 && touch /tmp/firewall_set'"
         creates: /tmp/firewall_set
+      become: true
     
-    - name: Restore iptables rules
+    - name: Netplan apply
       ansible.builtin.command:
         cmd: "bash -c 'netplan apply && touch /tmp/netplan_applied'"
         creates: /tmp/netplan_applied
+      become: true
 
     - name: Restart and enable iptables service
       ansible.builtin.service:
         name: netfilter-persistent
         state: restarted
         enabled: true
+      become: true
 
     - name: Restart and enable frr service
       ansible.builtin.service:
         name: frr
         state: restarted
         enabled: true
+      become: true
+    
+    - name: Restart and enable haproxy service
+      ansible.builtin.service:
+        name: haproxy
+        state: restarted
+        enabled: true
+      become: true
 
     - name: net.ipv4.ip_forward
       ansible.posix.sysctl:
@@ -72,3 +101,4 @@
         sysctl_set: true
         state: present
         reload: true
+      become: true
