@@ -121,13 +121,3 @@ class BuildingAdmin(admin.ModelAdmin):
     ]
     inlines = [InstallInline]
     filter_horizontal = ("nodes",)
-
-    # This is probably a bad idea because you'll have to load a million panos
-    # and OOM your computer
-    # Need to find a way to "thumbnail-ize" them on the server side, probably.
-    @mark_safe
-    def thumb(self, obj: Building) -> str:
-        # FIXME: This function might actually be unused, .get_thumb() isn't a real function
-        return f"<img src='{obj.get_thumb()}' width='50' height='50' />"  # type: ignore[attr-defined]
-
-    thumb.__name__ = "Thumbnail"
