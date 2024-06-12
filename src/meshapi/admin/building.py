@@ -5,7 +5,6 @@ from django.contrib import admin
 from django.contrib.admin import ModelAdmin
 from django.db.models import QuerySet
 from django.http import HttpRequest
-from django.utils.safestring import mark_safe
 
 from meshapi.admin.inlines import InstallInline
 from meshapi.models import Building
