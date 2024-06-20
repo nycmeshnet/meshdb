@@ -4,6 +4,8 @@ from django.db import models
 from django.db.models.fields import EmailField
 from django_jsonform.models.fields import ArrayField as JSONFormArrayField
 
+from meshapi.validation import validate_phone_number_field
+
 
 class Member(models.Model):
     name = models.CharField(help_text='Member full name in the format: "First Last"')
@@ -22,7 +24,7 @@ class Member(models.Model):
         help_text="Any additional email addresses associated with this member",
     )
     phone_number = models.CharField(
-        default=None, blank=True, null=True, help_text="A contact phone number for this member"
+        default=None, blank=True, null=True, help_text="A contact phone number for this member", validators=[validate_phone_number_field]
     )
     slack_handle = models.CharField(default=None, blank=True, null=True, help_text="The member's slack handle")
     notes = models.TextField(
