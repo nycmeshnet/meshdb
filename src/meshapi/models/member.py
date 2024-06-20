@@ -24,7 +24,11 @@ class Member(models.Model):
         help_text="Any additional email addresses associated with this member",
     )
     phone_number = models.CharField(
-        default=None, blank=True, null=True, help_text="A contact phone number for this member", validators=[validate_phone_number_field]
+        default=None,
+        blank=True,
+        null=True,
+        help_text="A contact phone number for this member",
+        validators=[validate_phone_number_field],
     )
     slack_handle = models.CharField(default=None, blank=True, null=True, help_text="The member's slack handle")
     notes = models.TextField(
