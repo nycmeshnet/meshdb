@@ -18,7 +18,7 @@ dependencies = [
     "python-dotenv==1.0.*",
     "py3-validate-email@git+https://gitea.ksol.io/karolyi/py3-validate-email#egg=@v1.0.9",
     "phonenumbers==8.13.*",
-    "requests==2.31.*",
+    "requests==2.32.*",
     "geopy==2.4.*",
     "django-cors-headers==4.3.*",
     "nameparser==1.1.*",
@@ -50,7 +50,7 @@ dev = [
     "flask == 3.0.*",
     "django-cprofile-middleware==1.0.5",
     "django-silk==5.1.0",
-    "types-requests==2.31.*",
+    "types-requests==2.32.*",
     "types-six==1.16.0.*",
 ]
 
