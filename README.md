@@ -15,7 +15,7 @@ Devices, and Links; Any info we need in order to get hardware on a rooftop near 
 
 This project aims to provide a convenient, stable, and sane interface for use with
 robots and humans. For more information, [check the
-wiki](https://wiki.mesh.nycmesh.net/books/services-software/chapter/meshdb)
+wiki](https://wiki.mesh.nycmesh.net/books/6-services-software/chapter/meshdb)
 
 ## Setup
 
