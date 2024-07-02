@@ -1,5 +1,7 @@
+from django import forms
 from django.contrib import admin
-from django.contrib.admin.options import forms
+from django.db.models import QuerySet
+from django.http import HttpRequest
 
 from meshapi.admin.admin import device_fieldsets
 from meshapi.admin.inlines import DeviceLinkInline
@@ -31,10 +33,10 @@ class DeviceAdmin(admin.ModelAdmin):
         "install_date",
         "model",
     ]
-    fieldsets = device_fieldsets
+    fieldsets = device_fieldsets  # type: ignore[assignment]
     inlines = [DeviceLinkInline]
 
-    def get_queryset(self, request):
+    def get_queryset(self, request: HttpRequest) -> QuerySet[Device]:
         # Get the base queryset
         queryset = super().get_queryset(request)
         # Filter out sectors

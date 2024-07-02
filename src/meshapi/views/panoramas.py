@@ -4,10 +4,10 @@ from pathlib import Path
 from typing import Union
 
 import requests
+from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.request import Request
 from rest_framework.response import Response
-from rest_framework.views import status
 
 from meshapi.models import Install
 from meshapi.models.building import Building
@@ -115,7 +115,7 @@ def set_panoramas(panos: dict[str, list[str]]) -> tuple[int, list[str]]:
                     continue
                 # Get the first install from the node and use its building. Can't
                 # really do any better than that.
-                install: Install = node_installs[0]
+                install = node_installs[0]
 
                 build_panorama_list(install.building, filenames)
                 panoramas_saved += len(filenames)

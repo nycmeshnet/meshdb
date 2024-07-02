@@ -1,6 +1,10 @@
+from typing import Iterable
+
+from django import forms
 from django.contrib import admin
-from django.contrib.admin.options import forms
-from django.utils.safestring import mark_safe
+from django.contrib.admin import ModelAdmin
+from django.db.models import QuerySet
+from django.http import HttpRequest
 
 from meshapi.admin.inlines import InstallInline
 from meshapi.models import Building
@@ -11,16 +15,16 @@ class BoroughFilter(admin.SimpleListFilter):
     title = "Borough"
     parameter_name = "borough"
 
-    def lookups(self, request, model_admin):
-        return (
-            ("bronx", ("The Bronx")),
-            ("manhattan", ("Manhattan")),
-            ("brooklyn", ("Brooklyn")),
-            ("queens", ("Queens")),
-            ("staten_island", ("Staten Island")),
-        )
+    def lookups(self, request: HttpRequest, model_admin: ModelAdmin) -> Iterable[tuple[str, str]]:
+        return [
+            ("bronx", "The Bronx"),
+            ("manhattan", "Manhattan"),
+            ("brooklyn", "Brooklyn"),
+            ("queens", "Queens"),
+            ("staten_island", "Staten Island"),
+        ]
 
-    def queryset(self, request, queryset):
+    def queryset(self, request: HttpRequest, queryset: QuerySet[Building]) -> QuerySet[Building]:
         if self.value() == "bronx":
             return queryset.filter(city="Bronx")
         elif self.value() == "manhattan":
@@ -116,12 +120,3 @@ class BuildingAdmin(admin.ModelAdmin):
     ]
     inlines = [InstallInline]
     filter_horizontal = ("nodes",)
-
-    # This is probably a bad idea because you'll have to load a million panos
-    # and OOM your computer
-    # Need to find a way to "thumbnail-ize" them on the server side, probably.
-    @mark_safe
-    def thumb(self, obj):
-        return f"<img src='{obj.get_thumb()}' width='50' height='50' />"
-
-    thumb.__name__ = "Thumbnail"

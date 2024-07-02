@@ -1,5 +1,7 @@
+from typing import Optional
+
+from django import forms
 from django.contrib import admin
-from django.contrib.admin.options import forms
 
 from meshapi.admin.inlines import (
     BuildingMembershipInline,
@@ -10,7 +12,7 @@ from meshapi.admin.inlines import (
     PanoramaInline,
     SectorInline,
 )
-from meshapi.models import Node
+from meshapi.models import Building, Node
 
 admin.site.site_header = "MeshDB Admin"
 admin.site.site_title = "MeshDB Admin Portal"
@@ -83,5 +85,5 @@ class NodeAdmin(admin.ModelAdmin):
         NodeLinkInline,
     ]
 
-    def address(self, obj):
+    def address(self, obj: Node) -> Optional[Building]:
         return obj.buildings.first()
