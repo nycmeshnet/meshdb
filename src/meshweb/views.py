@@ -1,8 +1,8 @@
 from django.http import HttpRequest, HttpResponse
+from django.template import loader
 from drf_spectacular.utils import extend_schema
 from rest_framework import permissions
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.filters import loader
 
 
 # Home view

@@ -1,7 +1,7 @@
 from argparse import ArgumentParser
 from datetime import date, timedelta
 from random import randint, randrange
-from typing import Any, Tuple
+from typing import Any, Optional, Tuple
 
 from django.core.management.base import BaseCommand
 from django.db import transaction
@@ -84,7 +84,7 @@ class Command(BaseCommand):
         for device in devices:
             device.notes = fake.text()
             _, device.install_date, device.abandon_date = self.fuzz_dates(
-                None, device.install_date, device.abandon_date
+                date.today(), device.install_date, device.abandon_date
             )
             device.save()
 
@@ -92,20 +92,28 @@ class Command(BaseCommand):
         links = Link.objects.all()
         for link in links:
             link.notes = fake.text()
-            _, link.install_date, link.abandon_date = self.fuzz_dates(None, link.install_date, link.abandon_date)
+            _, link.install_date, link.abandon_date = self.fuzz_dates(
+                date.today(), link.install_date, link.abandon_date
+            )
             link.save()
 
         print("Scrambling nodes...")
         nodes = Node.objects.all()
         for node in nodes:
             node.notes = fake.text()
-            _, node.install_date, node.abandon_date = self.fuzz_dates(None, node.install_date, node.abandon_date)
+            _, node.install_date, node.abandon_date = self.fuzz_dates(
+                date.today(), node.install_date, node.abandon_date
+            )
             node.save()
 
         print("Done")
 
     @staticmethod
-    def fuzz_dates(request_date: date | None, install_date: date, abandon_date: date) -> Tuple[date | None, date, date]:
+    def fuzz_dates(
+        request_date: date,
+        install_date: Optional[date],
+        abandon_date: Optional[date],
+    ) -> Tuple[date, Optional[date], Optional[date]]:
         if request_date:
             # Make it happen sooner so that there's no way the request date is
             # now beyond the install/abandon date.

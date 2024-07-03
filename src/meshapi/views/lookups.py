@@ -1,6 +1,6 @@
-from typing import Any, List
+from typing import Any, List, Type
 
-from django.db.models import Q
+from django.db.models import Q, QuerySet
 from django_filters import rest_framework as filters
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
@@ -21,8 +21,10 @@ from meshapi.serializers import (
 
 
 class FilterRequiredListAPIView(generics.ListAPIView):
+    filterset_class: Type[filters.FilterSet]
+
     def get(self, request: Request, *args: Any, **kwargs: Any) -> Response:
-        possible_filters = set(self.filterset_class.base_filters.keys())
+        possible_filters = set(self.filterset_class.get_filters().keys())  # type: ignore[no-untyped-call]
         provided_filters = set(self.request.query_params.keys())
         invalid_filters = provided_filters - possible_filters
 
@@ -41,7 +43,7 @@ class MemberFilter(filters.FilterSet):
     email_address = filters.CharFilter(method="filter_on_all_emails")
     phone_number = filters.CharFilter(field_name="phone_number", lookup_expr="icontains")
 
-    def filter_on_all_emails(self, queryset, name, value):
+    def filter_on_all_emails(self, queryset: QuerySet[Member], field_name: str, value: str) -> QuerySet[Member]:
         return queryset.filter(
             Q(primary_email_address__icontains=value)
             | Q(stripe_email_address__icontains=value)
@@ -274,10 +276,10 @@ class LinkFilter(filters.FilterSet):
     network_number = filters.NumberFilter(method="filter_from_to_network_number")
     device = filters.NumberFilter(method="filter_from_to_device_id")
 
-    def filter_from_to_network_number(self, queryset, name, value):
+    def filter_from_to_network_number(self, queryset: QuerySet[Link], field_name: str, value: str) -> QuerySet[Link]:
         return queryset.filter(Q(from_device__node__network_number=value) | Q(to_device__node__network_number=value))
 
-    def filter_from_to_device_id(self, queryset, name, value):
+    def filter_from_to_device_id(self, queryset: QuerySet[Link], field_name: str, value: str) -> QuerySet[Link]:
         return queryset.filter(Q(from_device__id=value) | Q(to_device__id=value))
 
     class Meta:

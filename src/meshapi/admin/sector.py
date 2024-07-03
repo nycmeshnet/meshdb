@@ -1,5 +1,5 @@
+from django import forms
 from django.contrib import admin
-from django.contrib.admin.options import forms
 
 from meshapi.admin.admin import device_fieldsets
 from meshapi.admin.inlines import DeviceLinkInline
@@ -39,4 +39,4 @@ class SectorAdmin(admin.ModelAdmin):
                 ]
             },
         ),
-    ]
+    ]  # type: ignore[assignment]

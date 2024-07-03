@@ -1,12 +1,19 @@
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from django.core.validators import MaxValueValidator
 from django.db import models
 
 from meshapi.util.network_number import NETWORK_NUMBER_MAX, get_next_available_network_number
 
+if TYPE_CHECKING:
+    # Gate the import to avoid cycles
+    from meshapi.models.building import Building
+
 
 class Node(models.Model):
+    # This should be added automatically by django-stubs, but for some reason it's not :(
+    buildings: models.QuerySet["Building"]
+
     class NodeStatus(models.TextChoices):
         INACTIVE = "Inactive"
         ACTIVE = "Active"

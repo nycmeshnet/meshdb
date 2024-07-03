@@ -1,3 +1,6 @@
+from typing import Any, Dict, Optional, Sequence
+
+from django.contrib.auth.models import User
 from django.db import models
 from drf_hooks.models import AbstractHook
 
@@ -29,13 +32,13 @@ class CelerySerializerHook(AbstractHook):
         verbose_name = "Webhook Target"
         verbose_name_plural = "Webhook Targets"
 
-    def deliver_hook(self, serialized_hook) -> None:
+    def deliver_hook(self, serialized_hook: Dict[str, Any]) -> None:
         # Inline import to prevent circular import loop
         from meshapi_hooks.tasks import deliver_webhook_task
 
         deliver_webhook_task.apply_async([self.id, serialized_hook])
 
     @classmethod
-    def find_hooks(cls, event_name, user=None):
+    def find_hooks(cls, event_name: str, user: Optional[User] = None) -> Sequence[AbstractHook]:
         hooks = super().find_hooks(event_name, user=user)
         return hooks.filter(enabled=True)

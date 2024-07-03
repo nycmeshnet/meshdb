@@ -46,12 +46,15 @@ dev = [
     "black == 23.7.*",
     "isort == 5.12.*",
     "coverage == 7.3.*",
-    "mypy == 1.5.*",
+    "mypy == 1.10.0",
     "flask == 3.0.*",
     "django-cprofile-middleware==1.0.5",
     "django-silk==5.1.0",
     "types-requests==2.32.*",
     "types-six==1.16.0.*",
+    "django-stubs[compatible-mypy]==5.0.*",
+    "djangorestframework-stubs[compatible-mypy]==3.15.*",
+    "django-filter-stubs==0.1.3",
 ]
 
 [project.scripts]
@@ -66,6 +69,7 @@ where = ["src"]
 
 
 [tool.mypy]
+plugins = ["mypy_django_plugin.main", "mypy_drf_plugin.main"]
 check_untyped_defs = true
 show_error_codes = true
 pretty = true
@@ -74,12 +78,29 @@ disallow_untyped_calls = true
 disallow_untyped_defs = true
 disallow_incomplete_defs = true
 warn_unused_configs = true
+files = [ "src/" ]
 exclude = [
-    "^src/meshdb/utils/spreadsheet_import/.*",
-    "^src/meshapi/tests/.*",
-    "^src/meshapi_hooks/tests/.*",
-    "^src/meshapi/migrations/.*",
+    "src/meshapi/tests/.*",
+    "src/meshapi_hooks/tests/.*",
+    "src/meshapi/migrations/.*",
+    "src/meshdb/utils/spreadsheet_import/.*",
+    "src/meshapi/util/django_pglocks.py",
+    "src/meshapi/models/util/custom_many_to_many.py",
+    "src/meshapi/docs.py"
 ]
+
+[[tool.mypy.overrides]]
+module = [
+    "meshdb.utils.spreadsheet_import.*",
+    "meshapi.util.django_pglocks",
+    "meshapi.models.util.custom_many_to_many",
+    "meshapi.docs",
+]
+follow_imports = "skip"
+
+
+[tool.django-stubs]
+django_settings_module = "meshdb.settings"
 
 
 [tool.black]
