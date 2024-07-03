@@ -49,5 +49,15 @@ jobs:
         known_hosts: ${{ secrets.GRANDSVC_KNOWN_HOSTS }}
         #config: ${{ secrets.CONFIG }} # ssh_config; optional
         if_key_exists: fail # replace / ignore / fail; optional (defaults to fail)
+
+    - name: Setup WireGuard
+      run:  |
+        run: sudo apt install wireguard
+        echo "${{ secrets.WIREGUARD_PRIVATE_KEY }}" > privatekey
+        sudo ip link add dev wg0 type wireguard
+        sudo ip address add dev wg0 ${{ secrets.WIREGUARD_OVERLAY_NETWORK_IP }} peer ${{ secrets.GRANDSVC_TARGET_IP }}
+        sudo wg set wg0 listen-port 48123 private-key privatekey peer ${{ secrets.WIREGUARD_PEER_PUBLIC_KEY }} allowed-ips 0.0.0.0/0 endpoint ${{ secrets.WIREGUARD_ENDPOINT }}
+        sudo ip link set up dev wg0
+
     - name: Pull new Docker image
-      run: ssh ${{ secrets.GRANDSVC_SSH_TARGET }} "cd ${{ secrets.GRANDSVC_PROJECT_PATH }} && git pull && docker compose pull && docker compose up -d"
+      run: ssh ${{ secrets.GRANDSVC_SSH_USER }}@${{ secrets.GRANDSVC_TARGET_IP }} "cd ${{ secrets.GRANDSVC_PROJECT_PATH }} && git pull && docker compose pull && docker compose up -d"
