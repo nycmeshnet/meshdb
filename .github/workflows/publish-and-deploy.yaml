@@ -52,7 +52,7 @@ jobs:
 
     - name: Setup WireGuard
       run:  |
-        run: sudo apt install wireguard
+        sudo apt install wireguard
         echo "${{ secrets.WIREGUARD_PRIVATE_KEY }}" > privatekey
         sudo ip link add dev wg0 type wireguard
         sudo ip address add dev wg0 ${{ secrets.WIREGUARD_OVERLAY_NETWORK_IP }} peer ${{ secrets.GRANDSVC_TARGET_IP }}
