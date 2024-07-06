@@ -1,0 +1,12 @@
+{% load i18n static %}
+
+<div style="padding: 10px 0;">
+    <a id="location_autocomplete_button"
+       class="button disabled-button"
+       style="padding: 10px 15px; text-decoration: none;"
+       href="#"
+       autocompletesource="{{ auto_populate_source }}"
+    >
+        Autocomplete from {{ auto_populate_source }} <img src="{% static 'admin/magic_wand.png' %}" alt="Magic wand"/>
+    </a>
+</div>

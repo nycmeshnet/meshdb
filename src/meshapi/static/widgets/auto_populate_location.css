@@ -1,0 +1,9 @@
+
+.disabled-button {
+    background-color: #ddd; /* Light gray background */
+    color: #999; /* Dim text color */
+    border: 1px solid #ccc; /* Light gray border */
+    cursor: not-allowed; /* Change cursor to indicate not clickable */
+    opacity: 0.6; /* Reduce opacity to visually indicate disabled state */
+    pointer-events: none; /* Disable pointer events */
+}
