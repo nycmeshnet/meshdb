@@ -26,6 +26,7 @@ class TestMemberLookups(TestCase):
             stripe_email_address="donny.stripe@example.com",
             additional_email_addresses=["donny.addl@example.com"],
             phone_number="555-555-6666",
+            additional_phone_numbers=["123-555-8888"],
         )
         m2.save()
 
@@ -94,6 +95,19 @@ class TestMemberLookups(TestCase):
 
     def test_member_phone_search(self):
         response = self.c.get("/api/v1/members/lookup/?phone_number=6666")
+        code = 200
+        self.assertEqual(
+            code,
+            response.status_code,
+            f"status code incorrect. Should be {code}, but got {response.status_code}",
+        )
+
+        response_objs = json.loads(response.content)["results"]
+        self.assertEqual(len(response_objs), 1)
+        self.assertEqual(response_objs[0]["name"], "Donald Smith")
+
+    def test_member_additional_phone_search(self):
+        response = self.c.get("/api/v1/members/lookup/?phone_number=8888")
         code = 200
         self.assertEqual(
             code,
