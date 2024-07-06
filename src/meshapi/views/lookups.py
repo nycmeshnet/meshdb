@@ -50,7 +50,7 @@ class MemberFilter(filters.FilterSet):
             | Q(additional_email_addresses__icontains=value)
         )
 
-    def filter_on_all_phone_numbers(self, queryset, name, value):
+    def filter_on_all_phone_numbers(self, queryset: QuerySet[Member], field_name: str, value: str) -> QuerySet[Member]:
         return queryset.filter(Q(phone_number__icontains=value) | Q(additional_phone_numbers__icontains=value))
 
     class Meta:
