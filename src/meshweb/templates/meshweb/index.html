@@ -55,12 +55,13 @@
   <div style="width:100%; display:flex; justify-content: center; flex-grow: 1; align-items: center;">
     <div style="display:flex; flex-direction:column; align-items: center; margin-top: 50px; padding-bottom: 4rem;"
       class="px-5 max-width-container">
+      <img src="{% static 'meshweb/meshdb.png' %}" height="300px" style="margin: 30px 0"/>
       <h1>Welcome to MeshDB!</h1>
       <p>
         This is MeshDB, an application intended to replace the New Node Form.
         It can be used to track Installs, Members, and Buildings in the mesh.
       </p>
-      <p>Reach out on Slack if you need access.</p>
+        <p>Reach out on Slack using the <code>#meshdb</code> channel if you need access.</p>
       <hr>
       <div style="display:flex; flex-direction: row; justify-content: space-between; margin-top: 20px" class="links">
         {% for category, tools in links.items %}
