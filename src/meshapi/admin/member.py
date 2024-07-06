@@ -28,6 +28,7 @@ class MemberAdmin(ImportExportModelAdmin, ExportActionMixin):
         "stripe_email_address__icontains",
         "additional_email_addresses__icontains",
         "phone_number__icontains",
+        "additional_phone_numbers__icontains",
         "slack_handle__icontains",
         # Search by building details
         "installs__building__street_address__icontains",
@@ -72,6 +73,7 @@ class MemberAdmin(ImportExportModelAdmin, ExportActionMixin):
             {
                 "fields": [
                     "phone_number",
+                    "additional_phone_numbers",
                     "slack_handle",
                 ]
             },
