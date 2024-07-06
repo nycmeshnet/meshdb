@@ -45,7 +45,7 @@ class Command(BaseCommand):
                 member.stripe_email_address = ""
                 member.additional_email_addresses = []
                 member.phone_number = fake.phone_number()
-                member.additional_phone_numbers = []
+                member.additional_phone_numbers = [] if randint(0, 100) > 0 else [fake.phone_number()]
                 member.slack_handle = ""
                 member.notes = fake.text()
                 member.save()
