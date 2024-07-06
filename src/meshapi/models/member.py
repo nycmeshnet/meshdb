@@ -22,7 +22,14 @@ class Member(models.Model):
         help_text="Any additional email addresses associated with this member",
     )
     phone_number = models.CharField(
-        default=None, blank=True, null=True, help_text="A contact phone number for this member"
+        default=None, blank=True, null=True, help_text="A primary contact phone number for this member"
+    )
+    additional_phone_numbers = JSONFormArrayField(
+        models.CharField(),
+        default=list,
+        null=True,
+        blank=True,
+        help_text="Any additional phone numbers used by this member",
     )
     slack_handle = models.CharField(default=None, blank=True, null=True, help_text="The member's slack handle")
     notes = models.TextField(
@@ -55,3 +62,16 @@ class Member(models.Model):
                     all_emails.append(email)
 
         return all_emails
+
+    @property
+    def all_phone_numbers(self) -> List[str]:
+        all_phone_numbers = []
+        if self.phone_number and self.phone_number not in all_phone_numbers:
+            all_phone_numbers.append(self.phone_number)
+
+        if self.additional_phone_numbers:
+            for phone_number in self.additional_phone_numbers:
+                if phone_number not in all_phone_numbers:
+                    all_phone_numbers.append(phone_number)
+
+        return all_phone_numbers
