@@ -1140,7 +1140,7 @@ class TestLinkLookups(TestCase):
         self.assertEqual(len(response_objs), 0)
 
     def test_link_type_search(self):
-        response = self.c.get("/api/v1/links/lookup/?type=Standard")
+        response = self.c.get("/api/v1/links/lookup/?type=5%20GHz")
         code = 200
         self.assertEqual(
             code,
