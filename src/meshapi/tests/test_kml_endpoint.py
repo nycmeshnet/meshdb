@@ -100,7 +100,7 @@ class TestKMLEndpoint(TestCase):
                 from_device=sn1_omni,
                 to_device=grand_omni,
                 status=Link.LinkStatus.ACTIVE,
-                type=Link.LinkType.MMWAVE,
+                type=Link.LinkType.SIXTY_GHZ,
             )
         )
 
@@ -109,7 +109,7 @@ class TestKMLEndpoint(TestCase):
                 from_device=sn1_omni,
                 to_device=brian_omni,
                 status=Link.LinkStatus.ACTIVE,
-                type=Link.LinkType.STANDARD,
+                type=Link.LinkType.FIVE_GHZ,
             )
         )
 
@@ -127,7 +127,7 @@ class TestKMLEndpoint(TestCase):
                 from_device=grand_omni,
                 to_device=random_omni,
                 status=Link.LinkStatus.PLANNED,
-                type=Link.LinkType.STANDARD,
+                type=Link.LinkType.FIVE_GHZ,
             )
         )
 
@@ -137,7 +137,7 @@ class TestKMLEndpoint(TestCase):
                 from_device=dead_omni,
                 to_device=random_omni,
                 status=Link.LinkStatus.ACTIVE,
-                type=Link.LinkType.STANDARD,
+                type=Link.LinkType.FIVE_GHZ,
             )
         )
 
