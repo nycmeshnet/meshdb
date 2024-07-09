@@ -41,6 +41,7 @@ class Member(models.Model):
         "import process and original spreadsheet data. However this structure can be changed by admins at any "
         "time and should not be relied on by automated systems. ",
     )
+    payment_preference = models.CharField(choices=('cash', 'stripe', None), default=None)
 
     def __str__(self) -> str:
         if self.name:

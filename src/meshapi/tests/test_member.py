@@ -76,6 +76,27 @@ class TestMember(TestCase):
         self.assertEqual(response_obj["additional_phone_numbers"], ["+1 456-555-6666"])
         self.assertEqual(response_obj["all_phone_numbers"], ["+1 123-555-5555", "+1 456-555-6666"])
 
+    def test_member_payment_preference(self):
+        test_member = Member(
+            name="John Doe",
+            primary_email_address="john@example.com",
+            payment_preference="stripe",
+        )
+        test_member.save()
+
+        response = self.c.get(f"/api/v1/members/{test_member.id}/")
+        code = 200
+        self.assertEqual(
+            code,
+            response.status_code,
+            f"status code incorrect. Should be {code}, but got {response.status_code}",
+        )
+
+        response_obj = json.loads(response.content)
+        self.assertEqual(response_obj["name"], "John Doe")
+        self.assertEqual(response_obj["primary_email_address"], "john@example.com")
+        self.assertEqual(response_obj["payment_preference"], "stripe")
+
     def test_broken_member(self):
         err_member = {
             "id": "Error",
