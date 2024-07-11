@@ -28,16 +28,16 @@ ansible-galaxy collection install cloud.terraform
 ansible-playbook meshdb.yaml
 ```
 
-<!-- 5. Install the `meshdb-cluster` chart.
+5. Install the `meshdb-cluster` chart.
 
 ```
 cd meshdb/infra/helm/meshdb-cluster
 # Modify values.yaml to meet your needs
 helm template . -f values.yaml > meshdb-cluster.yaml
 kubectl apply -f meshdb-cluster.yaml
-``` -->
+```
 
-5. Create and update values + secrets in `values.yaml` and `secret.values.yaml`
+5. Install the `meshdb` chart. Create and update values + secrets in `values.yaml` and `secret.values.yaml`
 
 
 ```

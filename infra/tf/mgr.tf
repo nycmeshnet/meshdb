@@ -49,4 +49,10 @@ resource "proxmox_vm_qemu" "meshdbmgr" {
   }
 
   tags = "meshdb${var.meshdb_env_name}"
+
+  lifecycle {
+    ignore_changes = [
+      qemu_os,
+    ]
+  }
 }

@@ -29,7 +29,6 @@ module "k3s" {
         user        = "debian"
       }
       flags = [
-        "--disable servicelb",
         "--write-kubeconfig-mode 644",
       ]
     }

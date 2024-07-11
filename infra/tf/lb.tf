@@ -47,5 +47,11 @@ resource "proxmox_vm_qemu" "k8s-lb" {
   }
 
   tags = "meshdb${var.meshdb_env_name}"
+
+  lifecycle {
+    ignore_changes = [
+      qemu_os,
+    ]
+  }
 }
 
