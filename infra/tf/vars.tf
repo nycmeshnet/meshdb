@@ -49,38 +49,34 @@ variable "meshdb_local_password" {
 }
 
 variable "meshdb_mgr_ips" {
-  description  = "static IPs to use for managers"
+  description = "static IPs to use for managers"
 }
 
 variable "meshdb_ips" {
-  description  = "static IPs to use for nodes"
+  description = "static IPs to use for nodes"
 }
 
 variable "meshdb_lb_ip" {
-  description  = "static IP to use for k8s lb"
+  description = "static IP to use for k8s lb"
 }
 
 variable "meshdb_gateway" {
-  description  = "default gateway to use for nodes"
-  default      = "10.70.90.1"
+  description = "default gateway to use for nodes"
+  default     = "10.70.90.1"
 }
 
 variable "meshdb_networkrange" {
-  description  = "network range to use for nodes"
-  default      = "24"
+  description = "network range to use for nodes"
+  default     = "24"
 }
 
 variable "meshdb_net_block" {
-  description  = "network range to use for intneral networking"
-  default      = "10.70.90.0"
+  description = "network range to use for intneral networking"
+  default     = "10.70.90.0"
 }
 
-variable "meshdb_metallb_range" {
-  type         = string
-  description  = "ip range for metallb"
-}
 
 variable "meshdb_external_ip" {
-  type         = string
-  description  = "external ip for meshdb, assigned to the lb vm"
+  type        = string
+  description = "external ip for meshdb, assigned to the lb vm"
 }

@@ -1,4 +1,3 @@
 ---
 plugin: cloud.terraform.terraform_provider
 project_path: "../tf"
-

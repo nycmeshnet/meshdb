@@ -1,7 +1,7 @@
 module "k3s" {
   source = "xunleii/k3s/module"
 
-  depends_on_    = [
+  depends_on_ = [
     proxmox_vm_qemu.meshdbmgr,
     proxmox_vm_qemu.meshdbnode,
   ]
@@ -22,11 +22,11 @@ module "k3s" {
     instance.name => {
       ip = instance.default_ipv4_address
       connection = {
-        host        = instance.default_ipv4_address
+        host = instance.default_ipv4_address
         # TODO: Try to use tls_private_key?
         #private_key = trimspace(tls_private_key.ed25519_provisioning.private_key_pem)
         private_key = file("${path.module}/meshdb${var.meshdb_env_name}")
-        user     = "debian"
+        user        = "debian"
       }
       flags = [
         "--disable servicelb",
@@ -41,11 +41,11 @@ module "k3s" {
       name = instance.name
       ip   = instance.default_ipv4_address
       connection = {
-        host        = instance.default_ipv4_address
+        host = instance.default_ipv4_address
         # TODO: Try to use tls_private_key?
         #private_key = trimspace(tls_private_key.ed25519_provisioning.private_key_pem)
         private_key = file("${path.module}/meshdb${var.meshdb_env_name}")
-        user     = "debian"
+        user        = "debian"
       }
     }
   }

@@ -1,0 +1,7 @@
+- hosts: mgrs:workers 
+  roles:
+    - role: meshdb-k8s-node
+
+- hosts: lb
+  roles:
+    - role: k8s-lb

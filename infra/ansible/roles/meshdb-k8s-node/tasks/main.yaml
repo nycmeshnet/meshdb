@@ -1,0 +1,8 @@
+
+- name: Install packages on each node
+  ansible.builtin.apt:
+    pkg:
+      - open-iscsi
+      - nfs-common
+    update_cache: true
+  become: true
