@@ -80,7 +80,7 @@ class TestMember(TestCase):
         test_member = Member(
             name="John Doe",
             primary_email_address="john@example.com",
-            payment_preference="stripe",
+            payment_preference=Member.PaymentPreference.STRIPE,
         )
         test_member.save()
 
@@ -95,7 +95,7 @@ class TestMember(TestCase):
         response_obj = json.loads(response.content)
         self.assertEqual(response_obj["name"], "John Doe")
         self.assertEqual(response_obj["primary_email_address"], "john@example.com")
-        self.assertEqual(response_obj["payment_preference"], "stripe")
+        self.assertEqual(response_obj["payment_preference"], Member.PaymentPreference.STRIPE.value)
 
     def test_broken_member(self):
         err_member = {

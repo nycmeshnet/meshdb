@@ -6,6 +6,12 @@ from django_jsonform.models.fields import ArrayField as JSONFormArrayField
 
 
 class Member(models.Model):
+
+    class PaymentPreference(models.TextChoices):
+        CASH = "cash", "Cash"
+        STRIPE = "stripe", "Stripe"
+        NONE = None, "None"
+
     name = models.CharField(help_text='Member full name in the format: "First Last"')
     primary_email_address = models.EmailField(null=True, help_text="Primary email address used to contact the member")
     stripe_email_address = models.EmailField(
@@ -41,7 +47,11 @@ class Member(models.Model):
         "import process and original spreadsheet data. However this structure can be changed by admins at any "
         "time and should not be relied on by automated systems. ",
     )
-    payment_preference = models.CharField(choices=('cash', 'stripe', None), default=None)
+    payment_preference = models.CharField(
+        max_length=6,
+        choices=PaymentPreference.choices,
+        default=PaymentPreference.NONE
+    )
 
     def __str__(self) -> str:
         if self.name:
