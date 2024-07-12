@@ -1055,7 +1055,7 @@ class TestLinkLookups(TestCase):
             from_device=d1,
             to_device=d2,
             status=Link.LinkStatus.ACTIVE,
-            type=Link.LinkType.STANDARD,
+            type=Link.LinkType.FIVE_GHZ,
             uisp_id="1231",
         )
         l1.save()
@@ -1140,7 +1140,7 @@ class TestLinkLookups(TestCase):
         self.assertEqual(len(response_objs), 0)
 
     def test_link_type_search(self):
-        response = self.c.get("/api/v1/links/lookup/?type=Standard")
+        response = self.c.get("/api/v1/links/lookup/?type=5%20GHz")
         code = 200
         self.assertEqual(
             code,
