@@ -35,6 +35,7 @@ labeled after a NN or Install #, contains its number, and any special label
 like `a`.
 """
 
+
 @dataclass
 class PanoramaTitle:
     filename: str
