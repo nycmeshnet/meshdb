@@ -5,6 +5,7 @@ from django.contrib.auth.models import User
 from django.test import Client, TestCase
 
 from meshapi.models import Building, Install, Member
+from meshapi.models.node import Node
 from meshapi.views.panoramas import (
     BadPanoramaTitle,
     PanoramaTitle,
@@ -13,7 +14,7 @@ from meshapi.views.panoramas import (
     set_panoramas,
 )
 
-from .sample_data import sample_building, sample_install, sample_member
+from .sample_data import sample_building, sample_install, sample_member, sample_node
 
 
 class TestPanoPipeline(TestCase):
@@ -29,6 +30,10 @@ class TestPanoPipeline(TestCase):
         self.member.save()
         sample_install_copy["member"] = self.member
 
+        self.node = Node(**sample_node)
+        self.node.save()
+        sample_install_copy["node"] = self.node
+
         self.install = Install(**sample_install_copy)
         self.install.save()
 
@@ -40,7 +45,11 @@ class TestPanoPipeline(TestCase):
     def test_set_panoramas(self):
         # Fabricate some fake panorama photos
         n = self.install.install_number
-        panos = {n: PanoramaTitle.from_filenames([f"{n}.jpg", f"{n}a.jpg"])}
+        nn = self.install.node.network_number
+        panos = {
+            str(n): PanoramaTitle.from_filenames([f"{n}.jpg", f"{n}a.jpg"]),
+            f"nn{nn}": PanoramaTitle.from_filenames([f"nn{nn}.jpg", f"nn{nn}a.jpg"]),
+        }
 
         set_panoramas(panos)
 
@@ -49,7 +58,10 @@ class TestPanoPipeline(TestCase):
         saved_panoramas = [
             f"https://node-db.netlify.app/panoramas/{n}.jpg",
             f"https://node-db.netlify.app/panoramas/{n}a.jpg",
+            f"https://node-db.netlify.app/panoramas/nn{nn}.jpg",
+            f"https://node-db.netlify.app/panoramas/nn{nn}a.jpg",
         ]
+        print(building.panoramas)
         self.assertEqual(saved_panoramas, building.panoramas)
 
     def test_update_panoramas(self):

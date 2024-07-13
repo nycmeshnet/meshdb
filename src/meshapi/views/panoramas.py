@@ -37,6 +37,17 @@ like `a`.
 
 
 @dataclass
+class PanoramaKey:
+    is_nn: bool
+    number: str
+
+    def __str__(self) -> str:
+        if self.is_nn:
+            return f"nn{self.number}"
+        return self.number
+
+
+@dataclass
 class PanoramaTitle:
     filename: str
     is_nn: bool
@@ -46,10 +57,8 @@ class PanoramaTitle:
     def __str__(self) -> str:
         return self.filename
 
-    def get_key(self) -> str:
-        if self.is_nn:
-            return f"nn{self.number}"
-        return self.number
+    def get_key(self) -> PanoramaKey:
+        return PanoramaKey(self.is_nn, self.number)
 
     def get_url(self) -> str:
         return f"{PANO_HOST}{self}"
@@ -152,26 +161,25 @@ def sync_github_panoramas() -> tuple[int, list[str]]:
     if not head_tree_sha:
         raise GitHubError("Could not get head tree SHA from GitHub")
 
-    panorama_files = list_files_in_git_directory(owner, repo, directory, head_tree_sha, token)
-    if not panorama_files:
+    filenames = list_files_in_git_directory(owner, repo, directory, head_tree_sha, token)
+    if not filenames:
         raise GitHubError("Could not get file list from GitHub")
 
-    panos: dict[str, list[PanoramaTitle]] = build_pano_dict(panorama_files)
+    panos: dict[PanoramaKey, list[PanoramaTitle]] = group_panoramas_by_install_or_nn(filenames)
     return set_panoramas(panos)
 
 
 # Panorama saving helper functions
 
 
-# Builds a dictionary of number/PanoramaTitle pairs with the goal of grouping
-# panoramas that are related.
-def build_pano_dict(files: list[str]) -> dict[str, list[PanoramaTitle]]:
-    panos: dict[str, list[PanoramaTitle]] = {}
-    for f in files:
+# Builds a dictionary of panoramas, grouping panoramas under the same NN or Install #
+def group_panoramas_by_install_or_nn(filenames: list[str]) -> dict[PanoramaKey, list[PanoramaTitle]]:
+    panos: dict[PanoramaKey, list[PanoramaTitle]] = {}
+    for f in filenames:
         try:
             title = PanoramaTitle.from_filename(f)
         except BadPanoramaTitle:
-            logging.exception("Error due to panorama title")
+            logging.exception("Error due to bad filename: f")
             continue
 
         # Use this special get_key() function to separate NNs from not NNs.
@@ -206,21 +214,21 @@ def save_building_panoramas(building: Building, panorama_titles: list[PanoramaTi
     return len(panoramas)
 
 
-# Iterate through the panoramas we're aware of, looking up buildings and setting
-# panoramas on them as appropriate
-def set_panoramas(panos: dict[str, list[PanoramaTitle]]) -> tuple[int, list[str]]:
+# Given a list of panoramas grouped by install number/network number, find the
+# appropriate Building object and update the list of panoramas for that Building
+def set_panoramas(panos: dict[PanoramaKey, list[PanoramaTitle]]) -> tuple[int, list[str]]:
     panoramas_saved = 0
     warnings = []
 
     for key, filenames in panos.items():
         try:
-            if "nn" in str(key):
+            if key.is_nn:
                 try:
-                    node: Node = Node.objects.get(network_number=int(key))
+                    node: Node = Node.objects.get(network_number=int(key.number))
                     node_installs = node.installs.all()
                     if len(node_installs) == 0:
                         # This should never happen
-                        logging.error(f"NN{key} exists, but has no installs.")
+                        logging.error(f"NN{key.number} exists, but has no installs.")
                         continue
 
                     # Get the first install from the node and use its building. Can't
@@ -229,18 +237,18 @@ def set_panoramas(panos: dict[str, list[PanoramaTitle]]) -> tuple[int, list[str]
 
                     panoramas_saved += save_building_panoramas(install.building, filenames)
                 except Node.DoesNotExist:
-                    logging.error("Could not find corresponding NN.")
-                    warnings.append(key)
+                    logging.error(f"Could not find corresponding NN {key.number}.")
+                    warnings.append(str(key))
             else:
                 try:
-                    install = Install.objects.get(install_number=int(key))
+                    install = Install.objects.get(install_number=int(key.number))
 
                     panoramas_saved += save_building_panoramas(install.building, filenames)
                 except Install.DoesNotExist:
                     logging.warning(f"Install #{key} Does not exist")
         except Exception:
             logging.exception(f"Could not add panorama to building (key = {key})")
-            warnings.append(key)
+            warnings.append(str(key))
     return panoramas_saved, warnings
 
 
