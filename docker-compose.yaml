@@ -58,11 +58,7 @@ services:
       - .env
     volumes:
       - static_files:/opt/meshdb/static
-      - type: bind
-        source: /var/log/meshdb
-        target: /var/log/meshdb
-        bind:
-          create_host_path: true
+      - meshdb_logs:/var/log/meshdb
     image: willnilges/meshdb:main
     build:
       context: .
@@ -100,6 +96,7 @@ services:
 volumes:
   postgres_data:
   static_files:
+  meshdb_logs:
 
 networks:
   api:
