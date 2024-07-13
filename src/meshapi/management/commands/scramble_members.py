@@ -1,5 +1,6 @@
 from argparse import ArgumentParser
 from datetime import date, timedelta
+import logging
 from random import randint, randrange
 from typing import Any, Optional, Tuple
 
@@ -34,11 +35,11 @@ class Command(BaseCommand):
 
     @transaction.atomic
     def handle(self, *args: Any, **options: Any) -> None:
-        print("Scrambling database with fake information")
+        logging.info("Scrambling database with fake information")
         fake = Faker()
         if not options["skip_members"]:
             members = Member.objects.all()
-            print("Scrambling members...")
+            logging.info("Scrambling members...")
             for member in members:
                 member.name = fake.name()
                 member.primary_email_address = f"{member.name.replace(' ', '').lower()}@gmail.com"
@@ -51,7 +52,7 @@ class Command(BaseCommand):
                 member.save()
 
         if not options["skip_installs"]:
-            print("Scrambling installs...")
+            logging.info("Scrambling installs...")
             installs = Install.objects.all()
             for install in installs:
                 install.unit = randrange(100)
@@ -61,9 +62,9 @@ class Command(BaseCommand):
                 )
                 install.save()
 
-        print("Scrambling all other notes and dates")
+        logging.info("Scrambling all other notes and dates")
 
-        print("Scrambling buildings...")
+        logging.info("Scrambling buildings...")
         buildings = Building.objects.all()
         for building in buildings:
             building.notes = fake.text()
@@ -80,7 +81,7 @@ class Command(BaseCommand):
 
             building.save()
 
-        print("Scrambling devices...")
+        logging.info("Scrambling devices...")
         devices = Device.objects.all()
         for device in devices:
             device.notes = fake.text()
@@ -89,7 +90,7 @@ class Command(BaseCommand):
             )
             device.save()
 
-        print("Scrambling links...")
+        logging.info("Scrambling links...")
         links = Link.objects.all()
         for link in links:
             link.notes = fake.text()
@@ -98,7 +99,7 @@ class Command(BaseCommand):
             )
             link.save()
 
-        print("Scrambling nodes...")
+        logging.info("Scrambling nodes...")
         nodes = Node.objects.all()
         for node in nodes:
             node.notes = fake.text()
@@ -107,7 +108,7 @@ class Command(BaseCommand):
             )
             node.save()
 
-        print("Done")
+        logging.info("Done")
 
     @staticmethod
     def fuzz_dates(
