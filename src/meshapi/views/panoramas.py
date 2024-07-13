@@ -35,30 +35,20 @@ labeled after a NN or Install #, contains its number, and any special label
 like `a`.
 """
 
-
-@dataclass
-class PanoramaKey:
-    is_nn: bool
-    number: str
-
-    def __str__(self) -> str:
-        if self.is_nn:
-            return f"nn{self.number}"
-        return self.number
-
-
 @dataclass
 class PanoramaTitle:
     filename: str
     is_nn: bool
-    number: str  # Confusingly, this is not a number.
+    number: str  # Confusingly, this is not an int.
     label: str
 
     def __str__(self) -> str:
         return self.filename
 
-    def get_key(self) -> PanoramaKey:
-        return PanoramaKey(self.is_nn, self.number)
+    def get_key(self) -> str:
+        if self.is_nn:
+            return f"nn{self.number}"
+        return self.number
 
     def get_url(self) -> str:
         return f"{PANO_HOST}{self}"
@@ -165,7 +155,7 @@ def sync_github_panoramas() -> tuple[int, list[str]]:
     if not filenames:
         raise GitHubError("Could not get file list from GitHub")
 
-    panos: dict[PanoramaKey, list[PanoramaTitle]] = group_panoramas_by_install_or_nn(filenames)
+    panos: dict[str, list[PanoramaTitle]] = group_panoramas_by_install_or_nn(filenames)
     return set_panoramas(panos)
 
 
@@ -173,8 +163,8 @@ def sync_github_panoramas() -> tuple[int, list[str]]:
 
 
 # Builds a dictionary of panoramas, grouping panoramas under the same NN or Install #
-def group_panoramas_by_install_or_nn(filenames: list[str]) -> dict[PanoramaKey, list[PanoramaTitle]]:
-    panos: dict[PanoramaKey, list[PanoramaTitle]] = {}
+def group_panoramas_by_install_or_nn(filenames: list[str]) -> dict[str, list[PanoramaTitle]]:
+    panos: dict[str, list[PanoramaTitle]] = {}
     for f in filenames:
         try:
             title = PanoramaTitle.from_filename(f)
@@ -216,19 +206,19 @@ def save_building_panoramas(building: Building, panorama_titles: list[PanoramaTi
 
 # Given a list of panoramas grouped by install number/network number, find the
 # appropriate Building object and update the list of panoramas for that Building
-def set_panoramas(panos: dict[PanoramaKey, list[PanoramaTitle]]) -> tuple[int, list[str]]:
+def set_panoramas(panos: dict[str, list[PanoramaTitle]]) -> tuple[int, list[str]]:
     panoramas_saved = 0
     warnings = []
 
     for key, filenames in panos.items():
         try:
-            if key.is_nn:
+            if "nn" in key:
                 try:
-                    node: Node = Node.objects.get(network_number=int(key.number))
+                    node: Node = Node.objects.get(network_number=int(key[2:]))
                     node_installs = node.installs.all()
                     if len(node_installs) == 0:
                         # This should never happen
-                        logging.error(f"NN{key.number} exists, but has no installs.")
+                        logging.error(f"NN{key} exists, but has no installs.")
                         continue
 
                     # Get the first install from the node and use its building. Can't
@@ -237,11 +227,11 @@ def set_panoramas(panos: dict[PanoramaKey, list[PanoramaTitle]]) -> tuple[int, l
 
                     panoramas_saved += save_building_panoramas(install.building, filenames)
                 except Node.DoesNotExist:
-                    logging.error(f"Could not find corresponding NN {key.number}.")
+                    logging.error(f"Could not find corresponding NN {key}.")
                     warnings.append(str(key))
             else:
                 try:
-                    install = Install.objects.get(install_number=int(key.number))
+                    install = Install.objects.get(install_number=int(key))
 
                     panoramas_saved += save_building_panoramas(install.building, filenames)
                 except Install.DoesNotExist:

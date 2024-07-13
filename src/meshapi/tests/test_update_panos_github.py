@@ -67,7 +67,7 @@ class TestPanoPipeline(TestCase):
     def test_update_panoramas(self):
         # Fabricate some fake panorama photos
         n = self.install.install_number
-        panos = {n: PanoramaTitle.from_filenames([f"{n}.jpg", f"{n}a.jpg"])}
+        panos = {str(n): PanoramaTitle.from_filenames([f"{n}.jpg", f"{n}a.jpg"])}
 
         set_panoramas(panos)
 
@@ -80,7 +80,7 @@ class TestPanoPipeline(TestCase):
         self.assertEqual(saved_panoramas, building.panoramas)
 
         # Now add one from the previous list, and a new one.
-        panos = {n: PanoramaTitle.from_filenames([f"{n}.jpg", f"{n}b.jpg"])}
+        panos = {str(n): PanoramaTitle.from_filenames([f"{n}.jpg", f"{n}b.jpg"])}
 
         set_panoramas(panos)
 
