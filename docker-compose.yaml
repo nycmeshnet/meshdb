@@ -58,6 +58,11 @@ services:
       - .env
     volumes:
       - static_files:/opt/meshdb/static
+      - type: bind
+        source: /var/log/meshdb
+        target: /var/log/meshdb
+        bind:
+          create_host_path: true
     image: willnilges/meshdb:main
     build:
       context: .
