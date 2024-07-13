@@ -135,6 +135,7 @@ def update_panoramas(request: Request) -> Response:
         return Response({"detail": str(type(e).__name__)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
+# Used by the above api route, and also the celery task
 @advisory_lock("update_panoramas_lock")
 def sync_github_panoramas() -> tuple[int, list[str]]:
     # Check that we have all the environment variables we need
@@ -157,6 +158,29 @@ def sync_github_panoramas() -> tuple[int, list[str]]:
 
     panos: dict[str, list[PanoramaTitle]] = build_pano_dict(panorama_files)
     return set_panoramas(panos)
+
+
+# Panorama saving helper functions
+
+
+# Builds a dictionary of number/PanoramaTitle pairs with the goal of grouping
+# panoramas that are related.
+def build_pano_dict(files: list[str]) -> dict[str, list[PanoramaTitle]]:
+    panos: dict[str, list[PanoramaTitle]] = {}
+    for f in files:
+        try:
+            title = PanoramaTitle.from_filename(f)
+        except BadPanoramaTitle:
+            logging.exception("Error due to panorama title")
+            continue
+
+        # Use this special get_key() function to separate NNs from not NNs.
+        # This way, we'll have 632 and nn632 in separate keys
+        if title.get_key() not in panos:
+            panos[title.get_key()] = [title]
+        else:
+            panos[title.get_key()].append(title)
+    return panos
 
 
 # Helper function to update panorama list. One day, this should probably
@@ -220,22 +244,7 @@ def set_panoramas(panos: dict[str, list[PanoramaTitle]]) -> tuple[int, list[str]
     return panoramas_saved, warnings
 
 
-def build_pano_dict(files: list[str]) -> dict[str, list[PanoramaTitle]]:
-    panos: dict[str, list[PanoramaTitle]] = {}
-    for f in files:
-        try:
-            title = PanoramaTitle.from_filename(f)
-        except BadPanoramaTitle:
-            logging.exception("Error due to panorama title")
-            continue
-
-        # Use this special get_key() function to separate NNs from not NNs.
-        # This way, we'll have 632 and nn632 in separate keys
-        if title.get_key() not in panos:
-            panos[title.get_key()] = [title]
-        else:
-            panos[title.get_key()].append(title)
-    return panos
+# Github helper functions
 
 
 # Gets the tree-sha, which we need to use the trees API (allows us to list up to
