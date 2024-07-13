@@ -2,7 +2,7 @@ import logging
 import os
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Union, dataclass_transform
+from typing import Union
 
 import requests
 from rest_framework import status
@@ -28,7 +28,7 @@ PANO_HOST = "https://node-db.netlify.app/panoramas/"
 """
 Panoramas can be titled as either ###[a-z*].jpg or nn###[a-z*].jpg. This will
 apply those rules to a given string and either return a title or raise a special
-exception if it finds a pano that breaks the rules. 
+exception if it finds a pano that breaks the rules.
 
 Returns a PanoramaTitle which determines if we're dealing with a panorama
 labeled after a NN or Install #, contains its number, and any special label
@@ -51,11 +51,11 @@ class PanoramaTitle:
             return f"nn{self.number}"
         return self.number
 
-    def get_url(self):
+    def get_url(self) -> str:
         return f"{PANO_HOST}{self}"
 
     @classmethod
-    def from_filename(cls, filename: str):
+    def from_filename(cls, filename: str) -> "PanoramaTitle":
         if len(filename) <= 0:
             raise BadPanoramaTitle("Got filename of length 0")
 
@@ -99,7 +99,7 @@ class PanoramaTitle:
         return cls(filename=filename, is_nn=is_nn, number=number, label=label)
 
     @classmethod
-    def from_filenames(cls, filenames: list[str]):
+    def from_filenames(cls, filenames: list[str]) -> list["PanoramaTitle"]:
         panorama_titles = []
         for f in filenames:
             panorama_titles.append(cls.from_filename(f))
@@ -163,7 +163,7 @@ def sync_github_panoramas() -> tuple[int, list[str]]:
 # clobber the panoramas already saved (since a robot should probably be
 # controlling this), but for now, it either appends to the current list,
 # or bails if the current list and the new list are the same.
-def save_building_panoramas(building: Building, panorama_titles: list[PanoramaTitle]):
+def save_building_panoramas(building: Building, panorama_titles: list[PanoramaTitle]) -> int:
     # Generate storage URL for panorama
     panoramas = []
     for filename in panorama_titles:
@@ -198,6 +198,7 @@ def set_panoramas(panos: dict[str, list[PanoramaTitle]]) -> tuple[int, list[str]
                         # This should never happen
                         logging.error(f"NN{key} exists, but has no installs.")
                         continue
+
                     # Get the first install from the node and use its building. Can't
                     # really do any better than that.
                     install = node_installs[0]
@@ -208,7 +209,7 @@ def set_panoramas(panos: dict[str, list[PanoramaTitle]]) -> tuple[int, list[str]
                     warnings.append(key)
             else:
                 try:
-                    install: Install = Install.objects.get(install_number=int(key))
+                    install = Install.objects.get(install_number=int(key))
 
                     panoramas_saved += save_building_panoramas(install.building, filenames)
                 except Install.DoesNotExist:
