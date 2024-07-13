@@ -5,7 +5,13 @@ from django.contrib.auth.models import User
 from django.test import Client, TestCase
 
 from meshapi.models import Building, Install, Member
-from meshapi.views.panoramas import PanoramaTitle, BadPanoramaTitle, set_panoramas, get_head_tree_sha, list_files_in_git_directory
+from meshapi.views.panoramas import (
+    BadPanoramaTitle,
+    PanoramaTitle,
+    get_head_tree_sha,
+    list_files_in_git_directory,
+    set_panoramas,
+)
 
 from .sample_data import sample_building, sample_install, sample_member
 

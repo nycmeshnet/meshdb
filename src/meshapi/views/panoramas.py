@@ -1,17 +1,17 @@
 import logging
 import os
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Union, dataclass_transform
-from dataclasses import dataclass
 
 import requests
-from meshapi.models.building import Building
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.request import Request
 from rest_framework.response import Response
 
 from meshapi.models import Install
+from meshapi.models.building import Building
 from meshapi.models.node import Node
 from meshapi.permissions import HasPanoramaUpdatePermission
 from meshapi.util.constants import DEFAULT_EXTERNAL_API_TIMEOUT_SECONDS
@@ -40,7 +40,7 @@ like `a`.
 class PanoramaTitle:
     filename: str
     is_nn: bool
-    number: str # Confusingly, this is not a number.
+    number: str  # Confusingly, this is not a number.
     label: str
 
     def __str__(self) -> str:
@@ -158,6 +158,7 @@ def sync_github_panoramas() -> tuple[int, list[str]]:
     panos: dict[str, list[PanoramaTitle]] = build_pano_dict(panorama_files)
     return set_panoramas(panos)
 
+
 # Helper function to update panorama list. One day, this should probably
 # clobber the panoramas already saved (since a robot should probably be
 # controlling this), but for now, it either appends to the current list,
@@ -179,6 +180,7 @@ def save_building_panoramas(building: Building, panorama_titles: list[PanoramaTi
     building.save()
 
     return len(panoramas)
+
 
 # Iterate through the panoramas we're aware of, looking up buildings and setting
 # panoramas on them as appropriate
