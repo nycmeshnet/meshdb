@@ -1,3 +1,4 @@
+import logging
 import os
 
 from celery.schedules import crontab
@@ -5,8 +6,6 @@ from django.core import management
 
 from meshapi.views.panoramas import sync_github_panoramas
 from meshdb.celery import app as celery_app
-
-import logging
 
 
 @celery_app.task
@@ -21,6 +20,7 @@ def run_database_backup() -> None:
     except Exception as e:
         logging.exception(e)
         raise e
+
 
 @celery_app.task
 def run_update_panoramas() -> None:
