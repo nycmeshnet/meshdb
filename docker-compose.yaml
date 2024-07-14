@@ -36,10 +36,24 @@ services:
   pgadmin:
     networks:
       - api
+    expose:
+      - 443
     image: dpage/pgadmin4:8.9
     environment:
       PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL}
       PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD}
+    labels:
+      # Uses an ACME cert. Better than nothing, I guess.
+      - "traefik.enable=true"
+      - "traefik.port=443"
+        # .nycmesh.net URL for pgadmin
+      - "traefik.http.routers.pgadmin-secure.rule=Host(`pgadmin.grandbox.mesh.nycmesh.net`)"
+      - "traefik.http.routers.pgadmin-secure.entrypoints=websecure"
+      - "traefik.http.routers.pgadmin-secure.tls=true"
+        # .mesh URL for pgadmin
+      - "traefik.http.routers.pgadmin-secure-mesh.rule=Host(`pgadmin.grandsvc.mesh`)"
+      - "traefik.http.routers.pgadmin-secure-mesh.entrypoints=websecure"
+      - "traefik.http.routers.pgadmin-secure-mesh.tls=true"
 
   pelias:
     networks:
@@ -84,6 +98,9 @@ services:
     #  - 80:80
     #  - 443:443
     image: nginx
+    volumes:
+      - ./nginx:/etc/nginx/conf.d
+      - static_files:/var/www/html/static
     labels:
       - "traefik.enable=true"
       - "traefik.port=80"
@@ -100,9 +117,6 @@ services:
         # .mesh URL
       - "traefik.http.routers.meshdb-mesh.rule=Host(`db.grandsvc.mesh`)"
       - "traefik.http.routers.meshdb-mesh.entrypoints=web"
-    volumes:
-      - ./nginx:/etc/nginx/conf.d
-      - static_files:/var/www/html/static
 
 volumes:
   postgres_data:
