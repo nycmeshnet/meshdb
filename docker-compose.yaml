@@ -28,8 +28,6 @@ services:
       start_period: 1s
     networks:
       - api
-    ports:
-      - 6379:6379
     image:
       redis
 
