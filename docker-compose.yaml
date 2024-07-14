@@ -73,9 +73,9 @@ services:
     expose:
       - 80
     # Useful for debugging, but should be commented out otherwise.
-    ports:
-      - 80:80
-      - 443:443
+    #ports:
+    #  - 80:80
+    #  - 443:443
     image: nginx
     labels:
       - "traefik.enable=true"
