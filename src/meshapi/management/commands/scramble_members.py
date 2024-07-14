@@ -1,6 +1,6 @@
+import logging
 from argparse import ArgumentParser
 from datetime import date, timedelta
-import logging
 from random import randint, randrange
 from typing import Any, Optional, Tuple
 
