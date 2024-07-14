@@ -44,6 +44,7 @@ ALLOWED_HOSTS = [
     "meshdb",
     "nginx",
     "host.docker.internal",
+    "devdb.mesh.nycmesh.net",
 ]
 
 # FIXME: Shit works, but also doesn't(?) work with the ^ as the first character
@@ -72,6 +73,8 @@ CSRF_TRUSTED_ORIGINS = [
     "http://127.0.0.1:8080",
     "http://meshdb:8081",
     "http://nginx:8080",
+    "http://devdb.mesh.nycmesh.net",
+    "https://devdb.mesh.nycmesh.net",
 ]
 
 # Application definition
