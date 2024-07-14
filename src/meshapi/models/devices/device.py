@@ -28,6 +28,7 @@ class Device(models.Model):
     node = models.ForeignKey(
         Node,
         related_name="devices",
+        db_column="network_number",
         on_delete=models.PROTECT,
         help_text="The logical node this Device is located within. The integer value of this field is "
         "also the network number, which corresponds to the static IP address and OSPF ID of this device "
@@ -112,7 +113,7 @@ class Device(models.Model):
         protocol="ipv4",
     )
 
-    def __str__(self):
+    def __str__(self) -> str:
         if self.name:
             return self.name
         return f"MeshDB Device ID {self.id}"

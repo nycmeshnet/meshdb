@@ -10,10 +10,13 @@ class Link(models.Model):
         ACTIVE = "Active"
 
     class LinkType(models.TextChoices):
-        STANDARD = "Standard"
+        FIVE_GHZ = "5 GHz"
+        TWENTYFOUR_GHZ = "24 GHz"
+        SIXTY_GHZ = "60 GHz"
+        SEVENTY_EIGHTY_GHZ = "70-80 GHz"
         VPN = "VPN"
-        MMWAVE = "MMWave"
         FIBER = "Fiber"
+        ETHERNET = "Ethernet"
 
     from_device = models.ForeignKey(
         Device,
@@ -62,7 +65,7 @@ class Link(models.Model):
         default=None, blank=True, null=True, help_text="The UUID used to indentify this link in UISP (if applicable)"
     )
 
-    def __str__(self):
+    def __str__(self) -> str:
         if self.from_device.node.network_number and self.to_device.node.network_number:
             return f"NN{self.from_device.node.network_number} → NN{self.to_device.node.network_number}"
         return f"MeshDB Link ID {self.id}"

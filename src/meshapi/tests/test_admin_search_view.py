@@ -80,3 +80,12 @@ class TestAdminSearchView(TestCase):
 
     def test_search_node(self):
         self._call("/admin/meshapi/node/?q=1", 200)
+
+    def test_search_install_by_nn(self):
+        self._call("/admin/meshapi/install/?q=nN1", 200)
+
+    def test_search_install_just_nn(self):
+        self._call("/admin/meshapi/install/?q=nN", 200)
+
+    def test_search_install_empty(self):
+        self._call("/admin/meshapi/install/?q=", 200)

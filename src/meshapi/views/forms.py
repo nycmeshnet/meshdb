@@ -4,20 +4,21 @@ import time
 from dataclasses import dataclass
 from datetime import date
 from json.decoder import JSONDecodeError
-from typing import Optional
 
 from django.db import IntegrityError, transaction
 from django.db.models import Q
 from drf_spectacular.utils import OpenApiResponse, extend_schema, extend_schema_view, inline_serializer
 from rest_framework import permissions, serializers, status
 from rest_framework.decorators import api_view, permission_classes
+from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework_dataclasses.serializers import DataclassSerializer
 
 from meshapi.exceptions import AddressAPIError, AddressError
-from meshapi.models import NETWORK_NUMBER_MAX, NETWORK_NUMBER_MIN, Building, Install, Member, Node
+from meshapi.models import Building, Install, Member, Node
 from meshapi.permissions import HasNNAssignPermission, LegacyNNAssignmentPassword
 from meshapi.util.django_pglocks import advisory_lock
+from meshapi.util.network_number import get_next_available_network_number
 from meshapi.validation import NYCAddressInfo, validate_email_address, validate_phone_number
 from meshapi.zips import NYCZipCodes
 from meshdb.utils.spreadsheet_import.building.constants import AddressTruthSource
@@ -80,7 +81,7 @@ form_err_response_schema = inline_serializer("ErrorResponse", fields={"detail": 
 @api_view(["POST"])
 @permission_classes([permissions.AllowAny])
 @advisory_lock("join_form_lock")
-def join_form(request):
+def join_form(request: Request) -> Response:
     request_json = json.loads(request.body)
     try:
         r = JoinFormRequest(**request_json)
@@ -104,7 +105,8 @@ def join_form(request):
     if not NYCZipCodes.match_zip(r.zip):
         return Response(
             {
-                "detail": "Non-NYC registrations are not supported at this time. Check back later, or email support@nycmesh.net"
+                "detail": "Non-NYC registrations are not supported at this time. Check back later, "
+                "or email support@nycmesh.net"
             },
             status=status.HTTP_400_BAD_REQUEST,
         )
@@ -119,17 +121,16 @@ def join_form(request):
         # If the user has given us an invalid address. Tell them to buzz
         # off.
         except AddressError as e:
-            print(e)
+            logging.exception("AddressError when validating address")
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         # If we get any other error, then there was probably an issue
         # using the API, and we should wait a bit and re-try
-        except (AddressAPIError, Exception) as e:
-            print(e)
-            print("(NYC) Something went wrong validating the address. Re-trying...")
+        except (AddressAPIError, Exception):
+            logging.exception("(NYC) Something went wrong validating the address. Re-trying...")
             time.sleep(3)
     # If we run out of tries, bail.
     if nyc_addr_info is None:
-        print(f"Could not parse address: {r.street_address}, {r.city}, {r.state}, {r.zip}")
+        logging.warn(f"Could not parse address: {r.street_address}, {r.city}, {r.state}, {r.zip}")
         return Response(
             {"detail": "Your address could not be validated."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
@@ -215,8 +216,8 @@ def join_form(request):
 
     try:
         join_form_member.save()
-    except IntegrityError as e:
-        print(e)
+    except IntegrityError:
+        logging.exception("Error saving member from join form")
         return Response(
             {"detail": "There was a problem saving your Member information"},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -230,8 +231,8 @@ def join_form(request):
         # association with the existing nodes
         for node in existing_nodes_for_structure:
             join_form_building.nodes.add(node)
-    except IntegrityError as e:
-        print(e)
+    except IntegrityError:
+        logging.exception("Error saving building from join form")
         # Delete the member and bail
         join_form_member.delete()
         return Response(
@@ -240,8 +241,8 @@ def join_form(request):
 
     try:
         join_form_install.save()
-    except IntegrityError as e:
-        print(e)
+    except IntegrityError:
+        logging.exception("Error saving install from join form")
         # Delete the member, building (if we just created it), and bail
         join_form_member.delete()
         if len(existing_exact_buildings) == 0:
@@ -250,8 +251,9 @@ def join_form(request):
             {"detail": "There was a problem saving your Install information"}, status=status.HTTP_400_BAD_REQUEST
         )
 
-    print(
-        f"JoinForm submission success. building_id: {join_form_building.id}, member_id: {join_form_member.id}, install_number: {join_form_install.install_number}"
+    logging.info(
+        f"JoinForm submission success. building_id: {join_form_building.id}, "
+        f"member_id: {join_form_member.id}, install_number: {join_form_install.install_number}"
     )
 
     return Response(
@@ -266,61 +268,6 @@ def join_form(request):
         },
         status=status.HTTP_201_CREATED,
     )
-
-
-def get_next_available_network_number() -> int:
-    """
-    This function finds, and marks as re-assigned, the next install whose number can be re-assigned
-    for use as a network number. This is non-trivial becuause we need to exclude installs that
-    have non "REQUEST RECIEVED" statuses, as well as the set of all NNs that have been assigned
-    to any other installs for any reason
-    :return: the integer for the next available network number
-    """
-
-    defined_nns = set(
-        Install.objects.exclude(status=Install.InstallStatus.REQUEST_RECEIVED, node__isnull=True).values_list(
-            "install_number", flat=True
-        )
-    ).union(set(Node.objects.values_list("network_number", flat=True)))
-
-    # Find the first valid NN that isn't in use
-    free_nn = next(i for i in range(NETWORK_NUMBER_MIN, NETWORK_NUMBER_MAX + 1) if i not in defined_nns)
-
-    # Sanity check to make sure we don't assign something crazy. This is done by the query above,
-    # but we want to be super sure we don't violate these constraints so we check it here
-    if free_nn < NETWORK_NUMBER_MIN or free_nn > NETWORK_NUMBER_MAX:
-        raise ValueError(f"Invalid NN: {free_nn}")
-
-    # The number we are about to assign should not be connected to any existing installs as
-    # an NN. Again, the above logic should do this, but we REALLY care about this not happening
-    already_in_use_nn_qs = Install.objects.filter(node__network_number=free_nn)
-    if len(already_in_use_nn_qs):
-        raise ValueError(
-            f"Invalid NN: {free_nn} is already in use for "
-            f"install number {already_in_use_nn_qs.first().install_number}"
-        )
-
-    already_exists_node_qs = Node.objects.filter(network_number=free_nn)
-    if len(already_exists_node_qs):
-        raise ValueError(f"Invalid NN: {free_nn} is already the network_number for a pre-exisiting node")
-
-    # If we are re-assigning a number from another install, mark it with NN Assigned to indicate
-    # that this has happened
-    nn_donor_install: Optional[Install] = Install.objects.select_for_update().filter(install_number=free_nn).first()
-    if nn_donor_install:
-        # Double check that if we are re-assigning something that has been used before that it is
-        # definitely unused. The logic above should do that, but this is so important that for
-        # safety that we should double-check
-        if nn_donor_install.status != Install.InstallStatus.REQUEST_RECEIVED or nn_donor_install.node is not None:
-            raise ValueError(
-                f"Invalid NN: {free_nn} has an install associated that "
-                f"looks active (#{nn_donor_install.install_number})"
-            )
-
-        nn_donor_install.status = Install.InstallStatus.NN_REASSIGNED
-        nn_donor_install.save()
-
-    return free_nn
 
 
 @dataclass
@@ -376,7 +323,7 @@ nn_form_success_schema = inline_serializer(
 @permission_classes([HasNNAssignPermission | LegacyNNAssignmentPassword])
 @transaction.atomic
 @advisory_lock("nn_assignment_lock")
-def network_number_assignment(request):
+def network_number_assignment(request: Request) -> Response:
     """
     Takes an install number, and assigns the install a network number,
     deduping using the other buildings in our database.
@@ -388,8 +335,8 @@ def network_number_assignment(request):
             del request_json["password"]
 
         r = NetworkNumberAssignmentRequest(**request_json)
-    except (TypeError, JSONDecodeError) as e:
-        print(f"NN Request failed. Could not decode request: {e}")
+    except (TypeError, JSONDecodeError):
+        logging.exception("NN Request failed. Could not decode request")
         return Response({"detail": "Got incomplete request"}, status=status.HTTP_400_BAD_REQUEST)
 
     try:
@@ -397,14 +344,15 @@ def network_number_assignment(request):
         # rows related to the Install object at hand, so that for example, the attached building
         # isn't changed underneath us
         nn_install = Install.objects.select_for_update().select_related().get(install_number=r.install_number)
-    except Exception as e:
-        print(f'NN Request failed. Could not get Install w/ Install Number "{r.install_number}": {e}')
+    except Exception:
+        logging.exception(f'NN Request failed. Could not get Install w/ Install Number "{r.install_number}"')
         return Response({"detail": "Install Number not found"}, status=status.HTTP_404_NOT_FOUND)
 
     # Check if the install already has a network number
     if nn_install.node is not None:
-        message = f"This Install Number ({r.install_number}) already has a Network Number ({nn_install.node.network_number}) associated with it!"
-        print(message)
+        message = f"This Install Number ({r.install_number}) already has a "
+        f"Network Number ({nn_install.node.network_number}) associated with it!"
+        logging.warn(message)
         return Response(
             {
                 "detail": message,
@@ -446,8 +394,8 @@ def network_number_assignment(request):
         nn_install.node.save()
         nn_building.save()
         nn_install.save()
-    except IntegrityError as e:
-        print(e)
+    except IntegrityError:
+        logging.exception("NN Request failed. Could not save node number.")
         return Response(
             {"detail": "NN Request failed. Could not save node number."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )

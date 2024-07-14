@@ -1,0 +1,7 @@
+{
+    "image": "docker.io/python:3.11-bookworm",
+    "runArgs": [
+        "--network=host",
+    ],
+    "postStartCommand": "pip install -e '.[dev]'"
+}

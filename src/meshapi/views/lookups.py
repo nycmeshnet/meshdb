@@ -1,8 +1,11 @@
-from django.db.models import Q
+from typing import Any, List, Type
+
+from django.db.models import Q, QuerySet
 from django_filters import rest_framework as filters
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
 from rest_framework import generics
+from rest_framework.request import Request
 from rest_framework.response import Response
 
 from meshapi.models import Building, Device, Install, Link, Member, Node, Sector
@@ -18,8 +21,10 @@ from meshapi.serializers import (
 
 
 class FilterRequiredListAPIView(generics.ListAPIView):
-    def get(self, request, *args, **kwargs):
-        possible_filters = set(self.filterset_class.base_filters.keys())
+    filterset_class: Type[filters.FilterSet]
+
+    def get(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        possible_filters = set(self.filterset_class.get_filters().keys())  # type: ignore[no-untyped-call]
         provided_filters = set(self.request.query_params.keys())
         invalid_filters = provided_filters - possible_filters
 
@@ -36,18 +41,21 @@ class FilterRequiredListAPIView(generics.ListAPIView):
 class MemberFilter(filters.FilterSet):
     name = filters.CharFilter(field_name="name", lookup_expr="icontains")
     email_address = filters.CharFilter(method="filter_on_all_emails")
-    phone_number = filters.CharFilter(field_name="phone_number", lookup_expr="icontains")
+    phone_number = filters.CharFilter(method="filter_on_all_phone_numbers")
 
-    def filter_on_all_emails(self, queryset, name, value):
+    def filter_on_all_emails(self, queryset: QuerySet[Member], field_name: str, value: str) -> QuerySet[Member]:
         return queryset.filter(
             Q(primary_email_address__icontains=value)
             | Q(stripe_email_address__icontains=value)
             | Q(additional_email_addresses__icontains=value)
         )
 
+    def filter_on_all_phone_numbers(self, queryset: QuerySet[Member], field_name: str, value: str) -> QuerySet[Member]:
+        return queryset.filter(Q(phone_number__icontains=value) | Q(additional_phone_numbers__icontains=value))
+
     class Meta:
         model = Member
-        fields = []
+        fields: List[Any] = []
 
 
 @extend_schema_view(
@@ -65,14 +73,15 @@ class MemberFilter(filters.FilterSet):
                 "email_address",
                 OpenApiTypes.STR,
                 OpenApiParameter.QUERY,
-                description="Filter members by any of the email address fields using case-insensitve substring matching",
+                description="Filter members by any of the email address fields using case-insensitve "
+                "substring matching",
                 required=False,
             ),
             OpenApiParameter(
                 "phone_number",
                 OpenApiTypes.STR,
                 OpenApiParameter.QUERY,
-                description="Filter members by the phone_number field using case-insensitve substring matching",
+                description="Filter members by any of the phone number fields using case-insensitve substring matching",
                 required=False,
             ),
         ],
@@ -270,10 +279,10 @@ class LinkFilter(filters.FilterSet):
     network_number = filters.NumberFilter(method="filter_from_to_network_number")
     device = filters.NumberFilter(method="filter_from_to_device_id")
 
-    def filter_from_to_network_number(self, queryset, name, value):
+    def filter_from_to_network_number(self, queryset: QuerySet[Link], field_name: str, value: str) -> QuerySet[Link]:
         return queryset.filter(Q(from_device__node__network_number=value) | Q(to_device__node__network_number=value))
 
-    def filter_from_to_device_id(self, queryset, name, value):
+    def filter_from_to_device_id(self, queryset: QuerySet[Link], field_name: str, value: str) -> QuerySet[Link]:
         return queryset.filter(Q(from_device__id=value) | Q(to_device__id=value))
 
     class Meta:

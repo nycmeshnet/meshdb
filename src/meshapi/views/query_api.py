@@ -1,7 +1,11 @@
-from django.db.models import Q
-from django_filters import rest_framework as filters
+from typing import List
 
-from meshapi.models import Install
+from django.db.models import Q, QuerySet
+from django_filters import rest_framework as filters
+from drf_spectacular.utils import extend_schema, extend_schema_view
+
+from meshapi.docs import query_form_password_param
+from meshapi.models import Install, Member
 from meshapi.permissions import LegacyMeshQueryPassword
 from meshapi.serializers.query_api import QueryFormSerializer
 from meshapi.views.lookups import FilterRequiredListAPIView
@@ -18,20 +22,32 @@ However, we return a JSON array, rather than a CSV file
 class QueryMemberFilter(filters.FilterSet):
     name = filters.CharFilter(field_name="member.name", lookup_expr="icontains")
     email_address = filters.CharFilter(method="filter_on_all_emails")
-    phone_number = filters.CharFilter(field_name="member.phone_number", lookup_expr="icontains")
+    phone_number = filters.CharFilter(method="filter_on_all_phone_numbers")
 
-    def filter_on_all_emails(self, queryset, name, value):
+    def filter_on_all_emails(self, queryset: QuerySet[Member], field_name: str, value: str) -> QuerySet[Member]:
         return queryset.filter(
             Q(member__primary_email_address__icontains=value)
             | Q(member__stripe_email_address__icontains=value)
             | Q(member__additional_email_addresses__icontains=value)
         )
 
+    def filter_on_all_phone_numbers(self, queryset: QuerySet[Member], name: str, value: str) -> QuerySet[Member]:
+        return queryset.filter(Q(phone_number__icontains=value) | Q(additional_phone_numbers__icontains=value))
+
     class Meta:
         model = Install
-        fields = []
+        fields: List[str] = []
 
 
+@extend_schema_view(
+    get=extend_schema(
+        tags=["Legacy Query Form"],
+        parameters=[query_form_password_param],
+        summary="Query & filter based on Member attributes. "
+        "Results are returned as flattened spreadsheet row style output",
+        auth=[],
+    ),
+)
 class QueryMember(FilterRequiredListAPIView):
     queryset = (
         Install.objects.all()
@@ -53,6 +69,15 @@ class QueryInstallFilter(filters.FilterSet):
         fields = ["install_number", "member", "building", "status"]
 
 
+@extend_schema_view(
+    get=extend_schema(
+        tags=["Legacy Query Form"],
+        parameters=[query_form_password_param],
+        summary="Query & filter based on Install attributes. "
+        "Results are returned as flattened spreadsheet row style output",
+        auth=[],
+    ),
+)
 class QueryInstall(FilterRequiredListAPIView):
     queryset = (
         Install.objects.all()
@@ -78,6 +103,15 @@ class QueryBuildingFilter(filters.FilterSet):
         fields = ["bin", "zip_code"]
 
 
+@extend_schema_view(
+    get=extend_schema(
+        tags=["Legacy Query Form"],
+        parameters=[query_form_password_param],
+        summary="Query & filter based on Building attributes. "
+        "Results are returned as flattened spreadsheet row style output",
+        auth=[],
+    ),
+)
 class QueryBuilding(FilterRequiredListAPIView):
     queryset = (
         Install.objects.all()

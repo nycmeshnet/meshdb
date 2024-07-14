@@ -2,12 +2,14 @@ name: Make sure to run manage.py makemigrations if you change models
 
 on: [pull_request]
 
+permissions: read-all
+
 jobs:
   is-migration-diff-clean:
     runs-on: ubuntu-latest
     services:
       postgres:
-        image: postgres:latest
+        image: docker.io/postgres:15-bookworm
         env:
           POSTGRES_DB: nycmesh-dev
           POSTGRES_USER: nycmesh

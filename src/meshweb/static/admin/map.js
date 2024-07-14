@@ -111,7 +111,7 @@ async function updateAdminContent(newUrl, updateHistory = true) {
     // Keep the elements Google Maps injected in the header, otherwise the map breaks
     const headerElementsToKeep = [];
     for (const el of document.getElementsByTagName("head")[0].getElementsByTagName("script")){
-        if (el.src && el.src.startsWith("https://maps.google")) headerElementsToKeep.push(el);
+        if (el.src && el.src.startsWith("https://maps.googleapis.com/")) headerElementsToKeep.push(el);
     }
     for (const el of document.getElementsByTagName("head")[0].getElementsByTagName("style")){
         if (el.textContent.indexOf(".gm") !== -1) headerElementsToKeep.push(el);
@@ -132,7 +132,7 @@ async function updateAdminContent(newUrl, updateHistory = true) {
 
     const scriptsToReload = [];
     for (const script of document.head.querySelectorAll('script')){
-        if (!script.src || !script.src.startsWith("https://maps.google")) scriptsToReload.push(script);
+        if (!script.src || !script.src.startsWith("https://maps.googleapis.com/")) scriptsToReload.push(script);
     }
     await loadScripts(scriptsToReload, document.head);
 
@@ -210,6 +210,18 @@ function listenForMapNavigation() {
     window.addEventListener("nodeSelectedOnMap", (event) => {
         nodeSelectedOnMap(event.selectedNodes);
     })
+}
+
+function listenForRecenterClick() {
+    const recenterButton = document.querySelector("#map_recenter_button");
+
+    function onRecenterClick(event) {
+        console.log("recenterclick");
+        updateMapForLocation();
+        event.preventDefault();
+    }
+
+    recenterButton.addEventListener("click", onRecenterClick, false);
 }
 
 async function load_map() {
@@ -315,6 +327,7 @@ async function start() {
     updateMapForLocation();
     interceptLinks();
     listenForMapNavigation();
+    listenForRecenterClick();
 }
 
 start();

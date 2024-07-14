@@ -110,7 +110,7 @@ class TestPanoAuthentication(TestCase):
         }
         mock_requests.return_value = mock_response
 
-        response = self.admin_c.get("/api/v1/update-panoramas/")
+        response = self.admin_c.post("/api/v1/update-panoramas/")
         code = 200
         self.assertEqual(
             code,

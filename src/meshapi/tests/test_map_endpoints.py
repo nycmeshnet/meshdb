@@ -175,6 +175,7 @@ class TestViewsGetUnauthenticated(TestCase):
         nodes.append(
             Node(
                 network_number=567,
+                name="Fancy Node",
                 status=Node.NodeStatus.PLANNED,
                 latitude=40.724868,
                 longitude=-73.987881,
@@ -314,6 +315,7 @@ class TestViewsGetUnauthenticated(TestCase):
                 },
                 {
                     "id": 567,
+                    "name": "Fancy Node",
                     "coordinates": [-73.9917741, 40.6962265, 66.0],
                     "requestDate": 1706331600000,
                     "roofAccess": True,
@@ -692,7 +694,7 @@ class TestViewsGetUnauthenticated(TestCase):
                 from_device=sn1_omni,
                 to_device=grand_omni,
                 status=Link.LinkStatus.ACTIVE,
-                type=Link.LinkType.MMWAVE,
+                type=Link.LinkType.SIXTY_GHZ,
             )
         )
 
@@ -701,7 +703,7 @@ class TestViewsGetUnauthenticated(TestCase):
                 from_device=sn1_omni,
                 to_device=brian_omni,
                 status=Link.LinkStatus.ACTIVE,
-                type=Link.LinkType.STANDARD,
+                type=Link.LinkType.FIVE_GHZ,
             )
         )
 
@@ -719,7 +721,7 @@ class TestViewsGetUnauthenticated(TestCase):
                 from_device=grand_omni,
                 to_device=random_omni,
                 status=Link.LinkStatus.PLANNED,
-                type=Link.LinkType.STANDARD,
+                type=Link.LinkType.FIVE_GHZ,
             )
         )
 
@@ -728,7 +730,7 @@ class TestViewsGetUnauthenticated(TestCase):
                 from_device=sn1_omni,
                 to_device=random_omni,
                 status=Link.LinkStatus.INACTIVE,
-                type=Link.LinkType.STANDARD,
+                type=Link.LinkType.FIVE_GHZ,
             )
         )
 
@@ -737,7 +739,7 @@ class TestViewsGetUnauthenticated(TestCase):
                 from_device=sn1_omni,
                 to_device=inactive_omni,
                 status=Link.LinkStatus.ACTIVE,
-                type=Link.LinkType.STANDARD,
+                type=Link.LinkType.FIVE_GHZ,
             )
         )
 
@@ -898,7 +900,7 @@ class TestViewsGetUnauthenticated(TestCase):
                 from_device=sn1_omni,
                 to_device=grand_omni,
                 status=Link.LinkStatus.ACTIVE,
-                type=Link.LinkType.MMWAVE,
+                type=Link.LinkType.SIXTY_GHZ,
             )
         )
         links.append(
@@ -906,7 +908,7 @@ class TestViewsGetUnauthenticated(TestCase):
                 from_device=sn1_additional_device,
                 to_device=grand_additional_device,
                 status=Link.LinkStatus.ACTIVE,
-                type=Link.LinkType.STANDARD,
+                type=Link.LinkType.FIVE_GHZ,
             )
         )
         links.append(
@@ -914,7 +916,7 @@ class TestViewsGetUnauthenticated(TestCase):
                 from_device=grand2_omni,
                 to_device=grand_omni,
                 status=Link.LinkStatus.ACTIVE,
-                type=Link.LinkType.STANDARD,
+                type=Link.LinkType.FIVE_GHZ,
             )
         )
 
@@ -1158,7 +1160,7 @@ class TestViewsGetUnauthenticated(TestCase):
                 from_device=device_1,
                 to_device=device_2,
                 status=Link.LinkStatus.ACTIVE,
-                type=Link.LinkType.STANDARD,
+                type=Link.LinkType.FIVE_GHZ,
             )
         )
 
@@ -1167,7 +1169,7 @@ class TestViewsGetUnauthenticated(TestCase):
                 from_device=device_2,
                 to_device=device_3,
                 status=Link.LinkStatus.ACTIVE,
-                type=Link.LinkType.STANDARD,
+                type=Link.LinkType.FIVE_GHZ,
             )
         )
 
@@ -1176,7 +1178,7 @@ class TestViewsGetUnauthenticated(TestCase):
                 from_device=device_3,
                 to_device=device_1,
                 status=Link.LinkStatus.ACTIVE,
-                type=Link.LinkType.STANDARD,
+                type=Link.LinkType.FIVE_GHZ,
             )
         )
 

@@ -15,7 +15,7 @@ Devices, and Links; Any info we need in order to get hardware on a rooftop near 
 
 This project aims to provide a convenient, stable, and sane interface for use with
 robots and humans. For more information, [check the
-wiki](https://wiki.mesh.nycmesh.net/books/services-software/chapter/meshdb)
+wiki](https://wiki.mesh.nycmesh.net/books/6-services-software/chapter/meshdb)
 
 ## Setup
 
@@ -24,7 +24,29 @@ wiki](https://wiki.mesh.nycmesh.net/books/services-software/chapter/meshdb)
 The production environment relies on Nginx and Gunicorn, but for development,
 you can use Django's tools. You'll also need Python 3.11, and pip, of course.
 
-For safety, create a venv
+Firstly, fork this repo.
+
+> [!NOTE]
+> If you cloned nycmeshnet/meshdb, you can change your origin by doing the following:
+> ```
+> git remote remove origin
+> git remote add origin https://github.com/<your_username>/meshdb
+> git remote add upstream https://github.com/nycmeshnet/meshdb
+> ```
+
+#### Dev Container
+
+If you would like to develop in a [Dev Container](https://code.visualstudio.com/docs/devcontainers/containers)
+
+1. Make sure you have VS Code installed.
+2. Install the Dev Containers extension: `ms-vscode-remote.remote-containers`
+3. [Open the repo folder in the container](https://code.visualstudio.com/docs/devcontainers/containers#_quick-start-open-an-existing-folder-in-a-container).
+4. In a different shell, outside of VS Code, start the other containers: `docker compose up -d postgres pelias redis` (as below).
+5. Continue on the VS Code terminal (where your project is opened) follow normal developer setup.
+
+#### Host
+
+If you are not using a Dev Container, for safety, create a venv
 
 ```
 python --version # Make sure this is python 3.11.x before continuing
@@ -32,14 +54,20 @@ python -m venv .venv
 source .venv/bin/activate
 ```
 
-Then, install dependencies
+Then, install dependencies.
 
 ```
-pip install '.[dev]'
+pip install -e '.[dev]'
 ```
+
+### Set Environment Variables
 
 Next, fill out the `.env.sample` file and load it into your environment.
 
+```
+cp .env.sample .env
+nano .env # Or your favorite text editor, fill in the blank variables
+```
 You're gonna need a `DJANGO_SECRET_KEY`:
 
 ### Generating `DJANGO_SECRET_KEY`
@@ -80,9 +108,18 @@ your database.
 > This is _real member data_. DO NOT share this database with anyone under any
 > circumstances.
 
-```
+```sh
 cp -R <path_to_data_dump> ./spreadsheet_data/
 ./import_spreadsheet_dump.sh
+```
+
+If you want to do work with celery, you'll need to run a worker as well as a beat.
+You can do this in two other terminals with these commands. `DEBUG` level is recommended
+for the beat to see what beats are going to run
+
+```
+celery -A meshdb worker -l INFO
+celery -A meshdb beat -s /tmp/celerybeat-schedule -l DEBUG
 ```
 
 Then, you can get crackin'
@@ -95,6 +132,16 @@ You should now be able to access the API:
 ```sh
 curl http://127.0.0.1:8000/api/v1/    # Should echo "We're Meshin" to indicate 200 status
 ```
+
+When you're done, you can stop the server with `Ctrl+C`, and run `docker compose down` to take down the containers.
+
+> [!NOTE]
+> To spin things back up again later, just run:
+> ```sh
+> source .venv/bin/activate
+> docker-compose up -d postgres pelias redis
+> python src/manage.py runserver
+> ```
 
 ### Prod Environment
 
@@ -234,6 +281,40 @@ ADMIN_MAP_BASE_URL=http://localhost:3000
 ```
 
 ### Backups
+
+**The Proper Way**
+
+We have a Celery job that runs hourly in production to back up to an S3 bucket.
+
+To restore from a backup in production:
+
+1. Get a shell in the meshdb container
+```
+$ docker exec -it meshdb-meshdb-1 bash
+```
+
+2. Find the backup you want to restore
+```
+root@eefdc57a46c2:/opt/meshdb# python manage.py listbackups
+Name                                     Datetime
+default-09855fadfa7e-2024-03-29-015116.psql.bin 03/29/24 01:51:16
+default-0c9b0a412baf-2024-03-31-170000.psql.bin 03/31/24 17:00:00
+default-12db99e5ec1d-2024-03-31-142422.psql.bin 03/31/24 14:24:22
+
+...
+
+default-bd0acc253775-2024-03-31-163520.psql.bin 03/31/24 16:35:20
+```
+
+3. In a separate terminal, drop the old database
+```
+$ echo 'drop database meshdb; create database meshdb;' | docker exec -i meshdb-postgres-1 psql -U meshdb -d postgres
+```
+
+4. Restore the backup
+```
+root@eefdc57a46c2:/opt/meshdb# python manage.py dbrestore -i default-bd0acc253775-2024-03-31-163520.psql.bin   
+```
 
 **The Quick 'n Dirty Way**
 

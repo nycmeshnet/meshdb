@@ -12,7 +12,7 @@ from meshdb.utils.spreadsheet_import.building.constants import INVALID_BIN_NUMBE
 from meshdb.utils.spreadsheet_import.building.pelias import humanify_street_address
 
 
-def validate_email_address(email_address):
+def validate_email_address(email_address: str) -> bool:
     return validate_email(
         email_address=email_address,
         check_format=True,
@@ -24,7 +24,7 @@ def validate_email_address(email_address):
 
 
 # Expects country code!!!!
-def validate_phone_number(phone_number):
+def validate_phone_number(phone_number: str) -> bool:
     try:
         parsed = phonenumbers.parse(phone_number, None)
         if not phonenumbers.is_possible_number(parsed):
@@ -46,7 +46,7 @@ class NYCAddressInfo:
     zip: int
     longitude: float
     latitude: float
-    altitude: float
+    altitude: float | None
     bin: int | None
 
     def __init__(self, street_address: str, city: str, state: str, zip: int):
@@ -60,7 +60,7 @@ class NYCAddressInfo:
             # This one always returns a "best effort" search
             query_params = {
                 "text": self.address,
-                "size": 1,
+                "size": "1",
             }
             nyc_planning_req = requests.get(
                 "https://geosearch.planninglabs.nyc/v2/search",
@@ -86,7 +86,8 @@ class NYCAddressInfo:
         found_zip = int(nyc_planning_resp["features"][0]["properties"]["postalcode"])
         if found_zip != zip:
             raise AddressError(
-                f"(NYC) Could not find address '{street_address}, {city}, {state} {zip}'. Zip code ({zip}) is probably not within city limits"
+                f"(NYC) Could not find address '{street_address}, {city}, {state} {zip}'. "
+                f"Zip code ({zip}) is probably not within city limits"
             )
 
         addr_props = nyc_planning_resp["features"][0]["properties"]
@@ -100,9 +101,9 @@ class NYCAddressInfo:
 
         # TODO (willnilges): Bail if no BIN. Given that we're guaranteeing this is NYC, if
         # there is no BIN, then we've really foweled something up
-        self.bin = addr_props["addendum"]["pad"]["bin"]
-        if int(self.bin) in INVALID_BIN_NUMBERS:
+        if int(addr_props["addendum"]["pad"]["bin"]) in INVALID_BIN_NUMBERS:
             raise AddressAPIError
+        self.bin = addr_props["addendum"]["pad"]["bin"]
         self.longitude, self.latitude = nyc_planning_resp["features"][0]["geometry"]["coordinates"]
 
         # Now that we have the bin, we can definitively get the height from
@@ -111,7 +112,7 @@ class NYCAddressInfo:
             query_params = {
                 "$where": f"bin={self.bin}",
                 "$select": "heightroof,groundelev",
-                "$limit": 1,
+                "$limit": "1",
             }
             nyc_dataset_req = requests.get(
                 "https://data.cityofnewyork.us/resource/qb5r-6dgf.json",

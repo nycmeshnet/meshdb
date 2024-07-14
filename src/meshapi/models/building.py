@@ -1,3 +1,5 @@
+from typing import Any
+
 from django.contrib.postgres.fields import ArrayField
 from django.core.validators import MinValueValidator
 from django.db import models
@@ -6,6 +8,7 @@ from django_jsonform.models.fields import ArrayField as JSONFormArrayField
 from meshdb.utils.spreadsheet_import.building.constants import AddressTruthSource
 
 from .node import Node
+from .util.custom_many_to_many import CustomColumnNameManyToManyField
 
 
 class Building(models.Model):
@@ -48,8 +51,8 @@ class Building(models.Model):
             choices=list((src.value, src.name) for src in AddressTruthSource),
         ),
         help_text="A list of strings that answers the question: How was the content of"
-        "the street address, city, state, and ZIP fields determined? This is useful in understanding the level of validation "
-        "applied to spreadsheet imported data. Possible values are: "
+        "the street address, city, state, and ZIP fields determined? This is useful in "
+        "understanding the level of validation applied to spreadsheet imported data. Possible values are: "
         f"{', '.join(src.value for src in AddressTruthSource)}. Check the import script for details",
     )
 
@@ -63,9 +66,9 @@ class Building(models.Model):
         blank=True,
         null=True,
         help_text="A free-form text description of this building, to track any additional information. "
-        "For Buidings imported from the spreadsheet, this starts with a formatted block of information about the import process"
-        "and original spreadsheet data. However this structure can be changed by admins at any time and should not be relied on"
-        "by automated systems. ",
+        "For Buidings imported from the spreadsheet, this starts with a formatted block of information about "
+        "the import process and original spreadsheet data. However this structure can be changed by admins at "
+        "any time and should not be relied on by automated systems. ",
     )
     panoramas = JSONFormArrayField(
         models.URLField(),
@@ -79,27 +82,30 @@ class Building(models.Model):
         Node,
         on_delete=models.PROTECT,
         related_name="+",  # Don't allow reverse access, since this will be included via nodes below
+        db_column="primary_network_number",
         help_text="The primary node for this Building, for cases where it has more than one. This is the node "
         "bearing the network number that the building is collquially referred to by volunteers and is "
         "usually the first NN held by any equipment on the building. If present, this must also be included in nodes",
         blank=True,
         null=True,
     )
-    nodes = models.ManyToManyField(
+    nodes = CustomColumnNameManyToManyField(
         Node,
+        db_from_column_name="building_id",
+        db_to_column_name="network_number",
         help_text="All nodes located on the same structure (i.e. a discrete man-made place identified by the same BIN) "
         "that this Building is located within.",
         related_name="buildings",
     )
 
-    def save(self, *args, **kwargs):
+    def save(self, *args: Any, **kwargs: Any) -> None:
         super().save(*args, **kwargs)
 
         # Ensure primary_node is always contained in nodes
         if self.primary_node and self.primary_node not in self.nodes.all():
             self.nodes.add(self.primary_node)
 
-    def __str__(self):
+    def __str__(self) -> str:
         if self.street_address:
             addr_str = str(self.street_address)
             if self.city:

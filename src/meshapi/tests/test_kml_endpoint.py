@@ -81,6 +81,9 @@ class TestKMLEndpoint(TestCase):
         s3_building, sn3_install, sn3, sn3_omni = create_building_install_node_and_device(fake_member, 713)
         brian_building, brian_install, brian, brian_omni = create_building_install_node_and_device(fake_member, 3)
         random_building, random_install, random, random_omni = create_building_install_node_and_device(fake_member, 123)
+        dead_building, dead_install, dead, dead_omni = create_building_install_node_and_device(fake_member, 888)
+        dead_omni.status = Device.DeviceStatus.INACTIVE
+        dead_omni.save()
 
         links.append(
             Link(
@@ -97,7 +100,7 @@ class TestKMLEndpoint(TestCase):
                 from_device=sn1_omni,
                 to_device=grand_omni,
                 status=Link.LinkStatus.ACTIVE,
-                type=Link.LinkType.MMWAVE,
+                type=Link.LinkType.SIXTY_GHZ,
             )
         )
 
@@ -106,7 +109,7 @@ class TestKMLEndpoint(TestCase):
                 from_device=sn1_omni,
                 to_device=brian_omni,
                 status=Link.LinkStatus.ACTIVE,
-                type=Link.LinkType.STANDARD,
+                type=Link.LinkType.FIVE_GHZ,
             )
         )
 
@@ -124,7 +127,17 @@ class TestKMLEndpoint(TestCase):
                 from_device=grand_omni,
                 to_device=random_omni,
                 status=Link.LinkStatus.PLANNED,
-                type=Link.LinkType.STANDARD,
+                type=Link.LinkType.FIVE_GHZ,
+            )
+        )
+
+        # Should show up as inactive because dead_omni is inactive
+        links.append(
+            Link(
+                from_device=dead_omni,
+                to_device=random_omni,
+                status=Link.LinkStatus.ACTIVE,
+                type=Link.LinkType.FIVE_GHZ,
             )
         )
 
@@ -141,7 +154,7 @@ class TestKMLEndpoint(TestCase):
         assert len(kml_tree[0]) == 6  # 4 styles and 2 folders
         assert len(kml_tree[0][4]) == 3  # "Active" and "Inactive" node folders + 1 for "name" tag
         assert len(kml_tree[0][4][1]) == 7  # 5 borough folders and "Other" + 1 for "name" tag
-        assert len(kml_tree[0][4][1][6]) == 13  # 6 installs and 6 NNs, all in the "Other" folder + 1 for "name" tag
+        assert len(kml_tree[0][4][1][6]) == 15  # 7 installs and 7 NNs, all in the "Other" folder + 1 for "name" tag
         assert len(kml_tree[0][5]) == 3  # "Active" and "Inactive" link folders + 1 for "name" tag
         assert len(kml_tree[0][5][1]) == 5  # 4 active links + 1 for "name" tag
-        assert len(kml_tree[0][5][2]) == 2  # 1 inactive links + 1 for "name" tag
+        assert len(kml_tree[0][5][2]) == 3  # 1 inactive links + 1 for "name" tag

@@ -70,5 +70,11 @@
      </tbody>
    </table>
 </fieldset>
+  <!--TODO: Add collapsible menu to add existing buildings...?-->
+  <div>
+    {% if inline_admin_formset.opts.add_button %}
+      <a href="{{ request.scheme }}://{{ request.get_host }}{% url 'admin:meshapi_building_add' %}?primary_node={{ inline_admin_formset.opts.network_number }}" class="addlink">Add</a>
+    {% endif %}
+  </div>
   </div>
 </div>

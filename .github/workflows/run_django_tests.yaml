@@ -3,12 +3,14 @@ name: Run Django Tests
 on: 
   pull_request:
 
+permissions: read-all
+
 jobs:
   run-django-tests:
     runs-on: ubuntu-latest
     services:
       postgres:
-        image: postgres:latest
+        image: docker.io/postgres:15-bookworm
         env:
           POSTGRES_DB: nycmesh-dev
           POSTGRES_USER: nycmesh

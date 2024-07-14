@@ -1,0 +1,26 @@
+.main-carousel {
+  width:100%;
+  min-height:fit-content;
+  max-height:300px;
+}
+.carousel-cell {
+  width: 100%; /* full width */
+  height: 200px;
+  /* center images in cells with flexbox */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 10px;
+}
+
+.carousel-cell img {
+  display: block;
+}
+
+.no-panos {
+  display:flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 5px;
+}
+

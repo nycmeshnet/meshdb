@@ -1,3 +1,6 @@
+from argparse import ArgumentParser
+from typing import Any
+
 from django.contrib.auth.models import Group, Permission
 from django.core.management.base import BaseCommand
 
@@ -5,10 +8,10 @@ from django.core.management.base import BaseCommand
 class Command(BaseCommand):
     help = "Creates basic MeshDB groups"
 
-    def add_arguments(self, parser):
+    def add_arguments(self, parser: ArgumentParser) -> None:
         pass
 
-    def handle(self, *args, **options):
+    def handle(self, *args: Any, **options: Any) -> None:
         models = [
             "building",
             "member",
@@ -18,7 +21,6 @@ class Command(BaseCommand):
             "link",
             "sector",
         ]
-        groups = ["admin", "installer", "readonly"]
         all_permissions = Permission.objects.all()
 
         admin, _ = Group.objects.get_or_create(name="Admin")

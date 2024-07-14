@@ -22,6 +22,10 @@ services:
   redis:
     healthcheck:
       test: [ "CMD", "redis-cli", "--raw", "incr", "ping" ]
+      interval: 3s
+      timeout: 3s
+      retries: 3
+      start_period: 1s
     networks:
       - api
     ports:
@@ -52,10 +56,10 @@ services:
          condition: service_healthy
     healthcheck:
       test: curl http://127.0.0.1:8081/api/v1
-      interval: 2s
-      timeout: 1s
+      interval: 3s
+      timeout: 3s
       retries: 3
-      start_period: 2s
+      start_period: 4s
     networks:
       - api
     env_file:
@@ -63,6 +67,9 @@ services:
     volumes:
       - static_files:/opt/meshdb/static
     image: willnilges/meshdb:main
+    build:
+      context: .
+      dockerfile: ./Dockerfile
 
   nginx:
     depends_on:

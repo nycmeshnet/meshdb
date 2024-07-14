@@ -1,5 +1,15 @@
-<div style='display:flex; flex-direction: row; width:100%; overflow-x:auto; max-height:300px; padding-left: 10px;'>
-	{% for panorama in widget.value %}
-		<img src="{{ panorama }}" height="300px"/>
-	{% endfor %}
+<!--https://flickity.metafizzy.co/-->
+<!--integrity generated with https://www.srihash.org/-->
+
+<div class="main-carousel" data-flickity='{ "wrapAround": true }'>
+  {% if widget.value|length == 0 %}
+  <div class="no-panos">
+  	<p>There are no panoramas.</p>
+  </div>
+  {% endif %}
+  {% for panorama in widget.value %}
+  <div class="carousel-cell">
+  	<a href="{{ panorama }}" target="_blank"><img src="{{ panorama }}"/></a>
+  </div>
+  {% endfor %}
 </div>
