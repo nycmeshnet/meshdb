@@ -6,11 +6,13 @@ metadata:
   labels:
     {{- include "meshdb.labels" . | nindent 4 }}
 spec:
+  type: NodePort
   ports:
     - port: {{ .Values.nginx.port }}
       targetPort: {{ .Values.nginx.port }}
       protocol: TCP
       name: nginx
+      nodePort: 30303
   selector:
     app: meshdb-nginx-app
 ---

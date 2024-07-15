@@ -25,7 +25,7 @@ terraform apply -var-file=your_env.tfvars
 ```
 cd meshdb/infra/ansible
 ansible-galaxy collection install cloud.terraform
-ansible-playbook meshdb.yaml
+ansible-playbook -i inventory.yaml meshdb.yaml
 ```
 
 5. Install the `meshdb-cluster` chart.
@@ -34,11 +34,12 @@ ansible-playbook meshdb.yaml
 cd meshdb/infra/helm/meshdb-cluster
 # Modify values.yaml to meet your needs
 helm template . -f values.yaml > meshdb-cluster.yaml
-kubectl apply -f meshdb-cluster.yaml
+kubectl apply --kubeconfig='../../tf/k3s.yaml' -f meshdb-cluster.yaml
+# Watch everything come up
+kubectl get all --kubeconfig='../../tf/k3s.yaml' --namespace longhorn-system
 ```
 
-5. Install the `meshdb` chart. Create and update values + secrets in `values.yaml` and `secret.values.yaml`
-
+5. Create and update values + secrets in `values.yaml` and `secret.values.yaml`
 
 ```
 cd meshdb/infra/helm/meshdb/
@@ -48,24 +49,14 @@ nano secret.values.yaml
 nano values.yaml
 ```
 
-6. Render the helm chart
-
-<!--TODO: Use helm install for everything-->
-<!-- helm install --kubeconfig='../../tf/k3s.yaml' -f values.yaml -f secret.values.yaml meshdb ./ -->
+6. Install the `meshdb` chart.
 
 ```
 cd meshdb/infra/helm/meshdb
-helm template . -f values.yaml -f secret.values.yaml > meshdb.yaml
+helm template . -f secret.values.yaml -f values.yaml > meshdb.yaml
+kubectl apply --kubeconfig='../../tf/k3s.yaml' -f meshdb.yaml
+# Watch everything come up
+kubectl get all --kubeconfig='../../tf/k3s.yaml' --namespace meshdbdev3
 ```
 
-<!--TODO: Have helm create NS and update instns to kubectl apply file-->
-
-7. Deploy MeshDB!
-
-```
-cd meshdb/infra/meshdb
-terraform init
-terraform apply
-```
-
-8. If you need a superuser: `kubectl exec -it -n meshdbdev0 service/meshdb-meshweb bash` and `python manage.py createsuperuser`
+7. If you need a superuser: `kubectl exec -it -n meshdbdev3 service/meshdb-meshweb bash` and `python manage.py createsuperuser`

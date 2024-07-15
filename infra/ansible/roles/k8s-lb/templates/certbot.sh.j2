@@ -1,0 +1,24 @@
+#!/bin/bash
+
+# Renew the cert
+/root/certbot_venv/bin/certbot certonly \
+    --authenticator standalone \
+    --http-01-port 63443 \
+    --text \
+    --expand \
+    --non-interactive \
+    --agree-tos \
+    -m jameso@nycmesh.net \
+    --domain {{ MESHDB_FQDN }}
+
+# Copy the current full cert chain to haproxy config location
+CERTS_DIR="/etc/haproxy/ssl"
+if [ ! -d "$CERTS_DIR" ]; then
+    mkdir -p "$CERTS_DIR"
+fi
+
+cat /etc/letsencrypt/live/{{ MESHDB_FQDN }}/fullchain.pem > $CERTS_DIR/{{ MESHDB_FQDN }}.pem
+cat /etc/letsencrypt/live/{{ MESHDB_FQDN }}/privkey.pem > $CERTS_DIR/{{ MESHDB_FQDN }}.pem.key
+
+# Reload the service
+service haproxy reload

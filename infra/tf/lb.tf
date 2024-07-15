@@ -1,5 +1,5 @@
 resource "proxmox_vm_qemu" "k8s-lb" {
-  name        = "k8s-lb"
+  name        = "k8s-lb-${var.meshdb_env_name}"
   desc        = "router and lb for k8s"
   target_node = var.meshdb_proxmox_node
 

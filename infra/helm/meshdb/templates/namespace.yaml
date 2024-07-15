@@ -1,9 +1,9 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: meshdb
+  name: {{ .Values.meshdb_app_namespace }}
   labels:
-    name: meshdb
+    name: {{ .Values.meshdb_app_namespace }}
 spec:
   finalizers:
   - kubernetes

@@ -80,3 +80,8 @@ variable "meshdb_external_ip" {
   type        = string
   description = "external ip for meshdb, assigned to the lb vm"
 }
+
+variable "meshdb_fqdn" {
+  type        = string
+  description = "fqdn meshdb should be responding to"
+}

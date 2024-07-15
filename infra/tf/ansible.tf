@@ -24,13 +24,14 @@ resource "ansible_group" "lb" {
     ansible_ssh_private_key_file = "../tf/${path.module}/meshdb${var.meshdb_env_name}"
     ansible_ssh_common_args      = "-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no"
     EXTERNAL_LISTEN_IP           = var.meshdb_external_ip
-    LB_HOSTNAME                  = "k8s-lb"
-    INTERNAL_NETWORK_BLOCK : format("%s/%s", var.meshdb_net_block, var.meshdb_networkrange)
-    INTERNAL_NETWORK_RANGE : var.meshdb_networkrange
-    NODE_IP_1 : var.meshdb_ips[0]
-    NODE_IP_2 : var.meshdb_ips[1]
-    NODE_IP_3 : var.meshdb_ips[2]
-    NODE_PORT = "32192"
+    LB_HOSTNAME                  = "k8s-lb-${var.meshdb_env_name}"
+    INTERNAL_NETWORK_BLOCK       = format("%s/%s", var.meshdb_net_block, var.meshdb_networkrange)
+    INTERNAL_NETWORK_RANGE       = var.meshdb_networkrange
+    NODE_IP_1                    = var.meshdb_ips[0]
+    NODE_IP_2                    = var.meshdb_ips[1]
+    NODE_IP_3                    = var.meshdb_ips[2]
+    NODE_PORT                    = "30303"
+    MESHDB_FQDN                  = var.meshdb_fqdn
   }
 }
 
