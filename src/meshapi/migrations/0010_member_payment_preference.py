@@ -3,6 +3,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
     dependencies = [
         ("meshapi", "0009_member_additional_phone_numbers_alter_member_phone_number"),
+    ]
 
     operations = [
         migrations.AddField(
