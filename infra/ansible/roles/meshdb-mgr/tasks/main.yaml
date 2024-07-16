@@ -1,0 +1,27 @@
+- name: Install git
+  ansible.builtin.apt:
+    pkg:
+      - git
+      - curl
+    update_cache: true
+  become: true
+
+- name: Git checkout
+  ansible.builtin.git:
+    repo: "https://github.com/nycmeshnet/meshdb.git"
+    dest: /root/meshdb
+    version: main
+  become: true
+
+- name: Download helm
+  ansible.builtin.get_url:
+    url: https://get.helm.sh/helm-v3.15.3-linux-amd64.tar.gz
+    dest: /root/helm-v3.15.3-linux-amd64.tar.gz
+    mode: "0600"
+  become: true
+
+- name: Extract install helm
+  ansible.builtin.command:
+    cmd: "bash -c 'mkdir -p /root/helm_extracted && tar -xzf /root/helm-v3.15.3-linux-amd64.tar.gz -C /root/helm_extracted && cp /root/helm_extracted/linux-amd64/helm /usr/bin/helm && chmod +x /usr/bin/helm'"
+    creates: /usr/bin/helm
+  become: true

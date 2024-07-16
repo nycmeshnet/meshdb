@@ -2,6 +2,10 @@
   roles:
     - role: meshdb-k8s-node
 
+- hosts: mgrs 
+  roles:
+    - role: meshdb-mgr
+
 - hosts: lb
   roles:
     - role: k8s-lb
