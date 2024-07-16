@@ -89,4 +89,4 @@ jobs:
         sudo ip link set up dev wg1
 
     - name: Pull new Docker image
-      run: ssh ${{ secrets.DEV3_SSH_USER }}@${{ secrets.DEV3_TARGET_IP }} "cd ${{ secrets.DEV3_PROJECT_PATH }} && git pull && cd infra/helm/meshdb && helm template . -f ../../../../values.yaml -f  ../../../../secret.values.yaml | kubectl apply -f -"
+      run: ssh ${{ secrets.DEV3_SSH_USER }}@${{ secrets.DEV3_TARGET_IP }} "sudo bash -c 'cd ${{ secrets.DEV3_PROJECT_PATH }} && git pull && cd infra/helm/meshdb && helm template . -f ../../../../values.yaml -f  ../../../../secret.values.yaml | kubectl apply -f -'"
