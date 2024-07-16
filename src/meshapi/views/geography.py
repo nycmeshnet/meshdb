@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Dict, List, Optional, Tuple
 
 from django.db.models import F, Q
 from django.db.models.functions import Greatest
@@ -10,6 +10,8 @@ from fastkml.enums import AltitudeMode
 from pygeoif import LineString, Point
 from rest_framework import permissions, status
 from rest_framework.negotiation import BaseContentNegotiation
+from rest_framework.parsers import BaseParser
+from rest_framework.renderers import BaseRenderer
 from rest_framework.views import APIView
 
 from meshapi.models import Install, Link
@@ -34,22 +36,27 @@ CITY_FOLDER_MAP = {
 
 
 class IgnoreClientContentNegotiation(BaseContentNegotiation):
-    def select_parser(self, request, parsers):
+    def select_parser(self, request: HttpRequest, parsers: List[BaseParser]) -> BaseParser:  # type: ignore[override]
         """
         Select the first parser in the `.parser_classes` list.
         """
         return parsers[0]
 
-    def select_renderer(self, request, renderers, format_suffix=None):
+    def select_renderer(
+        self,
+        request: HttpRequest,
+        renderers: List[BaseRenderer],  # type: ignore[override]
+        format_suffix: Optional[str] = None,
+    ) -> Tuple[BaseRenderer, str]:
         """
         Select the first renderer in the `.renderer_classes` list.
         """
-        return (renderers[0], renderers[0].media_type)
+        return renderers[0], renderers[0].media_type
 
 
 def create_placemark(identifier: str, point: Point, active: bool, status: str, roof_access: bool) -> kml.Placemark:
     placemark = kml.Placemark(
-        name=str(identifier),
+        name=identifier,
         style_url=styles.StyleUrl(url="#red_dot" if active else "#grey_dot"),
         kml_geometry=geometry.Point(
             geometry=point,
@@ -58,10 +65,10 @@ def create_placemark(identifier: str, point: Point, active: bool, status: str, r
     )
 
     extended_data = {
-        "name": str(identifier),
+        "name": identifier,
         "roofAccess": str(roof_access),
         "marker-color": ACTIVE_COLOR if active else INACTIVE_COLOR,
-        "id": str(identifier),
+        "id": identifier,
         "status": status,
         # Leave disabled, notes can leak a lot of information & this endpoint is public
         # "notes": install.notes,
@@ -146,8 +153,8 @@ class WholeMeshKML(APIView):
         inactive_links_folder = kml.Folder(name="Inactive")
         links_folder.append(inactive_links_folder)
 
-        active_folder_map: Dict[str, kml.Folder] = {}
-        inactive_folder_map: Dict[str, kml.Folder] = {}
+        active_folder_map: Dict[Optional[str], kml.Folder] = {}
+        inactive_folder_map: Dict[Optional[str], kml.Folder] = {}
 
         for city_name, folder_name in CITY_FOLDER_MAP.items():
             active_folder_map[city_name] = kml.Folder(name=folder_name)
@@ -174,7 +181,7 @@ class WholeMeshKML(APIView):
             folder = folder_map[install.building.city if install.building.city in folder_map.keys() else None]
 
             install_placemark = create_placemark(
-                install.install_number,
+                str(install.install_number),
                 Point(
                     install.building.longitude,
                     install.building.latitude,
@@ -190,7 +197,7 @@ class WholeMeshKML(APIView):
             # this makes searching much easier
             if install.node and install.node.network_number not in mapped_nns:
                 node_placemark = create_placemark(
-                    install.node.network_number,
+                    str(install.node.network_number),
                     Point(
                         install.node.longitude,
                         install.node.latitude,

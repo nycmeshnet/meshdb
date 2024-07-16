@@ -1,7 +1,8 @@
 import json
 from textwrap import dedent
-from typing import Dict, Optional
+from typing import Any, Dict, List, Optional
 
+from django.http import HttpRequest, HttpResponse
 from django.urls import reverse
 from drf_spectacular.authentication import SessionScheme
 from drf_spectacular.settings import spectacular_settings
@@ -12,7 +13,7 @@ from drf_spectacular.views import SpectacularSwaggerView
 
 class SpectacularSwaggerInjectVarsView(SpectacularSwaggerView):
     @extend_schema(exclude=True)
-    def get(self, request, *args, **kwargs):
+    def get(self, request: HttpRequest, *args: List[Any], **kwargs: Dict[str, Any]) -> HttpResponse:
         spectacular_settings.DESCRIPTION = (
             "Programmatic access to mesh core data, detailing our installs, members, etc. "
             '\n\nTo use an authorization token, use the "Authorize" button, and under "tokenAuth" enter '
@@ -74,7 +75,7 @@ query_form_password_param = OpenApiParameter(
 )
 
 
-def map_query_filters_to_param_annotations(query_filters: Dict[str, Optional[str]]):
+def map_query_filters_to_param_annotations(query_filters: Dict[str, Optional[str]]) -> List[OpenApiParameter]:
     param_annotations = []
     for param_name, filter_strategy in query_filters.items():
         filter_strategy_human_readable = {

@@ -1,8 +1,11 @@
+from typing import Any, Optional
+
 from django.contrib import admin
-from django.db.models import Q
+from django.db.models import Model, Q, QuerySet
+from django.http import HttpRequest
 from nonrelated_inlines.admin import NonrelatedTabularInline
 
-from meshapi.models import Building, Device, Install, Link, Sector
+from meshapi.models import Building, Device, Install, Link, Node, Sector
 
 
 # Inline with the typical rules we want + Formatting
@@ -11,7 +14,7 @@ class BetterInline(admin.TabularInline):
     can_delete = False
     template = "admin/install_tabular.html"
 
-    def has_add_permission(self, request, obj) -> bool:
+    def has_add_permission(self, request: HttpRequest, obj: Optional[Any]) -> bool:  # type: ignore[override]
         return False
 
     class Media:
@@ -25,10 +28,10 @@ class BetterNonrelatedInline(NonrelatedTabularInline):
     can_delete = False
     template = "admin/install_tabular.html"
 
-    def has_add_permission(self, request, obj) -> bool:
+    def has_add_permission(self, request: HttpRequest, obj: Model) -> bool:
         return False
 
-    def save_new_instance(self, parent, instance):
+    def save_new_instance(self, parent: Any, instance: Any) -> None:
         pass
 
     class Media:
@@ -44,14 +47,14 @@ class PanoramaInline(BetterNonrelatedInline):
     readonly_fields = fields
     template = "admin/node_panorama_viewer.html"
 
-    all_panoramas = []
+    all_panoramas: dict[str, list[Any]] = {}
 
-    def get_form_queryset(self, obj):
+    def get_form_queryset(self, obj: Node) -> QuerySet[Building]:
         buildings = self.model.objects.filter(nodes=obj)
-        self.all_panoramas = []
+        panoramas = []
         for b in buildings:
-            self.all_panoramas += b.panoramas
-        self.all_panoramas = {"value": self.all_panoramas}
+            panoramas += b.panoramas
+        self.all_panoramas = {"value": panoramas}
         return buildings
 
     class Media:
@@ -71,7 +74,7 @@ class NonrelatedBuildingInline(BetterNonrelatedInline):
     # Hack to get the NN
     network_number = None
 
-    def get_form_queryset(self, obj):
+    def get_form_queryset(self, obj: Node) -> QuerySet[Building]:
         self.network_number = obj.pk
         return self.model.objects.filter(nodes=obj)
 
@@ -88,9 +91,9 @@ class BuildingMembershipInline(admin.TabularInline):
 class DeviceInline(BetterInline):
     model = Device
     fields = ["status", "type", "model"]
-    readonly_fields = fields
+    readonly_fields = fields  # type: ignore[assignment]
 
-    def get_queryset(self, request):
+    def get_queryset(self, request: HttpRequest) -> QuerySet[Device]:
         # Get the base queryset
         queryset = super().get_queryset(request)
         # Filter out sectors
@@ -103,7 +106,7 @@ class NodeLinkInline(BetterNonrelatedInline):
     fields = ["status", "type", "from_device", "to_device"]
     readonly_fields = fields
 
-    def get_form_queryset(self, obj):
+    def get_form_queryset(self, obj: Node) -> QuerySet[Link]:
         from_device_q = Q(from_device__in=obj.devices.all())
         to_device_q = Q(to_device__in=obj.devices.all())
         all_links = from_device_q | to_device_q
@@ -115,7 +118,7 @@ class DeviceLinkInline(BetterNonrelatedInline):
     fields = ["status", "type", "from_device", "to_device"]
     readonly_fields = fields
 
-    def get_form_queryset(self, obj):
+    def get_form_queryset(self, obj: Link) -> QuerySet[Link]:
         from_device_q = Q(from_device=obj)
         to_device_q = Q(to_device=obj)
         all_links = from_device_q | to_device_q
@@ -125,11 +128,11 @@ class DeviceLinkInline(BetterNonrelatedInline):
 class SectorInline(BetterInline):
     model = Sector
     fields = ["status", "type", "model"]
-    readonly_fields = fields
+    readonly_fields = fields  # type: ignore[assignment]
 
 
 # This controls the list of installs reverse FK'd to Buildings and Members
 class InstallInline(BetterInline):
     model = Install
     fields = ["status", "node", "member", "building", "unit"]
-    readonly_fields = fields
+    readonly_fields = fields  # type: ignore[assignment]
