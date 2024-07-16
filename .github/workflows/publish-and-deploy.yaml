@@ -66,7 +66,7 @@ jobs:
   
   deploy_to_dev0:
     name: Deploy to dev3
-    needs: push_to_registry
+    #needs: push_to_registry
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/james/in_fra_ception'
     steps:
