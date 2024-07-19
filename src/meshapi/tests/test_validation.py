@@ -58,7 +58,7 @@ class TestValidationNYCAddressInfo(TestCase):
         assert nyc_addr_info.zip == 10002
         assert nyc_addr_info.longitude == -73.98492
         assert nyc_addr_info.latitude == 40.716245
-        assert nyc_addr_info.altitude == 200.0
+        assert nyc_addr_info.altitude == 61.0
         assert nyc_addr_info.bin == 1234
 
     @patch("meshapi.validation.requests.get")
