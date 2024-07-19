@@ -16,18 +16,24 @@ from meshdb.utils.spreadsheet_import.csv_load import SpreadsheetLink, Spreadshee
 from meshdb.utils.spreadsheet_import.fetch_uisp import download_uisp_links
 
 
-def convert_spreadsheet_link_type(status: SpreadsheetLinkStatus) -> Link.LinkType:
+def convert_spreadsheet_link_type(status: SpreadsheetLinkStatus, notes: Optional[str] = None) -> Link.LinkType:
     link_type = None
     if status in [
         SpreadsheetLinkStatus.active,
     ]:
-        link_type = models.Link.LinkType.STANDARD
+        link_type = models.Link.LinkType.FIVE_GHZ
     elif status == SpreadsheetLinkStatus.vpn:
         link_type = models.Link.LinkType.VPN
     elif status == SpreadsheetLinkStatus.sixty_ghz:
-        link_type = models.Link.LinkType.MMWAVE
+        link_type = models.Link.LinkType.SIXTY_GHZ
     elif status == SpreadsheetLinkStatus.fiber:
         link_type = models.Link.LinkType.FIBER
+
+    if notes and "siklu" in notes.lower():
+        link_type = Link.LinkType.SEVENTY_EIGHTY_GHZ
+
+    if notes and "24" in notes:
+        link_type = Link.LinkType.TWENTYFOUR_GHZ
 
     return link_type
 
@@ -100,11 +106,13 @@ def create_link(spreadsheet_link: SpreadsheetLink, from_node: Node, to_node: Nod
     to_device = get_representative_device_for_node(to_node, spreadsheet_link.status)
 
     link_notes = "\n".join([spreadsheet_link.notes, spreadsheet_link.comments]).strip()
+    link_type = convert_spreadsheet_link_type(spreadsheet_link.status, link_notes)
+
     link = models.Link(
         from_device=from_device,
         to_device=to_device,
         status=convert_spreadsheet_link_status(spreadsheet_link.status),
-        type=convert_spreadsheet_link_type(spreadsheet_link.status),
+        type=link_type,
         install_date=spreadsheet_link.install_date,
         abandon_date=spreadsheet_link.abandon_date,
         description=spreadsheet_link.where_to_where if spreadsheet_link.where_to_where else None,
@@ -158,12 +166,19 @@ def load_links_supplement_with_uisp(spreadsheet_links: List[SpreadsheetLink]):
             status = Link.LinkStatus.INACTIVE
 
         if uisp_link["type"] == "wireless":
-            if uisp_link["frequency"] and uisp_link["frequency"] > 8_000:
-                type = Link.LinkType.MMWAVE
+            if uisp_link["frequency"]:
+                if uisp_link["frequency"] < 7_000:
+                    type = Link.LinkType.FIVE_GHZ
+                elif uisp_link["frequency"] < 40_000:
+                    type = Link.LinkType.TWENTYFOUR_GHZ
+                elif uisp_link["frequency"] < 70_000:
+                    type = Link.LinkType.SIXTY_GHZ
+                else:
+                    type = Link.LinkType.SEVENTY_EIGHTY_GHZ
             else:
-                type = Link.LinkType.STANDARD
+                type = Link.LinkType.FIVE_GHZ
         elif uisp_link["type"] == "ethernet":
-            type = Link.LinkType.STANDARD
+            type = Link.LinkType.ETHERNET
         elif uisp_link["type"] == "pon":
             type = Link.LinkType.FIBER
         else:
@@ -216,10 +231,12 @@ def load_links_supplement_with_uisp(spreadsheet_links: List[SpreadsheetLink]):
             for link in existing_links:
                 link.status = convert_spreadsheet_link_status(spreadsheet_link.status)
                 link.install_date = spreadsheet_link.install_date
-                if link.type == Link.LinkType.STANDARD:
+                if link.type == Link.LinkType.FIVE_GHZ:
                     # If UISP indicates a special type of link, keep that.
                     # Otherwise, defer to the spreadsheet
-                    link.type = convert_spreadsheet_link_type(spreadsheet_link.status) or Link.LinkType.STANDARD
+                    link.type = (
+                        convert_spreadsheet_link_type(spreadsheet_link.status, link_notes) or Link.LinkType.FIVE_GHZ
+                    )
                 link.abandon_date = spreadsheet_link.abandon_date
                 link.description = spreadsheet_link.where_to_where if spreadsheet_link.where_to_where else None
                 link.notes = link_notes if link_notes else None
