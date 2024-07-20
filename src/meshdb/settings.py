@@ -75,6 +75,7 @@ CSRF_TRUSTED_ORIGINS = [
     "http://nginx:8080",
     "http://devdb.mesh.nycmesh.net",
     "https://devdb.mesh.nycmesh.net",
+    "https://db.mesh.nycmesh.net",
 ]
 
 # Application definition
