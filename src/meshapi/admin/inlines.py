@@ -1,7 +1,7 @@
 from typing import Any, Optional
 
-import django.db.models
 from django.contrib import admin
+from django.contrib.admin import AdminSite
 from django.db.models import Model, Q, QuerySet
 from django.http import HttpRequest
 from nonrelated_inlines.admin import NonrelatedTabularInline
@@ -139,8 +139,8 @@ class InstallInline(BetterInline):
     fields = ["status", "node", "member", "building", "unit"]
     readonly_fields = fields  # type: ignore[assignment]
 
-    def __init__(self, model: Model, *args, **kwargs):
-        super().__init__(model, *args, **kwargs)
+    def __init__(self, model: type[Any], admin_site: AdminSite):
+        super().__init__(model, admin_site)
 
         self.add_button = False
         self.reverse_relation = None
