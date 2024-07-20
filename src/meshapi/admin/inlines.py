@@ -1,11 +1,12 @@
 from typing import Any, Optional
 
+import django.db.models
 from django.contrib import admin
 from django.db.models import Model, Q, QuerySet
 from django.http import HttpRequest
 from nonrelated_inlines.admin import NonrelatedTabularInline
 
-from meshapi.models import Building, Device, Install, Link, Node, Sector
+from meshapi.models import Building, Device, Install, Link, Member, Node, Sector
 
 
 # Inline with the typical rules we want + Formatting
@@ -70,6 +71,7 @@ class NonrelatedBuildingInline(BetterNonrelatedInline):
     readonly_fields = fields
 
     add_button = True
+    reverse_relation = "primary_node"
 
     # Hack to get the NN
     network_number = None
@@ -136,3 +138,19 @@ class InstallInline(BetterInline):
     model = Install
     fields = ["status", "node", "member", "building", "unit"]
     readonly_fields = fields  # type: ignore[assignment]
+
+    def __init__(self, model: Model, *args, **kwargs):
+        super().__init__(model, *args, **kwargs)
+
+        self.add_button = False
+        self.reverse_relation = None
+
+        if model == Building:
+            self.add_button = True
+            self.reverse_relation = "building"
+        elif model == Node:
+            self.add_button = True
+            self.reverse_relation = "node"
+        elif model == Member:
+            self.add_button = True
+            self.reverse_relation = "member"
