@@ -23,9 +23,10 @@ def translate_spreadsheet_status_to_db_status(
         return models.Install.InstallStatus.ACTIVE
     elif status in {
         SpreadsheetStatus.poweredOff,
-        SpreadsheetStatus.nnAssigned,
     }:
         return models.Install.InstallStatus.INACTIVE
+    elif status in {SpreadsheetStatus.nnAssigned}:
+        return models.Install.InstallStatus.NN_REASSIGNED
     elif status in {
         SpreadsheetStatus.abandoned,
         SpreadsheetStatus.notInterested,
