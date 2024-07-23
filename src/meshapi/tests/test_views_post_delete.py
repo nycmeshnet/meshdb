@@ -91,8 +91,8 @@ class TestViewsPostDeleteInstaller(TestCase):
         member.refresh_from_db()
         assert member.name == "Chom2"
 
-        sample_building_changed = sample_member.copy()
-        sample_building_changed["node_name"] = "Chom2"
+        sample_building_changed = sample_building.copy()
+        sample_building_changed["zip_code"] = "10001"
         response = self.c.post("/api/v1/buildings/", sample_building_changed)
         assert_correct_response(self, response, 403)
         response = self.c.put(
@@ -100,7 +100,7 @@ class TestViewsPostDeleteInstaller(TestCase):
             sample_building_changed,
             content_type="application/json",
         )
-        assert_correct_response(self, response, 403)
+        assert_correct_response(self, response, 200)
 
         sample_install_changed = sample_install.copy()
         sample_install_changed["install_number"] = install.install_number
