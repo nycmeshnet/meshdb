@@ -1,13 +1,13 @@
 from datetime import datetime
 from typing import Any, Dict, List
 
-from django.db.models import Count, F, OuterRef, Prefetch, Q, Subquery
+from django.db.models import Count, Exists, F, OuterRef, Prefetch, Q, Subquery
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import generics, permissions
 from rest_framework.request import Request
 from rest_framework.response import Response
 
-from meshapi.models import Device, Install, Link, Node, Sector
+from meshapi.models import LOS, Device, Install, Link, Node, Sector
 from meshapi.serializers import (
     ALLOWED_INSTALL_STATUSES,
     EXCLUDED_INSTALL_STATUSES,
@@ -212,6 +212,36 @@ class MapDataLinkList(generics.ListAPIView):
                             )
 
         response.data.extend(cable_runs)
+
+        # Since the old school map has no concept of a LOS, only potential Links, we need to
+        # create a fake potential Link object to represent each of our LOS entries
+        # For our purposes here, we only care about LOS entries between buildings that have
+        # install numbers. If one side of an LOS is a building that has no installs associated with
+        # it, we exclude it
+        los_objects_with_installs = LOS.objects.filter(
+            Exists(Install.objects.filter(building=OuterRef("from_building")))
+            & Exists(Install.objects.filter(building=OuterRef("to_building")))
+            & Q(
+                # TODO: This is a crude way of excluding LOSes that are duplicates of active links.
+                #   In the future we probably want to actually do a database deduplication at call
+                #   time using some kind of JOIN with the links above
+                source=LOS.LOSSource.HUMAN_ANNOTATED
+            )
+        )
+
+        los_based_potential_links = []
+        for los in los_objects_with_installs:
+            for from_install in los.from_building.installs:
+                for to_install in los.to_building.installs:
+                    los_based_potential_links.append(
+                        {
+                            "from": from_install.install_number,
+                            "to": to_install.install_number,
+                            "status": Link.LinkStatus.PLANNED.lower(),
+                        }
+                    )
+
+        response.data.extend(los_based_potential_links)
 
         return response
 
