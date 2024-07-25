@@ -5,7 +5,7 @@ from django.contrib.auth.models import User
 from django.test import Client, TestCase
 
 from ..models import LOS, Building
-from .sample_data import sample_building, sample_device
+from .sample_data import sample_building
 
 
 class TestLOS(TestCase):

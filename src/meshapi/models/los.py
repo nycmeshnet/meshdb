@@ -58,8 +58,9 @@ class LOS(models.Model):
             if building.primary_node:
                 return f"NN{building.primary_node.network_number}"
 
-            if building.installs:
-                return f"#{building.installs.first().install_number}"
+            install = building.installs.first()
+            if install:
+                return f"#{install.install_number}"
 
             return f"MeshDB building ID {building.id}"
 

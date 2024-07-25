@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, TypedDict
 
 from django.db.models import F, Q
 from django.db.models.functions import Greatest
@@ -33,6 +33,17 @@ CITY_FOLDER_MAP = {
     "Staten Island": "Staten Island",
     None: "Other",
 }
+
+LinkKMLDict = TypedDict(
+    "LinkKMLDict",
+    {
+        "link_label": str,
+        "mark_active": bool,
+        "from_coord": Tuple[float, float, float],
+        "to_coord": Tuple[float, float, float],
+        "extended_data": Dict[str, Any],
+    },
+)
 
 
 class IgnoreClientContentNegotiation(BaseContentNegotiation):
@@ -210,7 +221,7 @@ class WholeMeshKML(APIView):
                 folder.append(node_placemark)
                 mapped_nns.add(install.node.network_number)
 
-        kml_links = []
+        kml_links: List[LinkKMLDict] = []
         for link in (
             Link.objects.prefetch_related("from_device")
             .prefetch_related("to_device")
@@ -272,7 +283,7 @@ class WholeMeshKML(APIView):
             .annotate(highest_altitude=Greatest("from_building__altitude", "to_building__altitude"))
             .order_by(F("highest_altitude").asc(nulls_first=True))
         ):
-            link_label: str = f"{str(los.from_building.street_address)} <-> {str(los.to_building.street_address)}"
+            link_label = f"{str(los.from_building.street_address)} <-> {str(los.to_building.street_address)}"
             kml_links.append(
                 {
                     "link_label": link_label,
@@ -299,27 +310,22 @@ class WholeMeshKML(APIView):
                 }
             )
 
-        for link in kml_links:
+        for link_dict in kml_links:
             placemark = kml.Placemark(
-                name=f"Links-{link['link_label']}",
-                style_url=styles.StyleUrl(url="#red_line" if link["mark_active"] else "#grey_line"),
+                name=f"Links-{link_dict['link_label']}",
+                style_url=styles.StyleUrl(url="#red_line" if link_dict["mark_active"] else "#grey_line"),
                 kml_geometry=geometry.LineString(
-                    geometry=LineString(
-                        [
-                            link["from_coord"],
-                            link["to_coord"],
-                        ]
-                    ),
+                    geometry=LineString([link_dict["from_coord"], link_dict["to_coord"]]),
                     altitude_mode=AltitudeMode.absolute,
                     extrude=True,
                 ),
             )
 
             placemark.extended_data = ExtendedData(
-                elements=[Data(name=key, value=val) for key, val in link["extended_data"].items()]
+                elements=[Data(name=key, value=val) for key, val in link_dict["extended_data"].items()]
             )
 
-            if link["mark_active"]:
+            if link_dict["mark_active"]:
                 active_links_folder.append(placemark)
             else:
                 inactive_links_folder.append(placemark)

@@ -1,6 +1,6 @@
 from typing import Any, List, Type
 
-from django.db.models import Exists, Q, QuerySet
+from django.db.models import Q, QuerySet
 from django_filters import rest_framework as filters
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view

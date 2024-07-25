@@ -231,8 +231,8 @@ class MapDataLinkList(generics.ListAPIView):
 
         los_based_potential_links = []
         for los in los_objects_with_installs:
-            for from_install in los.from_building.installs:
-                for to_install in los.to_building.installs:
+            for from_install in los.from_building.installs.all():
+                for to_install in los.to_building.installs.all():
                     los_based_potential_links.append(
                         {
                             "from": from_install.install_number,
