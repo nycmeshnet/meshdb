@@ -17,8 +17,6 @@ jobs:
       - name: Check out the repo
         uses: actions/checkout@v4
 
-      - run: git checkout james/infra_final
-
       - name: Install SSH key
         uses: shimataro/ssh-key-action@d4fffb50872869abe2d9a9098a6d9c5aa7d16be4 # v2
         with:
@@ -43,6 +41,7 @@ jobs:
             sudo bash -c '\
               cd ${{ secrets.PROJECT_PATH }} && \
               git pull && \
+              git checkout james/infra_final && \
               cd infra/helm/meshdb && \
                helm template . -f values.yaml \
                 --set meshdb_app_namespace=\"${{ vars.APP_NAMESPACE }}\" \
