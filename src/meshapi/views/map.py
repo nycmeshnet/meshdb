@@ -50,10 +50,11 @@ class MapDataNodeList(generics.ListAPIView):
         covered_nns = {install.install_number for install in all_installs}
         for node in (
             Node.objects.filter(~Q(status=Node.NodeStatus.INACTIVE) & Q(installs__status__in=ALLOWED_INSTALL_STATUSES))
+            .prefetch_related("devices")
             .prefetch_related(
                 Prefetch(
                     "installs",
-                    queryset=Install.objects.all(),
+                    queryset=Install.objects.all().select_related("building"),
                     to_attr="prefetched_installs",
                 )
             )
@@ -236,32 +237,12 @@ class MapDataLinkList(generics.ListAPIView):
 
         los_based_potential_links = []
         for los in los_objects_with_installs:
-            from_numbers = (
-                los.from_building.installs.all()
-                .values_list(
-                    "install_number",
-                    flat=True,
-                )
-                .union(
-                    los.from_building.nodes.all().values_list(
-                        "network_number",
-                        flat=True,
-                    )
-                )
+            from_numbers = set(i.install_number for i in los.from_building.installs.all()).union(
+                set(n.network_number for n in los.from_building.nodes.all())
             )
 
-            to_numbers = (
-                los.to_building.installs.all()
-                .values_list(
-                    "install_number",
-                    flat=True,
-                )
-                .union(
-                    los.to_building.nodes.all().values_list(
-                        "network_number",
-                        flat=True,
-                    )
-                )
+            to_numbers = set(i.install_number for i in los.to_building.installs.all()).union(
+                set(n.network_number for n in los.to_building.nodes.all())
             )
 
             for from_number in from_numbers:
