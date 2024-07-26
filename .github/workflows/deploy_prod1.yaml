@@ -36,20 +36,23 @@ jobs:
         run: |
           ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_TARGET_IP }} "\
             sudo bash -c '\
-               helm template . -f ../../../../values.yaml \
-                --set meshdb_app_namespace="${{ vars.APP_NAMESPACE }}" \
-                --set nginx.server_name="${{ vars.SERVER_NAME }}" \
-                --set pg.password="${{ secrets.PG_PASSWORD}}" \
-                --set aws.access_key_id="${{ secrets.ACCESS_KEY_ID }}" \
-                --set aws.secret_access_key="${{ secrets.SECRET_ACCESS_KEY }}" \
-                --set meshweb.backup_s3_base_folder="${{ vars.BACKUP_S3_BASE_FOLDER }}" \
-                --set meshweb.meshdb-data-backups="${{ secrets.BACKUP_S3_BUCKET_NAME }}" \
-                --set meshweb.django_secret_key="${{ secrets.DJANKO_SECRET_KEY }}" \
-                --set meshweb.nn_assign_psk="${{ secrets.NN_ASSIGN_PSK }}" \
-                --set meshweb.query_psk="${{ secrets.QUERY_PSK }}" \
-                --set meshweb.pano_github_token="${{ secrets.GH_TOKEN }}" \
-                --set uisp.user="${{ secrets.UISP_USER }}" \
-                --set uisp.psk="${{ secrets.UISP_PSK }}" \
+              cd ${{ secrets.PROJECT_PATH }} && \
+              git pull && \
+              cd infra/helm/meshdb && \
+               helm template . -f values.yaml \
+                --set meshdb_app_namespace=\"${{ vars.APP_NAMESPACE }}\" \
+                --set nginx.server_name=\"${{ vars.SERVER_NAME }}\" \
+                --set pg.password=\"${{ secrets.PG_PASSWORD}}\" \
+                --set aws.access_key_id=\"${{ secrets.ACCESS_KEY_ID }}\" \
+                --set aws.secret_access_key=\"${{ secrets.SECRET_ACCESS_KEY }}\" \
+                --set meshweb.backup_s3_base_folder=\"${{ vars.BACKUP_S3_BASE_FOLDER }}\" \
+                --set meshweb.meshdb-data-backups=\"${{ secrets.BACKUP_S3_BUCKET_NAME }}\" \
+                --set meshweb.django_secret_key=\"${{ secrets.DJANKO_SECRET_KEY }}\" \
+                --set meshweb.nn_assign_psk=\"${{ secrets.NN_ASSIGN_PSK }}\" \
+                --set meshweb.query_psk=\"${{ secrets.QUERY_PSK }}\" \
+                --set meshweb.pano_github_token=\"${{ secrets.GH_TOKEN }}\" \
+                --set uisp.user=\"${{ secrets.UISP_USER }}\" \
+                --set uisp.psk=\"${{ secrets.UISP_PSK }}\" \
                 | kubectl apply -f -\
             '"
 
