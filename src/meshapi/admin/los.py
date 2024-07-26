@@ -8,9 +8,6 @@ class LOSAdminForm(forms.ModelForm):
     class Meta:
         model = LOS
         fields = "__all__"
-        # widgets = {
-        #     "notes": forms.TextInput(),
-        # }
 
 
 @admin.register(LOS)

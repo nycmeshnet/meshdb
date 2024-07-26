@@ -341,5 +341,5 @@ def load_links_supplement_with_uisp(spreadsheet_links: List[SpreadsheetLink]):
 
 
 if __name__ == "__main__":
-    links_path = "spreadsheet_data/New Node Form (Responses) - Links.csv"
+    links_path = "spreadsheet_data/links.csv"
     load_links_supplement_with_uisp(get_spreadsheet_links((links_path)))
