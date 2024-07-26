@@ -17,6 +17,8 @@ jobs:
       - name: Check out the repo
         uses: actions/checkout@v4
 
+      - run: git checkout james/infra_final
+
       - name: Install SSH key
         uses: shimataro/ssh-key-action@d4fffb50872869abe2d9a9098a6d9c5aa7d16be4 # v2
         with:
