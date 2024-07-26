@@ -4,8 +4,8 @@ import json
 from django.contrib.auth.models import User
 from django.test import Client, TestCase
 
-from ..models import LOS, Building
-from .sample_data import sample_building
+from ..models import LOS, Building, Install, Member, Node
+from .sample_data import sample_building, sample_install, sample_member, sample_node
 
 
 class TestLOS(TestCase):
@@ -91,5 +91,28 @@ class TestLOS(TestCase):
         self.assertEqual(response_obj["to_building"], self.building2.id)
         self.assertEqual(response_obj["analysis_date"], self.today.isoformat())
 
+    def test_string_name(self):
+        self.assertEqual(
+            str(self.LOS), f"MeshDB building ID {self.building1.id} → MeshDB building ID {self.building2.id}"
+        )
 
-# TODO: Write tests for the more advanced features we wrote here
+        test_node = Node(**sample_node)
+        test_node.network_number = 123
+        test_node.save()
+
+        self.building1.primary_node = test_node
+        self.building1.save()
+
+        test_member = Member(**sample_member)
+        test_member.save()
+
+        sample_install_minimal = sample_install.copy()
+        del sample_install_minimal["building"]
+        del sample_install_minimal["member"]
+        test_install = Install(**sample_install_minimal)
+        test_install.install_number = 12345
+        test_install.building = self.building2
+        test_install.member = test_member
+        test_install.save()
+
+        self.assertEqual(str(self.LOS), "NN123 → #12345")

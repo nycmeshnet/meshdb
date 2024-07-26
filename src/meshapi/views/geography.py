@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Optional, Tuple, TypedDict
 
-from django.db.models import F, Q
+from django.db.models import Exists, F, OuterRef, Q
 from django.db.models.functions import Greatest
 from django.http import HttpRequest, HttpResponse
 from drf_spectacular.types import OpenApiTypes
@@ -221,6 +221,7 @@ class WholeMeshKML(APIView):
                 folder.append(node_placemark)
                 mapped_nns.add(install.node.network_number)
 
+        all_links_set = set()
         kml_links: List[LinkKMLDict] = []
         for link in (
             Link.objects.prefetch_related("from_device")
@@ -244,6 +245,7 @@ class WholeMeshKML(APIView):
             from_identifier = link.from_device.node.network_number
             to_identifier = link.to_device.node.network_number
 
+            all_links_set.add(tuple(sorted((from_identifier, to_identifier))))
             kml_links.append(
                 {
                     "link_label": link_label,
@@ -273,42 +275,49 @@ class WholeMeshKML(APIView):
 
         for los in (
             LOS.objects.filter(
-                # TODO: This is a crude way of excluding LOSes that are duplicates of active links.
-                #   In the future we probably want to actually do a database deduplication at call
-                #   time using some kind of JOIN with the links above
-                source=LOS.LOSSource.HUMAN_ANNOTATED
+                Exists(Install.objects.filter(building=OuterRef("from_building")))
+                & Exists(Install.objects.filter(building=OuterRef("to_building")))
+                & ~Q(from_building=F("to_building"))
             )
             .prefetch_related("from_building")
+            .prefetch_related("from_building__installs")
             .prefetch_related("to_building")
+            .prefetch_related("to_building__installs")
             .annotate(highest_altitude=Greatest("from_building__altitude", "to_building__altitude"))
             .order_by(F("highest_altitude").asc(nulls_first=True))
         ):
-            link_label = f"{str(los.from_building.street_address)} <-> {str(los.to_building.street_address)}"
-            kml_links.append(
-                {
-                    "link_label": link_label,
-                    "mark_active": False,
-                    "from_coord": (
-                        los.from_building.longitude,
-                        los.from_building.latitude,
-                        los.from_building.altitude or DEFAULT_ALTITUDE,
-                    ),
-                    "to_coord": (
-                        los.to_building.longitude,
-                        los.to_building.latitude,
-                        los.to_building.altitude or DEFAULT_ALTITUDE,
-                    ),
-                    "extended_data": {
-                        "name": f"LOS-{los.id} {link_label}",
-                        "stroke": INACTIVE_COLOR,
-                        "fill": "#000000",
-                        "fill-opacity": "0",
-                        "from": str(los.from_building.street_address),
-                        "to": str(los.to_building.street_address),
-                        "source": los.source,
-                    },
-                }
-            )
+            representative_from_install = min(los.from_building.installs.all().values_list("install_number", flat=True))
+            representative_to_install = min(los.to_building.installs.all().values_list("install_number", flat=True))
+            link_label = f"{representative_from_install}-{representative_to_install}"
+
+            link_tuple = tuple(sorted((representative_from_install, representative_to_install)))
+            if link_tuple not in all_links_set:
+                all_links_set.add(link_tuple)
+                kml_links.append(
+                    {
+                        "link_label": link_label,
+                        "mark_active": False,
+                        "from_coord": (
+                            los.from_building.longitude,
+                            los.from_building.latitude,
+                            los.from_building.altitude or DEFAULT_ALTITUDE,
+                        ),
+                        "to_coord": (
+                            los.to_building.longitude,
+                            los.to_building.latitude,
+                            los.to_building.altitude or DEFAULT_ALTITUDE,
+                        ),
+                        "extended_data": {
+                            "name": f"LOS-{los.id} {link_label}",
+                            "stroke": INACTIVE_COLOR,
+                            "fill": "#000000",
+                            "fill-opacity": "0",
+                            "from": f"#{representative_from_install} ({los.from_building.street_address})",
+                            "to": f"#{representative_to_install} ({los.to_building.street_address})",
+                            "source": los.source,
+                        },
+                    }
+                )
 
         for link_dict in kml_links:
             placemark = kml.Placemark(

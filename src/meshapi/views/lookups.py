@@ -345,19 +345,17 @@ class LOSFilter(filters.FilterSet):
     building = filters.NumberFilter(method="filter_from_to_building_id")
 
     def filter_from_to_network_number(self, queryset: QuerySet[LOS], field_name: str, value: int) -> QuerySet[LOS]:
-        building_ids = Node.objects.get(network_number=value).buildings.values_list("id", flat=True)
-        return queryset.filter(Q(from_building__id__in=building_ids) | Q(to_building__id__in=building_ids))
+        return queryset.filter(Q(from_building__nodes=value) | Q(to_building__nodes=value))
 
     def filter_from_to_install_number(self, queryset: QuerySet[LOS], field_name: str, value: int) -> QuerySet[LOS]:
-        building_id = Install.objects.get(install_number=value).building_id
-        return queryset.filter(Q(from_building__id=building_id) | Q(to_building__id=building_id))
+        return queryset.filter(Q(from_building__installs=value) | Q(to_building__installs=value))
 
     def filter_from_to_building_id(self, queryset: QuerySet[LOS], field_name: str, value: int) -> QuerySet[LOS]:
         return queryset.filter(Q(from_building__id=value) | Q(to_building__id=value))
 
     class Meta:
         model = LOS
-        fields = ["source"]
+        fields = ["source", "analysis_date"]
 
 
 @extend_schema_view(

@@ -1,12 +1,12 @@
 import datetime
 
 from django.test import Client, TestCase
-from lxml import etree
+from fastkml import kml
 
-from meshapi.models import Building, Device, Install, Link, Member, Node
+from meshapi.models import LOS, Building, Device, Install, Link, Member, Node
 
 
-def create_building_install_node_and_device(member_ref, nn):
+def create_building_install_node_and_device(member_ref, nn, install_number=None):
     node = Node(
         network_number=nn,
         status=Node.NodeStatus.ACTIVE,
@@ -25,6 +25,7 @@ def create_building_install_node_and_device(member_ref, nn):
     building.save()
 
     install = Install(
+        install_number=install_number if install_number else nn,
         member=member_ref,
         building=building,
         node=node,
@@ -77,9 +78,12 @@ class TestKMLEndpoint(TestCase):
 
         grand_building, grand_install, grand, grand_omni = create_building_install_node_and_device(fake_member, 1934)
         sn1_building, sn1_install, sn1, sn1_omni = create_building_install_node_and_device(fake_member, 227)
-        sn1_building, sn10_install, sn10, sn10_omni = create_building_install_node_and_device(fake_member, 10)
-        s3_building, sn3_install, sn3, sn3_omni = create_building_install_node_and_device(fake_member, 713)
+        sn10_building, sn10_install, sn10, sn10_omni = create_building_install_node_and_device(fake_member, 10)
+        sn3_building, sn3_install, sn3, sn3_omni = create_building_install_node_and_device(fake_member, 713)
         brian_building, brian_install, brian, brian_omni = create_building_install_node_and_device(fake_member, 3)
+        modern_hub_building, modern_hub_install, modern_hub, modern_hub_omni = create_building_install_node_and_device(
+            fake_member, 431, 14412
+        )
         random_building, random_install, random, random_omni = create_building_install_node_and_device(fake_member, 123)
         dead_building, dead_install, dead, dead_omni = create_building_install_node_and_device(fake_member, 888)
         dead_omni.status = Device.DeviceStatus.INACTIVE
@@ -141,20 +145,95 @@ class TestKMLEndpoint(TestCase):
             )
         )
 
+        los1 = LOS(
+            from_building=grand_building,
+            to_building=sn3_building,
+            source=LOS.LOSSource.HUMAN_ANNOTATED,
+            analysis_date=datetime.date(2022, 1, 26),
+        )
+        los1.save()
+
+        los_duplicate = LOS(
+            from_building=grand_building,
+            to_building=sn3_building,
+            source=LOS.LOSSource.HUMAN_ANNOTATED,
+            analysis_date=datetime.date(2022, 1, 26),
+        )
+        los_duplicate.save()
+
+        link_duplicate_los = LOS(
+            from_building=grand_building,
+            to_building=sn10_building,
+            source=LOS.LOSSource.HUMAN_ANNOTATED,
+            analysis_date=datetime.date(2022, 1, 26),
+        )
+        link_duplicate_los.save()
+
+        building_no_installs = Building(
+            latitude=0,
+            longitude=0,
+            address_truth_sources=[],
+        )
+        building_no_installs.save()
+
+        los_no_installs = LOS(
+            from_building=grand_building,
+            to_building=building_no_installs,
+            source=LOS.LOSSource.HUMAN_ANNOTATED,
+            analysis_date=datetime.date(2022, 1, 26),
+        )
+        los_no_installs.save()
+
+        self_loop_los = LOS(
+            from_building=grand_building,
+            to_building=grand_building,
+            source=LOS.LOSSource.HUMAN_ANNOTATED,
+            analysis_date=datetime.date(2022, 1, 26),
+        )
+        self_loop_los.save()
+
+        los_modern_hub = LOS(
+            from_building=grand_building,
+            to_building=modern_hub_building,
+            source=LOS.LOSSource.EXISTING_LINK,
+            analysis_date=datetime.date(2022, 1, 26),
+        )
+        los_modern_hub.save()
+
         for link in links:
             link.save()
 
         self.maxDiff = None
         response = self.c.get("/api/v1/geography/whole-mesh.kml")
 
-        kml_tree = etree.fromstring(response.content.decode("UTF8"))
+        kml_doc = kml.KML.class_from_string(response.content.decode("UTF8")).features[0]
 
-        # TODO: Actually assert real things here in a less brittle way,
-        #  once fastkml is actually capable of parsing its own outputs
-        assert len(kml_tree[0]) == 6  # 4 styles and 2 folders
-        assert len(kml_tree[0][4]) == 3  # "Active" and "Inactive" node folders + 1 for "name" tag
-        assert len(kml_tree[0][4][1]) == 7  # 5 borough folders and "Other" + 1 for "name" tag
-        assert len(kml_tree[0][4][1][6]) == 15  # 7 installs and 7 NNs, all in the "Other" folder + 1 for "name" tag
-        assert len(kml_tree[0][5]) == 3  # "Active" and "Inactive" link folders + 1 for "name" tag
-        assert len(kml_tree[0][5][1]) == 5  # 4 active links + 1 for "name" tag
-        assert len(kml_tree[0][5][2]) == 3  # 1 inactive links + 1 for "name" tag
+        self.assertEqual(len(kml_doc.styles), 4)
+        self.assertEqual(len(kml_doc.features), 2)
+
+        nodes_folder = kml_doc.features[0]
+        links_folder = kml_doc.features[1]
+
+        self.assertEqual(nodes_folder.name, "Nodes")
+        self.assertEqual(len(nodes_folder.features), 2)
+        self.assertEqual(links_folder.name, "Links")
+        self.assertEqual(len(links_folder.features), 2)
+
+        active_nodes = nodes_folder.features[0]
+        inactive_nodes = nodes_folder.features[1]
+        active_links = links_folder.features[0]
+        inactive_links = links_folder.features[1]
+
+        self.assertEqual(active_nodes.name, "Active")
+        self.assertEqual(inactive_nodes.name, "Inactive")
+        self.assertEqual(active_links.name, "Active")
+        self.assertEqual(inactive_links.name, "Inactive")
+
+        self.assertEqual(len(active_nodes.features), 6)  # 5 Borough folders + "Other"
+        self.assertEqual(len(inactive_nodes.features), 6)  # 5 Borough folders + "Other"
+
+        active_nodes_other = active_nodes.features[5]
+        self.assertEqual(len(active_nodes_other.features), 16)  # 8 installs and 8 NNs
+
+        self.assertEqual(len(active_links.features), 4)
+        self.assertEqual(len(inactive_links.features), 4)  # 2 inactive links + 2 LOSes

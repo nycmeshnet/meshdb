@@ -213,33 +213,69 @@ class MapDataLinkList(generics.ListAPIView):
 
         response.data.extend(cable_runs)
 
+        all_links_set = set()
+        for link in response.data:
+            all_links_set.add(tuple(sorted((link["from"], link["to"]))))
+
         # Since the old school map has no concept of a LOS, only potential Links, we need to
         # create a fake potential Link object to represent each of our LOS entries
         # For our purposes here, we only care about LOS entries between buildings that have
         # install numbers. If one side of an LOS is a building that has no installs associated with
         # it, we exclude it
-        los_objects_with_installs = LOS.objects.filter(
-            Exists(Install.objects.filter(building=OuterRef("from_building")))
-            & Exists(Install.objects.filter(building=OuterRef("to_building")))
-            & Q(
-                # TODO: This is a crude way of excluding LOSes that are duplicates of active links.
-                #   In the future we probably want to actually do a database deduplication at call
-                #   time using some kind of JOIN with the links above
-                source=LOS.LOSSource.HUMAN_ANNOTATED
+        los_objects_with_installs = (
+            LOS.objects.filter(
+                Exists(Install.objects.filter(building=OuterRef("from_building")))
+                & Exists(Install.objects.filter(building=OuterRef("to_building")))
+                & ~Q(from_building=F("to_building"))
             )
+            .prefetch_related("from_building__installs")
+            .prefetch_related("from_building__nodes")
+            .prefetch_related("to_building__installs")
+            .prefetch_related("to_building__nodes")
         )
 
         los_based_potential_links = []
         for los in los_objects_with_installs:
-            for from_install in los.from_building.installs.all():
-                for to_install in los.to_building.installs.all():
-                    los_based_potential_links.append(
-                        {
-                            "from": from_install.install_number,
-                            "to": to_install.install_number,
-                            "status": Link.LinkStatus.PLANNED.lower(),
-                        }
+            from_numbers = (
+                los.from_building.installs.all()
+                .values_list(
+                    "install_number",
+                    flat=True,
+                )
+                .union(
+                    los.from_building.nodes.all().values_list(
+                        "network_number",
+                        flat=True,
                     )
+                )
+            )
+
+            to_numbers = (
+                los.to_building.installs.all()
+                .values_list(
+                    "install_number",
+                    flat=True,
+                )
+                .union(
+                    los.to_building.nodes.all().values_list(
+                        "network_number",
+                        flat=True,
+                    )
+                )
+            )
+
+            for from_number in from_numbers:
+                for to_number in to_numbers:
+                    link_tuple = tuple(sorted((from_number, to_number)))
+                    if link_tuple not in all_links_set:
+                        los_based_potential_links.append(
+                            {
+                                "from": from_number,
+                                "to": to_number,
+                                "status": Link.LinkStatus.PLANNED.lower(),
+                            }
+                        )
+                        all_links_set.add(link_tuple)
 
         response.data.extend(los_based_potential_links)
 
