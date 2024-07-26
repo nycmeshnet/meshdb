@@ -4,59 +4,26 @@ These instructions will set up a 4 node k3s cluster on proxmox.
 - 1 "manager" node for control plane and to be used for deployments.
 - 3 "agent" nodes to run services.
 
-1. Clone this repository
+1. Setup a new cluster via [nycmeshnet/k8s-infra](https://github.com/nycmeshnet/k8s-infra). Get the ssh key of the mgr node via ssh-keyscan.
 
-2. Set up tfvars. See [proxmox provider](https://registry.terraform.io/providers/Telmate/proxmox/latest/docs). Create an API key in Proxmox, and disable Privilege Separation.
-```
-cd meshdb/infra/tf/
-cp example.tfvars your_env.tfvars
-# Modify your_env.tfvars to meet your needs
-bash gen_ssh_key.sh dev0
-```
+2. Create a new "environment" in this repo and add the required secrets to the "environment":
 
-3. Create the k3s cluster
-```
-terraform init -var-file=your_env.tfvars
-terraform plan -var-file=your_env.tfvars
-terraform apply -var-file=your_env.tfvars
-```
+| Name    | Description |
+| -------- | ------- |
+| `PROJECT_PATH`  |  Absolute file system path to the clone of meshdb, likely `/root/meshdb`  |
+| `SSH_KNOWN_HOSTS`  |  Copy paste from `ssh-keyscan <mgr node IP>`  |
+| `SSH_PRIVATE_KEY`  | SSH key for the mgr node.   |
+| `SSH_TARGET_IP`  |  Mgr node IP  |
+| `SSH_USER`  | Mgr username for ssh   |
+| `WIREGUARD_ENDPOINT`  | IP and port of the wireguard server for deployment in the format `<IP>:<Port>`   |
+| `WIREGUARD_OVERLAY_NETWORK_IP`  | Overlay network IP for wireguard server used for deployment   |
+| `WIREGUARD_PEER_PUBLIC_KEY`  | Public key of the wireguard server for deployment   |
+| `WIREGUARD_PRIVATE_KEY`  |  Private key for connecting to wireguard for deployment  |
 
-4. Setup ansible, run the playbook.
-```
-cd meshdb/infra/ansible
-ansible-galaxy collection install cloud.terraform
-ansible-playbook -i inventory.yaml meshdb.yaml
-```
+3. Create a new environment specific deployment workflow similar to `.github/workflows/deploy_prod1.yaml`
 
-5. Install the `meshdb-cluster` chart.
+4. Set variables in `values.yaml` and `secret.values.yaml` on the manager server in `/root/` (one directory above `PROJECT_PATH`)
 
-```
-cd meshdb/infra/helm/meshdb-cluster
-# Modify values.yaml to meet your needs
-helm template . -f values.yaml > meshdb-cluster.yaml
-kubectl apply --kubeconfig='../../tf/k3s.yaml' -f meshdb-cluster.yaml
-# Watch everything come up
-kubectl get all --kubeconfig='../../tf/k3s.yaml' --namespace longhorn-system
-```
+5. Run the deployment.
 
-5. Create and update values + secrets in `values.yaml` and `secret.values.yaml`
-
-```
-cd meshdb/infra/helm/meshdb/
-cp example.secret.values.yaml secret.values.yaml
-cp example.values.yaml values.yaml
-nano secret.values.yaml
-nano values.yaml
-```
-
-6. Install the `meshdb` chart.
-
-```
-cd meshdb/infra/helm/meshdb
-helm template . -f secret.values.yaml -f values.yaml > meshdb.yaml
-kubectl apply --kubeconfig='../../tf/k3s.yaml' -f meshdb.yaml
-# Watch everything come up
-kubectl get all --kubeconfig='../../tf/k3s.yaml' --namespace meshdbdev3
-```
-
-7. If you need a superuser: `kubectl exec -it -n meshdbdev3 service/meshdb-meshweb bash` and `python manage.py createsuperuser`
+6. If you need a superuser, ssh into the mgr node and: `kubectl exec -it -n meshdbdev3 service/meshdb-meshweb bash` and then `python manage.py createsuperuser`

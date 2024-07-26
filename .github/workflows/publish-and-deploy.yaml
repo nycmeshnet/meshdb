@@ -3,7 +3,7 @@ name: Publish and Deploy
 
 on:
   push:
-    branches: [ main, james/in_fra_ception ]
+    branches: [ main ]
 
 permissions: read-all
 
@@ -63,30 +63,3 @@ jobs:
 
     - name: Pull new Docker image
       run: ssh ${{ secrets.GRANDSVC_SSH_USER }}@${{ secrets.GRANDSVC_TARGET_IP }} "cd ${{ secrets.GRANDSVC_PROJECT_PATH }} && git pull && docker compose pull && docker compose up -d"
-  
-  deploy_to_dev0:
-    name: Deploy to dev3
-    #needs: push_to_registry
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/james/in_fra_ception'
-    steps:
-    - name: Install SSH key
-      uses: shimataro/ssh-key-action@d4fffb50872869abe2d9a9098a6d9c5aa7d16be4 # v2
-      with:
-        key: ${{ secrets.DEV3_KEY }}
-        name: id_ed25519 # optional
-        known_hosts: ${{ secrets.DEV3_KNOWN_HOSTS }}
-        #config: ${{ secrets.CONFIG }} # ssh_config; optional
-        if_key_exists: fail # replace / ignore / fail; optional (defaults to fail)
-    
-    - name: Setup WireGuard
-      run:  |
-        sudo apt install wireguard
-        echo "${{ secrets.WIREGUARD_PRIVATE_KEY }}" > privatekey
-        sudo ip link add dev wg1 type wireguard
-        sudo ip address add dev wg1 ${{ secrets.WIREGUARD_OVERLAY_NETWORK_IP }} peer ${{ secrets.DEV3_TARGET_IP }}
-        sudo wg set wg1 listen-port 48123 private-key privatekey peer ${{ secrets.WIREGUARD_PEER_PUBLIC_KEY }} allowed-ips 0.0.0.0/0 endpoint ${{ secrets.WIREGUARD_ENDPOINT }}
-        sudo ip link set up dev wg1
-
-    - name: Pull new Docker image
-      run: ssh ${{ secrets.DEV3_SSH_USER }}@${{ secrets.DEV3_TARGET_IP }} "sudo bash -c 'cd ${{ secrets.DEV3_PROJECT_PATH }} && git pull && cd infra/helm/meshdb && helm template . -f ../../../../values.yaml -f  ../../../../secret.values.yaml | kubectl apply -f -'"

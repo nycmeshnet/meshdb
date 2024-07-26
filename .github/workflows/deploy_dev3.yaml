@@ -1,4 +1,4 @@
-name: Deploy Prod 1
+name: Deploy Dev 3
 
 on:
   push:
@@ -8,9 +8,9 @@ permissions: read-all
 
 jobs:
     deploy_to_prod1:
-      name: Deploy to prod 1
+      name: Deploy to dev3
       #needs: push_to_registry
-      environment: prod
+      environment: dev3
       runs-on: ubuntu-latest
       if: github.ref == 'refs/heads/james/infra_final'
       steps:
@@ -36,7 +36,10 @@ jobs:
         run: |
           ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_TARGET_IP }} "\
             sudo bash -c '\
-               helm template . -f ../../../../values.yaml \
+              cd ${{ secrets.PROJECT_PATH }} && \
+              git pull && \
+              cd infra/helm/meshdb && \
+              helm template . -f ../../../../values.yaml \
                 --set meshdb_app_namespace="${{ vars.APP_NAMESPACE }}" \
                 --set nginx.server_name="${{ vars.SERVER_NAME }}" \
                 --set pg.password="${{ secrets.PG_PASSWORD}}" \
@@ -52,4 +55,3 @@ jobs:
                 --set uisp.psk="${{ secrets.UISP_PSK }}" \
                 | kubectl apply -f -\
             '"
-
