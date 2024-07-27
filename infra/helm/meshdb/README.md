@@ -15,7 +15,7 @@ A Helm chart for Kubernetes
 | fullnameOverride | string | `"meshdb"` | App name |
 | image.pullPolicy | string | `"Always"` | pullPolicy for all images, should be `Always` |
 | map.base_url | string | `"http://admin-map.grandsvc.mesh.nycmesh.net"` | Map url |
-| meshdb_app_namespace | string | `"meshdbdev0"` | K8s namespace used for all resources |
+| meshdb_app_namespace | string | `"meshdb"` | K8s namespace used for all resources |
 | meshweb.affinity | object | `{}` |  |
 | meshweb.backup_s3_base_folder | string | `"meshdb-backups/development/"` | Base folder for django postgres backups |
 | meshweb.backup_s3_bucket_name | string | `"meshdb-data-backups"` | Bucket used for django postgres backups |
