@@ -1,6 +1,6 @@
 # meshdb
 
-A Helm chart for Kubernetes
+A Helm chart for Kubernetes. Many meshweb variables are better described in the main README.
 
 ## Values
 
