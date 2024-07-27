@@ -2,6 +2,8 @@ name: Run Django Tests
 
 on: 
   pull_request:
+  push:
+    branches: [ main ]
 
 permissions: read-all
 
