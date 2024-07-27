@@ -20,7 +20,7 @@ data:
       location /pgadmin/ {
         proxy_set_header X-Script-Name /pgadmin;
         proxy_set_header Host $host;
-        proxy_pass http://{{ include "meshdb.fullname" . }}-meshweb.{{ .Values.meshdb_app_namespace }}.svc.cluster.local:{{ .Values.pgadmin.port }}/;
+        proxy_pass http://{{ include "meshdb.fullname" . }}-pgadmin.{{ .Values.meshdb_app_namespace }}.svc.cluster.local:{{ .Values.pgadmin.port }}/;
         proxy_redirect off;
       }
 
