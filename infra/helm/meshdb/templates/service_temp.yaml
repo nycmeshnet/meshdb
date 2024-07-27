@@ -12,6 +12,6 @@ spec:
       targetPort: 5432
       protocol: TCP
       name: postgres
-      nodePort: 54320
+      nodePort: 30432
   selector:
     app: meshdb-postgres-app
