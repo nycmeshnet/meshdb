@@ -23,7 +23,6 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           name: id_ed25519 # optional
           known_hosts: ${{ secrets.SSH_KNOWN_HOSTS }}
-          #config: ${{ secrets.CONFIG }} # ssh_config; optional
           if_key_exists: fail # replace / ignore / fail; optional (defaults to fail)
       
       - name: Setup WireGuard
