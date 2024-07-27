@@ -125,7 +125,14 @@ class NYCAddressInfo:
                 logging.warning(f"Empty response from nyc open data about altitude of ({self.bin})")
                 raise OpenDataAPIError
             else:
-                self.altitude = float(nyc_dataset_resp[0]["heightroof"]) + float(nyc_dataset_resp[0]["groundelev"])
+                # Convert relative to ground altitude to absolute altitude AMSL,
+                # convert feet to meters, and round to the nearest 0.1 m
+                FEET_PER_METER = 3.28084
+                self.altitude = round(
+                    (float(nyc_dataset_resp[0]["heightroof"]) + float(nyc_dataset_resp[0]["groundelev"]))
+                    / FEET_PER_METER,
+                    1,
+                )
         except OpenDataAPIError:
             self.altitude = INVALID_ALTITUDE
             logging.warning(

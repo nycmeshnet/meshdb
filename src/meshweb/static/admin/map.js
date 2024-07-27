@@ -212,6 +212,18 @@ function listenForMapNavigation() {
     })
 }
 
+function listenForRecenterClick() {
+    const recenterButton = document.querySelector("#map_recenter_button");
+
+    function onRecenterClick(event) {
+        console.log("recenterclick");
+        updateMapForLocation();
+        event.preventDefault();
+    }
+
+    recenterButton.addEventListener("click", onRecenterClick, false);
+}
+
 async function load_map() {
     const map_host = MAP_BASE_URL;
 
@@ -315,6 +327,7 @@ async function start() {
     updateMapForLocation();
     interceptLinks();
     listenForMapNavigation();
+    listenForRecenterClick();
 }
 
 start();

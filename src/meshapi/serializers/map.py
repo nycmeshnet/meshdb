@@ -150,7 +150,11 @@ class MapDataLinkSerializer(serializers.ModelSerializer):
             return "fiber"
         elif link.type == Link.LinkType.VPN:
             return "vpn"
-        elif link.type == Link.LinkType.MMWAVE:
+        elif link.type in [
+            Link.LinkType.TWENTYFOUR_GHZ,
+            Link.LinkType.SIXTY_GHZ,
+            Link.LinkType.SEVENTY_EIGHTY_GHZ,
+        ]:
             return "60GHz"
 
         return "active"

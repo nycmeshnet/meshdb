@@ -10,10 +10,13 @@ class Link(models.Model):
         ACTIVE = "Active"
 
     class LinkType(models.TextChoices):
-        STANDARD = "Standard"
+        FIVE_GHZ = "5 GHz"
+        TWENTYFOUR_GHZ = "24 GHz"
+        SIXTY_GHZ = "60 GHz"
+        SEVENTY_EIGHTY_GHZ = "70-80 GHz"
         VPN = "VPN"
-        MMWAVE = "MMWave"
         FIBER = "Fiber"
+        ETHERNET = "Ethernet"
 
     from_device = models.ForeignKey(
         Device,

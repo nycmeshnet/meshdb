@@ -54,4 +54,10 @@ jobs:
           QUERY_PSK: localdev
           NN_ASSIGN_PSK: localdev
           PANO_GITHUB_TOKEN: ${{ secrets.PANO_GITHUB_TOKEN }}
-        run: python3 src/manage.py test meshapi meshapi_hooks
+        run: coverage run src/manage.py test meshapi meshapi_hooks
+      - name: Write coverage report to disk
+        run: coverage html
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v4.0.1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
