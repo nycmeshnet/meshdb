@@ -50,7 +50,7 @@ jobs:
                 --set aws.secret_access_key=\"${{ secrets.SECRET_ACCESS_KEY }}\" \
                 --set meshweb.backup_s3_base_folder=\"${{ vars.BACKUP_S3_BASE_FOLDER }}\" \
                 --set meshweb.meshdb-data-backups=\"${{ secrets.BACKUP_S3_BUCKET_NAME }}\" \
-                --set meshweb.django_secret_key=\"${{ secrets.DJANKO_SECRET_KEY }}\" \
+                --set meshweb.django_secret_key=\"${{ secrets.DJANGO_SECRET_KEY }}\" \
                 --set meshweb.nn_assign_psk=\"${{ secrets.NN_ASSIGN_PSK }}\" \
                 --set meshweb.query_psk=\"${{ secrets.QUERY_PSK }}\" \
                 --set meshweb.pano_github_token=\"${{ secrets.GH_TOKEN }}\" \

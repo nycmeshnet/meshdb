@@ -10,11 +10,23 @@ These instructions will set up a 4 node k3s cluster on proxmox.
 
 | Name    | Description |
 | -------- | ------- |
+| `ACCESS_KEY_ID` | Access key ID for s3 backups |
+| `SECRET_ACCESS_KEY` | Secret access key for s3 backups |
+| `BACKUP_S3_BUCKET_NAME` | Name of the s3 bucket to store backups |
+| `DJANGO_SECRET_KEY` | Django secret key |
+| `GH_TOKEN` | Github token for pulling down panoramas |
+| `NN_ASSIGN_PSK` | Legacy node number assign password |
+| `PGADMIN_EMAIL` | Default username for pgadmin |
+| `PGADMIN_PASSWORD` | Default password for pgadmin |
+| `PG_PASSWORD` | meshdb postgres database password |
 | `PROJECT_PATH`  |  Absolute file system path to the clone of meshdb, likely `/root/meshdb`  |
+| `QUERY_PSK` | Legacy query password |
 | `SSH_KNOWN_HOSTS`  |  Copy paste from `ssh-keyscan <mgr node IP>`  |
 | `SSH_PRIVATE_KEY`  | SSH key for the mgr node.   |
 | `SSH_TARGET_IP`  |  Mgr node IP  |
 | `SSH_USER`  | Mgr username for ssh   |
+| `UISP_PSK` | UISP readonly password |
+| `UISP_USER` | UISP readonly username |
 | `WIREGUARD_ENDPOINT`  | IP and port of the wireguard server for deployment in the format `<IP>:<Port>`   |
 | `WIREGUARD_OVERLAY_NETWORK_IP`  | Overlay network IP for wireguard server used for deployment   |
 | `WIREGUARD_PEER_PUBLIC_KEY`  | Public key of the wireguard server for deployment   |
@@ -22,8 +34,6 @@ These instructions will set up a 4 node k3s cluster on proxmox.
 
 3. Create a new environment specific deployment workflow similar to `.github/workflows/deploy_prod1.yaml`
 
-4. Set variables in `values.yaml` and `secret.values.yaml` on the manager server in `/root/` (one directory above `PROJECT_PATH`)
+4. Run the deployment.
 
-5. Run the deployment.
-
-6. If you need a superuser, ssh into the mgr node and: `kubectl exec -it -n meshdbdev3 service/meshdb-meshweb bash` and then `python manage.py createsuperuser`
+5. If you need a superuser, ssh into the mgr node and: `kubectl exec -it -n meshdbdev3 service/meshdb-meshweb bash` and then `python manage.py createsuperuser`
