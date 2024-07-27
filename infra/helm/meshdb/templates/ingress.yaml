@@ -7,13 +7,6 @@ spec:
   rules:
   - http:
       paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: meshdb-nginx
-            port:
-              number: {{ .Values.nginx.port }}
       - path: /pgadmin
         pathType: Prefix
         backend:
@@ -21,3 +14,10 @@ spec:
             name: meshdb-pgadmin
             port:
               number: {{ .Values.pgadmin.port }}
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: meshdb-nginx
+            port:
+              number: {{ .Values.nginx.port }}
