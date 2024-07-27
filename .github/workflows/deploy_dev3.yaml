@@ -7,7 +7,7 @@ on:
 permissions: read-all
 
 jobs:
-    deploy_to_prod1:
+    deploy_to_prod3:
       name: Deploy to dev3
       #needs: push_to_registry
       environment: dev3
