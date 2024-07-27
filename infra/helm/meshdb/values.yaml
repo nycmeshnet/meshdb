@@ -51,6 +51,19 @@ meshweb:
   affinity: {}
   tolerations: []
 
+pgadmin:
+  port: 80
+  image:
+    repository: docker.io/dpage/pgadmin4
+    tag: 8.9
+  liveness_probe: "false"
+  podSecurityContext: {}
+  securityContext: {}
+  resources: {}
+  nodeSelector: {}
+  affinity: {}
+  tolerations: []
+
 nginx:
   port: 80
   podSecurityContext: {}
