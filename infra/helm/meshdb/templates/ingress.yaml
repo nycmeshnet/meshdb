@@ -14,7 +14,7 @@ spec:
             name: meshdb-nginx
             port:
               number: {{ .Values.nginx.port }}
-      - path: /
+      - path: /pgadmin
         pathType: Prefix
         backend:
           service:
