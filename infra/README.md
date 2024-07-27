@@ -37,3 +37,5 @@ These instructions will set up a 4 node k3s cluster on proxmox.
 4. Run the deployment.
 
 5. If you need a superuser, ssh into the mgr node and: `kubectl exec -it -n meshdbdev3 service/meshdb-meshweb bash` and then `python manage.py createsuperuser`
+
+6. If you need to import data: `cat meshdb_export.sql | kubectl exec -it --tty -n meshdbprod1 pod/meshdb-postgres-.... -- psql -U meshdb -d meshdb`
