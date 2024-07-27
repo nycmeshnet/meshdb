@@ -96,7 +96,7 @@ pelias:
   tolerations: []
 
 map:
-  base_url: "http://admin-map.grandsvc.mesh.nycmesh.net"
+  base_url: "https://admin-map.grandsvc.mesh.nycmesh.net"
 
 image:
   pullPolicy: Always
