@@ -34,6 +34,7 @@ dependencies = [
     # FIXME: Go back to PyPI when https://github.com/jazzband/django-dbbackup/pull/515 or https://github.com/jazzband/django-dbbackup/pull/511 is merged
     "django-dbbackup@git+https://github.com/willnilges/django-dbbackup.git@62048411ff5beac4beac1578f686824214f1f33a",
     "django-storages==1.14.*",
+    "django-import-export==4.0.*",
     "boto3==1.34.*",
     "six==1.16.0",
 ]
