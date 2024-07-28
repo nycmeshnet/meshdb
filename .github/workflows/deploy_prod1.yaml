@@ -2,7 +2,7 @@ name: Deploy Prod 1
 
 on:
   push:
-    branches: [ main, james/infra_final ]
+    branches: [ main ]
 
 permissions: read-all
 
@@ -12,7 +12,7 @@ jobs:
       #needs: push_to_registry
       environment: prod
       runs-on: ubuntu-latest
-      if: github.ref == 'refs/heads/james/infra_final'
+      if: github.ref == 'refs/heads/main'
       steps:
       - name: Check out the repo
         uses: actions/checkout@v4
@@ -40,7 +40,7 @@ jobs:
             sudo bash -c '\
               cd ${{ secrets.PROJECT_PATH }} && \
               git pull && \
-              git checkout james/infra_final && \
+              git checkout main && \
               cd infra/helm/meshdb && \
               helm template . -f values.yaml \
                 --set meshdb_app_namespace=\"${{ vars.APP_NAMESPACE }}\" \
