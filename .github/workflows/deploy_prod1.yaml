@@ -9,7 +9,6 @@ permissions: read-all
 jobs:
     deploy_to_prod1:
       name: Deploy to prod 1
-      needs: push_to_registry
       environment: prod
       runs-on: ubuntu-latest
       if: github.ref == 'refs/heads/main'

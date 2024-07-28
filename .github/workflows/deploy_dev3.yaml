@@ -9,7 +9,6 @@ permissions: read-all
 jobs:
     deploy_to_dev3:
       name: Deploy to dev3
-      needs: push_to_registry
       environment: dev3
       runs-on: ubuntu-latest
       if: github.ref == 'refs/heads/main'
