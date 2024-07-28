@@ -1,0 +1,74 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "meshdb.fullname" . }}-pgadmin
+  namespace: {{ .Values.meshdb_app_namespace }}
+  labels:
+    {{- include "meshdb.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "meshdb.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        app: meshdb-pgadmin-app
+        {{- include "meshdb.labels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      securityContext:
+        {{- toYaml .Values.pgadmin.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}-pgadmin
+          securityContext:
+            {{- toYaml .Values.pgadmin.securityContext | nindent 12 }}
+          image: "{{ .Values.pgadmin.image.repository }}:{{ .Values.pgadmin.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.pgadmin.port }}
+              protocol: TCP
+          env:
+            - name: PGADMIN_DEFAULT_EMAIL
+              valueFrom:
+                secretKeyRef:
+                  name: meshdb-secrets
+                  key: pgadmin-default-email
+            - name: PGADMIN_DEFAULT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: meshdb-secrets
+                  key: pgadmin-default-password
+          {{ if eq .Values.pgadmin.liveness_probe "true" }}
+          livenessProbe:
+           exec:
+             command:
+               - curl
+               - http://127.0.0.1:{{ .Values.pgadmin.port }}
+           periodSeconds: 3
+           initialDelaySeconds: 4
+           timeoutSeconds: 3
+           {{ end }}
+          readinessProbe:
+            {{- toYaml .Values.readinessProbe | nindent 12 }}
+          resources:
+            {{- toYaml .Values.pgadmin.resources | nindent 12 }}
+      {{- with .Values.pgadmin.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.pgadmin.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.pgadmin.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

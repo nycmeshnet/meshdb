@@ -1,0 +1,181 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "meshdb.fullname" . }}-meshweb
+  namespace: {{ .Values.meshdb_app_namespace }}
+  labels:
+    {{- include "meshdb.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "meshdb.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        app: meshdb-meshweb-app
+        {{- include "meshdb.labels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      securityContext:
+        {{- toYaml .Values.meshweb.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}-meshweb
+          securityContext:
+            {{- toYaml .Values.meshweb.securityContext | nindent 12 }}
+          image: "{{ .Values.meshweb.image.repository }}:{{ .Values.meshweb.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.meshweb.port }}
+              protocol: TCP
+          env:
+            - name: DB_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: meshdbconfig
+                  key: DB_NAME
+            - name: DB_USER
+              valueFrom:
+                configMapKeyRef:
+                  name: meshdbconfig
+                  key: DB_USER
+            - name: DB_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: meshdbconfig
+                  key: DB_HOST
+            - name: DB_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: meshdbconfig
+                  key: DB_PORT
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: meshdb-secrets
+                  key: postgres-password
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: meshdb-secrets
+                  key: aws-access-key-id
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: meshdb-secrets
+                  key: aws-secret-access-key
+            - name: BACKUP_S3_BUCKET_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: meshdbconfig
+                  key: BACKUP_S3_BUCKET_NAME
+            - name: BACKUP_S3_BASE_FOLDER
+              valueFrom:
+                configMapKeyRef:
+                  name: meshdbconfig
+                  key: BACKUP_S3_BASE_FOLDER
+            - name: CELERY_BROKER
+              valueFrom:
+                configMapKeyRef:
+                  name: meshdbconfig
+                  key: CELERY_BROKER
+            - name: DJANGO_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: meshdb-secrets
+                  key: django-secret-key
+            - name: PELIAS_ADDRESS_PARSER_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: meshdbconfig
+                  key: PELIAS_ADDRESS_PARSER_URL
+            - name: NN_ASSIGN_PSK
+              valueFrom:
+                secretKeyRef:
+                  name: meshdb-secrets
+                  key: nn-assign-psk
+            - name: QUERY_PSK
+              valueFrom:
+                secretKeyRef:
+                  name: meshdb-secrets
+                  key: query-psk
+            - name: DEBUG
+              valueFrom:
+                configMapKeyRef:
+                  name: meshdbconfig
+                  key: DEBUG
+            - name: DISABLE_PROFILING
+              valueFrom:
+                configMapKeyRef:
+                  name: meshdbconfig
+                  key: DISABLE_PROFILING
+            - name: DISABLE_PANO_EDITS
+              valueFrom:
+                configMapKeyRef:
+                  name: meshdbconfig
+                  key: DISABLE_PANO_EDITS
+            - name: PANO_GITHUB_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: meshdb-secrets
+                  key: pano-github-token
+            - name: UISP_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: meshdbconfig
+                  key: UISP_URL
+            - name: UISP_USER
+              valueFrom:
+                configMapKeyRef:
+                  name: meshdbconfig
+                  key: UISP_USER
+            - name: UISP_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: meshdb-secrets
+                  key: uisp-pass
+            - name: ADMIN_MAP_BASE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: meshdbconfig
+                  key: ADMIN_MAP_BASE_URL
+          volumeMounts:
+            - name: static-content-vol
+              mountPath: /opt/meshdb/static
+          {{ if eq .Values.meshweb.liveness_probe "true" }}
+          livenessProbe:
+           exec:
+             command:
+               - curl
+               - http://127.0.0.1:{{ .Values.meshweb.port }}/api/v1
+           periodSeconds: 3
+           initialDelaySeconds: 4
+           timeoutSeconds: 3
+           {{ end }}
+          readinessProbe:
+            {{- toYaml .Values.readinessProbe | nindent 12 }}
+          resources:
+            {{- toYaml .Values.meshweb.resources | nindent 12 }}
+      volumes:
+        - name: static-content-vol
+          persistentVolumeClaim:
+            claimName: {{ .Values.meshweb.static_pvc_name }}
+      {{- with .Values.meshweb.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.meshweb.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.meshweb.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
