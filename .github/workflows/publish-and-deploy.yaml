@@ -65,6 +65,7 @@ jobs:
   deploy_to_dev3:
       name: Deploy to dev3
       environment: dev3
+      needs: push_to_registry
       runs-on: ubuntu-latest
       if: github.ref == 'refs/heads/main'
       steps:
@@ -119,6 +120,7 @@ jobs:
   deploy_to_prod1:
       name: Deploy to prod 1
       environment: prod
+      needs: push_to_registry
       runs-on: ubuntu-latest
       if: github.ref == 'refs/heads/main'
       steps:
