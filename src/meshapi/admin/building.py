@@ -5,6 +5,7 @@ from django.contrib import admin
 from django.contrib.admin import ModelAdmin
 from django.db.models import QuerySet
 from django.http import HttpRequest
+from import_export.admin import ExportActionMixin, ImportExportModelAdmin
 
 from meshapi.admin.inlines import InstallInline
 from meshapi.models import Building
@@ -49,7 +50,7 @@ class BuildingAdminForm(forms.ModelForm):
 
 
 @admin.register(Building)
-class BuildingAdmin(admin.ModelAdmin):
+class BuildingAdmin(ImportExportModelAdmin, ExportActionMixin):
     form = BuildingAdminForm
     list_display = ["__str__", "street_address", "primary_node"]
     search_fields = [
