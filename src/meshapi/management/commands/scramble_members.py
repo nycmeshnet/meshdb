@@ -14,6 +14,7 @@ from meshapi.models.devices.device import Device
 from meshapi.models.link import Link
 from meshapi.models.node import Node
 
+logger.addHandler(logging.StreamHandler(sys.stdout))
 
 # Uses faker to get fake names, emails, and phone numbers
 # TODO: Instead of modifying real data, generate a completely fake database from
