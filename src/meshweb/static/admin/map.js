@@ -21,8 +21,8 @@ async function getNewSelectedNodes(){
         const buildingResponse = await fetch(`/api/v1/buildings/${id}/`);
         if (!buildingResponse.ok) return null;
         const building = await buildingResponse.json();
-        if (building.primary_node) {
-            nodeId = building.primary_node;
+        if (building.primary_network_number) {
+            nodeId = building.primary_network_number;
         } else if (building.installs) {
             nodeId = building.installs[0];
         }
@@ -53,6 +53,33 @@ async function getNewSelectedNodes(){
         const device2 = await device2Response.json();
 
         nodeId = `${device1.network_number}-${device2.network_number}`;
+    } else if (type === "los") {
+        if (!id) return null;
+        const losResponse = await fetch(`/api/v1/loses/${id}/`);
+        if (!losResponse.ok) return null;
+        const los = await losResponse.json();
+
+        let b1NodeId = null;
+        const buildingResponse1 = await fetch(`/api/v1/buildings/${los.from_building}/`);
+        if (!buildingResponse1.ok) return null;
+        const building1 = await buildingResponse1.json();
+        if (building1.primary_network_number) {
+            b1NodeId = building1.primary_network_number;
+        } else if (building1.installs) {
+            b1NodeId = building1.installs[0];
+        }
+
+        let b2NodeId = null;
+        const buildingResponse2 = await fetch(`/api/v1/buildings/${los.to_building}/`);
+        if (!buildingResponse2.ok) return null;
+        const building2 = await buildingResponse2.json();
+        if (building2.primary_network_number) {
+            b2NodeId = building2.primary_network_number;
+        } else if (building2.installs) {
+            b2NodeId = building2.installs[0];
+        }
+
+        if (b1NodeId && b2NodeId)  nodeId = `${b1NodeId}-${b2NodeId}`;
     }
 
     return nodeId ? `${nodeId}` : null;
