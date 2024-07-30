@@ -214,10 +214,6 @@ class MapDataLinkList(generics.ListAPIView):
 
         response.data.extend(cable_runs)
 
-        all_links_set = set()
-        for link in response.data:
-            all_links_set.add(tuple(sorted((link["from"], link["to"]))))
-
         # Since the old school map has no concept of a LOS, only potential Links, we need to
         # create a fake potential Link object to represent each of our LOS entries
         # For our purposes here, we only care about LOS entries between buildings that have
@@ -228,6 +224,22 @@ class MapDataLinkList(generics.ListAPIView):
                 Exists(Install.objects.filter(building=OuterRef("from_building")))
                 & Exists(Install.objects.filter(building=OuterRef("to_building")))
                 & ~Q(from_building=F("to_building"))
+            )
+            .exclude(
+                # Remove any LOS objects that would duplicate Link objects,
+                # to avoid cluttering the map
+                Exists(
+                    Link.objects.filter(
+                        (
+                            Q(from_device__node__buildings=OuterRef("from_building"))
+                            & Q(to_device__node__buildings=OuterRef("to_building"))
+                        )
+                        | (
+                            Q(from_device__node__buildings=OuterRef("to_building"))
+                            & Q(to_device__node__buildings=OuterRef("from_building"))
+                        )
+                    )
+                )
             )
             .prefetch_related("from_building__installs")
             .prefetch_related("from_building__nodes")
@@ -247,16 +259,13 @@ class MapDataLinkList(generics.ListAPIView):
 
             for from_number in from_numbers:
                 for to_number in to_numbers:
-                    link_tuple = tuple(sorted((from_number, to_number)))
-                    if link_tuple not in all_links_set:
-                        los_based_potential_links.append(
-                            {
-                                "from": from_number,
-                                "to": to_number,
-                                "status": Link.LinkStatus.PLANNED.lower(),
-                            }
-                        )
-                        all_links_set.add(link_tuple)
+                    los_based_potential_links.append(
+                        {
+                            "from": from_number,
+                            "to": to_number,
+                            "status": Link.LinkStatus.PLANNED.lower(),
+                        }
+                    )
 
         response.data.extend(los_based_potential_links)
 
