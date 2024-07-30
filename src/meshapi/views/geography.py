@@ -227,20 +227,11 @@ class WholeMeshKML(APIView):
             Link.objects.prefetch_related("from_device")
             .prefetch_related("to_device")
             .filter(~Q(status=Link.LinkStatus.INACTIVE))
+            .exclude(type=Link.LinkType.VPN)
             .annotate(highest_altitude=Greatest("from_device__altitude", "to_device__altitude"))
             .order_by(F("highest_altitude").asc(nulls_first=True))
         ):
-            # Logic to decide if this link should show up as active or not
-            mark_active: bool = (
-                # Link must be active
-                link.status == Link.LinkStatus.ACTIVE
-                # And the devices
-                and link.from_device.status == Device.DeviceStatus.ACTIVE
-                and link.to_device.status == Device.DeviceStatus.ACTIVE
-                # And the device's nodes
-                and link.from_device.node.status == Node.NodeStatus.ACTIVE
-                and link.to_device.node.status == Node.NodeStatus.ACTIVE
-            )
+            mark_active: bool = link.status == Link.LinkStatus.ACTIVE
             link_label: str = f"{str(link.from_device.node)}-{str(link.to_device.node)}"
             from_identifier = link.from_device.node.network_number
             to_identifier = link.to_device.node.network_number
@@ -278,6 +269,22 @@ class WholeMeshKML(APIView):
                 Exists(Install.objects.filter(building=OuterRef("from_building")))
                 & Exists(Install.objects.filter(building=OuterRef("to_building")))
                 & ~Q(from_building=F("to_building"))
+            )
+            .exclude(
+                # Remove any LOS objects that would duplicate Link objects,
+                # to avoid cluttering the file
+                Exists(
+                    Link.objects.filter(
+                        (
+                            Q(from_device__node__buildings=OuterRef("from_building"))
+                            & Q(to_device__node__buildings=OuterRef("to_building"))
+                        )
+                        | (
+                            Q(from_device__node__buildings=OuterRef("to_building"))
+                            & Q(to_device__node__buildings=OuterRef("from_building"))
+                        )
+                    )
+                )
             )
             .prefetch_related("from_building")
             .prefetch_related("from_building__installs")
