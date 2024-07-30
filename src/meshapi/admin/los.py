@@ -17,7 +17,7 @@ class LOSAdmin(admin.ModelAdmin):
         "from_building__primary_node__name__icontains",
         "to_building__primary_node__name__icontains",
         "from_building__street_address__icontains",
-        "to__building__street_address__icontains",
+        "to_building__street_address__icontains",
         "from_building__primary_node__network_number__iexact",
         "to_building__primary_node__network_number__iexact",
         "notes__icontains",
