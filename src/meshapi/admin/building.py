@@ -51,7 +51,6 @@ class BuildingAdminForm(forms.ModelForm):
 
 @admin.register(Building)
 class BuildingAdmin(ImportExportModelAdmin, ExportActionMixin):
-    # TODO: Add inline here to show the LOSes this building has
     form = BuildingAdminForm
     list_display = ["__str__", "street_address", "primary_node"]
     search_fields = [
