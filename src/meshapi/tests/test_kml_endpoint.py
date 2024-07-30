@@ -89,6 +89,7 @@ class TestKMLEndpoint(TestCase):
         dead_omni.status = Device.DeviceStatus.INACTIVE
         dead_omni.save()
 
+        # VPN Links should be hidden on the KML map
         links.append(
             Link(
                 from_device=sn1_omni,
@@ -135,7 +136,7 @@ class TestKMLEndpoint(TestCase):
             )
         )
 
-        # Should show up as inactive because dead_omni is inactive
+        # Should show up as active even though dead_omni is inactive (for consistency with the map)
         links.append(
             Link(
                 from_device=dead_omni,
@@ -236,4 +237,4 @@ class TestKMLEndpoint(TestCase):
         self.assertEqual(len(active_nodes_other.features), 16)  # 8 installs and 8 NNs
 
         self.assertEqual(len(active_links.features), 4)
-        self.assertEqual(len(inactive_links.features), 4)  # 2 inactive links + 2 LOSes
+        self.assertEqual(len(inactive_links.features), 3)  # 1 inactive link + 2 LOSes
