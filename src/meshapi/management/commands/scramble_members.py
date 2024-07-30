@@ -1,4 +1,5 @@
 import logging
+import sys
 from argparse import ArgumentParser
 from datetime import date, timedelta
 from random import randint, randrange
@@ -14,7 +15,7 @@ from meshapi.models.devices.device import Device
 from meshapi.models.link import Link
 from meshapi.models.node import Node
 
-logger.addHandler(logging.StreamHandler(sys.stdout))
+logging.basicConfig(level=logging.DEBUG, stream=sys.stdout)
 
 
 # Uses faker to get fake names, emails, and phone numbers
@@ -38,6 +39,16 @@ class Command(BaseCommand):
     @transaction.atomic
     def handle(self, *args: Any, **options: Any) -> None:
         logging.info("Scrambling database with fake information")
+
+        # Confirm with user
+        should_continue = input("WARNING: This is destructive. Are you sure? (y/N): ")
+        logging.info(should_continue)
+        if should_continue.lower() != "yes" and should_continue.lower() != "y":
+            logging.warning("Operation cancelled.")
+            return
+
+        logging.info("Continuing with scramble operation!!!")
+
         fake = Faker()
         if not options["skip_members"]:
             members = Member.objects.all()
