@@ -241,6 +241,24 @@ class MapDataLinkList(generics.ListAPIView):
                     )
                 )
             )
+            .filter(
+                # This horrible monster query exists to de-duplicate LOSes between the same building
+                # pairs so that the map doesn't freak out. This deduplication happens somewhat
+                # arbitrarily and is borrowed from https://stackoverflow.com/a/69938289
+                pk__in=LOS.objects.values("from_building", "to_building")
+                .distinct()
+                .annotate(
+                    pk=Subquery(
+                        LOS.objects.filter(
+                            from_building=OuterRef("from_building"),
+                            to_building=OuterRef("to_building"),
+                        )
+                        .order_by("pk")
+                        .values("pk")[:1]
+                    )
+                )
+                .values_list("pk", flat=True)
+            )
             .prefetch_related("from_building__installs")
             .prefetch_related("from_building__nodes")
             .prefetch_related("to_building__installs")

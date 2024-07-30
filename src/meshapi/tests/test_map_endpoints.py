@@ -522,7 +522,7 @@ class TestViewsGetUnauthenticated(TestCase):
         )
         sn1.save()
 
-        sn1_building = Building(address_truth_sources=[], latitude=0, longitude=0)
+        sn1_building = Building(address_truth_sources=[], latitude=0, longitude=0, primary_node=sn1)
         sn1_building.save()
 
         sn1_install = Install(
@@ -579,7 +579,7 @@ class TestViewsGetUnauthenticated(TestCase):
         )
         sn3_omni.save()
 
-        sn3_building = Building(address_truth_sources=[], latitude=0, longitude=0)
+        sn3_building = Building(address_truth_sources=[], latitude=0, longitude=0, primary_node=sn3)
         sn3_building.save()
 
         sn3_install = Install(
