@@ -219,6 +219,15 @@ STATICFILES_DIRS = [
     "/var/www/static/",
 ]
 
+MAP_DATA_CACHE_DURATION = 90  # seconds
+
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.redis.RedisCache",
+        "LOCATION": "redis://localhost:6379/0",
+    }
+}
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 

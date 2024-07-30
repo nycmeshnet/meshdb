@@ -1,6 +1,7 @@
 from datetime import datetime
 from typing import Collection, List
 
+from cacheback.decorators import cacheback
 from django.db.models import Count, Exists, F, OuterRef, Prefetch, Q, Subquery
 
 from meshapi.models import LOS, Device, Install, Link, Node, Sector
@@ -11,8 +12,10 @@ from meshapi.serializers import (
     MapDataLinkSerializer,
     MapDataSectorSerializer,
 )
+from meshdb.settings import MAP_DATA_CACHE_DURATION
 
 
+@cacheback(lifetime=MAP_DATA_CACHE_DURATION)
 def render_node_data() -> Collection[dict]:
     all_installs = []
 
@@ -108,6 +111,7 @@ def render_node_data() -> Collection[dict]:
     return all_installs_rendered_json + access_points
 
 
+@cacheback(lifetime=MAP_DATA_CACHE_DURATION)
 def render_link_data() -> Collection[dict]:
     all_links = []
     link_queryset = (
@@ -257,6 +261,7 @@ def render_link_data() -> Collection[dict]:
     return all_links
 
 
+@cacheback(lifetime=MAP_DATA_CACHE_DURATION)
 def render_sector_data() -> Collection[dict]:
     queryset = Sector.objects.filter(~Q(status__in=[Device.DeviceStatus.INACTIVE])).prefetch_related("node")
     return MapDataSectorSerializer(queryset, many=True).data
