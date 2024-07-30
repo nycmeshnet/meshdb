@@ -15,8 +15,6 @@ from rest_framework.renderers import BaseRenderer
 from rest_framework.views import APIView
 
 from meshapi.models import LOS, Install, Link
-from meshapi.models.devices.device import Device
-from meshapi.models.node import Node
 
 KML_CONTENT_TYPE = "application/vnd.google-earth.kml+xml"
 KML_CONTENT_TYPE_WITH_CHARSET = f"{KML_CONTENT_TYPE}; charset=utf-8"
