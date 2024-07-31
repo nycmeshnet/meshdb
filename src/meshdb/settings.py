@@ -34,6 +34,8 @@ SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY")
 DEBUG = "DEBUG" in os.environ
 PROFILING_ENABLED = DEBUG and not os.environ.get("DISABLE_PROFILING", "False") == "True"
 
+USE_X_FORWARDED_HOST = True
+
 ALLOWED_HOSTS = [
     "db.grandsvc.mesh.nycmesh.net",
     "db.grandsvc.mesh",
