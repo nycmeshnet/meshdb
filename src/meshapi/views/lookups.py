@@ -5,6 +5,7 @@ from django_filters import rest_framework as filters
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
 from rest_framework import generics
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.request import Request
 from rest_framework.response import Response
 
@@ -19,7 +20,11 @@ from meshapi.serializers import (
     SectorSerializer,
 )
 
-ADDITIONAL_QUERY_PARAMS = {"limit", "page"}
+ADDITIONAL_QUERY_PARAMS = {"page_size", "page"}
+
+
+class CustomSizePageNumberPagination(PageNumberPagination):
+    page_size_query_param = "page_size"  # items per page
 
 
 class FilterRequiredListAPIView(generics.ListAPIView):
@@ -95,6 +100,7 @@ class LookupMember(FilterRequiredListAPIView):
     queryset = Member.objects.all().order_by("id")
     serializer_class = MemberSerializer
     filterset_class = MemberFilter
+    pagination_class = CustomSizePageNumberPagination
 
 
 class InstallFilter(filters.FilterSet):
@@ -144,6 +150,7 @@ class LookupInstall(FilterRequiredListAPIView):
     queryset = Install.objects.all().order_by("install_number")
     serializer_class = InstallSerializer
     filterset_class = InstallFilter
+    pagination_class = CustomSizePageNumberPagination
 
 
 class BuildingFilter(filters.FilterSet):
@@ -226,6 +233,7 @@ class LookupBuilding(FilterRequiredListAPIView):
     queryset = Building.objects.all().order_by("id")
     serializer_class = BuildingSerializer
     filterset_class = BuildingFilter
+    pagination_class = CustomSizePageNumberPagination
 
 
 class NodeFilter(filters.FilterSet):
@@ -277,6 +285,7 @@ class LookupNode(FilterRequiredListAPIView):
     queryset = Node.objects.all().order_by("network_number")
     serializer_class = NodeSerializer
     filterset_class = NodeFilter
+    pagination_class = CustomSizePageNumberPagination
 
 
 class LinkFilter(filters.FilterSet):
@@ -340,6 +349,7 @@ class LookupLink(FilterRequiredListAPIView):
     queryset = Link.objects.all().order_by("id")
     serializer_class = LinkSerializer
     filterset_class = LinkFilter
+    pagination_class = CustomSizePageNumberPagination
 
 
 class DeviceFilter(filters.FilterSet):
@@ -411,6 +421,7 @@ class LookupDevice(FilterRequiredListAPIView):
     queryset = Device.objects.all().order_by("id")
     serializer_class = DeviceSerializer
     filterset_class = DeviceFilter
+    pagination_class = CustomSizePageNumberPagination
 
 
 class SectorFilter(DeviceFilter):
@@ -479,3 +490,4 @@ class LookupSector(FilterRequiredListAPIView):
     queryset = Sector.objects.all().order_by("id")
     serializer_class = SectorSerializer
     filterset_class = SectorFilter
+    pagination_class = CustomSizePageNumberPagination
