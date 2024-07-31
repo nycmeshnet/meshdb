@@ -21,7 +21,8 @@ KML_CONTENT_TYPE_WITH_CHARSET = f"{KML_CONTENT_TYPE}; charset=utf-8"
 DEFAULT_ALTITUDE = 5  # Meters (absolute)
 
 ACTIVE_COLOR = "#F00"
-INACTIVE_COLOR = "#CCC"
+INACTIVE_COLOR = "#777"
+POTENTIAL_COLOR = "#CCC"
 
 CITY_FOLDER_MAP = {
     "New York": "Manhattan",
@@ -37,6 +38,7 @@ LinkKMLDict = TypedDict(
     {
         "link_label": str,
         "mark_active": bool,
+        "is_los": bool,
         "from_coord": Tuple[float, float, float],
         "to_coord": Tuple[float, float, float],
         "extended_data": Dict[str, Any],
@@ -143,7 +145,15 @@ class WholeMeshKML(APIView):
             ],
         )
 
-        kml_document = kml.Document(ns, styles=[grey_dot, red_dot, red_line, grey_line])
+        dark_grey_line = styles.Style(
+            id="dark_grey_line",
+            styles=[
+                styles.LineStyle(color="ff777777", width=2),
+                styles.PolyStyle(color="00000000", fill=False, outline=True),
+            ],
+        )
+
+        kml_document = kml.Document(ns, styles=[grey_dot, red_dot, red_line, grey_line, dark_grey_line])
         kml_root.append(kml_document)
 
         nodes_folder = kml.Folder(name="Nodes")
@@ -239,6 +249,7 @@ class WholeMeshKML(APIView):
                 {
                     "link_label": link_label,
                     "mark_active": mark_active,
+                    "is_los": False,
                     "from_coord": (
                         link.from_device.longitude,
                         link.from_device.latitude,
@@ -302,6 +313,7 @@ class WholeMeshKML(APIView):
                     {
                         "link_label": link_label,
                         "mark_active": False,
+                        "is_los": True,
                         "from_coord": (
                             los.from_building.longitude,
                             los.from_building.latitude,
@@ -314,7 +326,7 @@ class WholeMeshKML(APIView):
                         ),
                         "extended_data": {
                             "name": f"LOS-{los.id} {link_label}",
-                            "stroke": INACTIVE_COLOR,
+                            "stroke": POTENTIAL_COLOR,
                             "fill": "#000000",
                             "fill-opacity": "0",
                             "from": f"#{representative_from_install} ({los.from_building.street_address})",
@@ -327,7 +339,11 @@ class WholeMeshKML(APIView):
         for link_dict in kml_links:
             placemark = kml.Placemark(
                 name=f"Links-{link_dict['link_label']}",
-                style_url=styles.StyleUrl(url="#red_line" if link_dict["mark_active"] else "#grey_line"),
+                style_url=styles.StyleUrl(
+                    url="#grey_line"
+                    if link_dict["is_los"]
+                    else ("#red_line" if link_dict["mark_active"] else "#dark_grey_line")
+                ),
                 kml_geometry=geometry.LineString(
                     geometry=LineString([link_dict["from_coord"], link_dict["to_coord"]]),
                     altitude_mode=AltitudeMode.absolute,
