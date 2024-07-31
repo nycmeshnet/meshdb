@@ -87,7 +87,7 @@ redis:
   tolerations: []
 
 pelias:
-  port: 6800
+  port: 3000
   podSecurityContext: {}
   securityContext: {}
   resources: {}
