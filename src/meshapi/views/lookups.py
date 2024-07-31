@@ -19,12 +19,16 @@ from meshapi.serializers import (
     SectorSerializer,
 )
 
+ADDITIONAL_QUERY_PARAMS = {"limit", "page"}
+
 
 class FilterRequiredListAPIView(generics.ListAPIView):
     filterset_class: Type[filters.FilterSet]
 
     def get(self, request: Request, *args: Any, **kwargs: Any) -> Response:
-        possible_filters = set(self.filterset_class.get_filters().keys())  # type: ignore[no-untyped-call]
+        possible_filters = set(self.filterset_class.get_filters().keys()).union(  # type: ignore[no-untyped-call]
+            ADDITIONAL_QUERY_PARAMS
+        )
         provided_filters = set(self.request.query_params.keys())
         invalid_filters = provided_filters - possible_filters
 
