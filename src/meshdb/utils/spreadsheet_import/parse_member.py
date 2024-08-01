@@ -22,6 +22,7 @@ EMAIL_REPLACEMENTS = {
     ",": " ",
     r"\/": " ",
     "gmailcom": "gmail.com",
+    "gmai.com": "gmail.com",
     r"\.\.@gmail\.com": "@gmail.com",
     r"\.\.\.": ".",
     r"\.@gmail\.com": "@gmail.com",
