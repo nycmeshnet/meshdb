@@ -34,6 +34,8 @@ SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY")
 DEBUG = "DEBUG" in os.environ
 PROFILING_ENABLED = DEBUG and not os.environ.get("DISABLE_PROFILING", "False") == "True"
 
+USE_X_FORWARDED_HOST = True
+
 ALLOWED_HOSTS = [
     "db.grandsvc.mesh.nycmesh.net",
     "db.grandsvc.mesh",
@@ -44,6 +46,7 @@ ALLOWED_HOSTS = [
     "meshdb",
     "nginx",
     "host.docker.internal",
+    "devdb.mesh.nycmesh.net",
 ]
 
 # FIXME: Shit works, but also doesn't(?) work with the ^ as the first character
@@ -72,6 +75,10 @@ CSRF_TRUSTED_ORIGINS = [
     "http://127.0.0.1:8080",
     "http://meshdb:8081",
     "http://nginx:8080",
+    "http://devdb.mesh.nycmesh.net",
+    "https://devdb.mesh.nycmesh.net",
+    "http://db.mesh.nycmesh.net",
+    "https://db.mesh.nycmesh.net",
 ]
 
 # Application definition
@@ -94,6 +101,7 @@ INSTALLED_APPS = [
     "django_filters",
     "django_jsonform",
     "dbbackup",
+    "import_export",
 ]
 
 MIDDLEWARE = [
@@ -217,7 +225,7 @@ STATICFILES_DIRS = [
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 REST_FRAMEWORK = {
-    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
+    "DEFAULT_PAGINATION_CLASS": "meshapi.util.drf_utils.CustomSizePageNumberPagination",
     "PAGE_SIZE": 100,
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "rest_framework.authentication.SessionAuthentication",
@@ -299,3 +307,6 @@ SPECTACULAR_SETTINGS = {
         "docExpansion": "none",
     },
 }
+
+IMPORT_EXPORT_IMPORT_PERMISSION_CODE = "add"
+IMPORT_EXPORT_EXPORT_PERMISSION_CODE = "view"

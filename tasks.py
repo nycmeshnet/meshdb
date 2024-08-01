@@ -12,7 +12,7 @@ def lint(context):
     context.run("black . --check")
     context.run("isort . --check")
     context.run("flake8 src")
-    # context.run("mypy src")
+    context.run("mypy")
 
 
 @task

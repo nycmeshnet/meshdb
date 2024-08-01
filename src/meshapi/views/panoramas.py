@@ -1,13 +1,14 @@
 import logging
 import os
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Union
 
 import requests
+from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.request import Request
 from rest_framework.response import Response
-from rest_framework.views import status
 
 from meshapi.models import Install
 from meshapi.models.building import Building
@@ -22,6 +23,87 @@ PANO_REPO = "node-db"
 PANO_BRANCH = "master"
 PANO_DIR = "data/panoramas"
 PANO_HOST = "https://node-db.netlify.app/panoramas/"
+
+
+"""
+Panoramas can be titled as either ###[a-z*].jpg or nn###[a-z*].jpg. This will
+apply those rules to a given string and either return a title or raise a special
+exception if it finds a pano that breaks the rules.
+
+Returns a PanoramaTitle which determines if we're dealing with a panorama
+labeled after a NN or Install #, contains its number, and any special label
+like `a`.
+"""
+
+
+@dataclass
+class PanoramaTitle:
+    filename: str
+    is_nn: bool
+    number: str  # Confusingly, this is not an int.
+    label: str
+
+    def __str__(self) -> str:
+        return self.filename
+
+    def get_key(self) -> str:
+        if self.is_nn:
+            return f"nn{self.number}"
+        return self.number
+
+    def get_url(self) -> str:
+        return f"{PANO_HOST}{self}"
+
+    @classmethod
+    def from_filename(cls, filename: str) -> "PanoramaTitle":
+        if len(filename) <= 0:
+            raise BadPanoramaTitle("Got filename of length 0")
+
+        # Get that file extension outta here
+        stem = Path(filename).stem
+
+        # Handle dumb edge case
+        if len(stem) > 4 and stem[0:4] == "IMG_":
+            return cls(filename=filename, is_nn=False, number=stem[4:], label="")
+
+        # Some of the files have spaces but are otherwise fine
+        if stem[0] == " ":
+            stem = stem[1:]
+
+        # Handle any other dumb edge cases by bailing
+        # Mainly, if the first 2 characters are not digits and not `nn`, then bail
+        if not stem[0].isdigit() and len(stem) < 2 and stem[0:2] != "nn":
+            raise BadPanoramaTitle(f"First character not a digit nor NN marker: {filename}")
+
+        # By default, all files are associated and labeled with Install #.
+        # Files associated with Network Numnbers are prepended with `nn`.
+        # Figure that out and chop it off for later
+        is_nn = False
+        if stem[0:2] == "nn":
+            is_nn = True
+            stem = stem[2:]
+
+        # Finally, parse the number and label
+        number = label = ""
+        for i in range(0, len(stem)):
+            if stem[i].isdigit():
+                number += stem[i]
+            elif i == 0:
+                # There are some files in here that have a space or something in the
+                # first letter, so we handle that edge case by ignoring it.
+                continue
+            else:
+                label = stem[i:]
+                break
+
+        return cls(filename=filename, is_nn=is_nn, number=number, label=label)
+
+    @classmethod
+    def from_filenames(cls, filenames: list[str]) -> list["PanoramaTitle"]:
+        panorama_titles = []
+        for f in filenames:
+            panorama_titles.append(cls.from_filename(f))
+        return panorama_titles
 
 
 # Raised if we get total nonsense as a panorama title
@@ -53,6 +135,7 @@ def update_panoramas(request: Request) -> Response:
         return Response({"detail": str(type(e).__name__)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
+# Used by the above api route, and also the celery task
 @advisory_lock("update_panoramas_lock")
 def sync_github_panoramas() -> tuple[int, list[str]]:
     # Check that we have all the environment variables we need
@@ -69,115 +152,98 @@ def sync_github_panoramas() -> tuple[int, list[str]]:
     if not head_tree_sha:
         raise GitHubError("Could not get head tree SHA from GitHub")
 
-    panorama_files = list_files_in_git_directory(owner, repo, directory, head_tree_sha, token)
-    if not panorama_files:
+    filenames = list_files_in_git_directory(owner, repo, directory, head_tree_sha, token)
+    if not filenames:
         raise GitHubError("Could not get file list from GitHub")
 
-    panos = build_pano_dict(panorama_files)
+    panos: dict[str, list[PanoramaTitle]] = group_panoramas_by_install_or_nn(filenames)
     return set_panoramas(panos)
 
 
-def set_panoramas(panos: dict[str, list[str]]) -> tuple[int, list[str]]:
-    def build_panorama_list(building: Building, filenames: list[str]) -> None:
-        panoramas = []
-        for filename in filenames:
-            file_url = f"{host_url}{filename}"
-            panoramas.append(file_url)
-        if building.panoramas == panoramas:
-            return
-        # Add new panoramas
-        for p in panoramas:
-            if p not in building.panoramas:
-                building.panoramas.append(p)
-        building.save()
+# Panorama saving helper functions
 
-    panoramas_saved = 0
-    warnings = []
 
-    host_url = PANO_HOST
-
-    for install_number, filenames in panos.items():
+# Builds a dictionary of panoramas, grouping panoramas under the same NN or Install #
+def group_panoramas_by_install_or_nn(filenames: list[str]) -> dict[str, list[PanoramaTitle]]:
+    panos: dict[str, list[PanoramaTitle]] = {}
+    for f in filenames:
         try:
-            install: Install = Install.objects.get(install_number=int(install_number))
-
-            build_panorama_list(install.building, filenames)
-            panoramas_saved += len(filenames)
-        except Install.DoesNotExist:
-            logging.warning(f"Install #{install_number} Does not exist")
-            # OK, let's see if that Install # is actually an NN.
-            logging.info("Checking if it's an NN...")
-            try:
-                node: Node = Node.objects.get(network_number=int(install_number))
-                node_installs = node.installs.all()
-                if len(node_installs) == 0:
-                    # This should never happen
-                    logging.error(f"NN{install_number} exists, but has no installs.")
-                    continue
-                # Get the first install from the node and use its building. Can't
-                # really do any better than that.
-                install: Install = node_installs[0]
-
-                build_panorama_list(install.building, filenames)
-                panoramas_saved += len(filenames)
-            except Node.DoesNotExist:
-                logging.error("Could not find corresponding NN.")
-                warnings.append(install_number)
-        except Exception:
-            logging.exception(f"Could not add panorama to building (Install #{install_number})")
-            warnings.append(install_number)
-    return panoramas_saved, warnings
-
-
-def build_pano_dict(files: list[str]) -> dict:
-    panos = {}
-    for f in files:
-        try:
-            number, label = parse_pano_title(Path(f).stem)
+            title = PanoramaTitle.from_filename(f)
         except BadPanoramaTitle:
-            logging.exception("Error due to panorama title")
+            logging.exception("Error due to bad filename: f")
             continue
-        if number not in panos:
-            panos[number] = [f]
+
+        # Use this special get_key() function to separate NNs from not NNs.
+        # This way, we'll have 632 and nn632 in separate keys
+        if title.get_key() not in panos:
+            panos[title.get_key()] = [title]
         else:
-            panos[number].append(f)
+            panos[title.get_key()].append(title)
     return panos
 
 
-# This is awful. Maybe there are easy ways to generalize some cases like stripping
-# spaces, but for now I would rather explicitly handle these cases until I have
-# better tests.
-def parse_pano_title(title: str) -> tuple[str, str]:
-    if len(title) <= 0:
-        raise BadPanoramaTitle("Got title of length 0")
+# Helper function to update panorama list. One day, this should probably
+# clobber the panoramas already saved (since a robot should probably be
+# controlling this), but for now, it either appends to the current list,
+# or bails if the current list and the new list are the same.
+def save_building_panoramas(building: Building, panorama_titles: list[PanoramaTitle]) -> int:
+    # Generate storage URL for panorama
+    panoramas = []
+    for filename in panorama_titles:
+        panoramas.append(filename.get_url())
 
-    # Get that file extension outta here
-    stem = Path(title).stem
+    # Bail if the panoramas have not changed
+    if building.panoramas == panoramas:
+        return 0
 
-    # Handle dumb edge case
-    if len(stem) > 4 and stem[0:4] == "IMG_":
-        return (stem[4:], "")
+    # Add new panoramas
+    for p in panoramas:
+        if p not in building.panoramas:
+            building.panoramas.append(p)
+    building.save()
 
-    # Some of the files have spaces but are otherwise fine
-    if stem[0] == " ":
-        stem = stem[1:]
+    return len(panoramas)
 
-    # Handle any other dumb edge cases by bailing
-    if not stem[0].isdigit():
-        raise BadPanoramaTitle(f"First character not a digit: {title}")
 
-    number = ""
-    label = ""
-    for i in range(0, len(stem)):
-        if stem[i].isdigit():
-            number += stem[i]
-        elif i == 0:
-            # There are some files in here that have a space or something in the
-            # first letter, so we handle that edge case by ignoring it.
-            continue
-        else:
-            label = stem[i:]
-            break
-    return (number, label)
+# Given a list of panoramas grouped by install number/network number, find the
+# appropriate Building object and update the list of panoramas for that Building
+def set_panoramas(panos: dict[str, list[PanoramaTitle]]) -> tuple[int, list[str]]:
+    panoramas_saved = 0
+    warnings = []
+
+    for key, filenames in panos.items():
+        try:
+            if "nn" in key:
+                try:
+                    node: Node = Node.objects.get(network_number=int(key[2:]))
+                    node_installs = node.installs.all()
+                    if len(node_installs) == 0:
+                        # This should never happen
+                        logging.error(f"NN{key} exists, but has no installs.")
+                        continue
+
+                    # Get the first install from the node and use its building. Can't
+                    # really do any better than that.
+                    install = node_installs[0]
+
+                    panoramas_saved += save_building_panoramas(install.building, filenames)
+                except Node.DoesNotExist:
+                    logging.error(f"Could not find corresponding NN {key}.")
+                    warnings.append(str(key))
+            else:
+                try:
+                    install = Install.objects.get(install_number=int(key))
+
+                    panoramas_saved += save_building_panoramas(install.building, filenames)
+                except Install.DoesNotExist:
+                    logging.warning(f"Install #{key} Does not exist")
+        except Exception:
+            logging.exception(f"Could not add panorama to building (key = {key})")
+            warnings.append(str(key))
+    return panoramas_saved, warnings
+
+
+# Github helper functions
 
 
 # Gets the tree-sha, which we need to use the trees API (allows us to list up to

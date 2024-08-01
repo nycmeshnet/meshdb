@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "meshdb.fullname" . }}-redis
+  namespace: {{ .Values.meshdb_app_namespace }}
+  labels:
+    {{- include "meshdb.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "meshdb.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        app: meshdb-redis-app
+        {{- include "meshdb.labels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      securityContext:
+        {{- toYaml .Values.redis.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}-redis
+          securityContext:
+            {{- toYaml .Values.redis.securityContext | nindent 12 }}
+          image: "redis:latest"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: redis
+              containerPort: {{ .Values.redis.port }}
+              protocol: TCP
+          resources:
+            {{- toYaml .Values.redis.resources | nindent 12 }}
+          {{ if eq .Values.redis.liveness_probe "true" }}
+          livenessProbe:
+            exec:
+              command:
+                - "redis-cli"
+                - "--raw"
+                - "incr"
+                - "ping"
+            periodSeconds: 3
+            initialDelaySeconds: 2
+            timeoutSeconds: 3
+          {{ end }}
+      {{- with .Values.redis.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.redis.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.redis.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

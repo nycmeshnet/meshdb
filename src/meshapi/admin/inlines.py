@@ -1,10 +1,12 @@
-from typing import Any
+from typing import Any, Optional
 
 from django.contrib import admin
-from django.db.models import Q
+from django.contrib.admin import AdminSite
+from django.db.models import Model, Q, QuerySet
+from django.http import HttpRequest
 from nonrelated_inlines.admin import NonrelatedTabularInline
 
-from meshapi.models import Building, Device, Install, Link, Sector
+from meshapi.models import Building, Device, Install, Link, Member, Node, Sector
 
 
 # Inline with the typical rules we want + Formatting
@@ -13,7 +15,7 @@ class BetterInline(admin.TabularInline):
     can_delete = False
     template = "admin/install_tabular.html"
 
-    def has_add_permission(self, request, obj) -> bool:
+    def has_add_permission(self, request: HttpRequest, obj: Optional[Any]) -> bool:  # type: ignore[override]
         return False
 
     class Media:
@@ -27,10 +29,10 @@ class BetterNonrelatedInline(NonrelatedTabularInline):
     can_delete = False
     template = "admin/install_tabular.html"
 
-    def has_add_permission(self, request, obj) -> bool:
+    def has_add_permission(self, request: HttpRequest, obj: Model) -> bool:
         return False
 
-    def save_new_instance(self, parent, instance):
+    def save_new_instance(self, parent: Any, instance: Any) -> None:
         pass
 
     class Media:
@@ -48,7 +50,7 @@ class PanoramaInline(BetterNonrelatedInline):
 
     all_panoramas: dict[str, list[Any]] = {}
 
-    def get_form_queryset(self, obj):
+    def get_form_queryset(self, obj: Node) -> QuerySet[Building]:
         buildings = self.model.objects.filter(nodes=obj)
         panoramas = []
         for b in buildings:
@@ -69,11 +71,12 @@ class NonrelatedBuildingInline(BetterNonrelatedInline):
     readonly_fields = fields
 
     add_button = True
+    reverse_relation = "primary_node"
 
     # Hack to get the NN
     network_number = None
 
-    def get_form_queryset(self, obj):
+    def get_form_queryset(self, obj: Node) -> QuerySet[Building]:
         self.network_number = obj.pk
         return self.model.objects.filter(nodes=obj)
 
@@ -90,9 +93,9 @@ class BuildingMembershipInline(admin.TabularInline):
 class DeviceInline(BetterInline):
     model = Device
     fields = ["status", "type", "model"]
-    readonly_fields = fields
+    readonly_fields = fields  # type: ignore[assignment]
 
-    def get_queryset(self, request):
+    def get_queryset(self, request: HttpRequest) -> QuerySet[Device]:
         # Get the base queryset
         queryset = super().get_queryset(request)
         # Filter out sectors
@@ -105,7 +108,7 @@ class NodeLinkInline(BetterNonrelatedInline):
     fields = ["status", "type", "from_device", "to_device"]
     readonly_fields = fields
 
-    def get_form_queryset(self, obj):
+    def get_form_queryset(self, obj: Node) -> QuerySet[Link]:
         from_device_q = Q(from_device__in=obj.devices.all())
         to_device_q = Q(to_device__in=obj.devices.all())
         all_links = from_device_q | to_device_q
@@ -117,7 +120,7 @@ class DeviceLinkInline(BetterNonrelatedInline):
     fields = ["status", "type", "from_device", "to_device"]
     readonly_fields = fields
 
-    def get_form_queryset(self, obj):
+    def get_form_queryset(self, obj: Link) -> QuerySet[Link]:
         from_device_q = Q(from_device=obj)
         to_device_q = Q(to_device=obj)
         all_links = from_device_q | to_device_q
@@ -127,11 +130,27 @@ class DeviceLinkInline(BetterNonrelatedInline):
 class SectorInline(BetterInline):
     model = Sector
     fields = ["status", "type", "model"]
-    readonly_fields = fields
+    readonly_fields = fields  # type: ignore[assignment]
 
 
 # This controls the list of installs reverse FK'd to Buildings and Members
 class InstallInline(BetterInline):
     model = Install
     fields = ["status", "node", "member", "building", "unit"]
-    readonly_fields = fields
+    readonly_fields = fields  # type: ignore[assignment]
+
+    def __init__(self, model: type[Any], admin_site: AdminSite):
+        super().__init__(model, admin_site)
+
+        self.add_button = False
+        self.reverse_relation = None
+
+        if model == Building:
+            self.add_button = True
+            self.reverse_relation = "building"
+        elif model == Node:
+            self.add_button = True
+            self.reverse_relation = "node"
+        elif model == Member:
+            self.add_button = True
+            self.reverse_relation = "member"

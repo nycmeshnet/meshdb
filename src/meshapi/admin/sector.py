@@ -1,5 +1,6 @@
+from django import forms
 from django.contrib import admin
-from django.contrib.admin.options import forms
+from import_export.admin import ExportActionMixin, ImportExportModelAdmin
 
 from meshapi.admin.admin import device_fieldsets
 from meshapi.admin.inlines import DeviceLinkInline
@@ -13,7 +14,7 @@ class SectorAdminForm(forms.ModelForm):
 
 
 @admin.register(Sector)
-class SectorAdmin(admin.ModelAdmin):
+class SectorAdmin(ImportExportModelAdmin, ExportActionMixin):
     form = SectorAdminForm
     search_fields = ["name__icontains", "model__icontains", "ssid__icontains", "notes__icontains"]
     list_display = [
@@ -39,4 +40,4 @@ class SectorAdmin(admin.ModelAdmin):
                 ]
             },
         ),
-    ]
+    ]  # type: ignore[assignment]

@@ -1,9 +1,11 @@
 from datetime import datetime
-from typing import List
+from typing import Any, Dict, List
 
 from django.db.models import Count, F, OuterRef, Prefetch, Q, Subquery
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import generics, permissions
+from rest_framework.request import Request
+from rest_framework.response import Response
 
 from meshapi.models import Device, Install, Link, Node, Sector
 from meshapi.serializers import (
@@ -29,7 +31,7 @@ class MapDataNodeList(generics.ListAPIView):
     serializer_class = MapDataInstallSerializer
     pagination_class = None
 
-    def get_queryset(self) -> List[Install]:
+    def get_queryset(self) -> List[Install]:  # type: ignore[override]
         all_installs = []
 
         queryset = (
@@ -66,7 +68,10 @@ class MapDataNodeList(generics.ListAPIView):
             if node.network_number not in covered_nns:
                 # Arbitrarily pick a representative install for the details of the "Fake" node,
                 # preferring active installs if possible
-                representative_install = (node.active_installs or node.prefetched_installs)[0]
+                representative_install = (
+                    node.active_installs  # type: ignore[attr-defined]
+                    or node.prefetched_installs  # type: ignore[attr-defined]
+                )[0]
 
                 all_installs.append(
                     Install(
@@ -85,7 +90,7 @@ class MapDataNodeList(generics.ListAPIView):
         all_installs.sort(key=lambda i: i.install_number)
         return all_installs
 
-    def list(self, request, *args, **kwargs):
+    def list(self, request: Request, *args: List[Any], **kwargs: Dict[str, Any]) -> Response:
         response = super().list(request, args, kwargs)
 
         access_points = []
@@ -169,8 +174,8 @@ class MapDataLinkList(generics.ListAPIView):
         # .exclude(to_device__status=Device.DeviceStatus.INACTIVE)
     )
 
-    def list(self, request, *args, **kwargs):
-        response = super().list(request, args, kwargs)
+    def list(self, request: Request, *args: List[Any], **kwargs: Dict[str, Any]) -> Response:
+        response = super().list(request, *args, **kwargs)
 
         covered_links = {(link["from"], link["to"]) for link in response.data}
 
@@ -179,6 +184,7 @@ class MapDataLinkList(generics.ListAPIView):
         # and add fake link objects to connect the installs on those other buildings to
         # the node dot
         cable_runs = []
+
         for node in (
             Node.objects.annotate(num_buildings=Count("buildings"))
             .filter(num_buildings__gt=1)
@@ -192,8 +198,9 @@ class MapDataLinkList(generics.ListAPIView):
             )
         ):
             for building in node.buildings.all():
-                if building.active_installs:
-                    from_install = building.active_installs[0].install_number
+                active_installs = building.active_installs  # type: ignore[attr-defined]
+                if active_installs:
+                    from_install = active_installs[0].install_number
                     if from_install != node.network_number:
                         if (from_install, node.network_number) not in covered_links:
                             cable_runs.append(

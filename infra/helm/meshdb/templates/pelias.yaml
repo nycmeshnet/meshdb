@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "meshdb.fullname" . }}-pelias
+  namespace: {{ .Values.meshdb_app_namespace }}
+  labels:
+    {{- include "meshdb.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "meshdb.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        app: meshdb-pelias-app
+        {{- include "meshdb.labels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      securityContext:
+        {{- toYaml .Values.pelias.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}-pelias
+          securityContext:
+            {{- toYaml .Values.pelias.securityContext | nindent 12 }}
+          image: "pelias/parser"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: pelias
+              containerPort: {{ .Values.pelias.port }}
+              protocol: TCP
+          resources:
+            {{- toYaml .Values.pelias.resources | nindent 12 }}
+      {{- with .Values.pelias.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.pelias.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.pelias.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

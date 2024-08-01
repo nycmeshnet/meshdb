@@ -1,0 +1,87 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "meshdb.fullname" . }}-postgres
+  namespace: {{ .Values.meshdb_app_namespace }}
+  labels:
+    {{- include "meshdb.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "meshdb.selectorLabels" . | nindent 6 }}
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        app: meshdb-postgres-app
+        {{- include "meshdb.labels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      securityContext:
+        {{- toYaml .Values.pg.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}-postgres
+          securityContext:
+            {{- toYaml .Values.pg.securityContext | nindent 12 }}
+          image: postgres:15-bookworm
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: postgres
+              containerPort: {{ .Values.pg.port }}
+              protocol: TCP
+          resources:
+            {{- toYaml .Values.pg.resources | nindent 12 }}
+          {{ if eq .Values.pg.liveness_probe "true" }}
+          livenessProbe:
+            exec:
+              command:
+                - pg_isready -U ${DB_USER}
+            periodSeconds: 5
+            initialDelaySeconds: 5
+            timeoutSeconds: 3
+          {{ end }}
+          env:
+            - name: POSTGRES_DB
+              valueFrom:
+                configMapKeyRef:
+                  name: meshdbconfig
+                  key: DB_NAME
+            - name: POSTGRES_USER
+              valueFrom:
+                configMapKeyRef:
+                  name: meshdbconfig
+                  key: DB_USER
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: meshdb-secrets
+                  key: postgres-password
+            - name: PGDATA
+              value: "/var/lib/postgresql/data/meshdb_data"
+          volumeMounts:
+            - name: pg-data-vol
+              mountPath: /var/lib/postgresql/data
+      volumes:
+        - name: pg-data-vol
+          persistentVolumeClaim:
+            claimName: {{ .Values.pg.pvc_name }}
+      {{- with .Values.pg.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.pg.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.pg.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

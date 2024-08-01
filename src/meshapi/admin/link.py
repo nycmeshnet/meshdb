@@ -1,5 +1,6 @@
+from django import forms
 from django.contrib import admin
-from django.contrib.admin.options import forms
+from import_export.admin import ExportActionMixin, ImportExportModelAdmin
 
 from meshapi.models import Link
 
@@ -14,7 +15,7 @@ class LinkAdminForm(forms.ModelForm):
 
 
 @admin.register(Link)
-class LinkAdmin(admin.ModelAdmin):
+class LinkAdmin(ImportExportModelAdmin, ExportActionMixin):
     form = LinkAdminForm
     search_fields = [
         "from_device__node__name__icontains",

@@ -1,5 +1,6 @@
+from django import forms
 from django.contrib import admin
-from django.contrib.admin.options import forms
+from import_export.admin import ExportActionMixin, ImportExportModelAdmin
 
 from meshapi.admin.inlines import InstallInline
 from meshapi.models import Member
@@ -18,7 +19,7 @@ class MemberAdminForm(forms.ModelForm):
 
 
 @admin.register(Member)
-class MemberAdmin(admin.ModelAdmin):
+class MemberAdmin(ImportExportModelAdmin, ExportActionMixin):
     form = MemberAdminForm
     search_fields = [
         # Search by name
@@ -27,6 +28,7 @@ class MemberAdmin(admin.ModelAdmin):
         "stripe_email_address__icontains",
         "additional_email_addresses__icontains",
         "phone_number__icontains",
+        "additional_phone_numbers__icontains",
         "slack_handle__icontains",
         # Search by building details
         "installs__building__street_address__icontains",
@@ -71,6 +73,7 @@ class MemberAdmin(admin.ModelAdmin):
             {
                 "fields": [
                     "phone_number",
+                    "additional_phone_numbers",
                     "slack_handle",
                 ]
             },

@@ -1,5 +1,3 @@
-from typing import Optional
-
 from django.apps import apps
 
 NETWORK_NUMBER_MIN = 101
@@ -49,7 +47,7 @@ def get_next_available_network_number() -> int:
 
     # If we are re-assigning a number from another install, mark it with NN Assigned to indicate
     # that this has happened
-    nn_donor_install: Optional[Install] = Install.objects.select_for_update().filter(install_number=free_nn).first()
+    nn_donor_install = Install.objects.select_for_update().filter(install_number=free_nn).first()
     if nn_donor_install:
         # Double check that if we are re-assigning something that has been used before that it is
         # definitely unused. The logic above should do that, but this is so important that for
