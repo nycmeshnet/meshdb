@@ -15,7 +15,7 @@ data:
   CELERY_BROKER: "redis://{{ include "meshdb.fullname" . }}-redis.{{ .Values.meshdb_app_namespace }}.svc.cluster.local:{{ .Values.redis.port }}/0"
 
   # Change to pelias:3000 when using full docker-compose
-  PELIAS_ADDRESS_PARSER_URL: http://{{ include "meshdb.fullname" . }}-pelias.{{ .Values.meshdb_app_namespace }}.svc.cluster.local:{{ .Values.pelias.port }}
+  PELIAS_ADDRESS_PARSER_URL: http://{{ include "meshdb.fullname" . }}-pelias.{{ .Values.meshdb_app_namespace }}.svc.cluster.local:{{ .Values.pelias.port }}/parser/parse
 
   # Comment this out to enter prod mode
   DEBUG: {{ .Values.meshweb.enable_debug | quote }}

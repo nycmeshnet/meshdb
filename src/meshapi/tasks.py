@@ -1,3 +1,4 @@
+import logging
 import os
 
 from celery.schedules import crontab
@@ -9,16 +10,27 @@ from meshdb.celery import app as celery_app
 
 @celery_app.task
 def run_database_backup() -> None:
+    logging.info("Running database backup task")
     if not os.environ.get("AWS_ACCESS_KEY_ID") or not os.environ.get("AWS_SECRET_ACCESS_KEY"):
-        print("Could not run backup. Missing AWS credentials!")
+        logging.error("Could not run backup. Missing AWS credentials!")
         return
 
-    management.call_command("dbbackup")
+    try:
+        management.call_command("dbbackup")
+    except Exception as e:
+        logging.exception(e)
+        raise e
 
 
 @celery_app.task
 def run_update_panoramas() -> None:
-    sync_github_panoramas()
+    logging.info("Running panorama sync task")
+    try:
+        sync_github_panoramas()
+    except Exception as e:
+        # Make sure the failure gets logged.
+        logging.exception(e)
+        raise e
 
 
 celery_app.conf.beat_schedule = {
