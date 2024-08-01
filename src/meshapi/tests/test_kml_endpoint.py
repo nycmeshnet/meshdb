@@ -209,7 +209,7 @@ class TestKMLEndpoint(TestCase):
 
         kml_doc = kml.KML.class_from_string(response.content.decode("UTF8")).features[0]
 
-        self.assertEqual(len(kml_doc.styles), 4)
+        self.assertEqual(len(kml_doc.styles), 5)
         self.assertEqual(len(kml_doc.features), 2)
 
         nodes_folder = kml_doc.features[0]
