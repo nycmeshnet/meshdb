@@ -75,9 +75,11 @@ def render_node_data() -> Collection[dict]:
 
     all_installs.sort(key=lambda i: i.install_number)
 
-    all_installs_rendered_json = MapDataInstallSerializer(all_installs, many=True).data
+    all_installs_rendered_json: List[dict] = MapDataInstallSerializer(  # type: ignore[assignment]
+        all_installs, many=True
+    ).data
 
-    access_points = []
+    access_points: List[dict] = []
     for device in Device.objects.filter(
         Q(status=Device.DeviceStatus.ACTIVE) & (~Q(node__latitude=F("latitude")) | ~Q(node__longitude=F("longitude")))
     ):
@@ -113,7 +115,7 @@ def render_node_data() -> Collection[dict]:
 
 @cacheback(lifetime=MAP_DATA_CACHE_DURATION)
 def render_link_data() -> Collection[dict]:
-    all_links = []
+    all_links: List[dict] = []
     link_queryset = (
         Link.objects.exclude(status__in=[Link.LinkStatus.INACTIVE])
         .exclude(to_device__node__status=Node.NodeStatus.INACTIVE)
