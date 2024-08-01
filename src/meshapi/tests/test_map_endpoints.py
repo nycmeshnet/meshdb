@@ -3,7 +3,7 @@ import json
 
 from django.test import Client, TestCase
 
-from meshapi.models import Building, Device, Install, Link, Member, Node, Sector
+from meshapi.models import LOS, Building, Device, Install, Link, Member, Node, Sector
 
 
 class TestViewsGetUnauthenticated(TestCase):
@@ -521,6 +521,20 @@ class TestViewsGetUnauthenticated(TestCase):
             longitude=0,
         )
         sn1.save()
+
+        sn1_building = Building(address_truth_sources=[], latitude=0, longitude=0, primary_node=sn1)
+        sn1_building.save()
+
+        sn1_install = Install(
+            member=member,
+            install_number=227,
+            building=sn1_building,
+            node=sn1,
+            status=Install.InstallStatus.ACTIVE,
+            request_date=datetime.date(2015, 3, 15),
+        )
+        sn1_install.save()
+
         sn1_omni = Device(
             node=sn1,
             model="OmniTik",
@@ -564,6 +578,19 @@ class TestViewsGetUnauthenticated(TestCase):
             longitude=0,
         )
         sn3_omni.save()
+
+        sn3_building = Building(address_truth_sources=[], latitude=0, longitude=0, primary_node=sn3)
+        sn3_building.save()
+
+        sn3_install = Install(
+            member=member,
+            install_number=713,
+            building=sn3_building,
+            node=sn3,
+            status=Install.InstallStatus.ACTIVE,
+            request_date=datetime.date(2015, 3, 15),
+        )
+        sn3_install.save()
 
         brian = Node(
             network_number=3,
@@ -746,6 +773,104 @@ class TestViewsGetUnauthenticated(TestCase):
         for link in links:
             link.save()
 
+        modern_hub = Node(
+            network_number=413,
+            latitude=0,
+            longitude=0,
+            status=Node.NodeStatus.ACTIVE,
+        )
+        modern_hub.save()
+
+        modern_hub_building = Building(
+            latitude=0,
+            longitude=0,
+            address_truth_sources=[],
+            primary_node=modern_hub,
+        )
+        modern_hub_building.save()
+
+        modern_hub_install = Install(
+            install_number=123323,
+            building=modern_hub_building,
+            node=modern_hub,
+            status=Install.InstallStatus.ACTIVE,
+            request_date=datetime.date(2015, 3, 15),
+            member=member,
+        )
+        modern_hub_install.save()
+
+        potential_building = Building(
+            latitude=0,
+            longitude=0,
+            address_truth_sources=[],
+        )
+        potential_building.save()
+
+        potential_install = Install(
+            install_number=88892,
+            building=potential_building,
+            status=Install.InstallStatus.REQUEST_RECEIVED,
+            request_date=datetime.date(2015, 3, 15),
+            member=member,
+        )
+        potential_install.save()
+
+        no_installs_building = Building(
+            latitude=0,
+            longitude=0,
+            address_truth_sources=[],
+        )
+        no_installs_building.save()
+
+        today = datetime.date.today()
+        los = LOS(
+            from_building=random_building,
+            to_building=potential_building,
+            source=LOS.LOSSource.HUMAN_ANNOTATED,
+            analysis_date=today,
+        )
+        los.save()
+
+        los_duplicative = LOS(
+            from_building=sn1_building,
+            to_building=sn3_building,
+            source=LOS.LOSSource.HUMAN_ANNOTATED,
+            analysis_date=today,
+        )
+        los_duplicative.save()
+
+        los_no_installs = LOS(
+            from_building=no_installs_building,
+            to_building=random_building,
+            source=LOS.LOSSource.HUMAN_ANNOTATED,
+            analysis_date=today,
+        )
+        los_no_installs.save()
+
+        modern_hub_los = LOS(
+            from_building=modern_hub_building,
+            to_building=potential_building,
+            source=LOS.LOSSource.EXISTING_LINK,
+            analysis_date=today,
+        )
+        modern_hub_los.save()
+
+        modern_hub_los_duplicate = LOS(
+            from_building=modern_hub_building,
+            to_building=potential_building,
+            source=LOS.LOSSource.EXISTING_LINK,
+            analysis_date=today,
+        )
+        modern_hub_los_duplicate.save()
+
+        self_loop_los = LOS(
+            from_building=modern_hub_building,
+            to_building=modern_hub_building,
+            source=LOS.LOSSource.HUMAN_ANNOTATED,
+            analysis_date=today,
+        )
+        self_loop_los.save()
+
         self.maxDiff = None
         response = self.c.get("/api/v1/mapdata/links/")
 
@@ -782,6 +907,21 @@ class TestViewsGetUnauthenticated(TestCase):
                     "from": 56789,
                     "to": 123,
                     "status": "active",
+                },
+                {
+                    "from": 123,
+                    "to": 88892,
+                    "status": "planned",
+                },
+                {
+                    "from": 123323,
+                    "to": 88892,
+                    "status": "planned",
+                },
+                {
+                    "from": 413,
+                    "to": 88892,
+                    "status": "planned",
                 },
             ],
         )

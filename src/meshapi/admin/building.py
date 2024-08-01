@@ -7,7 +7,7 @@ from django.db.models import QuerySet
 from django.http import HttpRequest
 from import_export.admin import ExportActionMixin, ImportExportModelAdmin
 
-from meshapi.admin.inlines import InstallInline
+from meshapi.admin.inlines import BuildingLOSInline, InstallInline
 from meshapi.models import Building
 from meshapi.widgets import PanoramaViewer
 
@@ -119,5 +119,5 @@ class BuildingAdmin(ImportExportModelAdmin, ExportActionMixin):
             },
         ),
     ]
-    inlines = [InstallInline]
+    inlines = [InstallInline, BuildingLOSInline]
     filter_horizontal = ("nodes",)
