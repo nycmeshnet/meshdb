@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING, Any
 from django.core.validators import MaxValueValidator
 from django.db import models
 
+from meshapi.util.django_pglocks import advisory_lock
 from meshapi.util.network_number import NETWORK_NUMBER_MAX, get_next_available_network_number
 
 if TYPE_CHECKING:
@@ -90,10 +91,11 @@ class Node(models.Model):
     )
 
     def save(self, *args: Any, **kwargs: Any) -> None:
-        if not self.network_number:
-            self.network_number = get_next_available_network_number()
+        with advisory_lock("nn_assignment_lock"):
+            if not self.network_number:
+                self.network_number = get_next_available_network_number()
 
-        super().save(*args, **kwargs)
+            super().save(*args, **kwargs)
 
     def __str__(self) -> str:
         if self.name:
