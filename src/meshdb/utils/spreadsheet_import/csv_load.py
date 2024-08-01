@@ -311,12 +311,12 @@ def get_spreadsheet_sectors(sectors_path: str) -> List[SpreadsheetSector]:
 
         for i, row in enumerate(csv_reader):
             try:
-                install_date = datetime.datetime.strptime(row["installDate"], "%m/%d/%Y")
+                install_date = datetime.datetime.strptime(row["installDate"], "%m/%d/%Y").date()
             except ValueError:
                 install_date = None
 
             try:
-                abandon_date = datetime.datetime.strptime(row["abandonDate"], "%m/%d/%Y")
+                abandon_date = datetime.datetime.strptime(row["abandonDate"], "%m/%d/%Y").date()
             except ValueError:
                 abandon_date = None
 
