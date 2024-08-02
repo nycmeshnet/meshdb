@@ -1,13 +1,13 @@
 from datetime import datetime
 from typing import Any, Dict, List
 
-from django.db.models import Count, F, OuterRef, Prefetch, Q, Subquery
+from django.db.models import Count, Exists, F, OuterRef, Prefetch, Q, Subquery
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import generics, permissions
 from rest_framework.request import Request
 from rest_framework.response import Response
 
-from meshapi.models import Device, Install, Link, Node, Sector
+from meshapi.models import LOS, Device, Install, Link, Node, Sector
 from meshapi.serializers import (
     ALLOWED_INSTALL_STATUSES,
     EXCLUDED_INSTALL_STATUSES,
@@ -50,10 +50,11 @@ class MapDataNodeList(generics.ListAPIView):
         covered_nns = {install.install_number for install in all_installs}
         for node in (
             Node.objects.filter(~Q(status=Node.NodeStatus.INACTIVE) & Q(installs__status__in=ALLOWED_INSTALL_STATUSES))
+            .prefetch_related("devices")
             .prefetch_related(
                 Prefetch(
                     "installs",
-                    queryset=Install.objects.all(),
+                    queryset=Install.objects.all().select_related("building"),
                     to_attr="prefetched_installs",
                 )
             )
@@ -212,6 +213,79 @@ class MapDataLinkList(generics.ListAPIView):
                             )
 
         response.data.extend(cable_runs)
+
+        # Since the old school map has no concept of a LOS, only potential Links, we need to
+        # create a fake potential Link object to represent each of our LOS entries
+        # For our purposes here, we only care about LOS entries between buildings that have
+        # install numbers. If one side of an LOS is a building that has no installs associated with
+        # it, we exclude it
+        los_objects_with_installs = (
+            LOS.objects.filter(
+                Exists(Install.objects.filter(building=OuterRef("from_building")))
+                & Exists(Install.objects.filter(building=OuterRef("to_building")))
+                & ~Q(from_building=F("to_building"))
+            )
+            .exclude(
+                # Remove any LOS objects that would duplicate Link objects,
+                # to avoid cluttering the map
+                Exists(
+                    Link.objects.filter(
+                        (
+                            Q(from_device__node__buildings=OuterRef("from_building"))
+                            & Q(to_device__node__buildings=OuterRef("to_building"))
+                        )
+                        | (
+                            Q(from_device__node__buildings=OuterRef("to_building"))
+                            & Q(to_device__node__buildings=OuterRef("from_building"))
+                        )
+                    )
+                )
+            )
+            .filter(
+                # This horrible monster query exists to de-duplicate LOSes between the same building
+                # pairs so that the map doesn't freak out. This deduplication happens somewhat
+                # arbitrarily and is borrowed from https://stackoverflow.com/a/69938289
+                pk__in=LOS.objects.values("from_building", "to_building")
+                .distinct()
+                .annotate(
+                    pk=Subquery(
+                        LOS.objects.filter(
+                            from_building=OuterRef("from_building"),
+                            to_building=OuterRef("to_building"),
+                        )
+                        .order_by("pk")
+                        .values("pk")[:1]
+                    )
+                )
+                .values_list("pk", flat=True)
+            )
+            .prefetch_related("from_building__installs")
+            .prefetch_related("from_building__nodes")
+            .prefetch_related("to_building__installs")
+            .prefetch_related("to_building__nodes")
+        )
+
+        los_based_potential_links = []
+        for los in los_objects_with_installs:
+            from_numbers = set(i.install_number for i in los.from_building.installs.all()).union(
+                set(n.network_number for n in los.from_building.nodes.all())
+            )
+
+            to_numbers = set(i.install_number for i in los.to_building.installs.all()).union(
+                set(n.network_number for n in los.to_building.nodes.all())
+            )
+
+            for from_number in from_numbers:
+                for to_number in to_numbers:
+                    los_based_potential_links.append(
+                        {
+                            "from": from_number,
+                            "to": to_number,
+                            "status": Link.LinkStatus.PLANNED.lower(),
+                        }
+                    )
+
+        response.data.extend(los_based_potential_links)
 
         return response
 

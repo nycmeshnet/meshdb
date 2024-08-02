@@ -4,7 +4,7 @@ import json
 from django.contrib.auth.models import User
 from django.test import Client, TestCase
 
-from ..models import Building, Device, Install, Link, Member, Node, Sector
+from ..models import LOS, Building, Device, Install, Link, Member, Node, Sector
 from .sample_data import sample_building, sample_member
 
 
@@ -1211,6 +1211,267 @@ class TestLinkLookups(TestCase):
 
     def test_invalid_search(self):
         response = self.c.get("/api/v1/links/lookup/?invalid=abc")
+        code = 400
+        self.assertEqual(
+            code,
+            response.status_code,
+            f"status code incorrect. Should be {code}, but got {response.status_code}",
+        )
+
+
+class TestLOSLookups(TestCase):
+    c = Client()
+
+    def setUp(self):
+        self.admin_user = User.objects.create_superuser(
+            username="admin", password="admin_password", email="admin@example.com"
+        )
+        self.c.login(username="admin", password="admin_password")
+
+        n1 = Node(
+            network_number=456,
+            status=Node.NodeStatus.ACTIVE,
+            latitude=2,
+            longitude=-2,
+            altitude=40,
+        )
+        n1.save()
+        n2 = Node(
+            network_number=789,
+            status=Node.NodeStatus.ACTIVE,
+            latitude=2,
+            longitude=-2,
+            altitude=40,
+        )
+        n2.save()
+
+        m1 = Member(**sample_member)
+        m1.save()
+
+        b1 = Building(**sample_building, primary_node=n1, id=1)
+        b1.save()
+
+        b2 = Building(
+            id=2,
+            bin=123,
+            street_address="123 Water Road",
+            city="New York",
+            state="NY",
+            zip_code="10025",
+            latitude=2,
+            longitude=-2,
+            altitude=40,
+            primary_node=n2,
+            address_truth_sources=[],
+        )
+        b2.save()
+        b2.nodes.add(n2)
+
+        b3 = Building(
+            id=3,
+            bin=123,
+            street_address="123 Water Road",
+            city="New York",
+            state="NY",
+            zip_code="10025",
+            latitude=2,
+            longitude=-2,
+            altitude=40,
+            address_truth_sources=[],
+        )
+        b3.save()
+
+        i1 = Install(
+            install_number=123456,
+            status=Install.InstallStatus.ACTIVE,
+            request_date=datetime.date.today(),
+            building=b1,
+            member=m1,
+            node=n1,
+        )
+        i1.save()
+
+        self.today = datetime.date.today()
+        l1 = LOS(
+            id=1,
+            from_building=b1,
+            to_building=b2,
+            source=LOS.LOSSource.HUMAN_ANNOTATED,
+            analysis_date=self.today,
+        )
+        l1.save()
+
+        l2 = LOS(
+            id=2,
+            from_building=b2,
+            to_building=b3,
+            source=LOS.LOSSource.EXISTING_LINK,
+            analysis_date=self.today,
+        )
+        l2.save()
+
+    def test_los_nn_search(self):
+        response = self.c.get("/api/v1/loses/lookup/?network_number=456")
+        code = 200
+        self.assertEqual(
+            code,
+            response.status_code,
+            f"status code incorrect. Should be {code}, but got {response.status_code}",
+        )
+
+        response_objs = json.loads(response.content)["results"]
+        self.assertEqual(len(response_objs), 1)
+        self.assertEqual(response_objs[0]["id"], 1)
+
+        response = self.c.get("/api/v1/loses/lookup/?network_number=789")
+        code = 200
+        self.assertEqual(
+            code,
+            response.status_code,
+            f"status code incorrect. Should be {code}, but got {response.status_code}",
+        )
+
+        response_objs = json.loads(response.content)["results"]
+        self.assertEqual(len(response_objs), 2)
+
+        response = self.c.get("/api/v1/loses/lookup/?network_number=321")
+        code = 200
+        self.assertEqual(
+            code,
+            response.status_code,
+            f"status code incorrect. Should be {code}, but got {response.status_code}",
+        )
+
+        response_objs = json.loads(response.content)["results"]
+        self.assertEqual(len(response_objs), 0)
+
+    def test_los_install_num_search(self):
+        response = self.c.get("/api/v1/loses/lookup/?install_number=123456")
+        code = 200
+        self.assertEqual(
+            code,
+            response.status_code,
+            f"status code incorrect. Should be {code}, but got {response.status_code}",
+        )
+
+        response_objs = json.loads(response.content)["results"]
+        self.assertEqual(len(response_objs), 1)
+        self.assertEqual(response_objs[0]["id"], 1)
+
+        response = self.c.get("/api/v1/loses/lookup/?install_number=321")
+        code = 200
+        self.assertEqual(
+            code,
+            response.status_code,
+            f"status code incorrect. Should be {code}, but got {response.status_code}",
+        )
+
+        response_objs = json.loads(response.content)["results"]
+        self.assertEqual(len(response_objs), 0)
+
+    def test_los_building_id_search(self):
+        response = self.c.get("/api/v1/loses/lookup/?building=3")
+        code = 200
+        self.assertEqual(
+            code,
+            response.status_code,
+            f"status code incorrect. Should be {code}, but got {response.status_code}",
+        )
+
+        response_objs = json.loads(response.content)["results"]
+        self.assertEqual(len(response_objs), 1)
+
+        response = self.c.get("/api/v1/loses/lookup/?building=321")
+        code = 200
+        self.assertEqual(
+            code,
+            response.status_code,
+            f"status code incorrect. Should be {code}, but got {response.status_code}",
+        )
+
+        response_objs = json.loads(response.content)["results"]
+        self.assertEqual(len(response_objs), 0)
+
+    def test_los_source_search(self):
+        response = self.c.get("/api/v1/loses/lookup/?source=Existing%20Link")
+        code = 200
+        self.assertEqual(
+            code,
+            response.status_code,
+            f"status code incorrect. Should be {code}, but got {response.status_code}",
+        )
+
+        response_objs = json.loads(response.content)["results"]
+        self.assertEqual(len(response_objs), 1)
+        self.assertEqual(response_objs[0]["id"], 2)
+
+        response = self.c.get("/api/v1/loses/lookup/?source=Human%20Annotated")
+        code = 200
+        self.assertEqual(
+            code,
+            response.status_code,
+            f"status code incorrect. Should be {code}, but got {response.status_code}",
+        )
+
+        response_objs = json.loads(response.content)["results"]
+        self.assertEqual(len(response_objs), 1)
+        self.assertEqual(response_objs[0]["id"], 1)
+
+        response = self.c.get("/api/v1/loses/lookup/?source=InvalidABCDEF")
+        code = 400
+        self.assertEqual(
+            code,
+            response.status_code,
+            f"status code incorrect. Should be {code}, but got {response.status_code}",
+        )
+
+    def test_los_date_search(self):
+        response = self.c.get(f"/api/v1/loses/lookup/?analysis_date={self.today.isoformat()}")
+        code = 200
+        self.assertEqual(
+            code,
+            response.status_code,
+            f"status code incorrect. Should be {code}, but got {response.status_code}",
+        )
+
+        response_objs = json.loads(response.content)["results"]
+        self.assertEqual(len(response_objs), 2)
+
+        response = self.c.get("/api/v1/loses/lookup/?analysis_date=1968-02-23")
+        code = 200
+        self.assertEqual(
+            code,
+            response.status_code,
+            f"status code incorrect. Should be {code}, but got {response.status_code}",
+        )
+
+        response_objs = json.loads(response.content)["results"]
+        self.assertEqual(len(response_objs), 0)
+
+    def test_node_combined_search(self):
+        response = self.c.get("/api/v1/loses/lookup/?source=Human%20Annotated&network_number=456")
+        code = 200
+        self.assertEqual(
+            code,
+            response.status_code,
+            f"status code incorrect. Should be {code}, but got {response.status_code}",
+        )
+
+        response_objs = json.loads(response.content)["results"]
+        self.assertEqual(len(response_objs), 1)
+        self.assertEqual(response_objs[0]["id"], 1)
+
+    def test_empty_search(self):
+        response = self.c.get("/api/v1/loses/lookup/")
+        code = 400
+        self.assertEqual(
+            code,
+            response.status_code,
+            f"status code incorrect. Should be {code}, but got {response.status_code}",
+        )
+
+    def test_invalid_search(self):
+        response = self.c.get("/api/v1/loses/lookup/?invalid=abc")
         code = 400
         self.assertEqual(
             code,

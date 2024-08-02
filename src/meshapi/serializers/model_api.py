@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
 
-from meshapi.models import Building, Device, Install, Link, Member, Node, Sector
+from meshapi.models import LOS, Building, Device, Install, Link, Member, Node, Sector
 
 
 class BuildingSerializer(serializers.ModelSerializer):
@@ -83,3 +83,9 @@ class SectorSerializer(serializers.ModelSerializer):
 
     links_from: serializers.PrimaryKeyRelatedField = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
     links_to: serializers.PrimaryKeyRelatedField = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
+
+
+class LOSSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = LOS
+        fields = "__all__"

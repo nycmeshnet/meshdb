@@ -9,7 +9,7 @@ from django.core.management.base import BaseCommand
 from django.db import transaction
 from faker import Faker
 
-from meshapi.models import Install, Member
+from meshapi.models import LOS, Install, Member
 from meshapi.models.building import Building
 from meshapi.models.devices.device import Device
 from meshapi.models.link import Link
@@ -120,6 +120,12 @@ class Command(BaseCommand):
                 date.today(), node.install_date, node.abandon_date
             )
             node.save()
+
+        logging.info("Scrambling LOSes...")
+        LOSes = LOS.objects.all()
+        for los in LOSes:
+            los.notes = fake.text()
+            los.save()
 
         logging.info("Done")
 
