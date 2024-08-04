@@ -7,3 +7,11 @@
     opacity: 0.6; /* Reduce opacity to visually indicate disabled state */
     pointer-events: none; /* Disable pointer events */
 }
+
+.geocode-error {
+    margin-top: 20px;
+    padding: 10px;
+    border: 1px red;
+    color: red;
+    background: pink;
+}

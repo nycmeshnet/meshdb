@@ -2,10 +2,8 @@ $(document).ready(function($) {
     const sourceURLMap = {
         Node: "/api/v1/nodes/",
         Building: "/api/v1/buildings/",
-        Address: "https://geosearch.planninglabs.nyc/v2/search?size=1&text="
+        Address: "/api/v1/geography/nyc-geocode/v2/search"
     };
-    const ALTITUDE_DATA_URL = "https://data.cityofnewyork.us/resource/qb5r-6dgf.json";
-
 
     let searchId = undefined;
     $('#id_node').on('change', function () {
@@ -26,12 +24,12 @@ $(document).ready(function($) {
         }
     });
 
-    function buildAddress(){
-        console.log("BUILD ADDR")
+    function buildAddressQuery(){
         const streetAddr = $('#id_street_address').val();
         const city = $('#id_city').val();
         const state = $('#id_state').val();
         const zip = $('#id_zip_code').val();
+
         if (!streetAddr) {
             searchId = undefined;
             $('#location_autocomplete_button').addClass("disabled-button")
@@ -52,15 +50,19 @@ $(document).ready(function($) {
             $('#location_autocomplete_button').addClass("disabled-button")
             return;
         }
-        searchId = encodeURIComponent(`${streetAddr}, ${city}, ${state} ${zip}`)
+        searchId = `?street_address=${encodeURIComponent(streetAddr)}` +
+            `&city=${encodeURIComponent(city)}` +
+            `&state=${encodeURIComponent(state)}` +
+            `&zip=${encodeURIComponent(zip)}`;
+
         $('#location_autocomplete_button').removeClass("disabled-button")
     }
 
-    $('#id_street_address').on('change', buildAddress);
-    $('#id_city').on('change', buildAddress);
-    $('#id_state').on('change', buildAddress);
-    $('#id_zip_code').on('change', buildAddress);
-    buildAddress();
+    $('#id_street_address').on('change', buildAddressQuery);
+    $('#id_city').on('change', buildAddressQuery);
+    $('#id_state').on('change', buildAddressQuery);
+    $('#id_zip_code').on('change', buildAddressQuery);
+    buildAddressQuery();
 
     $('#location_autocomplete_button').on("click", function (event){
         event.preventDefault();
@@ -68,39 +70,21 @@ $(document).ready(function($) {
         $('#id_longitude').val("");
         $('#id_altitude').val("");
         $('#id_bin').val("");
+        $('#geocode_error').addClass("hidden");
 
         if (searchId) {
-            $.get(sourceURLMap[$(this).attr('autocompletesource')] + searchId, function (data, status) {
-                if (data.features) {
-                    // We are talking to the NYC geocoding API,
-                    // build a special data object to replicate the meshDB api response
-                    let bin = data.features[0].properties.addendum.pad.bin ?? "";
-                    if (parseInt(bin) % 1000000 === 0) bin = "";
-
-                    if (bin) {
-                        $('#id_bin').val(bin);
-                        const altitudeParams = {
-                           "$where": `bin=${bin}`,
-                            "$select": "heightroof,groundelev",
-                            "$limit": "1",
-                        };
-                        $.get(ALTITUDE_DATA_URL + "?" + $.param(altitudeParams), function (data, status) {
-                            const absoluteAltitudeMeters = (parseFloat(data[0]["heightroof"]) + parseFloat(data[0]["groundelev"])) / 3.28084;
-                            $('#id_altitude').val(absoluteAltitudeMeters.toFixed(1));
-                        })
-                    }
-
-                    data = {
-                        latitude: data.features[0].geometry.coordinates[1],
-                        longitude: data.features[0].geometry.coordinates[0],
-                        altitude: ""
-                    }
-                }
-
-                $('#id_latitude').val(data.latitude);
-                $('#id_longitude').val(data.longitude);
-                $('#id_altitude').val(data.altitude);
-            })
+            $.get(sourceURLMap[$(this).attr('autocompletesource')] + searchId)
+                .done(function (data) {
+                    if (data.BIN) $('#id_bin').val(data.BIN);
+                    $('#id_latitude').val(data.latitude);
+                    $('#id_longitude').val(data.longitude);
+                    $('#id_altitude').val(data.altitude);
+                }).fail(function(jqXHR) {
+                    $('#geocode_error').text(
+                        `Error encountered while trying to autocomplete: ${jqXHR.responseText}`
+                    )
+                    $('#geocode_error').removeClass("hidden");
+                })
         }
     })
 });
