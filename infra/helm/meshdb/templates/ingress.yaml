@@ -33,7 +33,7 @@ spec:
             pathType: {{ .pathType }}
             backend:
               service:
-                name: {{ $.Values.ingress.targetService }}
+                name: {{ .targetService }}
                 port:
                   number: {{ $svcPort }}
           {{- end }}
