@@ -14,9 +14,9 @@ class TestViewsGetUnauthenticated(TestCase):
 
     def test_views_get_unauthenticated(self):
         routes = [
-            ("/api/v1/mapdata/nodes/", 200),
-            ("/api/v1/mapdata/links/", 200),
-            ("/api/v1/mapdata/sectors/", 200),
+            ("/api/v1/mapdata/nodes/?nocache=true", 200),
+            ("/api/v1/mapdata/links/?nocache=true", 200),
+            ("/api/v1/mapdata/sectors/?nocache=true", 200),
         ]
 
         for route, code in routes:
@@ -281,7 +281,7 @@ class TestViewsGetUnauthenticated(TestCase):
             install.save()
 
         self.maxDiff = None
-        response = self.c.get("/api/v1/mapdata/nodes/")
+        response = self.c.get("/api/v1/mapdata/nodes/?nocache=true")
 
         self.assertEqual(
             json.loads(response.content.decode("UTF8")),
@@ -466,7 +466,7 @@ class TestViewsGetUnauthenticated(TestCase):
         install.save()
 
         self.maxDiff = None
-        response = self.c.get("/api/v1/mapdata/sectors/")
+        response = self.c.get("/api/v1/mapdata/sectors/?nocache=true")
 
         self.assertEqual(
             json.loads(response.content.decode("UTF8")),
@@ -872,7 +872,7 @@ class TestViewsGetUnauthenticated(TestCase):
         self_loop_los.save()
 
         self.maxDiff = None
-        response = self.c.get("/api/v1/mapdata/links/")
+        response = self.c.get("/api/v1/mapdata/links/?nocache=true")
 
         self.assertEqual(
             json.loads(response.content.decode("UTF8")),
@@ -1064,7 +1064,7 @@ class TestViewsGetUnauthenticated(TestCase):
             link.save()
 
         self.maxDiff = None
-        response = self.c.get("/api/v1/mapdata/links/")
+        response = self.c.get("/api/v1/mapdata/links/?nocache=true")
 
         self.assertEqual(
             json.loads(response.content.decode("UTF8")),
@@ -1169,7 +1169,7 @@ class TestViewsGetUnauthenticated(TestCase):
             link.save()
 
         self.maxDiff = None
-        response = self.c.get("/api/v1/mapdata/links/")
+        response = self.c.get("/api/v1/mapdata/links/?nocache=true")
 
         self.assertEqual(
             json.loads(response.content.decode("UTF8")),
@@ -1326,7 +1326,7 @@ class TestViewsGetUnauthenticated(TestCase):
             link.save()
 
         self.maxDiff = None
-        response = self.c.get("/api/v1/mapdata/links/")
+        response = self.c.get("/api/v1/mapdata/links/?nocache=true")
 
         self.assertEqual(
             json.loads(response.content.decode("UTF8")),

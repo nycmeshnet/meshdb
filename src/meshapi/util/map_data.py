@@ -1,7 +1,8 @@
 from datetime import datetime
-from typing import Collection, List
+from typing import Any, Collection, List
 
 from cacheback.decorators import cacheback
+from cacheback.jobs import FunctionJob
 from django.db.models import Count, Exists, F, OuterRef, Prefetch, Q, Subquery
 
 from meshapi.models import LOS, Device, Install, Link, Node, Sector
@@ -15,7 +16,35 @@ from meshapi.serializers import (
 from meshdb.settings import MAP_DATA_CACHE_DURATION
 
 
-@cacheback(lifetime=MAP_DATA_CACHE_DURATION)
+class BypassableFunctionJob(FunctionJob):
+    def __init__(self, update_cache_on_read_skip: bool = True, *args: list, **kwargs: dict) -> None:
+        self.update_cache_on_skip = update_cache_on_read_skip
+        super().__init__(*args, **kwargs)
+
+    def get(self, *raw_args: list, **raw_kwargs: dict) -> Any:
+        bypass_cache = raw_kwargs.get("bypass_cache", False)
+
+        if "bypass_cache" in raw_kwargs:
+            # The downstream decorated function isn't expecting this kwarg,
+            # remove it, so we don't get a TypeError
+            del raw_kwargs["bypass_cache"]
+
+        if bypass_cache:
+            # Copy the arg preparation logic from the base class
+            args = self.prepare_args(*raw_args)
+            kwargs = self.prepare_kwargs(**raw_kwargs)
+
+            # When we want to update the cache with our new value, we use .refresh()
+            # instead of .fetch() here to ensure our new value is stored in the cache
+            if self.update_cache_on_skip:
+                return self.refresh(*args, **kwargs)
+            else:
+                return self.fetch(*args, **kwargs)
+
+        return super().get(*raw_args, **raw_kwargs)
+
+
+@cacheback(lifetime=MAP_DATA_CACHE_DURATION, job_class=BypassableFunctionJob)
 def render_node_data() -> Collection[dict]:
     all_installs = []
 
@@ -113,7 +142,7 @@ def render_node_data() -> Collection[dict]:
     return all_installs_rendered_json + access_points
 
 
-@cacheback(lifetime=MAP_DATA_CACHE_DURATION)
+@cacheback(lifetime=MAP_DATA_CACHE_DURATION, job_class=BypassableFunctionJob)
 def render_link_data() -> Collection[dict]:
     all_links: List[dict] = []
     link_queryset = (
@@ -263,7 +292,7 @@ def render_link_data() -> Collection[dict]:
     return all_links
 
 
-@cacheback(lifetime=MAP_DATA_CACHE_DURATION)
+@cacheback(lifetime=MAP_DATA_CACHE_DURATION, job_class=BypassableFunctionJob)
 def render_sector_data() -> Collection[dict]:
     queryset = Sector.objects.filter(~Q(status__in=[Device.DeviceStatus.INACTIVE])).prefetch_related("node")
     return MapDataSectorSerializer(queryset, many=True).data
