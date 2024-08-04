@@ -40,20 +40,20 @@ jobs:
         scp ${{ secrets.SSH_USER }}@${{ secrets.SSH_TARGET_IP }}:~/.kube/config ./
 
         # Install the chart with helm
-        helm upgrade --install --kubeconfig ./config --kube-apiserver https://${{ secrets.SSH_TARGET_IP }}:6443 -n ${{ vars.APP_NAMESPACE }} --create-namespace meshforms infra/helm/meshforms/ \
-        --set meshdb_app_namespace=\"${{ vars.APP_NAMESPACE }}\" \
-        --set nginx.server_name=\"${{ vars.SERVER_NAME }}\" \
-        --set pg.password=\"${{ secrets.PG_PASSWORD}}\" \
-        --set aws.access_key_id=\"${{ secrets.ACCESS_KEY_ID }}\" \
-        --set aws.secret_access_key=\"${{ secrets.SECRET_ACCESS_KEY }}\" \
-        --set meshweb.backup_s3_base_folder=\"${{ vars.BACKUP_S3_BASE_FOLDER }}\" \
-        --set meshweb.backup_s3_bucket_name=\"${{ secrets.BACKUP_S3_BUCKET_NAME }}\" \
-        --set meshweb.django_secret_key=\"${{ secrets.DJANGO_SECRET_KEY }}\" \
-        --set meshweb.nn_assign_psk=\"${{ secrets.NN_ASSIGN_PSK }}\" \
-        --set meshweb.query_psk=\"${{ secrets.QUERY_PSK }}\" \
-        --set meshweb.pano_github_token=\"${{ secrets.GH_TOKEN }}\" \
-        --set pgadmin.default_email=\"${{ secrets.PGADMIN_EMAIL }}\" \
-        --set pgadmin.default_password=\"${{ secrets.PGADMIN_PASSWORD }}\" \
-        --set uisp.user=\"${{ secrets.UISP_USER }}\" \
-        --set uisp.psk=\"${{ secrets.UISP_PSK }}\" \
-        --set ingress.hosts[0].host=\"${{ secrets.INGRESS_HOST }}\" \
+        helm upgrade --install --kubeconfig ./config --kube-apiserver https://${{ secrets.SSH_TARGET_IP }}:6443 -n ${{ vars.APP_NAMESPACE }} --create-namespace ${{ vars.APP_NAMESPACE }} infra/helm/${{ vars.APP_NAMESPACE }}/ \
+        --set meshdb_app_namespace="${{ vars.APP_NAMESPACE }}" \
+        --set nginx.server_name="${{ vars.SERVER_NAME }}" \
+        --set pg.password="${{ secrets.PG_PASSWORD}}" \
+        --set aws.access_key_id="${{ secrets.ACCESS_KEY_ID }}" \
+        --set aws.secret_access_key="${{ secrets.SECRET_ACCESS_KEY }}" \
+        --set meshweb.backup_s3_base_folder="${{ vars.BACKUP_S3_BASE_FOLDER }}" \
+        --set meshweb.backup_s3_bucket_name="${{ secrets.BACKUP_S3_BUCKET_NAME }}" \
+        --set meshweb.django_secret_key="${{ secrets.DJANGO_SECRET_KEY }}" \
+        --set meshweb.nn_assign_psk="${{ secrets.NN_ASSIGN_PSK }}" \
+        --set meshweb.query_psk="${{ secrets.QUERY_PSK }}" \
+        --set meshweb.pano_github_token="${{ secrets.GH_TOKEN }}" \
+        --set pgadmin.default_email="${{ secrets.PGADMIN_EMAIL }}" \
+        --set pgadmin.default_password="${{ secrets.PGADMIN_PASSWORD }}" \
+        --set uisp.user="${{ secrets.UISP_USER }}" \
+        --set uisp.psk="${{ secrets.UISP_PSK }}" \
+        --set ingress.hosts[0].host="${{ vars.INGRESS_HOST }}",ingress.hosts[0].paths[0].path=/,ingress.hosts[0].paths[0].pathType=Prefix
