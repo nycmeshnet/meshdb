@@ -1,5 +1,6 @@
 import datetime
 import json
+import time
 
 from django.test import Client, TestCase
 
@@ -1348,3 +1349,56 @@ class TestViewsGetUnauthenticated(TestCase):
                 },
             ],
         )
+
+    def test_cache_timing(self):
+        # Check to make sure that caching actually speeds things up for large databases
+        MANY_NODES = 1000
+
+        member = Member(name="Fake Name")
+        member.save()
+
+        building = Building(
+            address_truth_sources=[],
+            latitude=40.724868,
+            longitude=-73.987881,
+            altitude=27,
+            # primary_node=node,
+            panoramas=[],
+        )
+        building.save()
+
+        installs = [
+            Install(
+                # node=node,
+                status=Install.InstallStatus.ACTIVE,
+                request_date=datetime.date(2015, 3, 15),
+                install_date=datetime.date(2014, 10, 14),
+                roof_access=False,
+                building=building,
+                member=member,
+                notes="",
+            )
+            for _ in range(MANY_NODES)
+        ]
+        Install.objects.bulk_create(installs)
+
+        # Skip the cache to establish a baseline (and populate the cache with a warm entry)
+        cache_miss_start = time.time()
+        response = self.c.get("/api/v1/mapdata/nodes/?nocache=true")
+        cache_miss_end = time.time()
+        self.assertEqual(len(json.loads(response.content.decode("UTF8"))), MANY_NODES)
+
+        # Hit the cache, and confirm that the response was answered much quicker,
+        # and with the correct number of nodes
+        cache_hit_start = time.time()
+        response = self.c.get("/api/v1/mapdata/nodes/")
+        cache_hit_end = time.time()
+        self.assertEqual(len(json.loads(response.content.decode("UTF8"))), MANY_NODES)
+
+        cache_hit_duration = cache_hit_end - cache_hit_start
+        cache_miss_duration = cache_miss_end - cache_miss_start
+
+        # Check that a cache hit is at least twice as fast as a cache miss
+        # (to make sure that caching is actually happening), it should be 10x
+        # faster than this, but we're conservative to avoid a flaky test
+        self.assertLess(cache_hit_duration, cache_miss_duration / 2)
