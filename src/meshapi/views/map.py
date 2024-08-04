@@ -324,7 +324,6 @@ class MapDataSectorList(generics.ListAPIView):
         summary="Proxy for the city of new york LinkNYC kisok location dataset. Output in a JSON "
         "format that is compatible with the website map. (Warning: This endpoint is a legacy "
         "format and may be deprecated/removed in the future)",
-        request=inline_serializer(fields={}, name="ABC"),
         responses={
             "201": OpenApiResponse(
                 inline_serializer(
@@ -378,13 +377,13 @@ class KioskListWrapper(APIView):
                 kiosks,
                 status=status.HTTP_200_OK,
             )
-        except requests.exceptions.RequestException as e:
+        except requests.exceptions.RequestException:
             logging.exception("Error fetching data from City of New York LinkNYC kiosk dataset")
             return Response(
                 {"detail": "Error fetching data from City of New York"},
                 status=status.HTTP_502_BAD_GATEWAY,
             )
-        except (KeyError, JSONDecodeError, ValueError) as e:
+        except (KeyError, JSONDecodeError, ValueError):
             logging.exception("Error decoding data from City of New York LinkNYC kiosk dataset")
             return Response(
                 {"detail": "Invalid response received from City of New York"},
