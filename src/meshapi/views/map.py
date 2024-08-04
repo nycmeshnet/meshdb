@@ -1,11 +1,15 @@
+import logging
 from datetime import datetime
+from json import JSONDecodeError
 from typing import Any, Dict, List
 
+import requests
 from django.db.models import Count, Exists, F, OuterRef, Prefetch, Q, Subquery
-from drf_spectacular.utils import extend_schema, extend_schema_view
-from rest_framework import generics, permissions
+from drf_spectacular.utils import OpenApiResponse, extend_schema, extend_schema_view, inline_serializer
+from rest_framework import generics, permissions, serializers, status
 from rest_framework.request import Request
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from meshapi.models import LOS, Device, Install, Link, Node, Sector
 from meshapi.serializers import (
@@ -15,6 +19,14 @@ from meshapi.serializers import (
     MapDataLinkSerializer,
     MapDataSectorSerializer,
 )
+
+LINKNYC_KIOSK_DATA_URL = "https://data.cityofnewyork.us/resource/s4kf-3yrf.json?$limit=100000"
+
+LINKNYC_KIOSK_STATUS_TRANSLATION = {
+    "Live": "active",
+    "Ready for Activation": "pending",
+    "Installed": "installed",
+}
 
 
 @extend_schema_view(
@@ -303,3 +315,78 @@ class MapDataSectorList(generics.ListAPIView):
     serializer_class = MapDataSectorSerializer
     pagination_class = None
     queryset = Sector.objects.filter(~Q(status__in=[Device.DeviceStatus.INACTIVE])).prefetch_related("node")
+
+
+@extend_schema_view(
+    get=extend_schema(
+        tags=["Website Map Data"],
+        auth=[],
+        summary="Proxy for the city of new york LinkNYC kisok location dataset. Output in a JSON "
+        "format that is compatible with the website map. (Warning: This endpoint is a legacy "
+        "format and may be deprecated/removed in the future)",
+        request=inline_serializer(fields={}, name="ABC"),
+        responses={
+            "201": OpenApiResponse(
+                inline_serializer(
+                    "KioskData",
+                    fields={
+                        "street_address": serializers.CharField(),
+                        "type": serializers.CharField(),
+                        "id": serializers.IntegerField(),
+                        "coordinates": serializers.ListField(
+                            child=serializers.FloatField(), max_length=2, min_length=2
+                        ),
+                        "status": serializers.CharField(required=False),
+                    },
+                    many=True,
+                ),
+                description="Successfully fetched a list of all linkNYC kiosks in the city",
+            ),
+            "502": OpenApiResponse(
+                inline_serializer("CityErrorResponse", fields={"detail": serializers.CharField()}),
+                description="Missing or invalid response received from NYC dataset",
+            ),
+        },
+    )
+)
+class KioskListWrapper(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request: Request) -> Response:
+        try:
+            response = requests.get(LINKNYC_KIOSK_DATA_URL)
+            response.raise_for_status()
+            data = response.json()
+
+            if not data:
+                raise ValueError("Expected at least one kiosk to be returned from the City of New York dataset")
+
+            kiosks = []
+            for row in data:
+                coordinates = [float(row["longitude"]), float(row["latitude"])]
+                kiosk_status = LINKNYC_KIOSK_STATUS_TRANSLATION.get(row["link_installation_status"])
+                kiosks.append(
+                    {
+                        "street_address": row["street_address"],
+                        "type": row["planned_kiosk_type"],
+                        "id": row["link_site_id"],
+                        "coordinates": coordinates,
+                        "status": kiosk_status,
+                    }
+                )
+            return Response(
+                kiosks,
+                status=status.HTTP_200_OK,
+            )
+        except requests.exceptions.RequestException as e:
+            logging.exception("Error fetching data from City of New York LinkNYC kiosk dataset")
+            return Response(
+                {"detail": "Error fetching data from City of New York"},
+                status=status.HTTP_502_BAD_GATEWAY,
+            )
+        except (KeyError, JSONDecodeError, ValueError) as e:
+            logging.exception("Error decoding data from City of New York LinkNYC kiosk dataset")
+            return Response(
+                {"detail": "Invalid response received from City of New York"},
+                status=status.HTTP_502_BAD_GATEWAY,
+            )
