@@ -75,6 +75,7 @@ nginx:
 
 ingress:
   enabled: true
+  targetService: meshdb-nginx # Testing this out
   className: "traefik"
   annotations: {}
     # kubernetes.io/ingress.class: nginx
