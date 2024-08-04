@@ -1,3 +1,5 @@
+import datetime
+import json
 import logging
 import os
 from typing import List, Optional
@@ -11,9 +13,9 @@ django.setup()
 
 
 from meshapi import models
-from meshapi.models import Device, Install, Link, Node
+from meshapi.models import LOS, Building, Device, Install, Link, Node
 from meshdb.utils.spreadsheet_import.csv_load import SpreadsheetLink, SpreadsheetLinkStatus, get_spreadsheet_links
-from meshdb.utils.spreadsheet_import.fetch_uisp import download_uisp_links
+from meshdb.utils.spreadsheet_import.fetch_uisp import download_uisp_links, get_uisp_device_detail, get_uisp_session
 
 
 def convert_spreadsheet_link_type(status: SpreadsheetLinkStatus, notes: Optional[str] = None) -> Link.LinkType:
@@ -59,6 +61,37 @@ def get_node_from_spreadsheet_id(spreadsheet_node_id: int) -> Node:
         return Node.objects.get(network_number=spreadsheet_node_id)
     except Node.DoesNotExist:
         return Install.objects.get(install_number=spreadsheet_node_id).node
+
+
+def get_building_from_network_number(network_number: int) -> Optional[Building]:
+    node = Node.objects.get(network_number=network_number)
+
+    # We need to lookup which buildings have this NN as primary
+    # in the case of multiple buildings, we resolve arbitrarily to the lower ID one
+    building_candidate = Building.objects.filter(primary_node=node).order_by("id").first()
+
+    # If none of the buildings have this as a primary node, maybe one has it as a secondary node?
+    if not building_candidate:
+        building_candidate = Building.objects.filter(nodes=node).order_by("id").first()
+
+    # Okay we did our best, return the building if we have it, or None if we don't
+    return building_candidate
+
+
+def get_building_from_spreadsheet_id(spreadsheet_node_id: int) -> Optional[Building]:
+    try:
+        # First, try to see if this is an NN, by checking for a node that matches
+        node = Node.objects.get(network_number=spreadsheet_node_id)
+
+        # If it's a node, use our logic for that
+        return get_building_from_network_number(node.network_number)
+    except Node.DoesNotExist:
+        # If the spreadsheet node ID doesn't correspond to an NN, it must be an install number.
+        # Just grab the building that corresponds to that install, easy
+        try:
+            return Install.objects.get(install_number=spreadsheet_node_id).building
+        except Install.DoesNotExist:
+            return None
 
 
 def get_representative_device_for_node(node: Node, link_status: SpreadsheetLinkStatus) -> Device:
@@ -123,7 +156,35 @@ def create_link(spreadsheet_link: SpreadsheetLink, from_node: Node, to_node: Nod
 
 
 def load_links_supplement_with_uisp(spreadsheet_links: List[SpreadsheetLink]):
+    # Create LOS objects for the available data we have (UISP + the spreadsheet). To do this, we
+    # first go through all the links in the spreadsheet and create the appropriate entries for them
+    # then during UISP import we supplement this with any links not captured here
+    for spreadsheet_link in spreadsheet_links:
+        from_building = get_building_from_spreadsheet_id(spreadsheet_link.from_node_id)
+        to_buidling = get_building_from_spreadsheet_id(spreadsheet_link.to_node_id)
+
+        if not from_building or not to_buidling:
+            logging.warning(
+                f"Skipping link {spreadsheet_link.from_node_id} to {spreadsheet_link.to_node_id}. "
+                f"Can't find one or more building objects for this entry"
+            )
+            continue
+
+        source = LOS.LOSSource.EXISTING_LINK
+        if spreadsheet_link.status == SpreadsheetLinkStatus.planned:
+            source = LOS.LOSSource.HUMAN_ANNOTATED
+
+        los = LOS(
+            from_building=from_building,
+            to_building=to_buidling,
+            source=source,
+            analysis_date=spreadsheet_link.abandon_date or datetime.date.today(),
+            notes=f"Imported from spreadsheet link row",
+        )
+        los.save()
+
     uisp_links = download_uisp_links()
+    uisp_session = get_uisp_session()
 
     for uisp_link in uisp_links:
         try:
@@ -151,6 +212,38 @@ def load_links_supplement_with_uisp(spreadsheet_links: List[SpreadsheetLink]):
                     f"{uisp_link['to']['device']['identification']['name']} could not be found"
                 )
             continue
+
+        # Create an LOS object if there are buildings that correspond to
+        # the devices this link connects (there should be)
+        from_building = get_building_from_network_number(from_device.node.network_number)
+        to_buidling = get_building_from_network_number(to_device.node.network_number)
+        if from_building and to_buidling and from_building != to_buidling:
+            # First check to make sure we aren't duplicating a link from the spreadsheet
+            if not len(
+                LOS.objects.filter(
+                    Q(from_building=from_building, to_building=to_buidling)
+                    | Q(from_building=to_buidling, to_building=from_building)
+                )
+            ):
+                from_device_uisp_dict = get_uisp_device_detail(
+                    uisp_link["from"]["device"]["identification"]["id"], uisp_session
+                )
+                to_device_uisp_dict = get_uisp_device_detail(
+                    uisp_link["to"]["device"]["identification"]["id"], uisp_session
+                )
+
+                last_seen_date = min(
+                    datetime.datetime.fromisoformat(from_device_uisp_dict["overview"]["lastSeen"]),
+                    datetime.datetime.fromisoformat(to_device_uisp_dict["overview"]["lastSeen"]),
+                ).date()
+                los = LOS(
+                    from_building=from_building,
+                    to_building=to_buidling,
+                    source=LOS.LOSSource.EXISTING_LINK,
+                    analysis_date=last_seen_date,
+                    notes=f"Imported from UISP link",
+                )
+                los.save()
 
         if len(
             Link.objects.filter(
@@ -201,7 +294,6 @@ def load_links_supplement_with_uisp(spreadsheet_links: List[SpreadsheetLink]):
     for spreadsheet_link in spreadsheet_links:
         try:
             # TODO: this method of node lookup doesn't work for campus links like the vernon APs
-            # TODO: this doesn't work for "potential" links between potential installs
             from_node = get_node_from_spreadsheet_id(spreadsheet_link.from_node_id)
             to_node = get_node_from_spreadsheet_id(spreadsheet_link.to_node_id)
 
@@ -249,5 +341,5 @@ def load_links_supplement_with_uisp(spreadsheet_links: List[SpreadsheetLink]):
 
 
 if __name__ == "__main__":
-    links_path = "spreadsheet_data/New Node Form (Responses) - Links.csv"
+    links_path = "spreadsheet_data/links.csv"
     load_links_supplement_with_uisp(get_spreadsheet_links((links_path)))

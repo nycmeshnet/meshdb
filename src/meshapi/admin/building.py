@@ -8,7 +8,7 @@ from django.forms import ModelForm
 from django.http import HttpRequest
 from import_export.admin import ExportActionMixin, ImportExportModelAdmin
 
-from meshapi.admin.inlines import InstallInline
+from meshapi.admin.inlines import BuildingLOSInline, InstallInline
 from meshapi.models import Building
 from meshapi.widgets import AutoPopulateLocationWidget, PanoramaViewer
 
@@ -126,7 +126,7 @@ class BuildingAdmin(ImportExportModelAdmin, ExportActionMixin):
             },
         ),
     ]
-    inlines = [InstallInline]
+    inlines = [InstallInline, BuildingLOSInline]
 
     def get_form(
         self, request: HttpRequest, obj: Optional[Any] = None, change: bool = False, **kwargs: Any

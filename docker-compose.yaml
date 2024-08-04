@@ -78,6 +78,7 @@ services:
       - .env
     volumes:
       - static_files:/opt/meshdb/static
+      - meshdb_logs:/var/log/meshdb
     image: willnilges/meshdb:main
     build:
       context: .
@@ -119,6 +120,7 @@ services:
 volumes:
   postgres_data:
   static_files:
+  meshdb_logs:
 
 networks:
   api:

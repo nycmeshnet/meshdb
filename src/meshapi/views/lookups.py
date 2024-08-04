@@ -8,23 +8,28 @@ from rest_framework import generics
 from rest_framework.request import Request
 from rest_framework.response import Response
 
-from meshapi.models import Building, Device, Install, Link, Member, Node, Sector
+from meshapi.models import LOS, Building, Device, Install, Link, Member, Node, Sector
 from meshapi.serializers import (
     BuildingSerializer,
     DeviceSerializer,
     InstallSerializer,
     LinkSerializer,
+    LOSSerializer,
     MemberSerializer,
     NodeSerializer,
     SectorSerializer,
 )
+
+ADDITIONAL_QUERY_PARAMS = {"page_size", "page"}
 
 
 class FilterRequiredListAPIView(generics.ListAPIView):
     filterset_class: Type[filters.FilterSet]
 
     def get(self, request: Request, *args: Any, **kwargs: Any) -> Response:
-        possible_filters = set(self.filterset_class.get_filters().keys())  # type: ignore[no-untyped-call]
+        possible_filters = set(self.filterset_class.get_filters().keys()).union(  # type: ignore[no-untyped-call]
+            ADDITIONAL_QUERY_PARAMS
+        )
         provided_filters = set(self.request.query_params.keys())
         invalid_filters = provided_filters - possible_filters
 
@@ -336,6 +341,66 @@ class LookupLink(FilterRequiredListAPIView):
     queryset = Link.objects.all().order_by("id")
     serializer_class = LinkSerializer
     filterset_class = LinkFilter
+
+
+class LOSFilter(filters.FilterSet):
+    network_number = filters.NumberFilter(method="filter_from_to_network_number")
+    install_number = filters.NumberFilter(method="filter_from_to_install_number")
+    building = filters.NumberFilter(method="filter_from_to_building_id")
+
+    def filter_from_to_network_number(self, queryset: QuerySet[LOS], field_name: str, value: int) -> QuerySet[LOS]:
+        return queryset.filter(Q(from_building__nodes=value) | Q(to_building__nodes=value))
+
+    def filter_from_to_install_number(self, queryset: QuerySet[LOS], field_name: str, value: int) -> QuerySet[LOS]:
+        return queryset.filter(Q(from_building__installs=value) | Q(to_building__installs=value))
+
+    def filter_from_to_building_id(self, queryset: QuerySet[LOS], field_name: str, value: int) -> QuerySet[LOS]:
+        return queryset.filter(Q(from_building__id=value) | Q(to_building__id=value))
+
+    class Meta:
+        model = LOS
+        fields = ["source", "analysis_date"]
+
+
+@extend_schema_view(
+    get=extend_schema(
+        tags=["LOSes"],
+        parameters=[
+            OpenApiParameter(
+                "building",
+                OpenApiTypes.INT,
+                OpenApiParameter.QUERY,
+                description="Filter LOSes by the id of the buildings they connect using strict equality",
+                required=False,
+            ),
+            OpenApiParameter(
+                "network_number",
+                OpenApiTypes.INT,
+                OpenApiParameter.QUERY,
+                description="Filter LOSes the by network_numbers of the buildings they connect using strict equality",
+                required=False,
+            ),
+            OpenApiParameter(
+                "install_number",
+                OpenApiTypes.INT,
+                OpenApiParameter.QUERY,
+                description="Filter LOSes by install_numbers of the buildings they connect using strict equality",
+                required=False,
+            ),
+            OpenApiParameter(
+                "source",
+                OpenApiTypes.STR,
+                OpenApiParameter.QUERY,
+                description="Filter LOSes by the source field using strict equality",
+                required=False,
+            ),
+        ],
+    ),
+)
+class LookupLOS(FilterRequiredListAPIView):
+    queryset = LOS.objects.all().order_by("id")
+    serializer_class = LOSSerializer
+    filterset_class = LOSFilter
 
 
 class DeviceFilter(filters.FilterSet):

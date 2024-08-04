@@ -1,8 +1,8 @@
 import logging
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, TypedDict
 
-from django.db.models import F, Q
+from django.db.models import Exists, F, OuterRef, Q
 from django.db.models.functions import Greatest
 from django.http import HttpRequest, HttpResponse
 from drf_spectacular.types import OpenApiTypes
@@ -28,7 +28,8 @@ KML_CONTENT_TYPE_WITH_CHARSET = f"{KML_CONTENT_TYPE}; charset=utf-8"
 DEFAULT_ALTITUDE = 5  # Meters (absolute)
 
 ACTIVE_COLOR = "#F00"
-INACTIVE_COLOR = "#CCC"
+INACTIVE_COLOR = "#777"
+POTENTIAL_COLOR = "#CCC"
 
 CITY_FOLDER_MAP = {
     "New York": "Manhattan",
@@ -38,6 +39,18 @@ CITY_FOLDER_MAP = {
     "Staten Island": "Staten Island",
     None: "Other",
 }
+
+LinkKMLDict = TypedDict(
+    "LinkKMLDict",
+    {
+        "link_label": str,
+        "mark_active": bool,
+        "is_los": bool,
+        "from_coord": Tuple[float, float, float],
+        "to_coord": Tuple[float, float, float],
+        "extended_data": Dict[str, Any],
+    },
+)
 
 
 class IgnoreClientContentNegotiation(BaseContentNegotiation):
@@ -139,7 +152,15 @@ class WholeMeshKML(APIView):
             ],
         )
 
-        kml_document = kml.Document(ns, styles=[grey_dot, red_dot, red_line, grey_line])
+        dark_grey_line = styles.Style(
+            id="dark_grey_line",
+            styles=[
+                styles.LineStyle(color="ff777777", width=2),
+                styles.PolyStyle(color="00000000", fill=False, outline=True),
+            ],
+        )
+
+        kml_document = kml.Document(ns, styles=[grey_dot, red_dot, red_line, grey_line, dark_grey_line])
         kml_root.append(kml_document)
 
         nodes_folder = kml.Folder(name="Nodes")
@@ -215,67 +236,133 @@ class WholeMeshKML(APIView):
                 folder.append(node_placemark)
                 mapped_nns.add(install.node.network_number)
 
+        all_links_set = set()
+        kml_links: List[LinkKMLDict] = []
         for link in (
             Link.objects.prefetch_related("from_device")
             .prefetch_related("to_device")
             .filter(~Q(status=Link.LinkStatus.INACTIVE))
+            .exclude(type=Link.LinkType.VPN)
             .annotate(highest_altitude=Greatest("from_device__altitude", "to_device__altitude"))
             .order_by(F("highest_altitude").asc(nulls_first=True))
         ):
-            # Logic to decide if this link should show up as active or not
-            mark_active: bool = (
-                # Link must be active
-                link.status == Link.LinkStatus.ACTIVE
-                # And the devices
-                and link.from_device.status == Device.DeviceStatus.ACTIVE
-                and link.to_device.status == Device.DeviceStatus.ACTIVE
-                # And the device's nodes
-                and link.from_device.node.status == Node.NodeStatus.ACTIVE
-                and link.to_device.node.status == Node.NodeStatus.ACTIVE
-            )
-            node_label: str = f"{str(link.from_device.node)}-{str(link.to_device.node)}"
-            placemark = kml.Placemark(
-                name=f"Links-{link.id}",
-                style_url=styles.StyleUrl(url="#red_line" if mark_active else "#grey_line"),
-                kml_geometry=geometry.LineString(
-                    geometry=LineString(
-                        [
-                            (
-                                link.from_device.longitude,
-                                link.from_device.latitude,
-                                link.from_device.altitude or DEFAULT_ALTITUDE,
-                            ),
-                            (
-                                link.to_device.longitude,
-                                link.to_device.latitude,
-                                link.to_device.altitude or DEFAULT_ALTITUDE,
-                            ),
-                        ]
+            mark_active: bool = link.status == Link.LinkStatus.ACTIVE
+            link_label: str = f"{str(link.from_device.node)}-{str(link.to_device.node)}"
+            from_identifier = link.from_device.node.network_number
+            to_identifier = link.to_device.node.network_number
+
+            all_links_set.add(tuple(sorted((from_identifier, to_identifier))))
+            kml_links.append(
+                {
+                    "link_label": link_label,
+                    "mark_active": mark_active,
+                    "is_los": False,
+                    "from_coord": (
+                        link.from_device.longitude,
+                        link.from_device.latitude,
+                        link.from_device.altitude or DEFAULT_ALTITUDE,
                     ),
+                    "to_coord": (
+                        link.to_device.longitude,
+                        link.to_device.latitude,
+                        link.to_device.altitude or DEFAULT_ALTITUDE,
+                    ),
+                    "extended_data": {
+                        "name": f"Links-{link.id}-{link_label}",
+                        "stroke": ACTIVE_COLOR if mark_active else INACTIVE_COLOR,
+                        "fill": "#000000",
+                        "fill-opacity": "0",
+                        "from": str(from_identifier),
+                        "to": str(to_identifier),
+                        "status": link.status,
+                        "type": link.type,
+                    },
+                }
+            )
+
+        for los in (
+            LOS.objects.filter(
+                Exists(Install.objects.filter(building=OuterRef("from_building")))
+                & Exists(Install.objects.filter(building=OuterRef("to_building")))
+                & ~Q(from_building=F("to_building"))
+            )
+            .exclude(
+                # Remove any LOS objects that would duplicate Link objects,
+                # to avoid cluttering the file
+                Exists(
+                    Link.objects.filter(
+                        (
+                            Q(from_device__node__buildings=OuterRef("from_building"))
+                            & Q(to_device__node__buildings=OuterRef("to_building"))
+                        )
+                        | (
+                            Q(from_device__node__buildings=OuterRef("to_building"))
+                            & Q(to_device__node__buildings=OuterRef("from_building"))
+                        )
+                    )
+                )
+            )
+            .prefetch_related("from_building")
+            .prefetch_related("from_building__installs")
+            .prefetch_related("to_building")
+            .prefetch_related("to_building__installs")
+            .annotate(highest_altitude=Greatest("from_building__altitude", "to_building__altitude"))
+            .order_by(F("highest_altitude").asc(nulls_first=True))
+        ):
+            representative_from_install = min(los.from_building.installs.all().values_list("install_number", flat=True))
+            representative_to_install = min(los.to_building.installs.all().values_list("install_number", flat=True))
+            link_label = f"{representative_from_install}-{representative_to_install}"
+
+            link_tuple = tuple(sorted((representative_from_install, representative_to_install)))
+            if link_tuple not in all_links_set:
+                all_links_set.add(link_tuple)
+                kml_links.append(
+                    {
+                        "link_label": link_label,
+                        "mark_active": False,
+                        "is_los": True,
+                        "from_coord": (
+                            los.from_building.longitude,
+                            los.from_building.latitude,
+                            los.from_building.altitude or DEFAULT_ALTITUDE,
+                        ),
+                        "to_coord": (
+                            los.to_building.longitude,
+                            los.to_building.latitude,
+                            los.to_building.altitude or DEFAULT_ALTITUDE,
+                        ),
+                        "extended_data": {
+                            "name": f"LOS-{los.id} {link_label}",
+                            "stroke": POTENTIAL_COLOR,
+                            "fill": "#000000",
+                            "fill-opacity": "0",
+                            "from": f"#{representative_from_install} ({los.from_building.street_address})",
+                            "to": f"#{representative_to_install} ({los.to_building.street_address})",
+                            "source": los.source,
+                        },
+                    }
+                )
+
+        for link_dict in kml_links:
+            placemark = kml.Placemark(
+                name=f"Links-{link_dict['link_label']}",
+                style_url=styles.StyleUrl(
+                    url="#grey_line"
+                    if link_dict["is_los"]
+                    else ("#red_line" if link_dict["mark_active"] else "#dark_grey_line")
+                ),
+                kml_geometry=geometry.LineString(
+                    geometry=LineString([link_dict["from_coord"], link_dict["to_coord"]]),
                     altitude_mode=AltitudeMode.absolute,
                     extrude=True,
                 ),
             )
 
-            from_identifier = link.from_device.node.network_number
-            to_identifier = link.to_device.node.network_number
-
-            extended_data = {
-                "name": f"Links-{link.id}-{node_label}",
-                "stroke": ACTIVE_COLOR if mark_active else INACTIVE_COLOR,
-                "fill": "#000000",
-                "fill-opacity": "0",
-                "from": str(from_identifier),
-                "to": str(to_identifier),
-                "status": link.status,
-                "type": link.type,
-            }
-
             placemark.extended_data = ExtendedData(
-                elements=[Data(name=key, value=val) for key, val in extended_data.items()]
+                elements=[Data(name=key, value=val) for key, val in link_dict["extended_data"].items()]
             )
 
-            if mark_active:
+            if link_dict["mark_active"]:
                 active_links_folder.append(placemark)
             else:
                 inactive_links_folder.append(placemark)
