@@ -71,18 +71,6 @@ def merge_member_objects(members_and_installs: List[Tuple[Member, List[int]]]) -
             merged_member.name = member.name
         else:
             if merged_member.name != member.name and member.name:
-                # TODO: Fix tracking for this?
-                # add_dropped_edit(
-                #     DroppedModification(
-                #         list(install.install_number for install in existing_member.installs.all()),
-                #         row_id,
-                #         row_status,
-                #         existing_member.primary_email_address,
-                #         "member.name",
-                #         existing_member.name if existing_member.name else "",
-                #         new_member.name,
-                #     )
-                # )
                 logging.info(
                     f"Dropping name change {repr(merged_member.name)} -> {repr(member.name)} "
                     f"for member id {members_and_installs[0][0].id} (install number(s) {', '.join(f'#{i}' for i in install_numbers)}"
