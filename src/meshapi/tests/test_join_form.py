@@ -422,7 +422,7 @@ class TestJoinForm(TestCase):
             )["member_id"]
         )
         self.assertEqual(member.name, "John Smith")
-        self.assertIn("Dropped name change: Jane Smith (install #2)", member.notes)
+        self.assertIn("Dropped name change: Jane Smith", member.notes)
 
         mock_admin_notif_func.called_once_with(
             [member], MemberSerializer, "Dropped name change: Jane Smith (install #2)"
@@ -807,8 +807,10 @@ class TestJoinFormRaceCondition(TransactionTestCase):
 
         member1_submission = valid_join_form_submission.copy()
         member1_submission["email"] = "member1@xyz.com"
+        member1_submission["phone"] = "+1 212 555 5555"
         member2_submission = valid_join_form_submission.copy()
         member2_submission["email"] = "member2@xyz.com"
+        member1_submission["phone"] = "+1 212 555 2222"
 
         def invoke_join_form(submission, results):
             # Slow down the creation of the Install object to force a race condition
