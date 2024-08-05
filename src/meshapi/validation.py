@@ -1,7 +1,7 @@
 import json
 import logging
 from dataclasses import dataclass
-from typing import Optional
+from typing import List, Optional
 
 import phonenumbers
 import requests
@@ -152,11 +152,11 @@ class NYCAddressInfo:
             logging.exception(f"An error occurred while trying to find ({self.bin}) in NYC OpenData")
 
 
-def validate_multi_phone_number_field(phone_number_list: list):
+def validate_multi_phone_number_field(phone_number_list: List[str]) -> None:
     for num in phone_number_list:
         validate_phone_number_field(num)
 
 
-def validate_phone_number_field(phone_number: str):
+def validate_phone_number_field(phone_number: str) -> None:
     if not validate_phone_number(phone_number):
         raise ValidationError(f"Invalid phone number: {phone_number}")

@@ -101,7 +101,7 @@ def join_form(request: Request) -> Response:
     join_form_full_name = r.first_name + " " + r.last_name
 
     if not r.email and not r.phone:
-        return Response({"detail": f"Must provide an email or phone number"}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"detail": "Must provide an email or phone number"}, status=status.HTTP_400_BAD_REQUEST)
 
     if r.email and not validate_email_address(r.email):
         return Response({"detail": f"{r.email} is not a valid email"}, status=status.HTTP_400_BAD_REQUEST)

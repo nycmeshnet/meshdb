@@ -1,4 +1,4 @@
-from typing import List
+from typing import Any, List
 
 from django.db import models
 from django.db.models.fields import EmailField
@@ -83,7 +83,7 @@ class Member(models.Model):
 
         return all_phone_numbers
 
-    def save(self, *args, **kwargs):
+    def save(self, *args: Any, **kwargs: Any) -> None:
         if self.phone_number:
             self.phone_number = normalize_phone_number(self.phone_number)
         if self.additional_phone_numbers:
