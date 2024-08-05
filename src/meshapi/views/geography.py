@@ -443,7 +443,7 @@ class NYCGeocodeWrapper(APIView):
             )
         except AddressError as e:
             logging.exception("AddressError when validating address")
-            return Response({"detail": str(e)}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"detail": e.args[0]}, status=status.HTTP_404_NOT_FOUND)
 
         if not nyc_addr_info:
             # We failed to contact the city, this is probably a retryable error, return 500

@@ -110,7 +110,7 @@ def join_form(request: Request) -> Response:
             status=status.HTTP_400_BAD_REQUEST,
         )
     except AddressError as e:
-        return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"detail": e.args[0]}, status=status.HTTP_400_BAD_REQUEST)
 
     if not nyc_addr_info:
         return Response(
