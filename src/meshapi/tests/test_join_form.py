@@ -10,6 +10,7 @@ from parameterized import parameterized
 from meshapi.models import Building, Install, Member, Node
 from meshapi.views import JoinFormRequest
 
+from ..serializers import MemberSerializer
 from .sample_data import sample_building, sample_node
 from .sample_join_form_data import (
     bronx_join_form_submission,
@@ -28,7 +29,7 @@ from .util import TestThread
 original_install_init = Install.__init__
 
 
-def validate_successful_join_form_submission(test_case, test_name, s, response):
+def validate_successful_join_form_submission(test_case, test_name, s, response, expected_member_count=1):
     # Make sure that we get the right stuff out of the database afterwards
 
     # Check if the member was created and that we see it when we
@@ -40,11 +41,10 @@ def validate_successful_join_form_submission(test_case, test_name, s, response):
         | Q(additional_email_addresses__contains=[s.email])
     )
 
-    length = 1
     test_case.assertEqual(
         len(existing_members),
-        length,
-        f"Didn't find created member for {test_name}. Should be {length}, but got {len(existing_members)}",
+        expected_member_count,
+        f"Didn't find created member for {test_name}. Should be {expected_member_count}, but got {len(existing_members)}",
     )
 
     # Check if the building was created and that we see it when we
@@ -306,7 +306,70 @@ class TestJoinForm(TestCase):
             )["member_id"],
         )
 
-    def test_member_moved_and_changed_names_join_form(self):
+    @mock.patch("meshapi.views.forms.notify_administrators_of_data_issue")
+    def test_member_moved_join_form_but_somehow_duplicate_objects_already_exist_for_them(self, mock_admin_notif_func):
+        # Create a pre-exsiting duplicate member object,
+        # that won't be matched until the second join form submission
+        pre_existing_member = Member(
+            name="John Smith",
+            primary_email_address="jsmith23@yahoo.com",
+            phone_number="+1-555-555-5555",
+        )
+        pre_existing_member.save()
+
+        # Name, email, phone, location, apt, rooftop, referral
+        form, s = pull_apart_join_form_submission(valid_join_form_submission)
+        response1 = self.c.post("/api/v1/join/", form, content_type="application/json")
+
+        code = 201
+        self.assertEqual(
+            code,
+            response1.status_code,
+            f"status code incorrect for Valid Join Form. Should be {code}, but got {response1.status_code}.\n Response is: {response1.content.decode('utf-8')}",
+        )
+
+        validate_successful_join_form_submission(self, "Valid Join Form", s, response1)
+
+        # Now test that the member can "move" and still access the join form
+        v_sub_2 = valid_join_form_submission.copy()
+        v_sub_2["street_address"] = "152 Broome Street"
+        v_sub_2["phone"] = "+1 555-555-5555"
+
+        form, s = pull_apart_join_form_submission(v_sub_2)
+
+        # Name, email, phone, location, apt, rooftop, referral
+        response2 = self.c.post("/api/v1/join/", form, content_type="application/json")
+
+        code = 201
+        self.assertEqual(
+            code,
+            response2.status_code,
+            f"status code incorrect for Valid Join Form. Should be {code}, but got {response2.status_code}.\n Response is: {response2.content.decode('utf-8')}",
+        )
+
+        validate_successful_join_form_submission(
+            self,
+            "Valid Join Form",
+            s,
+            response2,
+            expected_member_count=2,
+        )
+
+        mock_admin_notif_func.called_once_with(
+            [
+                Member.objects.get(
+                    id=json.loads(
+                        response2.content.decode("utf-8"),
+                    )["member_id"]
+                ),
+                pre_existing_member,
+            ],
+            MemberSerializer,
+            "Possible duplicate member objects detected",
+        )
+
+    @mock.patch("meshapi.views.forms.notify_administrators_of_data_issue")
+    def test_member_moved_and_changed_names_join_form(self, mock_admin_notif_func):
         # Name, email, phone, location, apt, rooftop, referral
         form, s = pull_apart_join_form_submission(valid_join_form_submission)
         response1 = self.c.post("/api/v1/join/", form, content_type="application/json")
@@ -359,8 +422,11 @@ class TestJoinForm(TestCase):
             )["member_id"]
         )
         self.assertEqual(member.name, "John Smith")
-        self.assertIn("Dropped name change: Jane Smith", member.notes)
-        # TODO: Assert name change notification sent to slack
+        self.assertIn("Dropped name change: Jane Smith (install #2)", member.notes)
+
+        mock_admin_notif_func.called_once_with(
+            [member], MemberSerializer, "Dropped name change: Jane Smith (install #2)"
+        )
 
     def test_member_moved_and_used_a_new_email_join_form(self):
         # Name, email, phone, location, apt, rooftop, referral

@@ -19,6 +19,8 @@ from rest_framework_dataclasses.serializers import DataclassSerializer
 from meshapi.exceptions import AddressAPIError, AddressError
 from meshapi.models import Building, Install, Member, Node
 from meshapi.permissions import HasNNAssignPermission, LegacyNNAssignmentPassword
+from meshapi.serializers import MemberSerializer
+from meshapi.util.admin_notifications import notify_administrators_of_data_issue
 from meshapi.util.django_pglocks import advisory_lock
 from meshapi.util.network_number import get_next_available_network_number
 from meshapi.validation import NYCAddressInfo, normalize_phone_number, validate_email_address, validate_phone_number
@@ -159,10 +161,12 @@ def join_form(request: Request) -> Response:
             Q(phone_number=formatted_phone_number) | Q(additional_phone_numbers=[formatted_phone_number])
         )
 
-    existing_members = Member.objects.filter(
-        reduce(
-            operator.or_,
-            existing_member_filter_criteria,
+    existing_members = list(
+        Member.objects.filter(
+            reduce(
+                operator.or_,
+                existing_member_filter_criteria,
+            )
         )
     )
 
@@ -292,11 +296,14 @@ def join_form(request: Request) -> Response:
                 join_form_member.notes = name_change_note
             join_form_member.save()
 
-            # TODO: Trigger admin notification that a potential name change was dropped
+            notify_administrators_of_data_issue([join_form_member], MemberSerializer, name_change_note)
 
         if len(existing_members) > 1:
-            # TODO: Trigger admin notification that we should de-duplicate
-            pass
+            notify_administrators_of_data_issue(
+                existing_members + [join_form_member],
+                MemberSerializer,
+                "Possible duplicate member objects detected",
+            )
 
     logging.info(
         f"JoinForm submission success. building_id: {join_form_building.id}, "
