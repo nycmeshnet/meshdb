@@ -214,7 +214,6 @@ def parse_phone(input_phone: str) -> Optional[phonenumbers.PhoneNumber]:
         except phonenumbers.NumberParseException:
             return None
 
-    # TODO: Bring this validation to the join form
     if phonenumbers.is_possible_number(parsed):
         return parsed
     else:
@@ -262,10 +261,7 @@ def get_or_create_member(
         notes += f"Phone Notes: {row.phone} (install #{row.id})\n"
 
     formatted_phone_number = (
-        # TODO: Bring this formatting to the join form
-        phonenumbers.format_number(parsed_phone, phonenumbers.PhoneNumberFormat.INTERNATIONAL)
-        if parsed_phone
-        else None
+        phonenumbers.format_number(parsed_phone, phonenumbers.PhoneNumberFormat.INTERNATIONAL) if parsed_phone else None
     )
 
     if formatted_phone_number in FAKE_PHONE_NUMBERS:

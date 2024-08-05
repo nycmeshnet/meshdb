@@ -43,6 +43,7 @@ dependencies = [
 dev = [
     "invoke == 2.2.*",
     "pytest == 7.4.*",
+    "parameterized == 0.9.*",
     "flake8 == 6.1.*",
     "black == 23.7.*",
     "isort == 5.12.*",

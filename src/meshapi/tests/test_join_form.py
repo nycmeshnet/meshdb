@@ -5,6 +5,7 @@ from unittest import mock
 from django.contrib.auth.models import User
 from django.db.models import Q
 from django.test import Client, TestCase, TransactionTestCase
+from parameterized import parameterized
 
 from meshapi.models import Building, Install, Member, Node
 from meshapi.views import JoinFormRequest
@@ -18,6 +19,7 @@ from .sample_join_form_data import (
     queens_join_form_submission,
     richmond_join_form_submission,
     valid_join_form_submission,
+    valid_join_form_submission_no_email,
 )
 from .util import TestThread
 
@@ -32,15 +34,10 @@ def validate_successful_join_form_submission(test_case, test_name, s, response):
     # Check if the member was created and that we see it when we
     # filter for it.
     existing_members = Member.objects.filter(
-        Q(
-            name=s.first_name + " " + s.last_name,
-            phone_number=s.phone,
-        )
-        & (
-            Q(primary_email_address=s.email)
-            | Q(stripe_email_address=s.email)
-            | Q(additional_email_addresses__contains=[s.email])
-        )
+        Q(phone_number=s.phone)
+        | Q(primary_email_address=s.email)
+        | Q(stripe_email_address=s.email)
+        | Q(additional_email_addresses__contains=[s.email])
     )
 
     length = 1
@@ -106,24 +103,27 @@ class TestJoinForm(TestCase):
         )
         self.admin_c.login(username="admin", password="admin_password")
 
-    def test_valid_join_form(self):
-        for submission in [
-            valid_join_form_submission,
-            richmond_join_form_submission,
-            kings_join_form_submission,
-            queens_join_form_submission,
-            bronx_join_form_submission,
-        ]:
-            request, s = pull_apart_join_form_submission(submission)
+    @parameterized.expand(
+        [
+            [valid_join_form_submission],
+            [valid_join_form_submission_no_email],
+            [richmond_join_form_submission],
+            [kings_join_form_submission],
+            [queens_join_form_submission],
+            [bronx_join_form_submission],
+        ]
+    )
+    def test_valid_join_form(self, submission):
+        request, s = pull_apart_join_form_submission(submission)
 
-            response = self.c.post("/api/v1/join/", request, content_type="application/json")
-            code = 201
-            self.assertEqual(
-                code,
-                response.status_code,
-                f"status code incorrect for Valid Join Form. Should be {code}, but got {response.status_code}.\n Response is: {response.content.decode('utf-8')}",
-            )
-            validate_successful_join_form_submission(self, "Valid Join Form", s, response)
+        response = self.c.post("/api/v1/join/", request, content_type="application/json")
+        code = 201
+        self.assertEqual(
+            code,
+            response.status_code,
+            f"status code incorrect for Valid Join Form. Should be {code}, but got {response.status_code}.\n Response is: {response.content.decode('utf-8')}",
+        )
+        validate_successful_join_form_submission(self, "Valid Join Form", s, response)
 
     def test_no_ncl(self):
         request, _ = pull_apart_join_form_submission(valid_join_form_submission)
@@ -136,6 +136,33 @@ class TestJoinForm(TestCase):
             code,
             response.status_code,
             f"status code incorrect for No NCL. Should be {code}, but got {response.status_code}.\n Response is: {response.content.decode('utf-8')}",
+        )
+
+    def test_no_phone_or_email(self):
+        request, _ = pull_apart_join_form_submission(valid_join_form_submission)
+
+        request["email"] = None
+        request["phone"] = None
+
+        response = self.c.post("/api/v1/join/", request, content_type="application/json")
+        code = 400
+        self.assertEqual(
+            code,
+            response.status_code,
+            f"status code incorrect for no email & phone. Should be {code}, but got {response.status_code}.\n Response is: {response.content.decode('utf-8')}",
+        )
+
+    def test_invalid_email_valid_phone(self):
+        request, _ = pull_apart_join_form_submission(valid_join_form_submission)
+
+        request["email"] = "aljksdafljkasfjldsaf"
+
+        response = self.c.post("/api/v1/join/", request, content_type="application/json")
+        code = 400
+        self.assertEqual(
+            code,
+            response.status_code,
+            f"status code incorrect for invalid email valid phone. Should be {code}, but got {response.status_code}.\n Response is: {response.content.decode('utf-8')}",
         )
 
     def test_non_nyc_join_form(self):
@@ -182,7 +209,7 @@ class TestJoinForm(TestCase):
     def test_bad_phone_join_form(self):
         # Name, email, phone, location, apt, rooftop, referral
         form, _ = pull_apart_join_form_submission(valid_join_form_submission)
-        form["phone"] = "555-555-5555"
+        form["phone"] = "555-555-55555"
         response = self.c.post("/api/v1/join/", form, content_type="application/json")
 
         code = 400
@@ -194,7 +221,7 @@ class TestJoinForm(TestCase):
 
         con = json.loads(response.content.decode("utf-8"))
 
-        self.assertEqual("555-555-5555 is not a valid phone number", con["detail"], "Content is wrong")
+        self.assertEqual("555-555-55555 is not a valid phone number", con["detail"], "Content is wrong")
 
     def test_bad_email_join_form(self):
         # Name, email, phone, location, apt, rooftop, referral
@@ -278,6 +305,221 @@ class TestJoinForm(TestCase):
                 response2.content.decode("utf-8"),
             )["member_id"],
         )
+
+    def test_member_moved_and_changed_names_join_form(self):
+        # Name, email, phone, location, apt, rooftop, referral
+        form, s = pull_apart_join_form_submission(valid_join_form_submission)
+        response1 = self.c.post("/api/v1/join/", form, content_type="application/json")
+
+        code = 201
+        self.assertEqual(
+            code,
+            response1.status_code,
+            f"status code incorrect for Valid Join Form. Should be {code}, but got {response1.status_code}.\n Response is: {response1.content.decode('utf-8')}",
+        )
+
+        validate_successful_join_form_submission(self, "Valid Join Form", s, response1)
+
+        # Now test that the member can "move", change their name and still access the join form
+        v_sub_2 = valid_join_form_submission.copy()
+        v_sub_2["first_name"] = "Jane"
+        v_sub_2["last_name"] = "Smith"
+        v_sub_2["street_address"] = "152 Broome Street"
+
+        form, s = pull_apart_join_form_submission(v_sub_2)
+
+        # Name, email, phone, location, apt, rooftop, referral
+        response2 = self.c.post("/api/v1/join/", form, content_type="application/json")
+
+        code = 201
+        self.assertEqual(
+            code,
+            response2.status_code,
+            f"status code incorrect for Valid Join Form. Should be {code}, but got {response2.status_code}.\n Response is: {response2.content.decode('utf-8')}",
+        )
+
+        validate_successful_join_form_submission(self, "Valid Join Form", s, response2)
+
+        # Make sure it uses the same member ID
+        self.assertEqual(
+            json.loads(
+                response1.content.decode("utf-8"),
+            )["member_id"],
+            json.loads(
+                response2.content.decode("utf-8"),
+            )["member_id"],
+        )
+
+        # Make sure the member's name wasn't changed (prevents join form griefing)
+        # but also confirm we noted the name change request, and that we sent a notification
+        # to slack
+        member = Member.objects.get(
+            id=json.loads(
+                response1.content.decode("utf-8"),
+            )["member_id"]
+        )
+        self.assertEqual(member.name, "John Smith")
+        self.assertIn("Dropped name change: Jane Smith", member.notes)
+        # TODO: Assert name change notification sent to slack
+
+    def test_member_moved_and_used_a_new_email_join_form(self):
+        # Name, email, phone, location, apt, rooftop, referral
+        form, s = pull_apart_join_form_submission(valid_join_form_submission)
+        response1 = self.c.post("/api/v1/join/", form, content_type="application/json")
+
+        code = 201
+        self.assertEqual(
+            code,
+            response1.status_code,
+            f"status code incorrect for Valid Join Form. Should be {code}, but got {response1.status_code}.\n Response is: {response1.content.decode('utf-8')}",
+        )
+
+        validate_successful_join_form_submission(self, "Valid Join Form", s, response1)
+
+        # Now test that the member can "move" and still access the join form
+        # (even with a new email, provided they use the same phone number)
+        v_sub_2 = valid_join_form_submission.copy()
+        v_sub_2["email"] = "jsmith1234@yahoo.com"
+        v_sub_2["street_address"] = "152 Broome Street"
+
+        form, s = pull_apart_join_form_submission(v_sub_2)
+
+        # Name, email, phone, location, apt, rooftop, referral
+        response2 = self.c.post("/api/v1/join/", form, content_type="application/json")
+
+        code = 201
+        self.assertEqual(
+            code,
+            response2.status_code,
+            f"status code incorrect for Valid Join Form. Should be {code}, but got {response2.status_code}.\n Response is: {response2.content.decode('utf-8')}",
+        )
+
+        validate_successful_join_form_submission(self, "Valid Join Form", s, response2)
+
+        self.assertEqual(
+            json.loads(
+                response1.content.decode("utf-8"),
+            )["member_id"],
+            json.loads(
+                response2.content.decode("utf-8"),
+            )["member_id"],
+        )
+
+        # Make sure the member's primary email wasn't changed (prevents join form griefing)
+        # but also confirm we noted the new email in additional emails
+        member = Member.objects.get(
+            id=json.loads(
+                response1.content.decode("utf-8"),
+            )["member_id"]
+        )
+        self.assertEqual(member.primary_email_address, "jsmith@gmail.com")
+        self.assertEqual(member.additional_email_addresses, ["jsmith1234@yahoo.com"])
+
+    def test_member_moved_and_used_a_new_phone_number_join_form(self):
+        # Name, email, phone, location, apt, rooftop, referral
+        form, s = pull_apart_join_form_submission(valid_join_form_submission)
+        response1 = self.c.post("/api/v1/join/", form, content_type="application/json")
+
+        code = 201
+        self.assertEqual(
+            code,
+            response1.status_code,
+            f"status code incorrect for Valid Join Form. Should be {code}, but got {response1.status_code}.\n Response is: {response1.content.decode('utf-8')}",
+        )
+
+        validate_successful_join_form_submission(self, "Valid Join Form", s, response1)
+
+        # Now test that the member can "move" and still access the join form
+        # (even with a new phone number, so long as they use the same email)
+        v_sub_2 = valid_join_form_submission.copy()
+        v_sub_2["phone"] = "+1 212-555-5555"
+        v_sub_2["street_address"] = "152 Broome Street"
+
+        form, s = pull_apart_join_form_submission(v_sub_2)
+
+        # Name, email, phone, location, apt, rooftop, referral
+        response2 = self.c.post("/api/v1/join/", form, content_type="application/json")
+
+        code = 201
+        self.assertEqual(
+            code,
+            response2.status_code,
+            f"status code incorrect for Valid Join Form. Should be {code}, but got {response2.status_code}.\n Response is: {response2.content.decode('utf-8')}",
+        )
+
+        validate_successful_join_form_submission(self, "Valid Join Form", s, response2)
+
+        self.assertEqual(
+            json.loads(
+                response1.content.decode("utf-8"),
+            )["member_id"],
+            json.loads(
+                response2.content.decode("utf-8"),
+            )["member_id"],
+        )
+
+        # Make sure the member's primary phone number wasn't changed (prevents join form griefing)
+        # but also confirm we noted the new phone number in additional phone numbers
+        member = Member.objects.get(
+            id=json.loads(
+                response1.content.decode("utf-8"),
+            )["member_id"]
+        )
+        self.assertEqual(member.phone_number, "+1 585-758-3425")
+        self.assertEqual(member.additional_phone_numbers, ["+1 212-555-5555"])
+
+    def test_member_moved_and_used_only_a_badly_formatted_phone_number_join_form(self):
+        # Name, email, phone, location, apt, rooftop, referral
+        form, s = pull_apart_join_form_submission(valid_join_form_submission)
+        response1 = self.c.post("/api/v1/join/", form, content_type="application/json")
+
+        code = 201
+        self.assertEqual(
+            code,
+            response1.status_code,
+            f"status code incorrect for Valid Join Form. Should be {code}, but got {response1.status_code}.\n Response is: {response1.content.decode('utf-8')}",
+        )
+
+        validate_successful_join_form_submission(self, "Valid Join Form", s, response1)
+
+        # Now test that the member can "move" and still access the join form
+        # (even if they don't provide an email, and give a badly formatted phone number)
+        v_sub_2 = valid_join_form_submission.copy()
+        v_sub_2["street_address"] = "152 Broome Street"
+        v_sub_2["phone"] = "+1 5 8 5 75 8-3 425  "
+        v_sub_2["email"] = None
+
+        form, s = pull_apart_join_form_submission(v_sub_2)
+
+        # Name, email, phone, location, apt, rooftop, referral
+        response2 = self.c.post("/api/v1/join/", form, content_type="application/json")
+
+        code = 201
+        self.assertEqual(
+            code,
+            response2.status_code,
+            f"status code incorrect for Valid Join Form. Should be {code}, but got {response2.status_code}.\n Response is: {response2.content.decode('utf-8')}",
+        )
+
+        validate_successful_join_form_submission(self, "Valid Join Form", s, response2)
+
+        # Make sure the member's primary phone number wasn't changed,
+        # and that the member matches up to the original submission
+        self.assertEqual(
+            json.loads(
+                response1.content.decode("utf-8"),
+            )["member_id"],
+            json.loads(
+                response2.content.decode("utf-8"),
+            )["member_id"],
+        )
+        member = Member.objects.get(
+            id=json.loads(
+                response1.content.decode("utf-8"),
+            )["member_id"]
+        )
+        self.assertEqual(member.phone_number, "+1 585-758-3425")
+        self.assertEqual(member.additional_phone_numbers, [])
 
     def test_different_street_addr_same_bin_multi_node(self):
         """ "

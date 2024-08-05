@@ -1,9 +1,11 @@
 import json
 import logging
 from dataclasses import dataclass
+from typing import Optional
 
 import phonenumbers
 import requests
+from django.core.exceptions import ValidationError
 from validate_email import validate_email
 
 from meshapi.exceptions import AddressAPIError, AddressError, OpenDataAPIError
@@ -23,15 +25,22 @@ def validate_email_address(email_address: str) -> bool:
     )
 
 
+def normalize_phone_number(phone_number: str) -> str:
+    return phonenumbers.format_number(
+        phonenumbers.parse(phone_number, "US"),
+        phonenumbers.PhoneNumberFormat.INTERNATIONAL,
+    )
+
+
 # Expects country code!!!!
-def validate_phone_number(phone_number: str) -> bool:
+def validate_phone_number(phone_number: str) -> Optional[phonenumbers.PhoneNumber]:
     try:
-        parsed = phonenumbers.parse(phone_number, None)
+        parsed = phonenumbers.parse(phone_number, "US")
         if not phonenumbers.is_possible_number(parsed):
-            return False
+            return None
+        return parsed
     except phonenumbers.NumberParseException:
-        return False
-    return True
+        return None
 
 
 # Used to obtain info about addresses within NYC. Uses a pair of APIs
@@ -141,3 +150,13 @@ class NYCAddressInfo:
         except Exception:
             self.altitude = INVALID_ALTITUDE
             logging.exception(f"An error occurred while trying to find ({self.bin}) in NYC OpenData")
+
+
+def validate_multi_phone_number_field(phone_number_list: list):
+    for num in phone_number_list:
+        validate_phone_number_field(num)
+
+
+def validate_phone_number_field(phone_number: str):
+    if not validate_phone_number(phone_number):
+        raise ValidationError(f"Invalid phone number: {phone_number}")
