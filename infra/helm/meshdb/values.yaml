@@ -1,6 +1,43 @@
-# Default values for meshdb.
-# This is a YAML-formatted file.
-# Declare variables to be passed into your templates.
+# Services to allow pods to communicate. One service per app.
+services:
+  - name: nginx
+    type: ClusterIP
+    port: 80
+
+  - name: postgres
+    type: ClusterIP
+    port: 5432
+
+  - name: redis
+    type: ClusterIP
+    port: 3000
+
+  - name: pelias
+    type: ClusterIP
+    port: 3000
+
+  - name: meshweb
+    type: ClusterIP
+    port: 8081
+
+  - name: pgadmin
+    type: ClusterIP
+    port: 80
+
+ingress:
+  enabled: true
+  className: "traefik"
+  annotations: {}
+  host: db.mesh.nycmesh.net # This will get overridden. Set Values.ingress.host
+  paths:
+    - path: /
+      pathType: Prefix 
+      targetService: meshdb-nginx # Testing this out
+    - path: /pgadmin 
+      pathType: Prefix
+      targetService: meshdb-pgadmin
+tls: []
+
 
 pg:
   dbname: meshdb
@@ -72,20 +109,6 @@ nginx:
   nodeSelector: {}
   affinity: {}
   tolerations: []
-
-ingress:
-  enabled: true
-  className: "traefik"
-  annotations: {}
-  host: db.mesh.nycmesh.net # This will get overridden. Set Values.ingress.host
-  paths:
-    - path: /
-      pathType: Prefix 
-      targetService: meshdb-nginx # Testing this out
-    - path: /pgadmin 
-      pathType: Prefix
-      targetService: meshdb-pgadmin
-tls: []
 
 uisp:
   url: "https://uisp.mesh.nycmesh.net/nms"
