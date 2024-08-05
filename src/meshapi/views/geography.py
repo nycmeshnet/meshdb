@@ -20,7 +20,7 @@ from rest_framework.views import APIView
 from rest_framework_dataclasses.serializers import DataclassSerializer
 
 from meshapi.exceptions import AddressError
-from meshapi.models import LOS, Device, Install, Link, Node
+from meshapi.models import LOS, Install, Link
 from meshapi.validation import geocode_nyc_address
 
 KML_CONTENT_TYPE = "application/vnd.google-earth.kml+xml"

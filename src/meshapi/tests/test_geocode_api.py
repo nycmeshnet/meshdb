@@ -1,6 +1,6 @@
 import requests_mock
 from django.contrib.auth.models import User
-from django.test import Client, TestCase
+from django.test import TestCase
 
 from meshapi.tests.sample_geocode_response import (
     INVALID_ADDRESS_GEOCODE_RESPONSE,

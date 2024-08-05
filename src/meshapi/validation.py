@@ -172,7 +172,7 @@ def geocode_nyc_address(street_address: str, city: str, state: str, zip_code: in
 
         # If we get any other error, then there was probably an issue
         # using the API, and we should wait a bit and re-try
-        except (AddressAPIError, Exception) as e:
+        except (AddressAPIError, Exception):
             logging.exception("(NYC) Something went wrong validating the address. Re-trying...")
             time.sleep(3)
 
