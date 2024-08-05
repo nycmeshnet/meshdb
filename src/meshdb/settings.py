@@ -225,7 +225,7 @@ STATICFILES_DIRS = [
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 REST_FRAMEWORK = {
-    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
+    "DEFAULT_PAGINATION_CLASS": "meshapi.util.drf_utils.CustomSizePageNumberPagination",
     "PAGE_SIZE": 100,
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "rest_framework.authentication.SessionAuthentication",
@@ -242,18 +242,38 @@ HOOK_EVENTS = {
     "building.created": "meshapi.Building.created+",
     "member.created": "meshapi.Member.created+",
     "install.created": "meshapi.Install.created+",
+    "node.created": "meshapi.Node.created+",
+    "link.created": "meshapi.Link.created+",
+    "los.created": "meshapi.LOS.created+",
+    "device.created": "meshapi.Device.created+",
+    "sector.created": "meshapi.Sector.created+",
     "building.updated": "meshapi.Building.updated+",
     "member.updated": "meshapi.Member.updated+",
     "install.updated": "meshapi.Install.updated+",
+    "node.updated": "meshapi.Node.updated+",
+    "link.updated": "meshapi.Link.updated+",
+    "los.updated": "meshapi.LOS.updated+",
+    "device.updated": "meshapi.Device.updated+",
+    "sector.updated": "meshapi.Sector.updated+",
     "building.deleted": "meshapi.Building.deleted+",
     "member.deleted": "meshapi.Member.deleted+",
     "install.deleted": "meshapi.Install.deleted+",
+    "node.deleted": "meshapi.Node.deleted+",
+    "link.deleted": "meshapi.Link.deleted+",
+    "los.deleted": "meshapi.LOS.deleted+",
+    "device.deleted": "meshapi.Device.deleted+",
+    "sector.deleted": "meshapi.Sector.deleted+",
 }
 
 HOOK_SERIALIZERS = {
     "meshapi.Building": "meshapi.serializers.model_api.BuildingSerializer",
     "meshapi.Member": "meshapi.serializers.model_api.MemberSerializer",
     "meshapi.Install": "meshapi.serializers.model_api.InstallSerializer",
+    "meshapi.Node": "meshapi.serializers.model_api.NodeSerializer",
+    "meshapi.Link": "meshapi.serializers.model_api.LinkSerializer",
+    "meshapi.LOS": "meshapi.serializers.model_api.LOSSerializer",
+    "meshapi.Device": "meshapi.serializers.model_api.DeviceSerializer",
+    "meshapi.Sector": "meshapi.serializers.model_api.SectorSerializer",
 }
 
 HOOK_CUSTOM_MODEL = "meshapi_hooks.CelerySerializerHook"
@@ -277,6 +297,10 @@ SPECTACULAR_SETTINGS = {
             "the installs that use those devices, and the buildings that house them",
         },
         {"name": "Links", "description": "Network links between devices"},
+        {
+            "name": "LOSes",
+            "description": "Lines of sight between buildings, primarily useful to document potential future links",
+        },
         {
             "name": "Devices",
             "description": "Devices, one corresponding to each physical device on the mesh (routers, aps, cpes, etc.). "

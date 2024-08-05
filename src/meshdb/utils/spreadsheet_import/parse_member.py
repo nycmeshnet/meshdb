@@ -56,6 +56,10 @@ def parse_emails(input_emails: str) -> List[str]:
     if "brian@nycmesh.net" in email_matches:
         email_matches.remove("brian@nycmesh.net")
 
+    # Do the same thing for other fake emails used for similar situations
+    if "noclientemail@gsg.com" in email_matches:
+        email_matches.remove("noclientemail@gsg.com")
+
     return [
         email
         for email in email_matches

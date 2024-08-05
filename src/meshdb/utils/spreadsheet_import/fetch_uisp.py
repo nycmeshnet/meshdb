@@ -1,5 +1,6 @@
 import json
 import os
+from typing import Optional
 
 import requests
 from dotenv import load_dotenv
@@ -24,6 +25,18 @@ def download_uisp_links():
     return json.loads(
         session.get(
             os.path.join(os.environ["UISP_URL"], "api/v2.1/data-links"),
+            verify=False,
+        ).content.decode("UTF8")
+    )
+
+
+def get_uisp_device_detail(device_id: str, session: Optional[requests.Session] = None) -> dict:
+    if not session:
+        session = get_uisp_session()
+
+    return json.loads(
+        session.get(
+            os.path.join(os.environ["UISP_URL"], f"api/v2.1/devices/{device_id}"),
             verify=False,
         ).content.decode("UTF8")
     )

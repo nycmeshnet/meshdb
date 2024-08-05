@@ -5,26 +5,22 @@ from django_filters import rest_framework as filters
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
 from rest_framework import generics
-from rest_framework.pagination import PageNumberPagination
 from rest_framework.request import Request
 from rest_framework.response import Response
 
-from meshapi.models import Building, Device, Install, Link, Member, Node, Sector
+from meshapi.models import LOS, Building, Device, Install, Link, Member, Node, Sector
 from meshapi.serializers import (
     BuildingSerializer,
     DeviceSerializer,
     InstallSerializer,
     LinkSerializer,
+    LOSSerializer,
     MemberSerializer,
     NodeSerializer,
     SectorSerializer,
 )
 
 ADDITIONAL_QUERY_PARAMS = {"page_size", "page"}
-
-
-class CustomSizePageNumberPagination(PageNumberPagination):
-    page_size_query_param = "page_size"  # items per page
 
 
 class FilterRequiredListAPIView(generics.ListAPIView):
@@ -100,7 +96,6 @@ class LookupMember(FilterRequiredListAPIView):
     queryset = Member.objects.all().order_by("id")
     serializer_class = MemberSerializer
     filterset_class = MemberFilter
-    pagination_class = CustomSizePageNumberPagination
 
 
 class InstallFilter(filters.FilterSet):
@@ -150,7 +145,6 @@ class LookupInstall(FilterRequiredListAPIView):
     queryset = Install.objects.all().order_by("install_number")
     serializer_class = InstallSerializer
     filterset_class = InstallFilter
-    pagination_class = CustomSizePageNumberPagination
 
 
 class BuildingFilter(filters.FilterSet):
@@ -233,7 +227,6 @@ class LookupBuilding(FilterRequiredListAPIView):
     queryset = Building.objects.all().order_by("id")
     serializer_class = BuildingSerializer
     filterset_class = BuildingFilter
-    pagination_class = CustomSizePageNumberPagination
 
 
 class NodeFilter(filters.FilterSet):
@@ -285,7 +278,6 @@ class LookupNode(FilterRequiredListAPIView):
     queryset = Node.objects.all().order_by("network_number")
     serializer_class = NodeSerializer
     filterset_class = NodeFilter
-    pagination_class = CustomSizePageNumberPagination
 
 
 class LinkFilter(filters.FilterSet):
@@ -349,7 +341,66 @@ class LookupLink(FilterRequiredListAPIView):
     queryset = Link.objects.all().order_by("id")
     serializer_class = LinkSerializer
     filterset_class = LinkFilter
-    pagination_class = CustomSizePageNumberPagination
+
+
+class LOSFilter(filters.FilterSet):
+    network_number = filters.NumberFilter(method="filter_from_to_network_number")
+    install_number = filters.NumberFilter(method="filter_from_to_install_number")
+    building = filters.NumberFilter(method="filter_from_to_building_id")
+
+    def filter_from_to_network_number(self, queryset: QuerySet[LOS], field_name: str, value: int) -> QuerySet[LOS]:
+        return queryset.filter(Q(from_building__nodes=value) | Q(to_building__nodes=value))
+
+    def filter_from_to_install_number(self, queryset: QuerySet[LOS], field_name: str, value: int) -> QuerySet[LOS]:
+        return queryset.filter(Q(from_building__installs=value) | Q(to_building__installs=value))
+
+    def filter_from_to_building_id(self, queryset: QuerySet[LOS], field_name: str, value: int) -> QuerySet[LOS]:
+        return queryset.filter(Q(from_building__id=value) | Q(to_building__id=value))
+
+    class Meta:
+        model = LOS
+        fields = ["source", "analysis_date"]
+
+
+@extend_schema_view(
+    get=extend_schema(
+        tags=["LOSes"],
+        parameters=[
+            OpenApiParameter(
+                "building",
+                OpenApiTypes.INT,
+                OpenApiParameter.QUERY,
+                description="Filter LOSes by the id of the buildings they connect using strict equality",
+                required=False,
+            ),
+            OpenApiParameter(
+                "network_number",
+                OpenApiTypes.INT,
+                OpenApiParameter.QUERY,
+                description="Filter LOSes the by network_numbers of the buildings they connect using strict equality",
+                required=False,
+            ),
+            OpenApiParameter(
+                "install_number",
+                OpenApiTypes.INT,
+                OpenApiParameter.QUERY,
+                description="Filter LOSes by install_numbers of the buildings they connect using strict equality",
+                required=False,
+            ),
+            OpenApiParameter(
+                "source",
+                OpenApiTypes.STR,
+                OpenApiParameter.QUERY,
+                description="Filter LOSes by the source field using strict equality",
+                required=False,
+            ),
+        ],
+    ),
+)
+class LookupLOS(FilterRequiredListAPIView):
+    queryset = LOS.objects.all().order_by("id")
+    serializer_class = LOSSerializer
+    filterset_class = LOSFilter
 
 
 class DeviceFilter(filters.FilterSet):
@@ -421,7 +472,6 @@ class LookupDevice(FilterRequiredListAPIView):
     queryset = Device.objects.all().order_by("id")
     serializer_class = DeviceSerializer
     filterset_class = DeviceFilter
-    pagination_class = CustomSizePageNumberPagination
 
 
 class SectorFilter(DeviceFilter):
@@ -490,4 +540,3 @@ class LookupSector(FilterRequiredListAPIView):
     queryset = Sector.objects.all().order_by("id")
     serializer_class = SectorSerializer
     filterset_class = SectorFilter
-    pagination_class = CustomSizePageNumberPagination

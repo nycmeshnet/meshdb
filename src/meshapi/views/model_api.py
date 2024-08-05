@@ -7,12 +7,13 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.request import Request
 from rest_framework.response import Response
 
-from meshapi.models import Building, Device, Install, Link, Member, Node, Sector
+from meshapi.models import LOS, Building, Device, Install, Link, Member, Node, Sector
 from meshapi.serializers import (
     BuildingSerializer,
     DeviceSerializer,
     InstallSerializer,
     LinkSerializer,
+    LOSSerializer,
     MemberSerializer,
     NodeSerializer,
     SectorSerializer,
@@ -140,6 +141,26 @@ class LinkList(generics.ListCreateAPIView):
 class LinkDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = Link.objects.all()
     serializer_class = LinkSerializer
+
+
+@extend_schema_view(
+    get=extend_schema(tags=["LOSes"]),
+    post=extend_schema(tags=["LOSes"]),
+)
+class LOSList(generics.ListCreateAPIView):
+    queryset = LOS.objects.all()
+    serializer_class = LOSSerializer
+
+
+@extend_schema_view(
+    get=extend_schema(tags=["LOSes"]),
+    put=extend_schema(tags=["LOSes"]),
+    patch=extend_schema(tags=["LOSes"]),
+    delete=extend_schema(tags=["LOSes"]),
+)
+class LOSDetail(generics.RetrieveUpdateDestroyAPIView):
+    queryset = LOS.objects.all()
+    serializer_class = LOSSerializer
 
 
 @extend_schema_view(
