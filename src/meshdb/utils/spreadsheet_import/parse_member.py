@@ -117,7 +117,7 @@ def merge_member_objects(members: List[Member]) -> Member:
             merged_member.slack_handle = member.slack_handle
 
         if member.notes:
-            merged_member.notes += member.notes
+            merged_member.notes = "\n".join(n for n in [merged_member.notes, member.notes] if n)
 
     merged_member.save()
 
