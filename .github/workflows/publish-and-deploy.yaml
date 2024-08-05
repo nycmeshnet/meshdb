@@ -63,111 +63,19 @@ jobs:
       run: ssh ${{ secrets.GRANDSVC_SSH_USER }}@${{ secrets.GRANDSVC_TARGET_IP }} "cd ${{ secrets.GRANDSVC_PROJECT_PATH }} && git pull && docker compose pull && docker compose up -d"
 
   deploy_to_dev3:
-      name: Deploy to dev3
+    name: Deploy to dev 3
+    uses: ./.github/workflows/deploy-to-k8s.yaml
+    with:
       environment: dev3
-      needs: push_to_registry
-      runs-on: ubuntu-latest
-      if: github.ref == 'refs/heads/main'
-      steps:
-      - name: Check out the repo
-        uses: actions/checkout@v4
-
-      - name: Install SSH key
-        uses: shimataro/ssh-key-action@d4fffb50872869abe2d9a9098a6d9c5aa7d16be4 # v2
-        with:
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          name: id_ed25519 # optional
-          known_hosts: ${{ secrets.SSH_KNOWN_HOSTS }}
-          if_key_exists: fail # replace / ignore / fail; optional (defaults to fail)
-      
-      - name: Setup WireGuard
-        run:  |
-          sudo apt install wireguard
-          echo "${{ secrets.WIREGUARD_PRIVATE_KEY }}" > privatekey
-          sudo ip link add dev wg1 type wireguard
-          sudo ip address add dev wg1 ${{ secrets.WIREGUARD_OVERLAY_NETWORK_IP }} peer ${{ secrets.SSH_TARGET_IP }}
-          sudo wg set wg1 listen-port 48123 private-key privatekey peer ${{ secrets.WIREGUARD_PEER_PUBLIC_KEY }} allowed-ips 0.0.0.0/0 endpoint ${{ secrets.WIREGUARD_ENDPOINT }}
-          sudo ip link set up dev wg1
-
-      - name: Deploy Helm Chart
-        run: |
-          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_TARGET_IP }} "\
-            sudo bash -c '\
-              cd ${{ secrets.PROJECT_PATH }} && \
-              git pull && \
-              git checkout main && \
-              cd infra/helm/meshdb && \
-              helm template . -f values.yaml \
-                --set meshdb_app_namespace=\"${{ vars.APP_NAMESPACE }}\" \
-                --set nginx.server_name=\"${{ vars.SERVER_NAME }}\" \
-                --set pg.password=\"${{ secrets.PG_PASSWORD}}\" \
-                --set aws.access_key_id=\"${{ secrets.ACCESS_KEY_ID }}\" \
-                --set aws.secret_access_key=\"${{ secrets.SECRET_ACCESS_KEY }}\" \
-                --set meshweb.backup_s3_base_folder=\"${{ vars.BACKUP_S3_BASE_FOLDER }}\" \
-                --set meshweb.backup_s3_bucket_name=\"${{ secrets.BACKUP_S3_BUCKET_NAME }}\" \
-                --set meshweb.django_secret_key=\"${{ secrets.DJANGO_SECRET_KEY }}\" \
-                --set meshweb.nn_assign_psk=\"${{ secrets.NN_ASSIGN_PSK }}\" \
-                --set meshweb.query_psk=\"${{ secrets.QUERY_PSK }}\" \
-                --set meshweb.pano_github_token=\"${{ secrets.GH_TOKEN }}\" \
-                --set pgadmin.default_email=\"${{ secrets.PGADMIN_EMAIL }}\" \
-                --set pgadmin.default_password=\"${{ secrets.PGADMIN_PASSWORD }}\" \
-                --set uisp.user=\"${{ secrets.UISP_USER }}\" \
-                --set uisp.psk=\"${{ secrets.UISP_PSK }}\" \
-                | kubectl apply -f - && \
-              kubectl -n ${{ vars.APP_NAMESPACE }} rollout restart deploy \
-            '"
+    secrets: inherit
+    needs: push_to_registry
+    if: github.ref == 'refs/heads/main'
 
   deploy_to_prod1:
-      name: Deploy to prod 1
-      environment: prod
-      needs: push_to_registry
-      runs-on: ubuntu-latest
-      if: github.ref == 'refs/heads/main'
-      steps:
-      - name: Check out the repo
-        uses: actions/checkout@v4
-
-      - name: Install SSH key
-        uses: shimataro/ssh-key-action@d4fffb50872869abe2d9a9098a6d9c5aa7d16be4 # v2
-        with:
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          name: id_ed25519 # optional
-          known_hosts: ${{ secrets.SSH_KNOWN_HOSTS }}
-          if_key_exists: fail # replace / ignore / fail; optional (defaults to fail)
-      
-      - name: Setup WireGuard
-        run:  |
-          sudo apt install wireguard
-          echo "${{ secrets.WIREGUARD_PRIVATE_KEY }}" > privatekey
-          sudo ip link add dev wg2 type wireguard
-          sudo ip address add dev wg2 ${{ secrets.WIREGUARD_OVERLAY_NETWORK_IP }} peer ${{ secrets.SSH_TARGET_IP }}
-          sudo wg set wg2 listen-port 48123 private-key privatekey peer ${{ secrets.WIREGUARD_PEER_PUBLIC_KEY }} allowed-ips 0.0.0.0/0 endpoint ${{ secrets.WIREGUARD_ENDPOINT }}
-          sudo ip link set up dev wg2
-
-      - name: Deploy Helm Chart
-        run: |
-          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_TARGET_IP }} "\
-            sudo bash -c '\
-              cd ${{ secrets.PROJECT_PATH }} && \
-              git pull && \
-              git checkout main && \
-              cd infra/helm/meshdb && \
-              helm template . -f values.yaml \
-                --set meshdb_app_namespace=\"${{ vars.APP_NAMESPACE }}\" \
-                --set nginx.server_name=\"${{ vars.SERVER_NAME }}\" \
-                --set pg.password=\"${{ secrets.PG_PASSWORD}}\" \
-                --set aws.access_key_id=\"${{ secrets.ACCESS_KEY_ID }}\" \
-                --set aws.secret_access_key=\"${{ secrets.SECRET_ACCESS_KEY }}\" \
-                --set meshweb.backup_s3_base_folder=\"${{ vars.BACKUP_S3_BASE_FOLDER }}\" \
-                --set meshweb.backup_s3_bucket_name=\"${{ secrets.BACKUP_S3_BUCKET_NAME }}\" \
-                --set meshweb.django_secret_key=\"${{ secrets.DJANGO_SECRET_KEY }}\" \
-                --set meshweb.nn_assign_psk=\"${{ secrets.NN_ASSIGN_PSK }}\" \
-                --set meshweb.query_psk=\"${{ secrets.QUERY_PSK }}\" \
-                --set meshweb.pano_github_token=\"${{ secrets.GH_TOKEN }}\" \
-                --set pgadmin.default_email=\"${{ secrets.PGADMIN_EMAIL }}\" \
-                --set pgadmin.default_password=\"${{ secrets.PGADMIN_PASSWORD }}\" \
-                --set uisp.user=\"${{ secrets.UISP_USER }}\" \
-                --set uisp.psk=\"${{ secrets.UISP_PSK }}\" \
-                | kubectl apply -f - && \
-              kubectl -n ${{ vars.APP_NAMESPACE }} rollout restart deploy \
-            '"
+    name: Deploy to prod 1
+    uses: ./.github/workflows/deploy-to-k8s.yaml
+    with:
+      environment: prod1
+    secrets: inherit
+    needs: push_to_registry
+    if: github.ref == 'refs/heads/main'
