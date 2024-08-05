@@ -39,13 +39,16 @@ EMAIL_REPLACEMENTS = {
 
 FAKE_PHONE_NUMBERS = ["+1 999-999-9999", "+1 333-333-3333"]
 
+VOLUNTEER_PHONE_NUMBERS = set()
+VOLUNTEER_EMAIL_ADDRESSES = {"bh@usa.net", "brian@nycmesh.net", "marg@nycmesh.net"}
 
-def merge_member_objects(members: List[Member]) -> Member:
-    if len(members) == 0:
+
+def merge_member_objects(members_and_installs: List[Tuple[Member, List[int]]]) -> Member:
+    if len(members_and_installs) == 0:
         raise ValueError("members list is empty")
 
-    if len(members) == 1:
-        return members[0]
+    if len(members_and_installs) == 1:
+        return members_and_installs[0][0]
 
     merged_member = Member(
         name=None,
@@ -59,10 +62,11 @@ def merge_member_objects(members: List[Member]) -> Member:
     )
 
     # Sort by ID so that earlier spreadsheet rows take precedence over earlier ones
-    members.sort(key=lambda m: m.id)
+    members_and_installs.sort(key=lambda m: m[0].id)
 
     # Merge many members down into one
-    for member in members:
+    for member, install_numbers in members_and_installs:
+        name_change_note = None
         if merged_member.name is None:
             merged_member.name = member.name
         else:
@@ -79,12 +83,11 @@ def merge_member_objects(members: List[Member]) -> Member:
                 #         new_member.name,
                 #     )
                 # )
-                installs = [i.install_number for i in member.installs.all()]
                 logging.info(
                     f"Dropping name change {repr(merged_member.name)} -> {repr(member.name)} "
-                    f"for member id {members[0].id}"
+                    f"for member id {members_and_installs[0][0].id} (install number(s) {', '.join(f'#{i}' for i in install_numbers)}"
                 )
-                merged_member.notes += f"\nDropped name change: {member.name}"
+                name_change_note = f"Dropped name change: {member.name}"
 
         if merged_member.primary_email_address is None:
             merged_member.primary_email_address = member.primary_email_address
@@ -116,12 +119,35 @@ def merge_member_objects(members: List[Member]) -> Member:
         if merged_member.slack_handle is None:
             merged_member.slack_handle = member.slack_handle
 
+        note_items = []
+        if merged_member.notes:
+            note_items.append(merged_member.notes)
         if member.notes:
-            merged_member.notes = "\n".join(n for n in [merged_member.notes, member.notes] if n)
+            note_items.append(member.notes)
+
+        notes_lines = []
+        for notes_item in note_items:
+            for line in notes_item.split("\n"):
+                line_bare = line.strip()
+                if line_bare:
+                    if line_bare not in notes_lines:
+                        notes_lines.append(line_bare)
+
+        merged_member.notes = "\n".join(notes_lines).strip()
+
+        if name_change_note and name_change_note not in merged_member.notes:
+            install_number_addendum = ""
+            if install_numbers:
+                if len(install_numbers) == 1:
+                    install_number_addendum = f"(install #{install_numbers[0]})"
+                else:
+                    install_number_addendum = f"(installs {', '.join(f'#{i}' for i in install_numbers)})"
+
+            merged_member.notes = (name_change_note + " " + install_number_addendum + "\n") + merged_member.notes
 
     merged_member.save()
 
-    for member in members:
+    for member, _ in members_and_installs:
         for install in member.installs.all():
             merged_member.installs.add(install)
 
@@ -150,6 +176,8 @@ def parse_emails(input_emails: str) -> List[str]:
     # Do the same thing for other fake emails used for similar situations
     if "noclientemail@gsg.com" in email_matches:
         email_matches.remove("noclientemail@gsg.com")
+    if "none@example.com" in email_matches:
+        email_matches.remove("none@example.com")
 
     return [
         email
@@ -224,17 +252,14 @@ def get_or_create_member(
     # Keep track of garbage phone numbers just in case we're wrong about
     # their garbage-ness
     if row.phone and not parsed_phone:
-        notes += f"Un-parsable Phone Number: {row.phone}\n"
+        notes += f"Un-parsable Phone Number: {row.phone} (install #{row.id})\n"
 
     # If there were any letters in the phone number
     # (that we didn't parse into an extension)
     # it's probably a contact note like "text only".
     # Record that in the contact notes
     if re.search("[a-zA-Z]", row.phone) and parsed_phone and not parsed_phone.extension:
-        notes += f"Phone Notes: {row.phone}\n"
-
-    if row.contactNotes:
-        notes += f"Spreadsheet Emails:\n{row.email}\n{row.stripeEmail}\n{row.secondEmail}\n"
+        notes += f"Phone Notes: {row.phone} (install #{row.id})\n"
 
     formatted_phone_number = (
         # TODO: Bring this formatting to the join form
@@ -246,6 +271,20 @@ def get_or_create_member(
     if formatted_phone_number in FAKE_PHONE_NUMBERS:
         formatted_phone_number = None
 
+    # If this is a volunteer's phone number, drop it from our known information
+    # to prevent it being used to join member objects where the volunteer signed up other people
+    if formatted_phone_number in VOLUNTEER_PHONE_NUMBERS:
+        formatted_phone_number = None
+
+    # So that we don't put volunteer phone numbers in our source code,
+    # learn the phone numbers dynamically during the import process based on the known email
+    # addresses. This has the added bonus of not erasing the phone number on the first pass,
+    # so we don't forget the volunteer's phone number on their actual member object
+    for email in other_emails:
+        if email in VOLUNTEER_EMAIL_ADDRESSES:
+            if formatted_phone_number:
+                VOLUNTEER_PHONE_NUMBERS.add(formatted_phone_number)
+
     candidate_member = models.Member(
         name=row.name,
         primary_email_address=other_emails[0] if len(other_emails) > 0 else None,
@@ -253,7 +292,7 @@ def get_or_create_member(
         additional_email_addresses=other_emails[1:],
         phone_number=formatted_phone_number,
         slack_handle=None,
-        notes=notes if notes else None,
+        notes=notes if notes else "",
     )
 
     existing_member_filter_criteria = []
@@ -285,12 +324,14 @@ def get_or_create_member(
     candidate_member.save()
 
     if existing_members:
-        members_to_consolidate = existing_members + [candidate_member]
-        min_id = min(m.id for m in members_to_consolidate)
+        members_to_consolidate = [
+            (member, [install.install_number for install in member.installs.all()]) for member in existing_members
+        ] + [(candidate_member, [row.id])]
+        min_id = min(m[0].id for m in members_to_consolidate)
         logging.debug(
             f"Duplicate entries detected at install # {row.id}. "
             f"Consolidating the following members: "
-            f"{[(m.name, m.primary_email_address, m.phone_number) for m in members_to_consolidate]}"
+            f"{[(m.name, m.primary_email_address, m.phone_number, i_list) for m, i_list in members_to_consolidate]}"
         )
         merged_member = merge_member_objects(members_to_consolidate)
 
@@ -298,7 +339,7 @@ def get_or_create_member(
         # consolidated to avoid duplication, and convert our new object to use the
         # min id of those objects (since a future merge may happen and if so we want to
         # ensure that this object is used as the source of truth)
-        for member in members_to_consolidate:
+        for member, _ in members_to_consolidate:
             member.delete()
 
         Member.objects.filter(id=merged_member.id).update(id=min_id)
