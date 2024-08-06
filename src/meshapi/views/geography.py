@@ -436,8 +436,8 @@ class NYCGeocodeWrapper(APIView):
         except ValueError:
             return Response(
                 {
-                    "detail": "Non-NYC registrations are not supported at this time. Check back later, "
-                    "or email support@nycmesh.net"
+                    "detail": "Non-NYC registrations are not supported at this time. "
+                    "Please email support@nycmesh.net for more information"
                 },
                 status=status.HTTP_404_NOT_FOUND,
             )
