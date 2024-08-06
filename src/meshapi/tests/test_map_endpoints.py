@@ -1,9 +1,12 @@
 import datetime
 import json
 
+import requests_mock
 from django.test import Client, TestCase
 
 from meshapi.models import LOS, Building, Device, Install, Link, Member, Node, Sector
+from meshapi.tests.sample_kiosk_data import SAMPLE_OPENDATA_NYC_LINKNYC_KIOSK_RESPONSE
+from meshapi.views import LINKNYC_KIOSK_DATA_URL
 
 
 class TestViewsGetUnauthenticated(TestCase):
@@ -1348,3 +1351,51 @@ class TestViewsGetUnauthenticated(TestCase):
                 },
             ],
         )
+
+
+class TestKiosk(TestCase):
+    c = Client()
+
+    @requests_mock.Mocker()
+    def test_kiosk_list_good_state(self, city_api_call_request_mocker):
+        city_api_call_request_mocker.get(LINKNYC_KIOSK_DATA_URL, json=SAMPLE_OPENDATA_NYC_LINKNYC_KIOSK_RESPONSE)
+
+        response = self.c.get("/api/v1/mapdata/kiosks/")
+        self.assertEqual(
+            200,
+            response.status_code,
+            f"status code incorrect, should be 200, but got {response.status_code}",
+        )
+        self.assertEqual(len(json.loads(response.content.decode("UTF8"))), 7)
+
+    @requests_mock.Mocker()
+    def test_kiosk_list_bad_fetch(self, city_api_call_request_mocker):
+        city_api_call_request_mocker.get(LINKNYC_KIOSK_DATA_URL, status_code=500)
+
+        response = self.c.get("/api/v1/mapdata/kiosks/")
+        self.assertEqual(
+            502,
+            response.status_code,
+            f"status code incorrect, should be 200, but got {response.status_code}",
+        )
+        self.assertEqual(
+            json.loads(response.content.decode("UTF8")), {"detail": "Error fetching data from City of New York"}
+        )
+
+    @requests_mock.Mocker()
+    def test_kiosk_list_bad_response(self, city_api_call_request_mocker):
+        bad_responses = [[], [{"blah": "abc"}]]
+
+        for bad_response in bad_responses:
+            city_api_call_request_mocker.get(LINKNYC_KIOSK_DATA_URL, json=bad_response)
+
+            response = self.c.get("/api/v1/mapdata/kiosks/")
+            self.assertEqual(
+                502,
+                response.status_code,
+                f"status code incorrect, should be 200, but got {response.status_code}",
+            )
+            self.assertEqual(
+                json.loads(response.content.decode("UTF8")),
+                {"detail": "Invalid response received from City of New York"},
+            )
