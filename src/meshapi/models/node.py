@@ -91,10 +91,11 @@ class Node(models.Model):
     )
 
     def save(self, *args: Any, **kwargs: Any) -> None:
-        with advisory_lock("nn_assignment_lock"):
-            if not self.network_number:
+        if not self.network_number:
+            with advisory_lock("nn_assignment_lock"):
                 self.network_number = get_next_available_network_number()
-
+                super().save(*args, **kwargs)
+        else:
             super().save(*args, **kwargs)
 
     def __str__(self) -> str:
