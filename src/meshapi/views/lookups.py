@@ -8,8 +8,9 @@ from rest_framework import generics
 from rest_framework.request import Request
 from rest_framework.response import Response
 
-from meshapi.models import LOS, Building, Device, Install, Link, Member, Node, Sector
+from meshapi.models import LOS, AccessPoint, Building, Device, Install, Link, Member, Node, Sector
 from meshapi.serializers import (
+    AccessPointSerializer,
     BuildingSerializer,
     DeviceSerializer,
     InstallSerializer,
@@ -498,3 +499,50 @@ class LookupSector(FilterRequiredListAPIView):
     queryset = Sector.objects.all().order_by("id")
     serializer_class = SectorSerializer
     filterset_class = SectorFilter
+
+
+class AccessPointFilter(DeviceFilter):
+    class Meta:
+        model = AccessPoint
+        fields = DeviceFilter.Meta.fields
+
+
+@extend_schema_view(
+    get=extend_schema(
+        tags=["AccessPoints"],
+        parameters=[
+            OpenApiParameter(
+                "network_number",
+                OpenApiTypes.INT,
+                OpenApiParameter.QUERY,
+                description="Filter sectors by network_number using strict equality",
+                required=False,
+            ),
+            OpenApiParameter(
+                "status",
+                OpenApiTypes.STR,
+                OpenApiParameter.QUERY,
+                description="Filter sectors by the status field using strict equality",
+                required=False,
+            ),
+            OpenApiParameter(
+                "uisp_id",
+                OpenApiTypes.STR,
+                OpenApiParameter.QUERY,
+                description="Filter sectors by the uisp_id field using strict equality",
+                required=False,
+            ),
+            OpenApiParameter(
+                "name",
+                OpenApiTypes.STR,
+                OpenApiParameter.QUERY,
+                description="Filter sectors by the name field using case-insensitve substring matching",
+                required=False,
+            ),
+        ],
+    ),
+)
+class LookupAccessPoint(FilterRequiredListAPIView):
+    queryset = AccessPoint.objects.all().order_by("id")
+    serializer_class = AccessPointSerializer
+    filterset_class = AccessPointFilter

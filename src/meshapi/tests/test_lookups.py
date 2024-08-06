@@ -4,7 +4,7 @@ import json
 from django.contrib.auth.models import User
 from django.test import Client, TestCase
 
-from ..models import LOS, Building, Device, Install, Link, Member, Node, Sector
+from ..models import LOS, AccessPoint, Building, Device, Install, Link, Member, Node, Sector
 from .sample_data import sample_building, sample_member
 
 
@@ -1817,6 +1817,172 @@ class TestSectorLookups(TestCase):
 
     def test_invalid_search(self):
         response = self.c.get("/api/v1/sectors/lookup/?invalid=abc")
+        code = 400
+        self.assertEqual(
+            code,
+            response.status_code,
+            f"status code incorrect. Should be {code}, but got {response.status_code}",
+        )
+
+
+class TestAccessPointLookups(TestCase):
+    c = Client()
+
+    def setUp(self):
+        self.admin_user = User.objects.create_superuser(
+            username="admin", password="admin_password", email="admin@example.com"
+        )
+        self.c.login(username="admin", password="admin_password")
+
+        n1 = Node(
+            network_number=456,
+            status=Node.NodeStatus.ACTIVE,
+            name="ABC",
+            latitude=2,
+            longitude=-2,
+            altitude=40,
+        )
+        n1.save()
+        n2 = Node(
+            network_number=789,
+            status=Node.NodeStatus.INACTIVE,
+            name="DEFG",
+            latitude=2,
+            longitude=-2,
+            altitude=40,
+        )
+        n2.save()
+
+        ap1 = AccessPoint(
+            id=1,
+            node=n1,
+            status=Device.DeviceStatus.INACTIVE,
+            uisp_id="abc",
+            name="nycmesh-456-east",
+            latitude=2,
+            longitude=-2,
+            altitude=40,
+        )
+        ap1.save()
+
+        ap2 = AccessPoint(
+            id=2,
+            node=n2,
+            status=Device.DeviceStatus.ACTIVE,
+            uisp_id="123",
+            name="nycmesh-789-west",
+            latitude=2,
+            longitude=-2,
+            altitude=40,
+        )
+        ap2.save()
+
+        ap3 = AccessPoint(
+            id=3,
+            node=n2,
+            status=Device.DeviceStatus.ACTIVE,
+            uisp_id="def",
+            name="nycmesh-789-north",
+            latitude=2,
+            longitude=-2,
+            altitude=40,
+        )
+        ap3.save()
+
+    def test_access_point_nn_search(self):
+        response = self.c.get("/api/v1/accesspoints/lookup/?network_number=456")
+        code = 200
+        self.assertEqual(
+            code,
+            response.status_code,
+            f"status code incorrect. Should be {code}, but got {response.status_code}",
+        )
+
+        response_objs = json.loads(response.content)["results"]
+        self.assertEqual(len(response_objs), 1)
+        self.assertEqual(response_objs[0]["id"], 1)
+
+        response = self.c.get("/api/v1/accesspoints/lookup/?network_number=789")
+        code = 200
+        self.assertEqual(
+            code,
+            response.status_code,
+            f"status code incorrect. Should be {code}, but got {response.status_code}",
+        )
+
+        response_objs = json.loads(response.content)["results"]
+        self.assertEqual(len(response_objs), 2)
+
+        response = self.c.get("/api/v1/accesspoints/lookup/?network_number=123")
+        code = 200
+        self.assertEqual(
+            code,
+            response.status_code,
+            f"status code incorrect. Should be {code}, but got {response.status_code}",
+        )
+
+        response_objs = json.loads(response.content)["results"]
+        self.assertEqual(len(response_objs), 0)
+
+    def test_accesspoint_status_search(self):
+        response = self.c.get("/api/v1/accesspoints/lookup/?status=Inactive")
+        code = 200
+        self.assertEqual(
+            code,
+            response.status_code,
+            f"status code incorrect. Should be {code}, but got {response.status_code}",
+        )
+
+        response_objs = json.loads(response.content)["results"]
+        self.assertEqual(len(response_objs), 1)
+        self.assertEqual(response_objs[0]["id"], 1)
+
+        response = self.c.get("/api/v1/accesspoints/lookup/?status=Active")
+        code = 200
+        self.assertEqual(
+            code,
+            response.status_code,
+            f"status code incorrect. Should be {code}, but got {response.status_code}",
+        )
+
+        response_objs = json.loads(response.content)["results"]
+        self.assertEqual(len(response_objs), 2)
+
+        response = self.c.get("/api/v1/accesspoints/lookup/?status=Potential")
+        code = 200
+        self.assertEqual(
+            code,
+            response.status_code,
+            f"status code incorrect. Should be {code}, but got {response.status_code}",
+        )
+
+        response_objs = json.loads(response.content)["results"]
+        self.assertEqual(len(response_objs), 0)
+
+    def test_accesspoint_combined_search(self):
+        response = self.c.get("/api/v1/accesspoints/lookup/?status=Inactive&network_number=456")
+        code = 200
+        self.assertEqual(
+            code,
+            response.status_code,
+            f"status code incorrect. Should be {code}, but got {response.status_code}",
+        )
+
+        response_objs = json.loads(response.content)["results"]
+        self.assertEqual(len(response_objs), 1)
+        self.assertEqual(response_objs[0]["id"], 1)
+
+    def test_empty_search(self):
+        response = self.c.get("/api/v1/accesspoints/lookup/")
+        code = 400
+        self.assertEqual(
+            code,
+            response.status_code,
+            f"status code incorrect. Should be {code}, but got {response.status_code}",
+        )
+
+    def test_invalid_search(self):
+        response = self.c.get("/api/v1/accesspoints/lookup/?invalid=abc")
         code = 400
         self.assertEqual(
             code,

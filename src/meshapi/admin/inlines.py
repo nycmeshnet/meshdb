@@ -6,7 +6,7 @@ from django.db.models import Model, Q, QuerySet
 from django.http import HttpRequest
 from nonrelated_inlines.admin import NonrelatedTabularInline
 
-from meshapi.models import LOS, Building, Device, Install, Link, Member, Node, Sector
+from meshapi.models import LOS, AccessPoint, Building, Device, Install, Link, Member, Node, Sector
 
 
 # Inline with the typical rules we want + Formatting
@@ -99,7 +99,7 @@ class DeviceInline(BetterInline):
         # Get the base queryset
         queryset = super().get_queryset(request)
         # Filter out sectors
-        queryset = queryset.exclude(sector__isnull=False)
+        queryset = queryset.exclude(sector__isnull=False).exclude(accesspoint__isnull=False)
         return queryset
 
 
@@ -129,6 +129,12 @@ class DeviceLinkInline(BetterNonrelatedInline):
 
 class SectorInline(BetterInline):
     model = Sector
+    fields = ["status"]
+    readonly_fields = fields  # type: ignore[assignment]
+
+
+class AccessPointInline(BetterInline):
+    model = AccessPoint
     fields = ["status"]
     readonly_fields = fields  # type: ignore[assignment]
 

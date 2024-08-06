@@ -62,5 +62,5 @@ class DeviceAdmin(ImportExportModelAdmin, ExportActionMixin):
         # Get the base queryset
         queryset = super().get_queryset(request)
         # Filter out sectors
-        queryset = queryset.exclude(sector__isnull=False)
+        queryset = queryset.exclude(sector__isnull=False).exclude(accesspoint__isnull=False)
         return queryset

@@ -4,7 +4,7 @@ import json
 import requests_mock
 from django.test import Client, TestCase
 
-from meshapi.models import LOS, Building, Device, Install, Link, Member, Node, Sector
+from meshapi.models import LOS, AccessPoint, Building, Device, Install, Link, Member, Node, Sector
 from meshapi.tests.sample_kiosk_data import SAMPLE_OPENDATA_NYC_LINKNYC_KIOSK_RESPONSE
 from meshapi.views import LINKNYC_KIOSK_DATA_URL
 
@@ -105,14 +105,16 @@ class TestViewsGetUnauthenticated(TestCase):
                 notes="Spreadsheet notes:\nHub: LiteBeamLR to SN1 plus kiosk failover",
             )
         )
-        ap_device = Device(
+        ap = AccessPoint(
             id=123456,
             node=nodes[-1],
             name="Northwest AP",
             install_date=datetime.date(2024, 1, 27),
             status=Device.DeviceStatus.ACTIVE,
+            latitude=40.724863,
+            longitude=-73.987879,
         )
-        ap_device.save()
+        ap.save()
 
         buildings.append(
             Building(
@@ -467,7 +469,6 @@ class TestViewsGetUnauthenticated(TestCase):
                     "azimuth": 0,
                     "width": 360,
                     "status": "active",
-                    "device": "Omni",
                     "installDate": 1616299200000,
                 },
                 {
@@ -476,7 +477,6 @@ class TestViewsGetUnauthenticated(TestCase):
                     "azimuth": 0,
                     "width": 360,
                     "status": "potential",
-                    "device": "Omni",
                 },
             ],
         )

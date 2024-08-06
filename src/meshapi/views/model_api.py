@@ -7,8 +7,9 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.request import Request
 from rest_framework.response import Response
 
-from meshapi.models import LOS, Building, Device, Install, Link, Member, Node, Sector
+from meshapi.models import LOS, AccessPoint, Building, Device, Install, Link, Member, Node, Sector
 from meshapi.serializers import (
+    AccessPointSerializer,
     BuildingSerializer,
     DeviceSerializer,
     InstallSerializer,
@@ -201,3 +202,23 @@ class SectorList(generics.ListCreateAPIView):
 class SectorDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = Sector.objects.all()
     serializer_class = SectorSerializer
+
+
+@extend_schema_view(
+    get=extend_schema(tags=["AccessPoints"]),
+    post=extend_schema(tags=["AccessPoints"]),
+)
+class AccessPointList(generics.ListCreateAPIView):
+    queryset = AccessPoint.objects.all()
+    serializer_class = AccessPointSerializer
+
+
+@extend_schema_view(
+    get=extend_schema(tags=["AccessPoints"]),
+    put=extend_schema(tags=["AccessPoints"]),
+    patch=extend_schema(tags=["AccessPoints"]),
+    delete=extend_schema(tags=["AccessPoints"]),
+)
+class AccessPointDetail(generics.RetrieveUpdateDestroyAPIView):
+    queryset = AccessPoint.objects.all()
+    serializer_class = AccessPointSerializer
