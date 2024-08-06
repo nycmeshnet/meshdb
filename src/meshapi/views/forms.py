@@ -37,6 +37,7 @@ class JoinFormRequest:
     roof_access: bool
     referral: str
     ncl: bool
+    preferred_contact_method: str
 
 
 class JoinFormRequestSerializer(DataclassSerializer):
