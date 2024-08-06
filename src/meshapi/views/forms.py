@@ -288,7 +288,7 @@ def join_form(request: Request) -> Response:
     if existing_members:
         if join_form_member.name != join_form_full_name:
             name_change_note = (
-                f"Dropped name change: {join_form_full_name} (install #{join_form_install.install_number})"
+                f"Dropped name change: {join_form_full_name} (install request #{join_form_install.install_number})"
             )
             if join_form_member.notes:
                 join_form_member.notes = join_form_member.notes.strip() + "\n" + name_change_note
@@ -296,13 +296,19 @@ def join_form(request: Request) -> Response:
                 join_form_member.notes = name_change_note
             join_form_member.save()
 
-            notify_administrators_of_data_issue([join_form_member], MemberSerializer, name_change_note)
+            notify_administrators_of_data_issue(
+                [join_form_member],
+                MemberSerializer,
+                name_change_note,
+                request,
+            )
 
         if len(existing_members) > 1:
             notify_administrators_of_data_issue(
                 existing_members + [join_form_member],
                 MemberSerializer,
                 "Possible duplicate member objects detected",
+                request,
             )
 
     logging.info(
