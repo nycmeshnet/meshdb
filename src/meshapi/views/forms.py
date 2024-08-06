@@ -1,6 +1,5 @@
 import json
 import logging
-import time
 from dataclasses import dataclass
 from datetime import date
 from json.decoder import JSONDecodeError
@@ -14,13 +13,12 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework_dataclasses.serializers import DataclassSerializer
 
-from meshapi.exceptions import AddressAPIError, AddressError
+from meshapi.exceptions import AddressError
 from meshapi.models import Building, Install, Member, Node
 from meshapi.permissions import HasNNAssignPermission, LegacyNNAssignmentPassword
 from meshapi.util.django_pglocks import advisory_lock
 from meshapi.util.network_number import get_next_available_network_number
-from meshapi.validation import NYCAddressInfo, validate_email_address, validate_phone_number
-from meshapi.zips import NYCZipCodes
+from meshapi.validation import geocode_nyc_address, validate_email_address, validate_phone_number
 from meshdb.utils.spreadsheet_import.building.constants import AddressTruthSource
 
 
@@ -101,8 +99,9 @@ def join_form(request: Request) -> Response:
     if not validate_phone_number(r.phone):
         return Response({"detail": f"{r.phone} is not a valid phone number"}, status=status.HTTP_400_BAD_REQUEST)
 
-    # We only support the five boroughs of NYC at this time
-    if not NYCZipCodes.match_zip(r.zip):
+    try:
+        nyc_addr_info = geocode_nyc_address(r.street_address, r.city, r.state, r.zip)
+    except ValueError:
         return Response(
             {
                 "detail": "Non-NYC registrations are not supported at this time. Check back later, "
@@ -110,27 +109,10 @@ def join_form(request: Request) -> Response:
             },
             status=status.HTTP_400_BAD_REQUEST,
         )
+    except AddressError as e:
+        return Response({"detail": e.args[0]}, status=status.HTTP_400_BAD_REQUEST)
 
-    nyc_addr_info = None
-    attempts_remaining = 2
-    while attempts_remaining > 0:
-        attempts_remaining -= 1
-        try:
-            nyc_addr_info = NYCAddressInfo(r.street_address, r.city, r.state, r.zip)
-            break
-        # If the user has given us an invalid address. Tell them to buzz
-        # off.
-        except AddressError as e:
-            logging.exception("AddressError when validating address")
-            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-        # If we get any other error, then there was probably an issue
-        # using the API, and we should wait a bit and re-try
-        except (AddressAPIError, Exception):
-            logging.exception("(NYC) Something went wrong validating the address. Re-trying...")
-            time.sleep(3)
-    # If we run out of tries, bail.
-    if nyc_addr_info is None:
-        logging.warn(f"Could not parse address: {r.street_address}, {r.city}, {r.state}, {r.zip}")
+    if not nyc_addr_info:
         return Response(
             {"detail": "Your address could not be validated."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
