@@ -4,8 +4,21 @@ from django.db import models
 from django.db.models.fields import EmailField
 from django_jsonform.models.fields import ArrayField as JSONFormArrayField
 
+class ContactPreference(models.TextChoices):
+    EMAIL = 'EMAIL', 'Email'
+    PHONE = 'PHONE', 'Phone'
+    SLACK = 'SLACK', 'Slack'
+    OTHER = 'OTHER', 'Other'
 
 class Member(models.Model):
+
+    contact_preference = models.CharField(
+        max_length=10,
+        choices=ContactPreference.choices,
+        default=ContactPreference.EMAIL,
+        help_text="The preferred method to contact this member"
+    )
+
     name = models.CharField(help_text='Member full name in the format: "First Last"')
     primary_email_address = models.EmailField(null=True, help_text="Primary email address used to contact the member")
     stripe_email_address = models.EmailField(
