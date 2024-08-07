@@ -409,7 +409,7 @@ class DeviceFilter(filters.FilterSet):
 
     class Meta:
         model = Device
-        fields = ["type", "status", "model", "uisp_id", "ssid"]
+        fields = ["status", "uisp_id"]
 
 
 @extend_schema_view(
@@ -424,13 +424,6 @@ class DeviceFilter(filters.FilterSet):
                 required=False,
             ),
             OpenApiParameter(
-                "type",
-                OpenApiTypes.STR,
-                OpenApiParameter.QUERY,
-                description="Filter devices by the type field using strict equality",
-                required=False,
-            ),
-            OpenApiParameter(
                 "status",
                 OpenApiTypes.STR,
                 OpenApiParameter.QUERY,
@@ -438,24 +431,10 @@ class DeviceFilter(filters.FilterSet):
                 required=False,
             ),
             OpenApiParameter(
-                "model",
-                OpenApiTypes.STR,
-                OpenApiParameter.QUERY,
-                description="Filter devices by the model name field using strict equality",
-                required=False,
-            ),
-            OpenApiParameter(
                 "uisp_id",
                 OpenApiTypes.STR,
                 OpenApiParameter.QUERY,
                 description="Filter devices by the uisp_id field using strict equality",
-                required=False,
-            ),
-            OpenApiParameter(
-                "ssid",
-                OpenApiTypes.STR,
-                OpenApiParameter.QUERY,
-                description="Filter devices by the ssid field using strict equality",
                 required=False,
             ),
             OpenApiParameter(
@@ -492,13 +471,6 @@ class SectorFilter(DeviceFilter):
                 required=False,
             ),
             OpenApiParameter(
-                "type",
-                OpenApiTypes.STR,
-                OpenApiParameter.QUERY,
-                description="Filter sectors by the type field using strict equality",
-                required=False,
-            ),
-            OpenApiParameter(
                 "status",
                 OpenApiTypes.STR,
                 OpenApiParameter.QUERY,
@@ -506,24 +478,10 @@ class SectorFilter(DeviceFilter):
                 required=False,
             ),
             OpenApiParameter(
-                "model",
-                OpenApiTypes.STR,
-                OpenApiParameter.QUERY,
-                description="Filter sectors by the model name field using strict equality",
-                required=False,
-            ),
-            OpenApiParameter(
                 "uisp_id",
                 OpenApiTypes.STR,
                 OpenApiParameter.QUERY,
                 description="Filter sectors by the uisp_id field using strict equality",
-                required=False,
-            ),
-            OpenApiParameter(
-                "ssid",
-                OpenApiTypes.STR,
-                OpenApiParameter.QUERY,
-                description="Filter sectors by the ssid field using strict equality",
                 required=False,
             ),
             OpenApiParameter(

@@ -92,7 +92,7 @@ class BuildingMembershipInline(admin.TabularInline):
 
 class DeviceInline(BetterInline):
     model = Device
-    fields = ["status", "type", "model"]
+    fields = ["status"]
     readonly_fields = fields  # type: ignore[assignment]
 
     def get_queryset(self, request: HttpRequest) -> QuerySet[Device]:
@@ -129,7 +129,7 @@ class DeviceLinkInline(BetterNonrelatedInline):
 
 class SectorInline(BetterInline):
     model = Sector
-    fields = ["status", "type", "model"]
+    fields = ["status"]
     readonly_fields = fields  # type: ignore[assignment]
 
 

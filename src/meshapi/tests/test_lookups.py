@@ -1009,44 +1009,27 @@ class TestLinkLookups(TestCase):
         d1 = Device(
             id=1,
             node=n1,
-            model="OmniTik",
-            type=Device.DeviceType.ROUTER,
             status=Device.DeviceStatus.INACTIVE,
             uisp_id="abc",
             name="nycmesh-456-omni",
-            ssid="nycmesh-456-omni",
-            latitude=2,
-            longitude=-2,
-            altitude=40,
         )
         d1.save()
 
         d2 = Device(
             id=2,
             node=n2,
-            model="OmniTik",
-            type=Device.DeviceType.ROUTER,
             status=Device.DeviceStatus.ACTIVE,
             uisp_id="123",
             name="nycmesh-789-omni",
-            ssid="nycmesh-789-omni",
-            latitude=2,
-            longitude=-2,
-            altitude=40,
         )
         d2.save()
 
         d3 = Device(
             id=3,
             node=n3,
-            model="Litebeam5AC",
-            type=Device.DeviceType.STATION,
             status=Device.DeviceStatus.ACTIVE,
             uisp_id="def",
             name="nycmesh-lbe-789",
-            latitude=2,
-            longitude=-2,
-            altitude=40,
         )
         d3.save()
 
@@ -1511,44 +1494,26 @@ class TestDeviceLookups(TestCase):
         d1 = Device(
             id=1,
             node=n1,
-            model="OmniTik",
-            type=Device.DeviceType.ROUTER,
             status=Device.DeviceStatus.INACTIVE,
             uisp_id="abc",
-            name="nycmesh-456-omni",
-            ssid="nycmesh-456-omni",
-            latitude=2,
-            longitude=-2,
-            altitude=40,
         )
         d1.save()
 
         d2 = Device(
             id=2,
             node=n2,
-            model="OmniTik",
-            type=Device.DeviceType.ROUTER,
             status=Device.DeviceStatus.ACTIVE,
             uisp_id="123",
             name="nycmesh-789-omni",
-            ssid="nycmesh-789-omni",
-            latitude=2,
-            longitude=-2,
-            altitude=40,
         )
         d2.save()
 
         d3 = Device(
             id=3,
             node=n2,
-            model="Litebeam5AC",
-            type=Device.DeviceType.STATION,
             status=Device.DeviceStatus.ACTIVE,
             uisp_id="def",
             name="nycmesh-lbe-789",
-            latitude=2,
-            longitude=-2,
-            altitude=40,
         )
         d3.save()
 
@@ -1623,77 +1588,27 @@ class TestDeviceLookups(TestCase):
         self.assertEqual(len(response_objs), 0)
 
     def test_device_type_search(self):
+        # Device type lookup is no longer supported
         response = self.c.get("/api/v1/devices/lookup/?type=station")
-        code = 200
+        code = 400
         self.assertEqual(
             code,
             response.status_code,
             f"status code incorrect. Should be {code}, but got {response.status_code}",
         )
-
-        response_objs = json.loads(response.content)["results"]
-        self.assertEqual(len(response_objs), 1)
-        self.assertEqual(response_objs[0]["id"], 3)
-
-        response = self.c.get("/api/v1/devices/lookup/?type=router")
-        code = 200
-        self.assertEqual(
-            code,
-            response.status_code,
-            f"status code incorrect. Should be {code}, but got {response.status_code}",
-        )
-
-        response_objs = json.loads(response.content)["results"]
-        self.assertEqual(len(response_objs), 2)
-
-        response = self.c.get("/api/v1/devices/lookup/?type=ap")
-        code = 200
-        self.assertEqual(
-            code,
-            response.status_code,
-            f"status code incorrect. Should be {code}, but got {response.status_code}",
-        )
-
-        response_objs = json.loads(response.content)["results"]
-        self.assertEqual(len(response_objs), 0)
 
     def test_device_model_name_search(self):
+        # Device model lookup is no longer supported
         response = self.c.get("/api/v1/devices/lookup/?model=Litebeam5AC")
-        code = 200
+        code = 400
         self.assertEqual(
             code,
             response.status_code,
             f"status code incorrect. Should be {code}, but got {response.status_code}",
         )
 
-        response_objs = json.loads(response.content)["results"]
-        self.assertEqual(len(response_objs), 1)
-        self.assertEqual(response_objs[0]["id"], 3)
-
-        response = self.c.get("/api/v1/devices/lookup/?model=OmniTik")
-        code = 200
-        self.assertEqual(
-            code,
-            response.status_code,
-            f"status code incorrect. Should be {code}, but got {response.status_code}",
-        )
-
-        response_objs = json.loads(response.content)["results"]
-        self.assertEqual(len(response_objs), 2)
-
-        response = self.c.get("/api/v1/devices/lookup/?model=Nanostation")
-        code = 200
-        self.assertEqual(
-            code,
-            response.status_code,
-            f"status code incorrect. Should be {code}, but got {response.status_code}",
-        )
-
-        response_objs = json.loads(response.content)["results"]
-        self.assertEqual(len(response_objs), 0)
-
-    def test_node_combined_search(self):
-        response = self.c.get("/api/v1/devices/lookup/?model=OmniTik&network_number=456")
+    def test_device_combined_search(self):
+        response = self.c.get("/api/v1/devices/lookup/?status=Inactive&network_number=456")
         code = 200
         self.assertEqual(
             code,
@@ -1755,15 +1670,9 @@ class TestSectorLookups(TestCase):
         s1 = Sector(
             id=1,
             node=n1,
-            model="LAP-120",
-            type=Device.DeviceType.AP,
             status=Device.DeviceStatus.INACTIVE,
             uisp_id="abc",
             name="nycmesh-456-east",
-            ssid="nycmesh-456-east",
-            latitude=2,
-            longitude=-2,
-            altitude=40,
             width=120,
             radius=3,
             azimuth=45,
@@ -1773,15 +1682,9 @@ class TestSectorLookups(TestCase):
         s2 = Sector(
             id=2,
             node=n2,
-            model="LAP-120",
-            type=Device.DeviceType.AP,
             status=Device.DeviceStatus.ACTIVE,
             uisp_id="123",
             name="nycmesh-789-west",
-            ssid="nycmesh-789-west",
-            latitude=2,
-            longitude=-2,
-            altitude=40,
             width=120,
             radius=3,
             azimuth=45,
@@ -1791,14 +1694,9 @@ class TestSectorLookups(TestCase):
         s3 = Sector(
             id=3,
             node=n2,
-            model="PrisimStation5AC",
-            type=Device.DeviceType.AP,
             status=Device.DeviceStatus.ACTIVE,
             uisp_id="def",
             name="nycmesh-789-north",
-            latitude=2,
-            longitude=-2,
-            altitude=40,
             width=120,
             radius=3,
             azimuth=45,
@@ -1876,65 +1774,27 @@ class TestSectorLookups(TestCase):
         self.assertEqual(len(response_objs), 0)
 
     def test_sector_type_search(self):
+        # Type lookup no longer supported
         response = self.c.get("/api/v1/sectors/lookup/?type=ap")
-        code = 200
+        code = 400
         self.assertEqual(
             code,
             response.status_code,
             f"status code incorrect. Should be {code}, but got {response.status_code}",
         )
-
-        response_objs = json.loads(response.content)["results"]
-        self.assertEqual(len(response_objs), 3)
-
-        response = self.c.get("/api/v1/sectors/lookup/?type=router")
-        code = 200
-        self.assertEqual(
-            code,
-            response.status_code,
-            f"status code incorrect. Should be {code}, but got {response.status_code}",
-        )
-
-        response_objs = json.loads(response.content)["results"]
-        self.assertEqual(len(response_objs), 0)
 
     def test_sector_model_name_search(self):
+        # Model lookup no longer supported
         response = self.c.get("/api/v1/sectors/lookup/?model=PrisimStation5AC")
-        code = 200
+        code = 400
         self.assertEqual(
             code,
             response.status_code,
             f"status code incorrect. Should be {code}, but got {response.status_code}",
         )
 
-        response_objs = json.loads(response.content)["results"]
-        self.assertEqual(len(response_objs), 1)
-        self.assertEqual(response_objs[0]["id"], 3)
-
-        response = self.c.get("/api/v1/sectors/lookup/?model=LAP-120")
-        code = 200
-        self.assertEqual(
-            code,
-            response.status_code,
-            f"status code incorrect. Should be {code}, but got {response.status_code}",
-        )
-
-        response_objs = json.loads(response.content)["results"]
-        self.assertEqual(len(response_objs), 2)
-
-        response = self.c.get("/api/v1/sectors/lookup/?model=Nanostation")
-        code = 200
-        self.assertEqual(
-            code,
-            response.status_code,
-            f"status code incorrect. Should be {code}, but got {response.status_code}",
-        )
-
-        response_objs = json.loads(response.content)["results"]
-        self.assertEqual(len(response_objs), 0)
-
-    def test_node_combined_search(self):
-        response = self.c.get("/api/v1/sectors/lookup/?model=LAP-120&network_number=456")
+    def test_sector_combined_search(self):
+        response = self.c.get("/api/v1/sectors/lookup/?status=Inactive&network_number=456")
         code = 200
         self.assertEqual(
             code,

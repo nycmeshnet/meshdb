@@ -29,12 +29,8 @@ class TestSector(TestCase):
         response = self.c.post(
             "/api/v1/sectors/",
             {
-                "model": "LAP-120",
                 "network_number": self.node.network_number,
-                "type": Device.DeviceType.AP,
                 "status": Device.DeviceStatus.ACTIVE,
-                "latitude": 0,
-                "longitude": 0,
                 "azimuth": 0,
                 "width": 120,
                 "radius": 0.3,
@@ -74,8 +70,6 @@ class TestSector(TestCase):
             id=1,
             name="Vernon",
             status="Active",
-            longitude=0,
-            latitude=0,
             azimuth=0,
             width=120,
             radius=0.3,

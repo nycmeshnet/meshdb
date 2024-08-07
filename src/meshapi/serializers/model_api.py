@@ -68,6 +68,8 @@ class DeviceSerializer(serializers.ModelSerializer):
         source="node", queryset=Node.objects.all(), required=True, allow_null=False
     )
 
+    # TODO: Add read-only fields here that read lat/lon/alt through from the node model
+
     links_from: serializers.PrimaryKeyRelatedField = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
     links_to: serializers.PrimaryKeyRelatedField = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
 
