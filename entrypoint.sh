@@ -17,6 +17,10 @@ echo 'DB started'
 # FIXME: This makes testing locally a bit awkward, since this isn't started by "manage.py runserver"
 #  maybe there's a way to do this better?
 echo 'Starting Celery Worker...'
+if [ ! -d /var/log/meshdb ]; then
+		mkdir -p /var/log/meshdb/
+fi
+
 celery -A meshdb worker -l DEBUG -f /var/log/meshdb/celery.log &
 celery -A meshdb beat -l DEBUG -f /var/log/meshdb/celery-beat.log -s /tmp/celerybeat-schedule &
 
