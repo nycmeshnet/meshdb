@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
 
-from meshapi.models import LOS, Building, Device, Install, Link, Member, Node, Sector
+from meshapi.models import LOS, AccessPoint, Building, Device, Install, Link, Member, Node, Sector
 
 
 class BuildingSerializer(serializers.ModelSerializer):
@@ -68,6 +68,8 @@ class DeviceSerializer(serializers.ModelSerializer):
         source="node", queryset=Node.objects.all(), required=True, allow_null=False
     )
 
+    # TODO: Add read-only fields here that read lat/lon/alt through from the node model
+
     links_from: serializers.PrimaryKeyRelatedField = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
     links_to: serializers.PrimaryKeyRelatedField = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
 
@@ -75,6 +77,19 @@ class DeviceSerializer(serializers.ModelSerializer):
 class SectorSerializer(serializers.ModelSerializer):
     class Meta:
         model = Sector
+        exclude = ("node",)
+
+    network_number: serializers.PrimaryKeyRelatedField = serializers.PrimaryKeyRelatedField(
+        source="node", queryset=Node.objects.all(), required=True, allow_null=False
+    )
+
+    links_from: serializers.PrimaryKeyRelatedField = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
+    links_to: serializers.PrimaryKeyRelatedField = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
+
+
+class AccessPointSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AccessPoint
         exclude = ("node",)
 
     network_number: serializers.PrimaryKeyRelatedField = serializers.PrimaryKeyRelatedField(

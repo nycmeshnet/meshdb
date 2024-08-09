@@ -26,7 +26,7 @@ async function getNewSelectedNodes(){
         } else if (building.installs) {
             nodeId = building.installs[0];
         }
-    } else if (["device", "sector"].indexOf(type) !== -1) {
+    } else if (["device", "sector", "accesspoint"].indexOf(type) !== -1) {
         if (!id) return null;
         const deviceResponse = await fetch(`/api/v1/devices/${id}/`);
         if (!deviceResponse.ok) return null;

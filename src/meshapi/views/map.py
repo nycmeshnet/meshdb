@@ -11,7 +11,7 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from meshapi.models import LOS, Device, Install, Link, Node, Sector
+from meshapi.models import LOS, AccessPoint, Device, Install, Link, Node, Sector
 from meshapi.serializers import (
     ALLOWED_INSTALL_STATUSES,
     EXCLUDED_INSTALL_STATUSES,
@@ -107,36 +107,35 @@ class MapDataNodeList(generics.ListAPIView):
         response = super().list(request, args, kwargs)
 
         access_points = []
-        for device in Device.objects.filter(
-            Q(status=Device.DeviceStatus.ACTIVE)
-            & (~Q(node__latitude=F("latitude")) | ~Q(node__longitude=F("longitude")))
-        ):
+        for ap in AccessPoint.objects.filter(Q(status=Device.DeviceStatus.ACTIVE)):
             install_date = (
                 int(
                     datetime.combine(
-                        device.install_date,
+                        ap.install_date,
                         datetime.min.time(),
                     ).timestamp()
                     * 1000
                 )
-                if device.install_date
+                if ap.install_date
                 else None
             )
-            ap = {
-                "id": 1_000_000 + device.id,  # Hacky but we have no choice
-                "name": device.name,
+            ap_json = {
+                # Hacky, but we have no choice, we need this to present as a "node" object to the
+                # map frontend and not conflict with any existing installs
+                "id": 1_000_000 + ap.id,
+                "name": ap.name,
                 "status": "Installed",
-                "coordinates": [device.longitude, device.latitude, None],
+                "coordinates": [ap.longitude, ap.latitude, None],
                 "roofAccess": False,
                 "notes": "AP",
                 "panoramas": [],
             }
 
             if install_date:
-                ap["requestDate"] = install_date
-                ap["installDate"] = install_date
+                ap_json["requestDate"] = install_date
+                ap_json["installDate"] = install_date
 
-            access_points.append(ap)
+            access_points.append(ap_json)
 
         response.data.extend(access_points)
 

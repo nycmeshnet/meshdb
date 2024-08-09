@@ -9,22 +9,6 @@ class Device(models.Model):
         ACTIVE = "Active"
         POTENTIAL = "Potential"
 
-    class DeviceType(models.TextChoices):
-        AP = "ap"
-        GATEWAY = "gateway"
-        GPON = "gpon"
-        CONVERTOR = "convertor"
-        OTHER = "other"
-        PTP = "ptp"
-        ROUTER = "router"
-        SERVER = "server"
-        STATION = "station"
-        SWITCH = "switch"
-        UPS = "ups"
-        WIRELESS = "wireless"
-        HOMEWIFI = "homeWiFi"
-        WIRELESSDEVICE = "wirelessDevice"
-
     node = models.ForeignKey(
         Node,
         related_name="devices",
@@ -39,37 +23,13 @@ class Device(models.Model):
         default=None,
         blank=True,
         null=True,
-        help_text="The colloquial name of this node used among mesh volunteers, if applicable",
+        help_text="The name of this device, usually configured as the hostname in the device firmware, "
+        "usually in the format nycmesh-xxxx-yyyy-zzzz, where xxxx is the network number for "
+        "the node this device is located at, yyyy is the type of the device, and zzzz is the "
+        "network number of the other side of the link this device creates (if applicable)",
     )
 
-    model = models.CharField(
-        help_text="The manufacturer model name of this device, e.g. OmniTik or LBEGen2",
-    )
-
-    type = models.CharField(
-        choices=DeviceType.choices,
-        help_text="The general type of device that this is, the role it fills on the mesh. e.g. ap, ptp, station, etc. "
-        "This lines up with the UISP 'role' property",
-    )
     status = models.CharField(choices=DeviceStatus.choices, help_text="The current status of this device")
-
-    latitude = models.FloatField(
-        help_text="Approximate Device latitude in decimal degrees (this will match the attached "
-        "Node object in most cases, but has been manually moved around in some cases to "
-        "more accurately reflect the device location)"
-    )
-    longitude = models.FloatField(
-        help_text="Approximate Device longitude in decimal degrees (this will match the attached "
-        "Node object in most cases, but has been manually moved around in some cases to "
-        "more accurately reflect the device location)"
-    )
-    altitude = models.FloatField(
-        blank=True,
-        null=True,
-        help_text='Approximate Device altitude in "absolute" meters above mean sea level (this '
-        "will match the attached Node object in most cases, but has been manually moved around in "
-        "some cases to more accurately reflect the device location)",
-    )
 
     install_date = models.DateField(
         default=None,
@@ -96,21 +56,6 @@ class Device(models.Model):
 
     uisp_id = models.CharField(
         default=None, blank=True, null=True, help_text="The UUID used to indentify this device in UISP (if applicable)"
-    )
-
-    ssid = models.CharField(
-        default=None,
-        blank=True,
-        null=True,
-        help_text="The SSID being broadcast by this device",
-    )
-
-    ip_address = models.GenericIPAddressField(
-        default=None,
-        blank=True,
-        null=True,
-        help_text="The IP address of this device within the 10.x network",
-        protocol="ipv4",
     )
 
     def __str__(self) -> str:

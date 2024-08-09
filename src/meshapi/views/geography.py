@@ -243,7 +243,7 @@ class WholeMeshKML(APIView):
             .prefetch_related("to_device")
             .filter(~Q(status=Link.LinkStatus.INACTIVE))
             .exclude(type=Link.LinkType.VPN)
-            .annotate(highest_altitude=Greatest("from_device__altitude", "to_device__altitude"))
+            .annotate(highest_altitude=Greatest("from_device__node__altitude", "to_device__node__altitude"))
             .order_by(F("highest_altitude").asc(nulls_first=True))
         ):
             mark_active: bool = link.status == Link.LinkStatus.ACTIVE
@@ -258,14 +258,14 @@ class WholeMeshKML(APIView):
                     "mark_active": mark_active,
                     "is_los": False,
                     "from_coord": (
-                        link.from_device.longitude,
-                        link.from_device.latitude,
-                        link.from_device.altitude or DEFAULT_ALTITUDE,
+                        link.from_device.node.longitude,
+                        link.from_device.node.latitude,
+                        link.from_device.node.altitude or DEFAULT_ALTITUDE,
                     ),
                     "to_coord": (
-                        link.to_device.longitude,
-                        link.to_device.latitude,
-                        link.to_device.altitude or DEFAULT_ALTITUDE,
+                        link.to_device.node.longitude,
+                        link.to_device.node.latitude,
+                        link.to_device.node.altitude or DEFAULT_ALTITUDE,
                     ),
                     "extended_data": {
                         "name": f"Links-{link.id}-{link_label}",

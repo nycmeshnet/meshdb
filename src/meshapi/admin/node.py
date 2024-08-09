@@ -9,6 +9,7 @@ from import_export import resources
 from import_export.admin import ExportActionMixin, ImportExportModelAdmin
 
 from meshapi.admin.inlines import (
+    AccessPointInline,
     BuildingMembershipInline,
     DeviceInline,
     InstallInline,
@@ -106,6 +107,7 @@ class NodeAdmin(ImportExportModelAdmin, ExportActionMixin):
         BuildingMembershipInline,
         DeviceInline,
         SectorInline,
+        AccessPointInline,
         NodeLinkInline,
     ]
 

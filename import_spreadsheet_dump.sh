@@ -2,7 +2,7 @@
 
 DOCKER_PG_COMMAND="docker exec -i meshdb-postgres-1 psql -U meshdb"
 DATA_DIR="./spreadsheet_data/"
-tables=("meshapi_link" "meshapi_sector" "meshapi_device" "meshapi_building_nodes" "meshapi_node" "meshapi_install" "meshapi_building" "meshapi_member")
+tables=("meshapi_link" "meshapi_accesspoint" "meshapi_sector" "meshapi_device" "meshapi_building_nodes" "meshapi_node" "meshapi_install" "meshapi_building" "meshapi_member")
 #tables=("meshapi_link" "meshapi_building_nodes"  "meshapi_sector" "meshapi_device" "meshapi_install" "meshapi_member"  "meshapi_building" "meshapi_node")
 set -ex
 
@@ -46,6 +46,10 @@ done
 for table_name in "${tables[@]}"
 do
     if [[ "$table_name" == "meshapi_sector" ]]; then
+	continue
+    fi
+
+    if [[ "$table_name" == "meshapi_accesspoint" ]]; then
 	continue
     fi
 
