@@ -10,7 +10,6 @@ from django.test import Client, TestCase, TransactionTestCase
 
 from meshapi.models import Building, Install, Member, Node
 
-from ..views import get_next_available_network_number
 from .group_helpers import create_groups
 from .sample_data import sample_building, sample_install, sample_member
 from .util import TestThread
@@ -406,72 +405,6 @@ class TestNNRaceCondition(TransactionTestCase):
             f"status code incorrect for test_nn_valid_install_number. Should be {code}, but got {response2.status_code}",
         )
 
-    def test_save_function_race_condition(self):
-        outputs_dict = {}
-
-        def invoke_nn_form(install_num: int, outputs_dict: dict):
-            # Slow down the call which looks up the NN to force the race condition
-            with mock.patch("meshapi.views.forms.get_next_available_network_number", mocked_slow_nn_lookup):
-                result = self.admin_c.post(
-                    "/api/v1/nn-assign/",
-                    {"install_number": install_num, "password": os.environ.get("NN_ASSIGN_PSK")},
-                    content_type="application/json",
-                )
-                outputs_dict[install_num] = result
-
-        def save_via_model(outputs_dict: dict):
-            try:
-                # Slow down the call which looks up the NN to force the race condition
-                with mock.patch("meshapi.views.forms.get_next_available_network_number", mocked_slow_nn_lookup):
-                    node = Node(
-                        type=Node.NodeType.STANDARD,
-                        status=Node.NodeStatus.PLANNED,
-                        latitude=0,
-                        longitude=0,
-                    )
-                    # This save() should cause a call to get_next_available_network_number()
-                    # in order to determine the primary key prior to DB write, but since we slowed it
-                    # down, a race condition will occur unless the save() func properly protects the call
-                    node.save()
-                    node.refresh_from_db()
-                    outputs_dict["saved_node"] = node.network_number
-            except Exception as e:
-                outputs_dict["saved_node"] = e
-
-        t1 = TestThread(target=invoke_nn_form, args=(self.install_number1, outputs_dict))
-        t2 = TestThread(target=save_via_model, args=(outputs_dict,))
-
-        t1.start()
-        t2.start()
-
-        t1.join()
-        t2.join()
-
-        response1 = outputs_dict[self.install_number1]
-
-        if isinstance(outputs_dict["saved_node"], Exception):
-            # Re-raise exception from the save() call in thread if needed to fail the test
-            # (.join() does not do this propagation by default)
-            raise outputs_dict["saved_node"]
-
-        code = 201
-        self.assertEqual(
-            code,
-            response1.status_code,
-            f"status code incorrect for test_nn_valid_install_number. Should be {code}, but got {response1.status_code}",
-        )
-
-        resp_nns = {
-            json.loads(response1.content.decode("utf-8"))["network_number"],
-            outputs_dict["saved_node"],
-        }
-        expected_nns = {101, 102}
-        self.assertEqual(
-            expected_nns,
-            resp_nns,
-            f"NNs incorrect for test_nn_valid_install_number. Should be {expected_nns}, but got {resp_nns}",
-        )
-
     def test_save_and_form_race_condition(self):
         outputs_dict = {}
 
@@ -495,6 +428,9 @@ class TestNNRaceCondition(TransactionTestCase):
                         latitude=0,
                         longitude=0,
                     )
+                    # This save() should cause a call to get_next_available_network_number()
+                    # in order to determine the primary key prior to DB write, but since we slowed it
+                    # down, a race condition will occur unless the save() func properly protects the call
                     node.save()
                     node.refresh_from_db()
                     outputs_dict["save_call"] = node.network_number
