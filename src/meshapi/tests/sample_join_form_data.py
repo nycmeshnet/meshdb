@@ -14,6 +14,22 @@ valid_join_form_submission = {
     "ncl": True,
 }
 
+valid_join_form_submission_no_email = {
+    "first_name": "John",
+    "last_name": "Smith",
+    "email": None,
+    "phone": "+1585-758-3425",  # CSH's phone number :P
+    "street_address": "151 Broome St",  # Also covers New York County Test Case
+    "parsed_street_address": "151 Broome Street",
+    "city": "New York",
+    "state": "NY",
+    "zip": 10002,
+    "apartment": "",
+    "roof_access": True,
+    "referral": "Googled it or something IDK",
+    "ncl": True,
+}
+
 richmond_join_form_submission = {
     "first_name": "Maya",
     "last_name": "Viernes",
