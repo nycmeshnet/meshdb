@@ -4,7 +4,7 @@ NETWORK_NUMBER_MIN = 101
 NETWORK_NUMBER_MAX = 8192
 
 
-def no_op():
+def no_op() -> None:
     """Literally does nothing, exists to provide a hook to the testing
     harness for race condition analysis"""
     pass
