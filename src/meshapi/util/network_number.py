@@ -4,6 +4,12 @@ NETWORK_NUMBER_MIN = 101
 NETWORK_NUMBER_MAX = 8192
 
 
+def no_op() -> None:
+    """Literally does nothing, exists to provide a hook to the testing
+    harness for race condition analysis"""
+    pass
+
+
 def get_next_available_network_number() -> int:
     """
     This function finds, and marks as re-assigned, the next install whose number can be re-assigned
@@ -26,6 +32,9 @@ def get_next_available_network_number() -> int:
 
     # Find the first valid NN that isn't in use
     free_nn = next(i for i in range(NETWORK_NUMBER_MIN, NETWORK_NUMBER_MAX + 1) if i not in defined_nns)
+
+    # At testing time this turns into a time.sleep() call to help expose race conditions
+    no_op()
 
     # Sanity check to make sure we don't assign something crazy. This is done by the query above,
     # but we want to be super sure we don't violate these constraints so we check it here
