@@ -56,4 +56,5 @@ jobs:
         --set pgadmin.default_password="${{ secrets.PGADMIN_PASSWORD }}" \
         --set uisp.user="${{ secrets.UISP_USER }}" \
         --set uisp.psk="${{ secrets.UISP_PSK }}" \
+        --set map.base_url="${{ vars.MAP_URL }}" \
         --set ingress.hosts[0].host="${{ vars.INGRESS_HOST }}",ingress.hosts[0].paths[0].path=/,ingress.hosts[0].paths[0].pathType=Prefix
