@@ -449,7 +449,7 @@ class DeviceFilter(filters.FilterSet):
     ),
 )
 class LookupDevice(FilterRequiredListAPIView):
-    queryset = Device.objects.all().order_by("id")
+    queryset = Device.objects.all().order_by("id").prefetch_related("node")
     serializer_class = DeviceSerializer
     filterset_class = DeviceFilter
 

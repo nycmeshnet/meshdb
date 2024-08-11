@@ -58,6 +58,18 @@ class Device(models.Model):
         default=None, blank=True, null=True, help_text="The UUID used to indentify this device in UISP (if applicable)"
     )
 
+    @property
+    def latitude(self) -> float:
+        return self.node.latitude
+
+    @property
+    def longitude(self) -> float:
+        return self.node.longitude
+
+    @property
+    def altitude(self) -> float:
+        return self.node.altitude
+
     def __str__(self) -> str:
         if self.name:
             return self.name

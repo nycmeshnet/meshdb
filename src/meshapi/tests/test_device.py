@@ -82,6 +82,9 @@ class TestDevice(TestCase):
         self.assertEqual(response_obj["name"], None)
         self.assertEqual(response_obj["status"], "Active")
         self.assertEqual(response_obj["notes"], None)
+        self.assertEqual(response_obj["latitude"], 0)  # Read through via the Node Object
+        self.assertEqual(response_obj["longitude"], 0)  # Read through via the Node Object
+        self.assertEqual(response_obj["altitude"], None)  # Read through via the Node Object
 
     def test_modify_device(self):
         response = self.c.patch(
@@ -101,6 +104,21 @@ class TestDevice(TestCase):
         self.assertEqual(response_obj["name"], None)
         self.assertEqual(response_obj["status"], "Active")
         self.assertEqual(response_obj["notes"], "New notes! Wheee")
+
+    def test_modify_latitude(self):
+        # Modifying latitude shouldn't be possible, since it is read-only
+        response = self.c.patch(
+            f"/api/v1/devices/{self.device.id}/",
+            {"latitude": 22},
+            content_type="application/json",
+        )
+
+        code = 400
+        self.assertEqual(
+            code,
+            response.status_code,
+            f"status code incorrect. Should be {code}, but got {response.status_code}",
+        )
 
     def test_delete_device(self):
         device_id = self.device.id

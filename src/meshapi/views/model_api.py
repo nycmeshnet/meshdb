@@ -169,7 +169,7 @@ class LOSDetail(generics.RetrieveUpdateDestroyAPIView):
     post=extend_schema(tags=["Devices"]),
 )
 class DeviceList(generics.ListCreateAPIView):
-    queryset = Device.objects.all()
+    queryset = Device.objects.all().prefetch_related("node")
     serializer_class = DeviceSerializer
 
 
@@ -180,7 +180,7 @@ class DeviceList(generics.ListCreateAPIView):
     delete=extend_schema(tags=["Devices"]),
 )
 class DeviceDetail(generics.RetrieveUpdateDestroyAPIView):
-    queryset = Device.objects.all()
+    queryset = Device.objects.all().prefetch_related("node")
     serializer_class = DeviceSerializer
 
 
