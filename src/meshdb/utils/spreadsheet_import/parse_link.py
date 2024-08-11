@@ -8,6 +8,8 @@ import django
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Q
 
+from meshapi.util.uisp_import.fetch_uisp import get_uisp_device_detail, get_uisp_links, get_uisp_session
+
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "meshdb.settings")
 django.setup()
 
@@ -15,7 +17,6 @@ django.setup()
 from meshapi import models
 from meshapi.models import LOS, Building, Device, Install, Link, Node
 from meshdb.utils.spreadsheet_import.csv_load import SpreadsheetLink, SpreadsheetLinkStatus, get_spreadsheet_links
-from meshdb.utils.spreadsheet_import.fetch_uisp import download_uisp_links, get_uisp_device_detail, get_uisp_session
 
 
 def convert_spreadsheet_link_type(status: SpreadsheetLinkStatus, notes: Optional[str] = None) -> Link.LinkType:
@@ -183,7 +184,7 @@ def load_links_supplement_with_uisp(spreadsheet_links: List[SpreadsheetLink]):
         )
         los.save()
 
-    uisp_links = download_uisp_links()
+    uisp_links = get_uisp_links()
     uisp_session = get_uisp_session()
 
     for uisp_link in uisp_links:

@@ -7,6 +7,8 @@ from typing import List, Optional
 
 import django
 
+from meshapi.util.uisp_import.fetch_uisp import get_uisp_devices
+
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "meshdb.settings")
 django.setup()
 
@@ -21,7 +23,6 @@ from meshdb.utils.spreadsheet_import.csv_load import (
     SpreadsheetStatus,
     get_spreadsheet_sectors,
 )
-from meshdb.utils.spreadsheet_import.fetch_uisp import download_uisp_devices
 
 nn_subsitutions = {
     "sn1": "227",
@@ -124,7 +125,7 @@ def create_device(nn: int, uisp_device: dict, spreadsheet_sector: Optional[Sprea
 
 
 def load_devices_supplement_with_uisp(spreadsheet_sectors: List[SpreadsheetSector]):
-    uisp_devices = download_uisp_devices()
+    uisp_devices = get_uisp_devices()
 
     grouped_by_nn = defaultdict(lambda: {"uisp": [], "spreadsheet": []})
 
