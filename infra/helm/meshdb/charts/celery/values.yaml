@@ -8,7 +8,7 @@ image:
   repository: willnilges/meshdb
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
-  tag: "main"
+  tag: "wdn-beat"
 
 imagePullSecrets: []
 nameOverride: ""
@@ -38,9 +38,15 @@ resources:
 
 containers:
   - name: celery-beat
-    entrypoint: ./celery_beat.sh
+    command: 
+      - sh
+      - -c
+      - ./celery_beat.sh
   - name: celery-worker
-    entrypoint: ./celery_worker.sh
+    command:
+      - sh
+      - -c
+      - ./celery_worker.sh
 
 # TODO (willnilges): Come up with some clever liveness probe
 #livenessProbe:
