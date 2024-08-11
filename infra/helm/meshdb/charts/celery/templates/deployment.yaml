@@ -2,6 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ include "celery.fullname" . }}
+  namespace: meshdb
   labels:
     {{- include "celery.labels" . | nindent 4 }}
 spec:
@@ -27,11 +28,17 @@ spec:
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
       containers:
         {{- range .Values.containers }}
         - name: {{ .name }}
+          securityContext:
+            {{- toYaml $.Values.securityContext | nindent 12 }}
           image: "{{ $.Values.image.repository }}:{{ $.Values.image.tag | default $.Chart.AppVersion }}"
           imagePullPolicy: {{ $.Values.image.pullPolicy }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
           entrypoint: {{ .entrypoint }}
           envFrom:
           - configMapRef:

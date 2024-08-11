@@ -20,10 +20,21 @@ serviceAccount:
 podAnnotations: {}
 podLabels: {}
 
+podSecurityContext:
+  seccompProfile:
+    type: RuntimeDefault
+securityContext: {}
+
 ingress:
   enabled: false
 
-resources: {}
+resources:
+  limits:
+    cpu: 100m
+    memory: 128Mi
+  #requests:
+  #  cpu: 100m
+  #  memory: 128Mi
 
 containers:
   - name: celery-beat
