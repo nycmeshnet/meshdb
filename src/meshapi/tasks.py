@@ -4,6 +4,7 @@ import os
 from celery.schedules import crontab
 from django.core import management
 
+from meshapi.util.uisp_import.handler import run_uisp_import
 from meshapi.views.panoramas import sync_github_panoramas
 from meshdb.celery import app as celery_app
 
@@ -33,13 +34,28 @@ def run_update_panoramas() -> None:
         raise e
 
 
+@celery_app.task
+def run_update_from_uisp() -> None:
+    logging.info("Running UISP import & sync task")
+    try:
+        run_uisp_import()
+    except Exception as e:
+        # Make sure the failure gets logged.
+        logging.exception(e)
+        raise e
+
+
 celery_app.conf.beat_schedule = {
-    "run-database-backup-hourly": {
-        "task": "meshapi.tasks.run_database_backup",
-        "schedule": crontab(minute="0", hour="*/1"),
-    },
     "update-panoramas-hourly": {
         "task": "meshapi.tasks.run_update_panoramas",
         "schedule": crontab(minute="0", hour="*/1"),
+    },
+    "import-from-uisp-hourly": {
+        "task": "meshapi.tasks.run_update_panoramas",
+        "schedule": crontab(minute="10", hour="*/1"),
+    },
+    "run-database-backup-hourly": {
+        "task": "meshapi.tasks.run_database_backup",
+        "schedule": crontab(minute="20", hour="*/1"),
     },
 }
