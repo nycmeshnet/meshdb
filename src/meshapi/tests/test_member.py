@@ -115,7 +115,7 @@ class TestMember(TestCase):
         test_member.refresh_from_db()
         self.assertEqual(test_member.additional_phone_numbers, ["+1 456-555-6666"])
 
-        # Try to make a valid modification with a badly formated number and make sure it gets normalized
+        # Try to make a valid modification with a badly formatted number and make sure it gets normalized
         response = self.c.patch(
             f"/api/v1/members/{test_member.id}/",
             {"phone_number": "+1 212 5553333"},
