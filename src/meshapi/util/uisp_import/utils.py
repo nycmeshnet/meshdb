@@ -1,0 +1,88 @@
+import datetime
+from typing import List, Optional, Union
+
+import dateutil.parser
+import requests
+
+from meshapi.models import Building, Device, Link, Node
+from meshapi.serializers import DeviceSerializer, LinkSerializer
+from meshapi.util.admin_notifications import notify_administrators_of_data_issue
+from meshapi.util.uisp_import.fetch_uisp import get_uisp_device_detail, get_uisp_session
+from meshapi.util.uisp_import.types.data_links import DataLink as USIPDataLink
+
+
+def parse_uisp_datetime(datetime_str: str) -> datetime.datetime:
+    return dateutil.parser.isoparse(datetime_str)
+
+
+def get_link_type(uisp_link: USIPDataLink) -> Link.LinkType:
+    if uisp_link["type"] == "wireless":
+        if uisp_link["frequency"]:
+            if uisp_link["frequency"] < 7_000:
+                return Link.LinkType.FIVE_GHZ
+            elif uisp_link["frequency"] < 40_000:
+                return Link.LinkType.TWENTYFOUR_GHZ
+            elif uisp_link["frequency"] < 70_000:
+                return Link.LinkType.SIXTY_GHZ
+
+            return Link.LinkType.SEVENTY_EIGHTY_GHZ
+
+        return Link.LinkType.FIVE_GHZ
+    elif uisp_link["type"] == "ethernet":
+        return Link.LinkType.ETHERNET
+    elif uisp_link["type"] == "pon":
+        return Link.LinkType.FIBER
+
+    raise ValueError(f"Unexpected UISP link type: {uisp_link['type']} for link {uisp_link['id']}")
+
+
+def get_building_from_network_number(network_number: int) -> Optional[Building]:
+    node = Node.objects.get(network_number=network_number)
+
+    # We need to lookup which buildings have this NN as primary
+    # in the case of multiple buildings, we resolve arbitrarily to the lower ID one
+    building_candidate = Building.objects.filter(primary_node=node).order_by("id").first()
+
+    # If none of the buildings have this as a primary node, maybe one has it as a secondary node?
+    if not building_candidate:
+        building_candidate = Building.objects.filter(nodes=node).order_by("id").first()
+
+    # Okay we did our best, return the building if we have it, or None if we don't
+    return building_candidate
+
+
+def get_uisp_link_last_seen(
+    from_device_uuid: str, to_device_uuid: str, uisp_session: Optional[requests.Session] = None
+) -> datetime.datetime:
+    if not uisp_session:
+        uisp_session = get_uisp_session()
+
+    from_device_uisp_dict = get_uisp_device_detail(from_device_uuid, uisp_session)
+    to_device_uisp_dict = get_uisp_device_detail(to_device_uuid, uisp_session)
+
+    uisp_last_seen = min(
+        parse_uisp_datetime(from_device_uisp_dict["overview"]["lastSeen"]),
+        parse_uisp_datetime(to_device_uisp_dict["overview"]["lastSeen"]),
+    )
+
+    return uisp_last_seen
+
+
+def notify_admins_of_changes(db_object: Union[Device, Link], change_list: List[str]) -> None:
+    serializer_lookup = {
+        Device: DeviceSerializer,
+        Link: LinkSerializer,
+    }
+
+    message = (
+        f"modified {db_object._meta.verbose_name} based on information from UISP. "
+        f"The following changes were made:\n"
+        + "\n".join(" - " + change for change in change_list)
+        + "\n(to prevent this, make changes to these fields in UISP rather than directly in MeshDB)"
+    )
+
+    notify_administrators_of_data_issue(
+        [db_object],
+        serializer_lookup[type(db_object)],
+        message=message,
+    )

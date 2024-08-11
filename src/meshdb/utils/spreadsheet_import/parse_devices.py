@@ -8,6 +8,7 @@ from typing import List, Optional
 import django
 
 from meshapi.util.uisp_import.fetch_uisp import get_uisp_devices
+from meshapi.util.uisp_import.utils import parse_uisp_datetime
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "meshdb.settings")
 django.setup()
@@ -54,10 +55,6 @@ def find_uisp_omni(devices: List[dict]):
             return uisp_dev, i
 
     return None, None
-
-
-def parse_uisp_datetime(datetime_str: str) -> datetime.date:
-    return dateutil.parser.isoparse(datetime_str).date()
 
 
 def create_device(nn: int, uisp_device: dict, spreadsheet_sector: Optional[SpreadsheetSector]):
@@ -112,13 +109,13 @@ def create_device(nn: int, uisp_device: dict, spreadsheet_sector: Optional[Sprea
             name=uisp_device["identification"]["name"],
             uisp_id=uisp_device["identification"]["id"],
             status=status,
-            install_date=parse_uisp_datetime(uisp_device["overview"]["createdAt"]),
+            install_date=parse_uisp_datetime(uisp_device["overview"]["createdAt"]).date(),
             abandon_date=(
-                parse_uisp_datetime(uisp_device["overview"]["lastSeen"])
+                parse_uisp_datetime(uisp_device["overview"]["lastSeen"]).date()
                 if status == Device.DeviceStatus.INACTIVE
                 else None
             ),
-            notes=None,
+            notes=f"Automatically imported from UISP on {datetime.date.today().isoformat()}\n\n",
         )
 
     device.save()

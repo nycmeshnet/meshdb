@@ -11,9 +11,9 @@ from meshapi.util.uisp_import.types.devices import Device as UISPDevice
 load_dotenv()
 
 
-UISP_URL = os.environ["UISP_URL"]
-UISP_USER = os.environ["UISP_USER"]
-UISP_PASS = os.environ["UISP_PASS"]
+UISP_URL = os.environ.get("UISP_URL")
+UISP_USER = os.environ.get("UISP_USER")
+UISP_PASS = os.environ.get("UISP_PASS")
 
 
 def get_uisp_devices() -> List[UISPDevice]:

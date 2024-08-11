@@ -5,7 +5,7 @@
 # fields are required, so lots of stuff that's probably always there
 # is marked NotRequired
 
-from typing import Dict, Literal, NotRequired, Optional, TypedDict
+from typing import Dict, Literal, NotRequired, TypedDict
 
 from meshapi.util.uisp_import.types.literals import RoleLiteral
 
