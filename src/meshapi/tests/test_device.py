@@ -27,11 +27,7 @@ class TestDevice(TestCase):
         response = self.c.post(
             "/api/v1/devices/",
             {
-                "model": "Lightbeam",
                 "status": Device.DeviceStatus.INACTIVE,
-                "type": Device.DeviceType.STATION,
-                "latitude": 0.0,
-                "longitude": 0.0,
                 "network_number": self.node1.network_number,
             },
         )
@@ -46,11 +42,7 @@ class TestDevice(TestCase):
         response = self.c.post(
             "/api/v1/devices/",
             {
-                "model": "Lightbeam",
                 "status": Device.DeviceStatus.INACTIVE,
-                "type": Device.DeviceType.STATION,
-                "latitude": 0.0,
-                "longitude": 0.0,
                 # Missing node
             },
         )
@@ -66,10 +58,6 @@ class TestDevice(TestCase):
             "/api/v1/devices/",
             {
                 "node": self.node1.network_number,
-                "model": "Lightbeam",
-                "type": Device.DeviceType.STATION,
-                "latitude": 0.0,
-                "longitude": 0.0,
                 # Missing status
             },
         )
@@ -94,6 +82,9 @@ class TestDevice(TestCase):
         self.assertEqual(response_obj["name"], None)
         self.assertEqual(response_obj["status"], "Active")
         self.assertEqual(response_obj["notes"], None)
+        self.assertEqual(response_obj["latitude"], 0)  # Read through via the Node Object
+        self.assertEqual(response_obj["longitude"], 0)  # Read through via the Node Object
+        self.assertEqual(response_obj["altitude"], None)  # Read through via the Node Object
 
     def test_modify_device(self):
         response = self.c.patch(
@@ -113,6 +104,26 @@ class TestDevice(TestCase):
         self.assertEqual(response_obj["name"], None)
         self.assertEqual(response_obj["status"], "Active")
         self.assertEqual(response_obj["notes"], "New notes! Wheee")
+
+    def test_modify_latitude(self):
+        # Modifying latitude shouldn't be possible, since it is read-only
+        response = self.c.patch(
+            f"/api/v1/devices/{self.device.id}/",
+            {"latitude": 22},
+            content_type="application/json",
+        )
+
+        code = 200
+        self.assertEqual(
+            code,
+            response.status_code,
+            f"status code incorrect. Should be {code}, but got {response.status_code}",
+        )
+
+        self.device.refresh_from_db()
+        self.assertEqual(0, self.device.latitude)
+        self.node1.refresh_from_db()
+        self.assertEqual(0, self.node1.latitude)
 
     def test_delete_device(self):
         device_id = self.device.id
