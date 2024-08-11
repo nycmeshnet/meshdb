@@ -101,7 +101,7 @@ def join_form(request: Request) -> Response:
             {"detail": "You must agree to the Network Commons License!"}, status=status.HTTP_400_BAD_REQUEST
         )
 
-    join_form_full_name = r.first_name + " " + r.last_name
+    join_form_full_name = f"{r.first_name} {r.last_name}"
 
     if not r.email and not r.phone:
         return Response({"detail": "Must provide an email or phone number"}, status=status.HTTP_400_BAD_REQUEST)
