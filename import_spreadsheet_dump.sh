@@ -45,11 +45,7 @@ done
 # Fix the numbering
 for table_name in "${tables[@]}"
 do
-    if [[ "$table_name" == "meshapi_sector" ]]; then
-	continue
-    fi
-
-    if [[ "$table_name" == "meshapi_accesspoint" ]]; then
+    if [[ "$table_name" == "meshapi_accesspoint" || "$table_name" == "meshapi_sector" ]]; then
 	continue
     fi
 
