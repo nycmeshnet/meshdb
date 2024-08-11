@@ -20,9 +20,6 @@ serviceAccount:
 podAnnotations: {}
 podLabels: {}
 
-podSecurityContext: {}
-securityContext: {}
-
 ingress:
   enabled: false
 
