@@ -125,6 +125,44 @@ class TestJoinForm(TestCase):
         )
         validate_successful_join_form_submission(self, "Valid Join Form", s, response)
 
+    def test_valid_join_form_aussie_intl_phone(self):
+        request, s = pull_apart_join_form_submission(valid_join_form_submission)
+
+        request["phone"] = "+61 3 96 69491 6"  # Australian bureau of meteorology (badly formatted)
+
+        response = self.c.post("/api/v1/join/", request, content_type="application/json")
+        code = 201
+        self.assertEqual(
+            code,
+            response.status_code,
+            f"status code incorrect for Valid Join Form. Should be {code}, but got {response.status_code}.\n Response is: {response.content.decode('utf-8')}",
+        )
+        validate_successful_join_form_submission(self, "Valid Join Form", s, response)
+
+        self.assertEqual(
+            "+61 3 9669 4916",  # Australian bureau of meteorology (Aussie formatted)
+            Member.objects.get(id=json.loads(response.content.decode("utf-8"))["member_id"]).phone_number,
+        )
+
+    def test_valid_join_form_guatemala_intl_phone(self):
+        request, s = pull_apart_join_form_submission(valid_join_form_submission)
+
+        request["phone"] = "+502 23 5 4 00 0 0"  # US Embassy in Guatemala (badly formatted)
+
+        response = self.c.post("/api/v1/join/", request, content_type="application/json")
+        code = 201
+        self.assertEqual(
+            code,
+            response.status_code,
+            f"status code incorrect for Valid Join Form. Should be {code}, but got {response.status_code}.\n Response is: {response.content.decode('utf-8')}",
+        )
+        validate_successful_join_form_submission(self, "Valid Join Form", s, response)
+
+        self.assertEqual(
+            "+502 2354 0000",  # US Embassy in Guatemala (Properly formatted)
+            Member.objects.get(id=json.loads(response.content.decode("utf-8"))["member_id"]).phone_number,
+        )
+
     def test_no_ncl(self):
         request, _ = pull_apart_join_form_submission(valid_join_form_submission)
 
