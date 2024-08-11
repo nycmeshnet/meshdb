@@ -120,19 +120,6 @@ class AccessPointSerializer(serializers.ModelSerializer):
         source="node", queryset=Node.objects.all(), required=True, allow_null=False
     )
 
-    latitude: serializers.ReadOnlyField = serializers.ReadOnlyField(
-        help_text="Approximate Device latitude in decimal degrees "
-        "(this is read through from the attached Node object, not stored separately)",
-    )
-    longitude: serializers.ReadOnlyField = serializers.ReadOnlyField(
-        help_text="Approximate Device longitude in decimal degrees "
-        "(this is read through from the attached Node object, not stored separately)",
-    )
-    altitude: serializers.ReadOnlyField = serializers.ReadOnlyField(
-        help_text='Approximate Device altitude in "absolute" meters above mean sea level '
-        "(this is read through from the attached Node object, not stored separately)",
-    )
-
     links_from: serializers.PrimaryKeyRelatedField = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
     links_to: serializers.PrimaryKeyRelatedField = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
 

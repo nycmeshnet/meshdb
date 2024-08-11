@@ -84,3 +84,33 @@ class TestAccessPoint(TestCase):
         response_obj = json.loads(response.content)
         self.assertEqual(response_obj["status"], "Active")
         self.assertEqual(response_obj["network_number"], node.network_number)
+
+    def test_modify_latitude(self):
+        accesspoint = AccessPoint(
+            name="Vernon",
+            status="Active",
+            node=self.node,
+            latitude=0,
+            longitude=0,
+        )
+        accesspoint.save()
+
+        # Modifying latitude should be possible, since it is not read-only
+        # (unlike on the Parent Device model)
+        response = self.c.patch(
+            f"/api/v1/accesspoints/{accesspoint.id}/",
+            {"latitude": 22},
+            content_type="application/json",
+        )
+
+        code = 200
+        self.assertEqual(
+            code,
+            response.status_code,
+            f"status code incorrect. Should be {code}, but got {response.status_code}",
+        )
+
+        accesspoint.refresh_from_db()
+        self.assertEqual(22, accesspoint.latitude)
+        self.node.refresh_from_db()
+        self.assertEqual(0, self.node.latitude)
