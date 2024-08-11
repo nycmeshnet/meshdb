@@ -37,7 +37,6 @@ def normalize_phone_number(phone_number: str) -> str:
     )
 
 
-# Expects country code!!!!
 def validate_phone_number(phone_number: str) -> Optional[phonenumbers.PhoneNumber]:
     try:
         parsed = phonenumbers.parse(phone_number, "US")
