@@ -509,7 +509,7 @@ class AccessPointFilter(DeviceFilter):
 
 @extend_schema_view(
     get=extend_schema(
-        tags=["AccessPoints"],
+        tags=["Access Points"],
         parameters=[
             OpenApiParameter(
                 "network_number",

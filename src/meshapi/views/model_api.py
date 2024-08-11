@@ -205,8 +205,8 @@ class SectorDetail(generics.RetrieveUpdateDestroyAPIView):
 
 
 @extend_schema_view(
-    get=extend_schema(tags=["AccessPoints"]),
-    post=extend_schema(tags=["AccessPoints"]),
+    get=extend_schema(tags=["Access Points"]),
+    post=extend_schema(tags=["Access Points"]),
 )
 class AccessPointList(generics.ListCreateAPIView):
     queryset = AccessPoint.objects.all()
@@ -214,10 +214,10 @@ class AccessPointList(generics.ListCreateAPIView):
 
 
 @extend_schema_view(
-    get=extend_schema(tags=["AccessPoints"]),
-    put=extend_schema(tags=["AccessPoints"]),
-    patch=extend_schema(tags=["AccessPoints"]),
-    delete=extend_schema(tags=["AccessPoints"]),
+    get=extend_schema(tags=["Access Points"]),
+    put=extend_schema(tags=["Access Points"]),
+    patch=extend_schema(tags=["Access Points"]),
+    delete=extend_schema(tags=["Access Points"]),
 )
 class AccessPointDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = AccessPoint.objects.all()
