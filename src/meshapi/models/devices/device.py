@@ -1,4 +1,7 @@
+from typing import Optional
+
 from django.db import models
+from django.db.models import FloatField
 
 from meshapi.models.node import Node
 
@@ -59,15 +62,15 @@ class Device(models.Model):
     )
 
     @property
-    def latitude(self) -> float:
+    def latitude(self) -> FloatField | float:
         return self.node.latitude
 
     @property
-    def longitude(self) -> float:
+    def longitude(self) -> FloatField | float:
         return self.node.longitude
 
     @property
-    def altitude(self) -> float:
+    def altitude(self) -> Optional[FloatField | float]:
         return self.node.altitude
 
     def __str__(self) -> str:
