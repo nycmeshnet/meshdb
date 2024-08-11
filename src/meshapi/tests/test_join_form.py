@@ -163,6 +163,25 @@ class TestJoinForm(TestCase):
             Member.objects.get(id=json.loads(response.content.decode("utf-8"))["member_id"]).phone_number,
         )
 
+    def test_valid_join_form_no_country_code_us_phone(self):
+        request, s = pull_apart_join_form_submission(valid_join_form_submission)
+
+        request["phone"] = "212 555 5555"
+
+        response = self.c.post("/api/v1/join/", request, content_type="application/json")
+        code = 201
+        self.assertEqual(
+            code,
+            response.status_code,
+            f"status code incorrect for Valid Join Form. Should be {code}, but got {response.status_code}.\n Response is: {response.content.decode('utf-8')}",
+        )
+        validate_successful_join_form_submission(self, "Valid Join Form", s, response)
+
+        self.assertEqual(
+            "+1 212-555-5555",
+            Member.objects.get(id=json.loads(response.content.decode("utf-8"))["member_id"]).phone_number,
+        )
+
     def test_no_ncl(self):
         request, _ = pull_apart_join_form_submission(valid_join_form_submission)
 
