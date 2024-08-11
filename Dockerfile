@@ -9,7 +9,9 @@ COPY pyproject.toml .
 RUN mkdir src
 RUN pip install .
 
-COPY entrypoint.sh .
+RUN useradd -ms /bin/bash --uid 1069 celery # Celery does not recommend running as root
+
+COPY entrypoint.sh celery_beat.sh celery_worker.sh .
 
 # Doing it like this should enable both dev and prod to work fine
 COPY ./src/meshweb/static .
