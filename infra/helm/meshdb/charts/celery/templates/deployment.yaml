@@ -39,7 +39,7 @@ spec:
           imagePullPolicy: {{ $.Values.image.pullPolicy }}
           resources:
             {{- toYaml $.Values.resources | nindent 12 }}
-          entrypoint: {{ .entrypoint }}
+          command: {{ toJson .command }}
           envFrom:
           - configMapRef:
               name: meshdbconfig
