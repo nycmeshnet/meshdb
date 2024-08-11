@@ -20,16 +20,19 @@ serviceAccount:
 podAnnotations: {}
 podLabels: {}
 
+podSecurityContext: {}
 securityContext: {}
-
-service:
-  type: ClusterIP
-  port: 80
 
 ingress:
   enabled: false
 
 resources: {}
+
+containers:
+  - name: celery-beat
+    entrypoint: ./celery_beat.sh
+  - name: celery-worker
+    entrypoint: ./celery_worker.sh
 
 # TODO (willnilges): Come up with some clever liveness probe
 #livenessProbe:
