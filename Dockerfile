@@ -9,7 +9,7 @@ COPY pyproject.toml .
 RUN mkdir src
 RUN pip install .
 
-RUN useradd -ms /bin/bash --uid 1069 celery # Celery does not recommend running as root
+RUN useradd -ms /bin/bash celery # Celery does not recommend running as root
 
 COPY entrypoint.sh celery_beat.sh celery_worker.sh .
 
