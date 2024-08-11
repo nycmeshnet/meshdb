@@ -113,12 +113,17 @@ class TestDevice(TestCase):
             content_type="application/json",
         )
 
-        code = 400
+        code = 200
         self.assertEqual(
             code,
             response.status_code,
             f"status code incorrect. Should be {code}, but got {response.status_code}",
         )
+
+        self.device.refresh_from_db()
+        self.assertEqual(0, self.device.latitude)
+        self.node1.refresh_from_db()
+        self.assertEqual(0, self.node1.latitude)
 
     def test_delete_device(self):
         device_id = self.device.id
