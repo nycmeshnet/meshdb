@@ -41,10 +41,17 @@ class TestNN(TestCase):
         inst["building"] = self.building
         inst["member"] = member_obj
 
-        install_obj = Install(**inst)
-        install_obj.save()
+        self.install = Install(**inst)
+        self.install.install_number = 10001
+        self.install.save()
 
-        self.install_number = install_obj.install_number
+        self.install_number = self.install.install_number
+
+        self.install_obj_low = Install(**inst)
+        self.install_obj_low.install_number = 1234
+        self.install_obj_low.save()
+
+        self.install_number_low = self.install_obj_low.install_number
 
     def test_nn_valid_install_number(self):
         response = self.admin_c.post(
@@ -74,6 +81,9 @@ class TestNN(TestCase):
         self.assertEqual(node_object.longitude, self.building.longitude)
         self.assertEqual(node_object.install_date, datetime.date.today())
 
+        self.install.refresh_from_db()
+        self.assertEqual(self.install.node, node_object)
+
         # Now test to make sure that we get 200 for dupes
         response = self.admin_c.post(
             "/api/v1/nn-assign/",
@@ -89,12 +99,78 @@ class TestNN(TestCase):
         )
 
         resp_nn = json.loads(response.content.decode("utf-8"))["network_number"]
+        self.assertEqual(
+            expected_nn,
+            resp_nn,
+            f"nn incorrect for test_nn_valid_install_number. Should be {expected_nn}, but got {resp_nn}",
+        )
+
+    def test_nn_valid_low_install_number_unused_nn(self):
+        # Check that install numbers that are valid network numbers (i.e. >10 <8192) are used
+        # as the network number at assignment time, if there is no existing Node with that NN
+
+        response = self.admin_c.post(
+            "/api/v1/nn-assign/",
+            {"install_number": self.install_number_low, "password": os.environ.get("NN_ASSIGN_PSK")},
+            content_type="application/json",
+        )
+
+        code = 201
+        self.assertEqual(
+            code,
+            response.status_code,
+            f"status code incorrect for test_nn_valid_install_number. Should be {code}, but got {response.status_code}",
+        )
+
+        resp_nn = json.loads(response.content.decode("utf-8"))["network_number"]
+        expected_nn = self.install_number_low
+        self.assertEqual(
+            expected_nn,
+            resp_nn,
+            f"nn incorrect for test_nn_valid_install_number. Should be {expected_nn}, but got {resp_nn}",
+        )
+
+        node_object = Node.objects.get(network_number=expected_nn)
+        self.install_obj_low.refresh_from_db()
+        self.assertEqual(self.install_obj_low.node, node_object)
+
+    def test_nn_valid_low_install_number_used_nn(self):
+        # Check that install numbers that are valid network numbers (i.e. >10 <8192) are NOT used
+        # as the network number at assignment time, if there is an existing Node with that NN
+
+        node = Node(
+            network_number=self.install_number_low,
+            status=Node.NodeStatus.ACTIVE,
+            type=Node.NodeType.STANDARD,
+            latitude=0,
+            longitude=0,
+        )
+        node.save()
+
+        response = self.admin_c.post(
+            "/api/v1/nn-assign/",
+            {"install_number": self.install_number_low, "password": os.environ.get("NN_ASSIGN_PSK")},
+            content_type="application/json",
+        )
+
+        code = 201
+        self.assertEqual(
+            code,
+            response.status_code,
+            f"status code incorrect for test_nn_valid_install_number. Should be {code}, but got {response.status_code}",
+        )
+
+        resp_nn = json.loads(response.content.decode("utf-8"))["network_number"]
         expected_nn = 101
         self.assertEqual(
             expected_nn,
             resp_nn,
             f"nn incorrect for test_nn_valid_install_number. Should be {expected_nn}, but got {resp_nn}",
         )
+
+        node_object = Node.objects.get(network_number=expected_nn)
+        self.install_obj_low.refresh_from_db()
+        self.assertEqual(self.install_obj_low.node, node_object)
 
     def test_nn_invalid_password(self):
         unauth_client = Client()
