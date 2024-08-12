@@ -206,3 +206,55 @@ class TestSlackNotification(TestCase):
             )
 
         self.assertEqual(requests_mocker.request_history[0].url, "https://mock-slack-url/")
+
+    @requests_mock.Mocker()
+    @patch("meshapi.util.admin_notifications.SLACK_ADMIN_NOTIFICATIONS_WEBHOOK_URL", "https://mock-slack-url")
+    @patch("meshapi.util.admin_notifications.SITE_BASE_URL", None)
+    def test_slack_notification_no_request_no_env_variable(self, requests_mocker):
+        member = Member(
+            id=1,
+            name="Stacy Maidenname",
+            primary_email_address="stacy@example.com",
+            phone_number="+1 2125555555",
+            notes="Dropped name change: Stacy Marriedname (install request #98232)",
+        )
+        member.save()
+
+        requests_mocker.post("https://mock-slack-url", json={})
+
+        notify_administrators_of_data_issue(
+            [member],
+            MemberSerializer,
+            "Dropped name change: Stacy Marriedname (install request #98232)",
+        )
+
+        self.assertEqual(len(requests_mocker.request_history), 0)
+
+    @requests_mock.Mocker()
+    @patch("meshapi.util.admin_notifications.SLACK_ADMIN_NOTIFICATIONS_WEBHOOK_URL", "https://mock-slack-url")
+    @patch("meshapi.util.admin_notifications.SITE_BASE_URL", "https://mock-meshdb-url.example")
+    def test_slack_notification_no_request_env_variable_fallback(self, requests_mocker):
+        member = Member(
+            id=1,
+            name="Stacy Maidenname",
+            primary_email_address="stacy@example.com",
+            phone_number="+1 2125555555",
+            notes="Dropped name change: Stacy Marriedname (install request #98232)",
+        )
+        member.save()
+
+        requests_mocker.post("https://mock-slack-url", json={})
+
+        notify_administrators_of_data_issue(
+            [member],
+            MemberSerializer,
+            "Dropped name change: Stacy Marriedname (install request #98232)",
+        )
+
+        self.assertEqual(requests_mocker.request_history[0].url, "https://mock-slack-url/")
+
+        request_payload = json.loads(requests_mocker.request_history[0].text)
+        self.assertIn(
+            "https://mock-meshdb-url.example",
+            request_payload["text"],
+        )

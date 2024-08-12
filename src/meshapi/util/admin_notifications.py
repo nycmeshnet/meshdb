@@ -1,7 +1,8 @@
 import json
 import logging
 import os
-from typing import Sequence, Type
+from typing import Optional, Sequence, Type
+from urllib.parse import urljoin
 
 import requests
 from django.contrib.contenttypes.models import ContentType
@@ -11,26 +12,40 @@ from django.urls import reverse
 from rest_framework.serializers import Serializer
 
 SLACK_ADMIN_NOTIFICATIONS_WEBHOOK_URL = os.environ.get("SLACK_ADMIN_NOTIFICATIONS_WEBHOOK_URL")
+SITE_BASE_URL = os.environ.get("SITE_BASE_URL")
 
 
-def get_admin_url(model: Model) -> str:
+def get_admin_url(model: Model, site_base_url: str) -> str:
     content_type = ContentType.objects.get_for_model(model.__class__)
-    return reverse("admin:%s_%s_change" % (content_type.app_label, content_type.model), args=(model.pk,))
+    return urljoin(
+        site_base_url, reverse("admin:%s_%s_change" % (content_type.app_label, content_type.model), args=(model.pk,))
+    )
 
 
 def notify_administrators_of_data_issue(
     model_instances: Sequence[Model],
     serializer_class: Type[Serializer],
     message: str,
-    request: HttpRequest,
+    request: Optional[HttpRequest] = None,
     raise_exception_on_failure: bool = False,
 ) -> None:
     serializer = serializer_class(model_instances, many=True)
 
+    site_base_url = SITE_BASE_URL
+    if request:
+        site_base_url = "{}://{}".format(request.scheme, request.get_host())
+
+    if not site_base_url:
+        logging.error(
+            "Env var SITE_BASE_URL is not set and a request was not available to infer this value from, "
+            "please set this variable to prevent silenced slack notifications"
+        )
+        return
+
     slack_message = {
         "text": f"Encountered the following data issue which may require admin attention: *{message}*. "
         f"When processing the following {model_instances[0]._meta.verbose_name_plural}: "
-        + ", ".join(f"<{request.build_absolute_uri(get_admin_url(m))}|{m}>" for m in model_instances)
+        + ", ".join(f"<{get_admin_url(m, site_base_url)}|{m}>" for m in model_instances)
         + ". Please open the database admin UI using the provided links to correct this.\n\n"
         + "The current database state of these objects is: \n"
         + f"```\n{json.dumps(serializer.data, indent=2)}\n```",
