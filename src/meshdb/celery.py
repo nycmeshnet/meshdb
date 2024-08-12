@@ -1,15 +1,13 @@
 import os
-
-from celery import Celery
-from dotenv import load_dotenv
-
 from pathlib import Path
 
-from celery import bootsteps
-from celery.signals import worker_ready, worker_shutdown, beat_init
+from celery import Celery, bootsteps
+from celery.signals import beat_init, worker_ready, worker_shutdown
+from dotenv import load_dotenv
 
 HEARTBEAT_FILE = Path("/tmp/celery_worker_heartbeat")
 READINESS_FILE = Path("/tmp/celery_worker_ready")
+BEAT_READINESS_FILE = Path("/tmp/celery_beat_ready")
 
 
 class LivenessProbe(bootsteps.StartStopStep):
@@ -46,7 +44,7 @@ def worker_shutdown(**_):
 
 @beat_init.connect
 def beat_ready(**_):
-    READINESS_FILE.touch()
+    BEAT_READINESS_FILE.touch()
 
 
 load_dotenv()

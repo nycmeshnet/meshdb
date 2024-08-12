@@ -11,7 +11,7 @@ RUN pip install .
 
 RUN useradd -ms /bin/bash celery # Celery does not recommend running as root
 
-COPY entrypoint.sh celery_beat.sh celery_worker.sh celery_liveness.py celery_readiness.py .
+COPY entrypoint.sh celery_beat.sh celery_worker.sh celery_liveness.py celery_readiness.py celery_beat_liveness.py celery_beat_readiness.py .
 
 # Doing it like this should enable both dev and prod to work fine
 COPY ./src/meshweb/static .
