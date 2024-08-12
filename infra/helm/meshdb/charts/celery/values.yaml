@@ -45,10 +45,17 @@ containers:
       - ./celery_worker.sh
 
 # TODO (willnilges): Come up with some clever liveness probe
-#livenessProbe:
-#  httpGet:
-#    path: /
-#    port: http
+livenessProbe:
+  exec:
+    # bash is needed to replace the environment variable
+    command:
+      - "sh"
+      - "-c"
+      - "celery inspect ping -d celery@$HOSTNAME"
+  initialDelaySeconds: 30  # startup takes some time
+  periodSeconds: 60  # default is quite often and celery uses a lot cpu/ram then.
+  timeoutSeconds: 10  # default is too low
+
 #readinessProbe:
 #  httpGet:
 #    path: /

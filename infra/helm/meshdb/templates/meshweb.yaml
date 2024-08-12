@@ -159,6 +159,8 @@ spec:
            initialDelaySeconds: 4
            timeoutSeconds: 3
            {{ end }}
+          livenessProbe:
+            {{- toYaml .Values.livenessProbe | nindent 12 }}
           readinessProbe:
             {{- toYaml .Values.readinessProbe | nindent 12 }}
           resources:
