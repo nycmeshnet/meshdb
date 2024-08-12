@@ -3,7 +3,7 @@ replicaCount: 1
 
 image:
   repository: willnilges/meshdb
-  pullPolicy: IfNotPresent
+  pullPolicy: Always #IfNotPresent
   tag: "wdn-beat"
 
 imagePullSecrets: []
@@ -44,7 +44,7 @@ containers:
         command:
           - "sh"
           - "-c"
-          - "python scripts/celery_liveness.py"
+          - "python celery_liveness.py"
       initialDelaySeconds: 30  # startup takes some time
       periodSeconds: 60  # default is quite often and celery uses a lot cpu/ram then.
       timeoutSeconds: 10  # default is too low
@@ -55,7 +55,7 @@ containers:
         command:
           - "sh"
           - "-c"
-          - "python scripts/celery_readiness.py"
+          - "python celery_readiness.py"
       initialDelaySeconds: 30  # startup takes some time
       periodSeconds: 60  # default is quite often and celery uses a lot cpu/ram then.
       timeoutSeconds: 10  # default is too low
