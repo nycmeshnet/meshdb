@@ -57,3 +57,6 @@ jobs:
         --set uisp.user="${{ secrets.UISP_USER }}" \
         --set uisp.psk="${{ secrets.UISP_PSK }}" \
         --set ingress.hosts[0].host="${{ vars.INGRESS_HOST }}",ingress.hosts[0].paths[0].path=/,ingress.hosts[0].paths[0].pathType=Prefix
+
+        # Rolling restart
+        kubectl -n ${{ vars.APP_NAMESPACE }} rollout restart deploy
