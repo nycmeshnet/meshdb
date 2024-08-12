@@ -2,7 +2,7 @@ import sys
 import time
 from pathlib import Path
 
-LIVENESS_FILE = Path('/tmp/celery_worker_heartbeat')
+LIVENESS_FILE = Path("/tmp/celery_worker_heartbeat")
 
 if not LIVENESS_FILE.is_file():
     print("Celery liveness file NOT found.")
