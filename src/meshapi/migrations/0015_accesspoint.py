@@ -6,7 +6,7 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("meshapi", "0013_remove_device_altitude_remove_device_ip_address_and_more"),
+        ("meshapi", "0014_remove_device_altitude_remove_device_ip_address_and_more"),
     ]
 
     operations = [
