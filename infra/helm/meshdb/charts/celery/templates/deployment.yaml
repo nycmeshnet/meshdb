@@ -43,6 +43,14 @@ spec:
           envFrom:
           - configMapRef:
               name: meshdbconfig
+          {{- if .livenessProbe }}
+          livenessProbe:
+            {{- toYaml .livenessProbe | nindent 12 }}
+          {{- end }}
+          {{- if .readinessProbe }}
+          readinessProbe:
+            {{- toYaml .readinessProbe | nindent 12 }}
+          {{- end }}
       {{- end }}
       {{- with .Values.volumes }}
       volumes:
