@@ -11,8 +11,9 @@ from celery.signals import worker_ready, worker_shutdown
 HEARTBEAT_FILE = Path("/tmp/worker_heartbeat")
 READINESS_FILE = Path("/tmp/worker_ready")
 
+
 class LivenessProbe(bootsteps.StartStopStep):
-    requires = {'celery.worker.components:Timer'}
+    requires = {"celery.worker.components:Timer"}
 
     def __init__(self, worker, **kwargs):
         self.requests = []
@@ -20,24 +21,28 @@ class LivenessProbe(bootsteps.StartStopStep):
 
     def start(self, worker):
         self.tref = worker.timer.call_repeatedly(
-            1.0, self.update_heartbeat_file, (worker,), priority=10,
+            1.0,
+            self.update_heartbeat_file,
+            (worker,),
+            priority=10,
         )
 
     def stop(self, worker):
-       HEARTBEAT_FILE.unlink(missing_ok=True)
+        HEARTBEAT_FILE.unlink(missing_ok=True)
 
     def update_heartbeat_file(self, worker):
-       HEARTBEAT_FILE.touch()
+        HEARTBEAT_FILE.touch()
 
 
 @worker_ready.connect
 def worker_ready(**_):
-   READINESS_FILE.touch()
+    READINESS_FILE.touch()
 
 
 @worker_shutdown.connect
 def worker_shutdown(**_):
-   READINESS_FILE.unlink(missing_ok=True)
+    READINESS_FILE.unlink(missing_ok=True)
+
 
 load_dotenv()
 
