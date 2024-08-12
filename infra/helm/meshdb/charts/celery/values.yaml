@@ -4,7 +4,7 @@ replicaCount: 1
 image:
   repository: willnilges/meshdb
   pullPolicy: IfNotPresent
-  tag: "main"
+  tag: "wdn-beat"
 
 imagePullSecrets: []
 nameOverride: ""
@@ -33,33 +33,37 @@ resources:
   #  memory: 128Mi
 
 containers:
-  - name: celery-beat
-    command: 
-      - sh
-      - -c
-      - ./celery_beat.sh
   - name: celery-worker
     command:
       - sh
       - -c
       - ./celery_worker.sh
+    livenessProbe:
+      exec:
+        # bash is needed to replace the environment variable
+        command:
+          - "sh"
+          - "-c"
+          - "python scripts/celery_liveness.py"
+      initialDelaySeconds: 30  # startup takes some time
+      periodSeconds: 60  # default is quite often and celery uses a lot cpu/ram then.
+      timeoutSeconds: 10  # default is too low
 
-# TODO (willnilges): Come up with some clever liveness probe
-livenessProbe:
-  exec:
-    # bash is needed to replace the environment variable
-    command:
-      - "sh"
-      - "-c"
-      - "celery inspect ping -d celery@$HOSTNAME"
-  initialDelaySeconds: 30  # startup takes some time
-  periodSeconds: 60  # default is quite often and celery uses a lot cpu/ram then.
-  timeoutSeconds: 10  # default is too low
-
-#readinessProbe:
-#  httpGet:
-#    path: /
-#    port: http
+    readinessProbe:
+      exec:
+        # bash is needed to replace the environment variable
+        command:
+          - "sh"
+          - "-c"
+          - "python scripts/celery_readiness.py"
+      initialDelaySeconds: 30  # startup takes some time
+      periodSeconds: 60  # default is quite often and celery uses a lot cpu/ram then.
+      timeoutSeconds: 10  # default is too low
+  - name: celery-beat
+    command: 
+      - sh
+      - -c
+      - ./celery_beat.sh
 
 autoscaling:
   enabled: false
