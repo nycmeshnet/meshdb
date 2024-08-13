@@ -1,4 +1,5 @@
 import datetime
+import math
 from typing import List, Optional, Union
 
 import dateutil.parser
@@ -86,3 +87,37 @@ def notify_admins_of_changes(db_object: Union[Device, Link], change_list: List[s
         serializer_lookup[type(db_object)],
         message=message,
     )
+
+
+def guess_compass_heading_from_device_name(device_name: str) -> Optional[float]:
+    contributors = []
+
+    cardinal_directions = {
+        "north": (0, 1),
+        "south": (0, -1),
+        "east": (1, 0),
+        "west": (-1, 0),
+    }
+
+    for direction, coordinate_pair in cardinal_directions.items():
+        if direction in device_name.lower():
+            contributors.append(coordinate_pair)
+
+    if not len(contributors):
+        # If we don't get any signal from this device name,
+        # tell the caller that we couldn't guess
+        return None
+
+    coord = tuple(sum(x) for x in zip(*contributors))
+
+    if coord == (0, 0):
+        raise ValueError(
+            f"Invalid device name {device_name}, does this result in a sensible "
+            f"cardinal direction? Combining oposite cardinal directions like "
+            f"'northsouth' or 'eastwest' is not permitted"
+        )
+
+    # Negative sign and plus 90 degrees is used to convert from standard
+    # "mathematical" (counter-clockwise degrees from the positive x-axis) to
+    # "compass heading" (clockwise degrees from the positive y-axis)
+    return (-math.degrees(math.atan2(coord[1], coord[0])) + 90) % 360

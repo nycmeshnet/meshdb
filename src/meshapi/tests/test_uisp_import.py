@@ -17,12 +17,31 @@ from meshapi.util.uisp_import.utils import (
     get_building_from_network_number,
     get_link_type,
     get_uisp_link_last_seen,
+    guess_compass_heading_from_device_name,
     notify_admins_of_changes,
     parse_uisp_datetime,
 )
 
 
 class TestUISPImportUtils(TestCase):
+    def test_guess_compass_heading(self):
+        self.assertEqual(guess_compass_heading_from_device_name("nycmesh-227-north"), 0)
+        self.assertEqual(guess_compass_heading_from_device_name("nycmesh-227-south"), 180)
+        self.assertEqual(guess_compass_heading_from_device_name("nycmesh-227-east"), 90)
+        self.assertEqual(guess_compass_heading_from_device_name("nycmesh-227-west"), 270)
+
+        self.assertEqual(guess_compass_heading_from_device_name("nycmesh-227-northwest"), 315)
+        self.assertEqual(guess_compass_heading_from_device_name("nycmesh-227-eastsouth"), 135)
+
+        self.assertEqual(guess_compass_heading_from_device_name("nycmesh-227-ev"), None)
+        self.assertEqual(guess_compass_heading_from_device_name("nycmesh-227-sector1"), None)
+
+        with pytest.raises(ValueError):
+            guess_compass_heading_from_device_name("nycmesh-227-northsouth")
+
+        with pytest.raises(ValueError):
+            guess_compass_heading_from_device_name("nycmesh-227-westeast")
+
     def test_parse_uisp_datetime(self):
         self.assertEqual(
             parse_uisp_datetime("2018-11-14T15:20:32.004Z"),
