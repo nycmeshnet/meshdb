@@ -3,6 +3,7 @@ from pathlib import Path
 
 from celery import Celery, bootsteps
 from celery.signals import beat_init, worker_ready, worker_shutdown
+from celery.apps.worker import Worker
 from dotenv import load_dotenv
 
 HEARTBEAT_FILE = Path("/tmp/celery_worker_heartbeat")
@@ -13,11 +14,11 @@ BEAT_READINESS_FILE = Path("/tmp/celery_beat_ready")
 class LivenessProbe(bootsteps.StartStopStep):
     requires = {"celery.worker.components:Timer"}
 
-    def __init__(self, worker, **kwargs):  # type: ignore[no-untyped-def]
+    def __init__(self, worker: Worker, **kwargs: dict):
         self.requests = []
         self.tref = None
 
-    def start(self, worker):  # type: ignore[no-untyped-def]
+    def start(self, worker: Worker):
         self.tref = worker.timer.call_repeatedly(
             1.0,
             self.update_heartbeat_file,
@@ -25,25 +26,25 @@ class LivenessProbe(bootsteps.StartStopStep):
             priority=10,
         )
 
-    def stop(self, worker):  # type: ignore[no-untyped-def]
+    def stop(self, worker: Worker):
         HEARTBEAT_FILE.unlink(missing_ok=True)
 
-    def update_heartbeat_file(self, worker):  # type: ignore[no-untyped-def]
+    def update_heartbeat_file(self, worker: Worker):
         HEARTBEAT_FILE.touch()
 
 
 @worker_ready.connect  # type: ignore[no-redef]
-def worker_ready(**_):  # type: ignore[no-untyped-def]
+def worker_ready(**_: dict):
     READINESS_FILE.touch()
 
 
 @worker_shutdown.connect  # type: ignore[no-redef]
-def worker_shutdown(**_):  # type: ignore[no-untyped-def]
+def worker_shutdown(**_: dict):
     READINESS_FILE.unlink(missing_ok=True)
 
 
 @beat_init.connect
-def beat_ready(**_):  # type: ignore[no-untyped-def]
+def beat_ready(**_: dict):
     BEAT_READINESS_FILE.touch()
 
 
