@@ -5,8 +5,8 @@ from typing import List, Optional, Union
 import dateutil.parser
 import requests
 
-from meshapi.models import Building, Device, Link, Node
-from meshapi.serializers import DeviceSerializer, LinkSerializer
+from meshapi.models import AccessPoint, Building, Device, Link, Node, Sector
+from meshapi.serializers import AccessPointSerializer, DeviceSerializer, LinkSerializer, SectorSerializer
 from meshapi.types.uisp_api.data_links import DataLink as USIPDataLink
 from meshapi.util.admin_notifications import notify_administrators_of_data_issue
 from meshapi.util.uisp_import.fetch_uisp import get_uisp_device_detail, get_uisp_session
@@ -69,18 +69,35 @@ def get_uisp_link_last_seen(
     return uisp_last_seen
 
 
-def notify_admins_of_changes(db_object: Union[Device, Link], change_list: List[str]) -> None:
+def notify_admins_of_changes(db_object: Union[Device, Link, Sector], change_list: List[str], created=False) -> None:
     serializer_lookup = {
         Device: DeviceSerializer,
+        Sector: SectorSerializer,
+        AccessPoint: AccessPointSerializer,
         Link: LinkSerializer,
     }
 
-    message = (
-        f"modified {db_object._meta.verbose_name} based on information from UISP. "
-        f"The following changes were made:\n"
-        + "\n".join(" - " + change for change in change_list)
-        + "\n(to prevent this, make changes to these fields in UISP rather than directly in MeshDB)"
-    )
+    if type(db_object) == Device:
+        sector = Sector.objects.filter(device_ptr=db_object).first()
+        access_point = AccessPoint.objects.filter(device_ptr=db_object).first()
+
+        if sector:
+            db_object = sector
+        elif access_point:
+            db_object = access_point
+
+    if created:
+        message = (
+            f"created {db_object._meta.verbose_name} based on information from UISP. "
+            f"The following items may require attention:\n" + "\n".join(" - " + change for change in change_list)
+        )
+    else:
+        message = (
+            f"modified {db_object._meta.verbose_name} based on information from UISP. "
+            f"The following changes were made:\n"
+            + "\n".join(" - " + change for change in change_list)
+            + "\n(to prevent this, make changes to these fields in UISP rather than directly in MeshDB)"
+        )
 
     notify_administrators_of_data_issue(
         [db_object],

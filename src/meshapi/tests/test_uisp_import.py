@@ -5,8 +5,8 @@ import pytest
 from dateutil.tz import tzutc
 from django.test import TestCase
 
-from meshapi.models import LOS, Building, Device, Link, Node
-from meshapi.serializers import DeviceSerializer
+from meshapi.models import LOS, AccessPoint, Building, Device, Link, Node, Sector
+from meshapi.serializers import AccessPointSerializer, DeviceSerializer, SectorSerializer
 from meshapi.util.uisp_import.handler import (
     import_and_sync_uisp_devices,
     import_and_sync_uisp_links,
@@ -245,6 +245,80 @@ class TestUISPImportUtils(TestCase):
             " - Mock change 1\n"
             " - Mock change 2\n"
             "(to prevent this, make changes to these fields in UISP rather than directly in MeshDB)",
+        )
+
+    @patch("meshapi.util.uisp_import.utils.notify_administrators_of_data_issue")
+    def test_notify_admins_of_created_sector(self, mock_notify):
+        node1 = Node(
+            network_number=1234,
+            status=Node.NodeStatus.ACTIVE,
+            type=Node.NodeType.STANDARD,
+            latitude=0,
+            longitude=0,
+        )
+        node1.save()
+
+        sector = Sector(
+            node=node1,
+            status=Device.DeviceStatus.ACTIVE,
+            radius=1,
+            azimuth=0,
+            width=90,
+        )
+        sector.save()
+
+        notify_admins_of_changes(sector, ["Mock change 1", "Mock change 2"], created=True)
+
+        mock_notify.assert_called_once_with(
+            [sector],
+            SectorSerializer,
+            message="created sector based on information from UISP. The following items may require attention:\n"
+            " - Mock change 1\n"
+            " - Mock change 2",
+        )
+        mock_notify.reset_mock()
+
+        # Test automatic sector detection
+        notify_admins_of_changes(sector.device_ptr, ["Mock change 1", "Mock change 2"], created=True)
+
+        mock_notify.assert_called_once_with(
+            [sector],
+            SectorSerializer,
+            message="created sector based on information from UISP. The following items may require attention:\n"
+            " - Mock change 1\n"
+            " - Mock change 2",
+        )
+
+    @patch("meshapi.util.uisp_import.utils.notify_administrators_of_data_issue")
+    def test_notify_admins_autodetect_ap(self, mock_notify):
+        node1 = Node(
+            network_number=1234,
+            status=Node.NodeStatus.ACTIVE,
+            type=Node.NodeType.STANDARD,
+            latitude=0,
+            longitude=0,
+        )
+        node1.save()
+
+        ap = AccessPoint(
+            node=node1,
+            status=Device.DeviceStatus.ACTIVE,
+            latitude=0,
+            longitude=0,
+        )
+        ap.save()
+
+        # We pass the device object here, and confirm that the notification function
+        # automatically detects that this is device is associated with an AccessPoint and fetches
+        # the relevant object (this makes the admin link correct)
+        notify_admins_of_changes(ap.device_ptr, ["Mock change 1", "Mock change 2"], created=True)
+
+        mock_notify.assert_called_once_with(
+            [ap],
+            AccessPointSerializer,
+            message="created access point based on information from UISP. The following items may require attention:\n"
+            " - Mock change 1\n"
+            " - Mock change 2",
         )
 
 
