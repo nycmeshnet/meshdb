@@ -743,11 +743,13 @@ class TestUISPImportHandlers(TestCase):
                     "status": "active",
                     "createdAt": "2018-11-14T15:20:32.004Z",
                     "lastSeen": "2024-08-12T02:04:35.335Z",
+                    "wirelessMode": "sta-ptmp",
                 },
                 "identification": {
                     "id": "uisp-uuid1",
                     "name": "nycmesh-1234-dev1",
                     "category": "wireless",
+                    "type": "airMax",
                 },
             },
             {
@@ -755,11 +757,13 @@ class TestUISPImportHandlers(TestCase):
                     "status": None,
                     "createdAt": "2018-11-14T15:20:32.004Z",
                     "lastSeen": "2024-08-12T02:04:35.335Z",
+                    "wirelessMode": "sta-ptmp",
                 },
                 "identification": {
                     "id": "uisp-uuid2",
                     "name": "nycmesh-5678-dev2",
                     "category": "wireless",
+                    "type": "airMax",
                 },
             },
             {
@@ -767,11 +771,13 @@ class TestUISPImportHandlers(TestCase):
                     "status": "inactive",
                     "createdAt": "2018-11-14T15:20:32.004Z",
                     "lastSeen": "2024-08-12T02:04:35.335Z",
+                    "wirelessMode": "sta-ptmp",
                 },
                 "identification": {
                     "id": "uisp-uuid3",
                     "name": "nycmesh-9012-dev3",
                     "category": "wireless",
+                    "type": "airMax",
                 },
             },
             {
@@ -779,11 +785,13 @@ class TestUISPImportHandlers(TestCase):
                     "status": "active",
                     "createdAt": "2018-11-14T15:20:32.004Z",
                     "lastSeen": "2024-08-12T02:04:35.335Z",
+                    "wirelessMode": "sta-ptmp",
                 },
                 "identification": {
                     "id": "uisp-uuid9",
                     "name": "nycmesh-1234-dev9",
                     "category": "wireless",
+                    "type": "airMax",
                 },
             },
             {
@@ -791,6 +799,22 @@ class TestUISPImportHandlers(TestCase):
                     "status": "active",
                     "createdAt": "2018-11-14T15:20:32.004Z",
                     "lastSeen": "2024-08-12T02:04:35.335Z",
+                    "wirelessMode": "ap-ptmp",
+                },
+                "identification": {
+                    "id": "uisp-uuid99",
+                    "name": "nycmesh-1234-east",
+                    "model": "LAP-120",
+                    "category": "wireless",
+                    "type": "airMax",
+                },
+            },
+            {
+                "overview": {
+                    "status": "active",
+                    "createdAt": "2018-11-14T15:20:32.004Z",
+                    "lastSeen": "2024-08-12T02:04:35.335Z",
+                    "wirelessMode": "sta-ptmp",
                 },
                 "identification": {
                     "id": "uisp-uuid5",
@@ -803,11 +827,13 @@ class TestUISPImportHandlers(TestCase):
                     "status": "active",
                     "createdAt": "2018-11-14T15:20:32.004Z",
                     "lastSeen": "2024-08-12T02:04:35.335Z",
+                    "wirelessMode": "sta-ptmp",
                 },
                 "identification": {
                     "id": "uisp-uuid5",
                     "name": "nycmesh-abc-def",  # Causes it to be excluded, no NN
                     "category": "wireless",
+                    "type": "airMax",
                 },
             },
             {
@@ -815,16 +841,20 @@ class TestUISPImportHandlers(TestCase):
                     "status": "active",
                     "createdAt": "2018-11-14T15:20:32.004Z",
                     "lastSeen": "2024-08-12T02:04:35.335Z",
+                    "wirelessMode": "sta-ptmp",
                 },
                 "identification": {
                     "id": "uisp-uuid5",
                     "name": "nycmesh-888-def",  # Causes it to be excluded, no NN 888 in the DB
                     "category": "wireless",
+                    "type": "airMax",
                 },
             },
         ]
 
         import_and_sync_uisp_devices(uisp_devices)
+
+        created_sector = Sector.objects.get(uisp_id="uisp-uuid99")
 
         last_seen_date = datetime.datetime(2024, 8, 12, 2, 4, 35, 335000, tzinfo=tzutc())
         mock_update_device.assert_has_calls(
@@ -835,7 +865,20 @@ class TestUISPImportHandlers(TestCase):
             ]
         )
 
-        mock_notify_admins.assert_called_once_with(self.device3, ["Mock update 3"])
+        mock_notify_admins.assert_has_calls(
+            [
+                call(self.device3, ["Mock update 3"]),
+                call(
+                    created_sector,
+                    [
+                        "Guessed azimuth of 90.0 degrees from device name. Please provide a more accurate value if available",
+                        "Guessed coverage width of 120 degrees from device type. Please provide a more accurate value if available",
+                        "Set default radius of 1 km. Please correct if this is not accurate",
+                    ],
+                    created=True,
+                ),
+            ]
+        )
 
         created_device = Device.objects.get(uisp_id="uisp-uuid9")
         self.assertEqual(created_device.node, self.node1)
@@ -844,6 +887,16 @@ class TestUISPImportHandlers(TestCase):
         self.assertEqual(created_device.install_date, datetime.date(2018, 11, 14))
         self.assertEqual(created_device.abandon_date, None)
         self.assertTrue(created_device.notes.startswith("Automatically imported from UISP on"))
+
+        self.assertEqual(created_sector.node, self.node1)
+        self.assertEqual(created_sector.name, "nycmesh-1234-east")
+        self.assertEqual(created_sector.status, Device.DeviceStatus.ACTIVE)
+        self.assertEqual(created_sector.install_date, datetime.date(2018, 11, 14))
+        self.assertEqual(created_sector.abandon_date, None)
+        self.assertEqual(created_sector.width, 120)  # From device model
+        self.assertEqual(created_sector.azimuth, 90)  # From device name ("east")
+        self.assertEqual(created_sector.radius, 1)  # Default for airmax sectors
+        self.assertTrue(created_sector.notes.startswith("Automatically imported from UISP on"))
 
         self.assertIsNone(Device.objects.filter(uisp_id="uisp-uuid5").first())
 

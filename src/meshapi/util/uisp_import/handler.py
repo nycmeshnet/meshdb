@@ -5,7 +5,7 @@ from typing import List, Optional
 
 from django.db.models import Q
 
-from meshapi.models import LOS, Device, Link, Node
+from meshapi.models import LOS, Device, Link, Node, Sector
 from meshapi.types.uisp_api.data_links import DataLink as UISPDataLink
 from meshapi.types.uisp_api.devices import Device as UISPDevice
 from meshapi.util.uisp_import.fetch_uisp import get_uisp_devices, get_uisp_links, get_uisp_session
@@ -13,6 +13,7 @@ from meshapi.util.uisp_import.update_objects import update_device_from_uisp_data
 from meshapi.util.uisp_import.utils import (
     get_building_from_network_number,
     get_link_type,
+    guess_compass_heading_from_device_name,
     notify_admins_of_changes,
     parse_uisp_datetime,
 )
@@ -28,6 +29,17 @@ DEVICE_NAME_NETWORK_NUMBER_SUBSTITUTIONS = {
 }
 
 NETWORK_NUMBER_REGEX_FOR_DEVICE_NAME = r"\b\d{1,4}\b"
+
+DEFAULT_SECTOR_AZIMUTH = 0  # decimal degrees (compass heading)
+DEFAULT_SECTOR_WIDTH = 0  # decimal degrees
+DEFAULT_SECTOR_RADIUS = 1  # km
+
+DEVICE_MODEL_TO_BEAM_WIDTH = {
+    "LAP-120": 120,
+    "LAP-GPS": 120,
+    "PS-5AC": 45,  # In reality this is based on the antenna used, this is just a guess based on our historical use
+    "RP-5AC-Gen2": 90,  # In reality this is based on the antenna used, this is just a guess based on our historical use
+}
 
 
 def import_and_sync_uisp_devices(uisp_devices: List[UISPDevice]) -> None:
@@ -84,17 +96,50 @@ def import_and_sync_uisp_devices(uisp_devices: List[UISPDevice]) -> None:
             if change_list:
                 notify_admins_of_changes(existing_device, change_list)
         else:
-            # TODO: Branch here for AP vs Sector vs Device
-            device = Device(
-                node=uisp_node,
-                name=uisp_name,
-                uisp_id=uisp_uuid,
-                status=uisp_status,
-                install_date=parse_uisp_datetime(uisp_device["overview"]["createdAt"]).date(),
-                abandon_date=(uisp_last_seen.date() if uisp_status == Device.DeviceStatus.INACTIVE else None),
-                notes=f"Automatically imported from UISP on {datetime.date.today().isoformat()}\n\n",
-            )
-            device.save()
+            device_fields = {
+                "node": uisp_node,
+                "name": uisp_name,
+                "uisp_id": uisp_uuid,
+                "status": uisp_status,
+                "install_date": parse_uisp_datetime(uisp_device["overview"]["createdAt"]).date(),
+                "abandon_date": uisp_last_seen.date() if uisp_status == Device.DeviceStatus.INACTIVE else None,
+                "notes": f"Automatically imported from UISP on {datetime.date.today().isoformat()}\n\n",
+            }
+
+            if (
+                uisp_device["identification"]["type"] == "airMax"
+                and uisp_device["overview"]["wirelessMode"] == "ap-ptmp"
+            ):
+                try:
+                    guessed_compass_heading = guess_compass_heading_from_device_name(uisp_name)
+                except ValueError:
+                    logging.exception("Invalid device name detected")
+                    guessed_compass_heading = None
+
+                guessed_beam_width = DEVICE_MODEL_TO_BEAM_WIDTH.get(
+                    uisp_device["identification"]["model"], DEFAULT_SECTOR_WIDTH
+                )
+
+                sector = Sector(
+                    **device_fields,
+                    azimuth=guessed_compass_heading or DEFAULT_SECTOR_AZIMUTH,
+                    width=guessed_beam_width,
+                    radius=DEFAULT_SECTOR_RADIUS,
+                )
+                sector.save()
+
+                notify_admins_of_changes(
+                    sector,
+                    [
+                        f"Guessed azimuth of {sector.azimuth} degrees from device name. Please provide a more accurate value if available",
+                        f"Guessed coverage width of {sector.width} degrees from device type. Please provide a more accurate value if available",
+                        f"Set default radius of {sector.radius} km. Please correct if this is not accurate",
+                    ],
+                    created=True,
+                )
+            else:
+                device = Device(**device_fields)
+                device.save()
 
 
 def import_and_sync_uisp_links(uisp_links: List[UISPDataLink]) -> None:

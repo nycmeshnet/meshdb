@@ -78,8 +78,8 @@ def update_link_from_uisp_data(
     db_device_pair = {existing_link.from_device, existing_link.to_device}
 
     if uisp_device_pair != db_device_pair:
-        uisp_device_pair_str = "[" + ", ".join(str(dev) for dev in uisp_device_pair) + "]"
-        db_device_pair_str = "[" + ", ".join(str(dev) for dev in db_device_pair) + "]"
+        uisp_device_pair_str = "[" + ", ".join(sorted(str(dev) for dev in uisp_device_pair)) + "]"
+        db_device_pair_str = "[" + ", ".join(sorted(str(dev) for dev in db_device_pair)) + "]"
         change_messages.append(f"Changed connected device pair from {db_device_pair_str} to {uisp_device_pair_str}")
         existing_link.from_device = uisp_from_device
         existing_link.to_device = uisp_to_device
