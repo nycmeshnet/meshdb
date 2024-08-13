@@ -14,22 +14,22 @@ BEAT_READINESS_FILE = Path("/tmp/celery_beat_ready")
 class LivenessProbe(bootsteps.StartStopStep):
     requires = {"celery.worker.components:Timer"}
 
-    def __init__(self, worker: Worker, **kwargs: dict):
+    def __init__(self, parent: Worker, **kwargs: dict):
         self.requests = []
         self.tref = None
 
-    def start(self, worker: Worker):
-        self.tref = worker.timer.call_repeatedly(
+    def start(self, parent: Worker):
+        self.tref = parent.timer.call_repeatedly(
             1.0,
             self.update_heartbeat_file,
-            (worker,),
+            (parent,),
             priority=10,
         )
 
-    def stop(self, worker: Worker):
+    def stop(self, parent: Worker):
         HEARTBEAT_FILE.unlink(missing_ok=True)
 
-    def update_heartbeat_file(self, worker: Worker):
+    def update_heartbeat_file(self, parent: Worker):
         HEARTBEAT_FILE.touch()
 
 
