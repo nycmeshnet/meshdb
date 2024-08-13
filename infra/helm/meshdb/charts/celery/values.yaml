@@ -3,8 +3,8 @@ replicaCount: 1
 
 image:
   repository: willnilges/meshdb
-  pullPolicy: Always #IfNotPresent
-  tag: "wdn-beat"
+  pullPolicy: Always
+  tag: "main"
 
 imagePullSecrets: []
 nameOverride: ""
