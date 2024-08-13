@@ -59,4 +59,4 @@ jobs:
         --set ingress.hosts[0].host="${{ vars.INGRESS_HOST }}",ingress.hosts[0].paths[0].path=/,ingress.hosts[0].paths[0].pathType=Prefix
 
         # Rolling restart
-        kubectl -n ${{ vars.APP_NAMESPACE }} rollout restart deploy
+        kubectl --kubeconfig ./config --server https://${{ secrets.SSH_TARGET_IP }}:6443 -n ${{ vars.APP_NAMESPACE }} rollout restart deploy
