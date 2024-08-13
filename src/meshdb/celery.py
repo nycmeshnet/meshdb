@@ -17,7 +17,7 @@ class LivenessProbe(bootsteps.StartStopStep):
         self.requests = []
         self.tref = None
 
-    def start(self, worker):
+    def start(self, worker):  # type: ignore[no-untyped-def]
         self.tref = worker.timer.call_repeatedly(
             1.0,
             self.update_heartbeat_file,
@@ -25,25 +25,25 @@ class LivenessProbe(bootsteps.StartStopStep):
             priority=10,
         )
 
-    def stop(self, worker):
+    def stop(self, worker):  # type: ignore[no-untyped-def]
         HEARTBEAT_FILE.unlink(missing_ok=True)
 
-    def update_heartbeat_file(self, worker):
+    def update_heartbeat_file(self, worker):  # type: ignore[no-untyped-def]
         HEARTBEAT_FILE.touch()
 
 
-@worker_ready.connect
-def worker_ready(**_):
+@worker_ready.connect  # type: ignore[no-redef]
+def worker_ready(**_):  # type: ignore[no-untyped-def]
     READINESS_FILE.touch()
 
 
-@worker_shutdown.connect
-def worker_shutdown(**_):
+@worker_shutdown.connect  # type: ignore[no-redef]
+def worker_shutdown(**_):  # type: ignore[no-untyped-def]
     READINESS_FILE.unlink(missing_ok=True)
 
 
 @beat_init.connect
-def beat_ready(**_):
+def beat_ready(**_):  # type: ignore[no-untyped-def]
     BEAT_READINESS_FILE.touch()
 
 

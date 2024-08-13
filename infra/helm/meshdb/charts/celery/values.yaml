@@ -37,14 +37,14 @@ containers:
     command:
       - sh
       - -c
-      - ./celery_worker.sh
+      - ./scripts/celery/celery_worker.sh
     livenessProbe:
       exec:
         # bash is needed to replace the environment variable
         command:
           - "sh"
           - "-c"
-          - "python celery_liveness.py"
+          - "python scripts/celery/probes/celery_liveness.py"
       initialDelaySeconds: 30  # startup takes some time
       periodSeconds: 60  # default is quite often and celery uses a lot cpu/ram then.
       timeoutSeconds: 10  # default is too low
@@ -54,7 +54,7 @@ containers:
         command:
           - "sh"
           - "-c"
-          - "python celery_readiness.py"
+          - "python scripts/celery/probes/celery_readiness.py"
       initialDelaySeconds: 30
       periodSeconds: 60
       timeoutSeconds: 10
@@ -62,14 +62,14 @@ containers:
     command: 
       - sh
       - -c
-      - ./celery_beat.sh
+      - ./scripts/celery/celery_beat.sh
     livenessProbe:
       exec:
         # bash is needed to replace the environment variable
         command:
           - "sh"
           - "-c"
-          - "python celery_beat_liveness.py"
+          - "python scripts/celery/probes/celery_beat_liveness.py"
       initialDelaySeconds: 30
       periodSeconds: 60
       timeoutSeconds: 10
@@ -79,7 +79,7 @@ containers:
         command:
           - "sh"
           - "-c"
-          - "python celery_beat_readiness.py"
+          - "python scripts/celery/probes/celery_beat_readiness.py"
       initialDelaySeconds: 30
       periodSeconds: 60
       timeoutSeconds: 10
