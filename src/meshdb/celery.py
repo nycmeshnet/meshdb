@@ -13,7 +13,7 @@ BEAT_READINESS_FILE = Path("/tmp/celery_beat_ready")
 class LivenessProbe(bootsteps.StartStopStep):
     requires = {"celery.worker.components:Timer"}
 
-    def __init__(self, worker, **kwargs):
+    def __init__(self, worker, **kwargs):  # type: ignore[no-untyped-def]
         self.requests = []
         self.tref = None
 
