@@ -20,6 +20,7 @@ class Command(BaseCommand):
             "device",
             "link",
             "sector",
+            "accesspoint",
         ]
         all_permissions = Permission.objects.all()
 
