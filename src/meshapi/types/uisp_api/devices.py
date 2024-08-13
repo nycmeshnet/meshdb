@@ -8,7 +8,7 @@
 
 from typing import Dict, List, Literal, NotRequired, TypedDict
 
-from meshapi.util.uisp_import.types.literals import (
+from meshapi.types.uisp_api.literals import (
     CountryCodeLiteral,
     CountryLiteral,
     DeviceTypeLiteral,

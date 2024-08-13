@@ -6,9 +6,9 @@ import requests
 
 from meshapi.models import Building, Device, Link, Node
 from meshapi.serializers import DeviceSerializer, LinkSerializer
+from meshapi.types.uisp_api.data_links import DataLink as USIPDataLink
 from meshapi.util.admin_notifications import notify_administrators_of_data_issue
 from meshapi.util.uisp_import.fetch_uisp import get_uisp_device_detail, get_uisp_session
-from meshapi.util.uisp_import.types.data_links import DataLink as USIPDataLink
 
 
 def parse_uisp_datetime(datetime_str: str) -> datetime.datetime:

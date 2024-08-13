@@ -5,8 +5,8 @@ from typing import List, Optional
 import requests
 from dotenv import load_dotenv
 
-from meshapi.util.uisp_import.types.data_links import DataLink as UISPDataLink
-from meshapi.util.uisp_import.types.devices import Device as UISPDevice
+from meshapi.types.uisp_api.data_links import DataLink as UISPDataLink
+from meshapi.types.uisp_api.devices import Device as UISPDevice
 
 load_dotenv()
 

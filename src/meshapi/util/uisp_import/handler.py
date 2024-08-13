@@ -6,9 +6,9 @@ from typing import List, Optional
 from django.db.models import Q
 
 from meshapi.models import LOS, Device, Link, Node
+from meshapi.types.uisp_api.data_links import DataLink as UISPDataLink
+from meshapi.types.uisp_api.devices import Device as UISPDevice
 from meshapi.util.uisp_import.fetch_uisp import get_uisp_devices, get_uisp_links, get_uisp_session
-from meshapi.util.uisp_import.types.data_links import DataLink as UISPDataLink
-from meshapi.util.uisp_import.types.devices import Device as UISPDevice
 from meshapi.util.uisp_import.update_objects import update_device_from_uisp_data, update_link_from_uisp_data
 from meshapi.util.uisp_import.utils import (
     get_building_from_network_number,

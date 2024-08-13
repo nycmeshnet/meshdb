@@ -7,7 +7,7 @@
 
 from typing import Dict, Literal, NotRequired, TypedDict
 
-from meshapi.util.uisp_import.types.literals import RoleLiteral
+from meshapi.types.uisp_api.literals import RoleLiteral
 
 # This one has to be different, because from is a reserved keyword in python
 DataLink = TypedDict(
