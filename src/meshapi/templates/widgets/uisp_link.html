@@ -4,11 +4,12 @@
     {% block links %}
     {% spaceless %}
     {% if widget.value %}
-    <form 
-            class="related-widget-wrapper-link view-related"
-            action="https://uisp.mesh.nycmesh.net/nms/devices#id={{ widget.value }}&panelType=device-panel">
-        <input type="submit" value="View on UISP" />
-    </form>
+    <a class="related-widget-wrapper-link view-related"
+            href="https://uisp.mesh.nycmesh.net/nms/devices#id={{ widget.value }}&panelType=device-panel"
+        target="_blank"
+        title="{% blocktranslate %}View in UISP{% endblocktranslate %}">
+        <img src="{% static 'admin/img/icon-viewlink.svg' %}" alt="{% translate 'Navigate' %}">
+    </a>
     {% endif %}
     {% endspaceless %}
     {% endblock %}
