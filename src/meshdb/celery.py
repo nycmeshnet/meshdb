@@ -10,7 +10,11 @@ HEARTBEAT_FILE = Path("/tmp/celery_worker_heartbeat")
 READINESS_FILE = Path("/tmp/celery_worker_ready")
 BEAT_READINESS_FILE = Path("/tmp/celery_beat_ready")
 
-
+# This is still somewhat contentious in the Celery community, but the popular
+# opinion seems to be this approach:
+# https://medium.com/ambient-innovation/health-checks-for-celery-in-kubernetes-cf3274a3e106
+# https://github.com/celery/celery/issues/4079#issuecomment-1270085680
+# https://docs.celeryq.dev/projects/pytest-celery/en/latest/userguide/signals.html#signals-py
 class LivenessProbe(bootsteps.StartStopStep):
     requires = {"celery.worker.components:Timer"}
 
