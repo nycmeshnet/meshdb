@@ -1,0 +1,15 @@
+{% load i18n static %}
+<div class="related-widget-wrapper">
+    {% include "django/forms/widgets/input.html" %}
+    {% block links %}
+    {% spaceless %}
+    {% if widget.value %}
+    <form 
+            class="related-widget-wrapper-link view-related"
+            action="https://uisp.mesh.nycmesh.net/nms/devices#id={{ widget.value }}&panelType=device-panel">
+        <input type="submit" value="View on UISP" />
+    </form>
+    {% endif %}
+    {% endspaceless %}
+    {% endblock %}
+</div>
