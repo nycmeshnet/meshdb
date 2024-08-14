@@ -31,7 +31,7 @@ SESSION_SAVE_EVERY_REQUEST = True  # "False" by default
 SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = "DEBUG" in os.environ
+DEBUG = os.environ.get("DEBUG", "False") == "True"
 PROFILING_ENABLED = DEBUG and not os.environ.get("DISABLE_PROFILING", "False") == "True"
 
 USE_X_FORWARDED_HOST = True
@@ -47,9 +47,6 @@ ALLOWED_HOSTS = [
     "devdb.mesh.nycmesh.net",
 ]
 
-# FIXME: Shit works, but also doesn't(?) work with the ^ as the first character
-# r"^https://\w+\.nycmesh\.net$",
-# r"^http://\w+\.nycmesh\.net$",
 CORS_ALLOWED_ORIGINS = [
     "http://forms.grandsvc.mesh.nycmesh.net",
     "https://forms.grandsvc.mesh.nycmesh.net",
