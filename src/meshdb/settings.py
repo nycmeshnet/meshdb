@@ -42,10 +42,8 @@ ALLOWED_HOSTS = [
     "db.mesh.nycmesh.net",
     "db.mesh",
     "db.nycmesh.net",
-    "127.0.0.1",
     "meshdb",
     "nginx",
-    "host.docker.internal",
     "devdb.mesh.nycmesh.net",
 ]
 
@@ -61,11 +59,21 @@ CORS_ALLOWED_ORIGINS = [
     "https://map.grandsvc.mesh",
     "http://forms.grandsvc.mesh",
     "https://forms.grandsvc.mesh",
-    "http://127.0.0.1:3000",
-    "http://localhost:3000",
-    "http://127.0.0.1:80",
-    "http://localhost:80",
 ]
+
+if DEBUG:
+    ALLOWED_HOSTS += [
+        "127.0.0.1",
+        "host.docker.internal",
+    ]
+
+    CORS_ALLOWED_ORIGINS += [
+        "http://127.0.0.1:3000",
+        "http://localhost:3000",
+        "http://127.0.0.1:80",
+        "http://localhost:80",
+    ]
+
 
 CSRF_TRUSTED_ORIGINS = [
     "http://db.grandsvc.mesh.nycmesh.net",
