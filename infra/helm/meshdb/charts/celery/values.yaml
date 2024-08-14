@@ -1,0 +1,86 @@
+# This pod should NOT be scaled higher.
+replicaCount: 1
+
+image:
+  repository: willnilges/meshdb
+  pullPolicy: Always
+  tag: "main"
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: false
+
+podAnnotations: {}
+podLabels: {}
+
+podSecurityContext:
+  seccompProfile:
+    type: RuntimeDefault
+securityContext: {}
+
+ingress:
+  enabled: false
+
+resources:
+  limits:
+    cpu: 100m
+    memory: 512Mi
+  #requests:
+  #  cpu: 100m
+  #  memory: 128Mi
+
+containers:
+  - name: celery-worker
+    command:
+      - sh
+      - -c
+      - ./scripts/celery/celery_worker.sh
+    livenessProbe:
+      exec:
+        # bash is needed to replace the environment variable
+        command:
+          - "sh"
+          - "-c"
+          - "python scripts/celery/probes/celery_liveness.py"
+      initialDelaySeconds: 30  # startup takes some time
+      periodSeconds: 60  # default is quite often and celery uses a lot cpu/ram then.
+      timeoutSeconds: 10  # default is too low
+    readinessProbe:
+      exec:
+        # bash is needed to replace the environment variable
+        command:
+          - "sh"
+          - "-c"
+          - "python scripts/celery/probes/celery_readiness.py"
+      initialDelaySeconds: 30
+      periodSeconds: 60
+      timeoutSeconds: 10
+  - name: celery-beat
+    command: 
+      - sh
+      - -c
+      - ./scripts/celery/celery_beat.sh
+    livenessProbe:
+      exec:
+        # bash is needed to replace the environment variable
+        command:
+          - "sh"
+          - "-c"
+          - "python scripts/celery/probes/celery_beat_liveness.py"
+      initialDelaySeconds: 30
+      periodSeconds: 60
+      timeoutSeconds: 10
+    readinessProbe:
+      exec:
+        # bash is needed to replace the environment variable
+        command:
+          - "sh"
+          - "-c"
+          - "python scripts/celery/probes/celery_beat_readiness.py"
+      initialDelaySeconds: 30
+      periodSeconds: 60
+      timeoutSeconds: 10
+
