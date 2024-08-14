@@ -3,14 +3,14 @@
     {% include "django/forms/widgets/input.html" %}
     {% block links %}
     {% spaceless %}
-    {% if widget.value %}
     <a class="related-widget-wrapper-link view-related"
+        {% if widget.value %}
             href="https://uisp.mesh.nycmesh.net/nms/devices#id={{ widget.value }}&panelType=device-panel"
+        {% endif %}
         target="_blank"
         title="{% blocktranslate %}View in UISP{% endblocktranslate %}">
         <img src="{% static 'admin/img/icon-viewlink.svg' %}" alt="{% translate 'Navigate' %}">
     </a>
-    {% endif %}
     {% endspaceless %}
     {% endblock %}
 </div>
