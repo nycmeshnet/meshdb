@@ -6,6 +6,7 @@ from django.db.models import FloatField
 
 from meshapi.models.node import Node
 
+
 class Device(models.Model):
     class DeviceStatus(models.TextChoices):
         INACTIVE = "Inactive"

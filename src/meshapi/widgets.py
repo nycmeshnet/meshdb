@@ -1,6 +1,6 @@
-from collections.abc import Callable
 import json
 import os
+from collections.abc import Callable
 from typing import Any, Dict, List, Optional
 
 from django import forms
@@ -55,7 +55,7 @@ class ExternalHyperlinkWidget(widgets.TextInput):
     # TODO: Can I let a user pass a dict and just... figure it out?
     def __init__(self, formatter):
         # fstring is a custom formatter for the URL. You can use it to pass templates and the like.
-        self.formatter = formatter 
+        self.formatter = formatter
         super().__init__()
 
     def get_link_context(self, name: str, value: str) -> dict:
@@ -73,7 +73,7 @@ class ExternalHyperlinkWidget(widgets.TextInput):
     def render(
         self, name: str, value: str, attrs: Optional[Dict[str, Any]] = None, renderer: Optional[Any] = None
     ) -> SafeString:
-        #super_template = super().render(name, value, attrs, renderer)
+        # super_template = super().render(name, value, attrs, renderer)
         context = self.get_link_context(name, value)
         super_context = self.get_context(name, value, attrs)
         super_context["widget"]["value"] = context["widget"]["value"]
@@ -85,7 +85,6 @@ class ExternalHyperlinkWidget(widgets.TextInput):
         template = super_template + template
 
         return mark_safe(template)
-
 
 
 class DeviceIPAddressWidget(widgets.TextInput):
