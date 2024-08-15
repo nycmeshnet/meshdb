@@ -8,7 +8,7 @@ from import_export.admin import ExportActionMixin, ImportExportModelAdmin
 
 from meshapi.admin.inlines import DeviceLinkInline
 from meshapi.models import Device
-from meshapi.widgets import ExternalHyperlinkWidget, UISPHyperlinkWidget
+from meshapi.widgets import ExternalHyperlinkWidget
 
 UISP_URL = os.environ.get("UISP_URL", "https://uisp.mesh.nycmesh.net")
 
