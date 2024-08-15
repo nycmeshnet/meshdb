@@ -1,3 +1,4 @@
+import os
 from django import forms
 from django.contrib import admin
 from django.db.models import QuerySet
@@ -6,15 +7,17 @@ from import_export.admin import ExportActionMixin, ImportExportModelAdmin
 
 from meshapi.admin.inlines import DeviceLinkInline
 from meshapi.models import Device
-from meshapi.widgets import UISPHyperlinkWidget
+from meshapi.widgets import ExternalHyperlinkWidget, UISPHyperlinkWidget 
 
+UISP_URL = os.environ.get("UISP_URL", "https://uisp.mesh.nycmesh.net")
 
 class DeviceAdminForm(forms.ModelForm):
     class Meta:
         model = Device
         fields = "__all__"
+        readonly_fields = ["uisp_link"]
         widgets = {
-            "uisp_id": UISPHyperlinkWidget(),
+            "uisp_id": ExternalHyperlinkWidget(lambda uisp_id: f"{UISP_URL}/nms/devices#id={uisp_id}&panelType=device-panel"),
         }
 
 

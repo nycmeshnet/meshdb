@@ -1,10 +1,10 @@
+import os
 from typing import Optional
 
 from django.db import models
 from django.db.models import FloatField
 
 from meshapi.models.node import Node
-
 
 class Device(models.Model):
     class DeviceStatus(models.TextChoices):

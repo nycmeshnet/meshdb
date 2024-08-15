@@ -1,11 +1,12 @@
+from collections.abc import Callable
 import json
 import os
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 from django import forms
 from django.forms import widgets
 from django.template import loader
-from django.utils.safestring import mark_safe
+from django.utils.safestring import SafeString, mark_safe
 from django_jsonform.widgets import JSONFormWidget
 
 
@@ -24,6 +25,7 @@ class PanoramaViewer(JSONFormWidget):
             }
         }
 
+    # FIXME (Use SafeString)
     def render(
         self, name: str, value: str, attrs: Optional[Dict[str, Any]] = None, renderer: Optional[Any] = None
     ) -> str:
@@ -45,6 +47,45 @@ class PanoramaViewer(JSONFormWidget):
             "all": ("widgets/panorama_viewer.css", "widgets/flickity.min.css"),
         }
         js = ["widgets/flickity.pkgd.min.js"]
+
+
+class ExternalHyperlinkWidget(widgets.TextInput):
+    template_name = "widgets/external_link.html"
+
+    # TODO: Can I let a user pass a dict and just... figure it out?
+    def __init__(self, formatter):
+        # fstring is a custom formatter for the URL. You can use it to pass templates and the like.
+        self.formatter = formatter 
+        super().__init__()
+
+    def get_link_context(self, name: str, value: str) -> dict:
+        formatted_value = None
+        if value:
+            formatted_value = self.formatter(value)
+        return {
+            "widget": {
+                "name": name,
+                "value": value,
+                "formatted": formatted_value,
+            }
+        }
+
+    def render(
+        self, name: str, value: str, attrs: Optional[Dict[str, Any]] = None, renderer: Optional[Any] = None
+    ) -> SafeString:
+        #super_template = super().render(name, value, attrs, renderer)
+        context = self.get_link_context(name, value)
+        super_context = self.get_context(name, value, attrs)
+        super_context["widget"]["value"] = context["widget"]["value"]
+        super_context["widget"]["formatted"] = context["widget"]["formatted"]
+        return super()._render(self.template_name, super_context, renderer)
+
+        template = loader.get_template(self.template_name).render(context)
+
+        template = super_template + template
+
+        return mark_safe(template)
+
 
 
 class DeviceIPAddressWidget(widgets.TextInput):
