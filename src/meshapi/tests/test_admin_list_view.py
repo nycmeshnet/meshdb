@@ -1,7 +1,7 @@
 from django.contrib.auth.models import User
 from django.test import Client, TestCase
 
-from meshapi.models import Building, Device, Install, Link, Member, Node, Sector
+from meshapi.models import AccessPoint, Building, Device, Install, Link, Member, Node, Sector
 from meshapi.tests.sample_data import sample_building, sample_device, sample_install, sample_member, sample_node
 
 
@@ -46,6 +46,14 @@ class TestAdminListView(TestCase):
         self.sector.node = self.node2
         self.sector.save()
 
+        self.access_point = AccessPoint(
+            **sample_device,
+            latitude=0,
+            longitude=0,
+        )
+        self.access_point.node = self.node2
+        self.access_point.save()
+
         self.link = Link(
             from_device=self.device1,
             to_device=self.device2,
@@ -76,6 +84,9 @@ class TestAdminListView(TestCase):
 
     def test_list_sector(self):
         self._call("/admin/meshapi/sector/", 200)
+
+    def test_list_accesspoint(self):
+        self._call("/admin/meshapi/accesspoint/", 200)
 
     def test_list_device(self):
         self._call("/admin/meshapi/device/", 200)

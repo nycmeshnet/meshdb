@@ -1,15 +1,15 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "meshdb.fullname" . }}-meshweb
-  namespace: {{ .Values.meshdb_app_namespace }}
+  name: {{ include "celery.fullname" . }}
+  namespace: meshdb
   labels:
-    {{- include "meshdb.labels" . | nindent 4 }}
+    {{- include "celery.labels" . | nindent 4 }}
 spec:
-  replicas: 1
+  replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      {{- include "meshdb.selectorLabels" . | nindent 6 }}
+      {{- include "celery.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       {{- with .Values.podAnnotations }}
@@ -17,24 +17,28 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       labels:
-        app: meshdb-meshweb-app
-        {{- include "meshdb.labels" . | nindent 8 }}
+        {{- include "celery.labels" . | nindent 8 }}
         {{- with .Values.podLabels }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
     spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       securityContext:
-        {{- toYaml .Values.meshweb.podSecurityContext | nindent 8 }}
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
       containers:
-        - name: {{ .Chart.Name }}-meshweb
+        {{- range .Values.containers }}
+        - name: {{ .name }}
           securityContext:
-            {{- toYaml .Values.meshweb.securityContext | nindent 12 }}
-          image: "{{ .Values.meshweb.image.repository }}:{{ .Values.meshweb.image.tag }}"
-          imagePullPolicy: {{ .Values.image.pullPolicy }}
-          ports:
-            - name: http
-              containerPort: {{ .Values.meshweb.port }}
-              protocol: TCP
+            {{- toYaml $.Values.securityContext | nindent 12 }}
+          image: "{{ $.Values.image.repository }}:{{ $.Values.image.tag | default $.Chart.AppVersion }}"
+          imagePullPolicy: {{ $.Values.image.pullPolicy }}
+          resources:
+            {{- toYaml $.Values.resources | nindent 12 }}
+          command: {{ toJson .command }}
+          # TODO (willnilges): Fix this in a later PR
           env:
             - name: DB_NAME
               valueFrom:
@@ -146,38 +150,12 @@ spec:
                 configMapKeyRef:
                   name: meshdbconfig
                   key: ADMIN_MAP_BASE_URL
-          volumeMounts:
-            - name: static-content-vol
-              mountPath: /opt/meshdb/static
-          {{ if eq .Values.meshweb.liveness_probe "true" }}
+          {{- if .livenessProbe }}
           livenessProbe:
-           exec:
-             command:
-               - curl
-               - http://127.0.0.1:{{ .Values.meshweb.port }}/api/v1
-           periodSeconds: 3
-           initialDelaySeconds: 4
-           timeoutSeconds: 3
-           {{ end }}
-          livenessProbe:
-            {{- toYaml .Values.livenessProbe | nindent 12 }}
+            {{- toYaml .livenessProbe | nindent 12 }}
+          {{- end }}
+          {{- if .readinessProbe }}
           readinessProbe:
-            {{- toYaml .Values.readinessProbe | nindent 12 }}
-          resources:
-            {{- toYaml .Values.meshweb.resources | nindent 12 }}
-      volumes:
-        - name: static-content-vol
-          persistentVolumeClaim:
-            claimName: {{ .Values.meshweb.static_pvc_name }}
-      {{- with .Values.meshweb.nodeSelector }}
-      nodeSelector:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
-      {{- with .Values.meshweb.affinity }}
-      affinity:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
-      {{- with .Values.meshweb.tolerations }}
-      tolerations:
-        {{- toYaml . | nindent 8 }}
+            {{- toYaml .readinessProbe | nindent 12 }}
+          {{- end }}
       {{- end }}

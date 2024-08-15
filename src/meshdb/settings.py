@@ -253,6 +253,7 @@ HOOK_EVENTS = {
     "los.created": "meshapi.LOS.created+",
     "device.created": "meshapi.Device.created+",
     "sector.created": "meshapi.Sector.created+",
+    "access_point.created": "meshapi.AccessPoint.created+",
     "building.updated": "meshapi.Building.updated+",
     "member.updated": "meshapi.Member.updated+",
     "install.updated": "meshapi.Install.updated+",
@@ -261,6 +262,7 @@ HOOK_EVENTS = {
     "los.updated": "meshapi.LOS.updated+",
     "device.updated": "meshapi.Device.updated+",
     "sector.updated": "meshapi.Sector.updated+",
+    "access_point.updated": "meshapi.AccessPoint.updated+",
     "building.deleted": "meshapi.Building.deleted+",
     "member.deleted": "meshapi.Member.deleted+",
     "install.deleted": "meshapi.Install.deleted+",
@@ -269,6 +271,7 @@ HOOK_EVENTS = {
     "los.deleted": "meshapi.LOS.deleted+",
     "device.deleted": "meshapi.Device.deleted+",
     "sector.deleted": "meshapi.Sector.deleted+",
+    "access_point.deleted": "meshapi.AccessPoint.deleted+",
 }
 
 HOOK_SERIALIZERS = {
@@ -280,6 +283,7 @@ HOOK_SERIALIZERS = {
     "meshapi.LOS": "meshapi.serializers.model_api.LOSSerializer",
     "meshapi.Device": "meshapi.serializers.model_api.DeviceSerializer",
     "meshapi.Sector": "meshapi.serializers.model_api.SectorSerializer",
+    "meshapi.AccessPoint": "meshapi.serializers.model_api.AccessPointSerializer",
 }
 
 HOOK_CUSTOM_MODEL = "meshapi_hooks.CelerySerializerHook"
@@ -310,12 +314,17 @@ SPECTACULAR_SETTINGS = {
         {
             "name": "Devices",
             "description": "Devices, one corresponding to each physical device on the mesh (routers, aps, cpes, etc.). "
-            "Includes all Sectors",
+            "Includes all Sectors and Access Points",
         },
         {
             "name": "Sectors",
             "description": 'Special devices with antennas with broad coverage of a radial "slice" of land area. '
             "See https://docs.nycmesh.net/hardware/liteap/",
+        },
+        {
+            "name": "Access Points",
+            "description": "Special devices which provide community WiFi to a given area, usually in a park or "
+            "other public place",
         },
         {"name": "Geographic & KML Data", "description": "Endpoints for geographic and KML data export"},
         {
