@@ -6,12 +6,16 @@ from import_export.admin import ExportActionMixin, ImportExportModelAdmin
 
 from meshapi.admin.inlines import DeviceLinkInline
 from meshapi.models import Device
+from meshapi.widgets import UISPHyperlinkWidget
 
 
 class DeviceAdminForm(forms.ModelForm):
     class Meta:
         model = Device
         fields = "__all__"
+        widgets = {
+            "uisp_id": UISPHyperlinkWidget(),
+        }
 
 
 @admin.register(Device)
