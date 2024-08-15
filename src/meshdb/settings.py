@@ -31,7 +31,7 @@ SESSION_SAVE_EVERY_REQUEST = True  # "False" by default
 SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = "DEBUG" in os.environ
+DEBUG = os.environ.get("DEBUG", "False") == "True"
 PROFILING_ENABLED = DEBUG and not os.environ.get("DISABLE_PROFILING", "False") == "True"
 
 USE_X_FORWARDED_HOST = True
@@ -42,30 +42,41 @@ ALLOWED_HOSTS = [
     "db.mesh.nycmesh.net",
     "db.mesh",
     "db.nycmesh.net",
-    "127.0.0.1",
     "meshdb",
     "nginx",
-    "host.docker.internal",
     "devdb.mesh.nycmesh.net",
 ]
 
-# FIXME: Shit works, but also doesn't(?) work with the ^ as the first character
-# r"^https://\w+\.nycmesh\.net$",
-# r"^http://\w+\.nycmesh\.net$",
 CORS_ALLOWED_ORIGINS = [
     "http://forms.grandsvc.mesh.nycmesh.net",
     "https://forms.grandsvc.mesh.nycmesh.net",
+    "https://forms.mesh.nycmesh.net",
+    "https://devforms.mesh.nycmesh.net",
     "http://map.grandsvc.mesh.nycmesh.net",
     "https://map.grandsvc.mesh.nycmesh.net",
+    "https://map.mesh.nycmesh.net",
+    "https://devmap.mesh.nycmesh.net",
+    "https://adminmap.mesh.nycmesh.net",
+    "https://devadminmap.mesh.nycmesh.net",
     "http://map.grandsvc.mesh",
     "https://map.grandsvc.mesh",
     "http://forms.grandsvc.mesh",
     "https://forms.grandsvc.mesh",
-    "http://127.0.0.1:3000",
-    "http://localhost:3000",
-    "http://127.0.0.1:80",
-    "http://localhost:80",
 ]
+
+if DEBUG:
+    ALLOWED_HOSTS += [
+        "127.0.0.1",
+        "host.docker.internal",
+    ]
+
+    CORS_ALLOWED_ORIGINS += [
+        "http://127.0.0.1:3000",
+        "http://localhost:3000",
+        "http://127.0.0.1:80",
+        "http://localhost:80",
+    ]
+
 
 CSRF_TRUSTED_ORIGINS = [
     "http://db.grandsvc.mesh.nycmesh.net",

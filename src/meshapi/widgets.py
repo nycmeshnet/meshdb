@@ -83,6 +83,10 @@ class DeviceIPAddressWidget(widgets.TextInput):
     template_name = "widgets/ip_address.html"
 
 
+class UISPHyperlinkWidget(widgets.TextInput):
+    template_name = "widgets/uisp_link.html"
+
+
 class AutoPopulateLocationWidget(forms.Widget):
     template_name = "widgets/auto_populate_location.html"
 
