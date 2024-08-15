@@ -1,7 +1,6 @@
 import json
 import os
-from collections.abc import Callable
-from typing import Any, Dict, List, Optional
+from typing import Any, Callable, Dict, Optional
 
 from django import forms
 from django.forms import widgets
@@ -52,10 +51,9 @@ class PanoramaViewer(JSONFormWidget):
 class ExternalHyperlinkWidget(widgets.TextInput):
     template_name = "widgets/external_link.html"
 
-    # TODO: Can I let a user pass a dict and just... figure it out?
-    def __init__(self, formatter):
-        # fstring is a custom formatter for the URL. You can use it to pass templates and the like.
+    def __init__(self, formatter: Callable, title: str = ""):
         self.formatter = formatter
+        self.title = title
         super().__init__()
 
     def get_link_context(self, name: str, value: str) -> dict:
@@ -67,24 +65,18 @@ class ExternalHyperlinkWidget(widgets.TextInput):
                 "name": name,
                 "value": value,
                 "formatted": formatted_value,
+                "title": self.title,
             }
         }
 
     def render(
         self, name: str, value: str, attrs: Optional[Dict[str, Any]] = None, renderer: Optional[Any] = None
     ) -> SafeString:
-        # super_template = super().render(name, value, attrs, renderer)
         context = self.get_link_context(name, value)
         super_context = self.get_context(name, value, attrs)
         super_context["widget"]["value"] = context["widget"]["value"]
         super_context["widget"]["formatted"] = context["widget"]["formatted"]
         return super()._render(self.template_name, super_context, renderer)
-
-        template = loader.get_template(self.template_name).render(context)
-
-        template = super_template + template
-
-        return mark_safe(template)
 
 
 class DeviceIPAddressWidget(widgets.TextInput):

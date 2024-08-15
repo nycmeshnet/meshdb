@@ -8,7 +8,7 @@
             href="{{ widget.formatted }}"
         {% endif %}
         target="_blank"
-        title="{% blocktranslate %}View in UISP{% endblocktranslate %}">
+        title="{% blocktranslate %}{{ widget.title }}{% endblocktranslate %}">
         <img src="{% static 'admin/img/icon-viewlink.svg' %}" alt="{% translate 'Navigate' %}">
     </a>
     {% endspaceless %}

@@ -20,7 +20,8 @@ class DeviceAdminForm(forms.ModelForm):
         readonly_fields = ["uisp_link"]
         widgets = {
             "uisp_id": ExternalHyperlinkWidget(
-                lambda uisp_id: f"{UISP_URL}/nms/devices#id={uisp_id}&panelType=device-panel"
+                lambda uisp_id: f"{UISP_URL}/nms/devices#id={uisp_id}&panelType=device-panel",
+                title="View in UISP",
             ),
         }
 
