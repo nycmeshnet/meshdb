@@ -18,7 +18,11 @@ SITE_BASE_URL = os.environ.get("SITE_BASE_URL")
 def get_admin_url(model: Model, site_base_url: str) -> str:
     content_type = ContentType.objects.get_for_model(model.__class__)
     return urljoin(
-        site_base_url, reverse("admin:%s_%s_change" % (content_type.app_label, content_type.model), args=(model.pk,))
+        site_base_url,
+        reverse(
+            f"admin:{content_type.app_label}_{content_type.model}_change",
+            args=(model.pk,),
+        ),
     )
 
 
@@ -33,7 +37,7 @@ def notify_administrators_of_data_issue(
 
     site_base_url = SITE_BASE_URL
     if request:
-        site_base_url = "{}://{}".format(request.scheme, request.get_host())
+        site_base_url = f"{request.scheme}://{request.get_host()}"
 
     if not site_base_url:
         logging.error(
