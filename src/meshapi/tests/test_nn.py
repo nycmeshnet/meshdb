@@ -3,6 +3,7 @@ import json
 import time
 from functools import partial
 from unittest import mock
+from unittest.mock import patch
 
 from django.conf import os
 from django.contrib.auth.models import User
@@ -104,6 +105,63 @@ class TestNN(TestCase):
             resp_nn,
             f"nn incorrect for test_nn_valid_install_number. Should be {expected_nn}, but got {resp_nn}",
         )
+
+    def test_building_already_has_nn(self):
+        node = Node(
+            network_number=9999,
+            status=Node.NodeStatus.ACTIVE,
+            type=Node.NodeType.STANDARD,
+            latitude=0,
+            longitude=0,
+        )
+        node.save()
+
+        self.building.primary_node = node
+        self.building.save()
+
+        response = self.admin_c.post(
+            "/api/v1/nn-assign/",
+            {"install_number": self.install_number, "password": os.environ.get("NN_ASSIGN_PSK")},
+            content_type="application/json",
+        )
+
+        code = 201
+        self.assertEqual(
+            code,
+            response.status_code,
+            f"status code incorrect for test_nn_valid_install_number. Should be {code}, but got {response.status_code}",
+        )
+
+        resp_nn = json.loads(response.content.decode("utf-8"))["network_number"]
+        expected_nn = 9999
+        self.assertEqual(
+            expected_nn,
+            resp_nn,
+            f"nn incorrect for test_nn_valid_install_number. Should be {expected_nn}, but got {resp_nn}",
+        )
+
+        self.install.refresh_from_db()
+        self.assertEqual(self.install.node, node)
+
+    @patch("meshapi.views.forms.get_next_available_network_number")
+    def test_next_nn_failure(self, mock_get_next_nn):
+        mock_get_next_nn.side_effect = ValueError("Test failure")
+
+        response = self.admin_c.post(
+            "/api/v1/nn-assign/",
+            {"install_number": self.install_number, "password": os.environ.get("NN_ASSIGN_PSK")},
+            content_type="application/json",
+        )
+
+        code = 500
+        self.assertEqual(
+            code,
+            response.status_code,
+            f"status code incorrect for test_nn_valid_install_number. Should be {code}, but got {response.status_code}",
+        )
+
+        self.assertEqual("NN Request failed. Test failure", json.loads(response.content.decode("utf-8"))["detail"])
+        self.assertEqual(0, len(Node.objects.all()))
 
     def test_nn_valid_low_install_number_unused_nn(self):
         # Check that install numbers that are valid network numbers (i.e. >10 <8192) are used

@@ -429,7 +429,7 @@ def network_number_assignment(request: Request) -> Response:
                 candidate_nn = get_next_available_network_number()
             except ValueError as exception:
                 return Response(
-                    {"detail": f"NN Request failed. {exception}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                    {"detail": f"NN Request failed. {exception.args[0]}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
                 )
 
         nn_install.node = Node(
