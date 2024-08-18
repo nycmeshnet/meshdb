@@ -30,11 +30,18 @@ from meshapi.util.uisp_import.utils import (
 
 def import_and_sync_uisp_devices(uisp_devices: List[UISPDevice]) -> None:
     for uisp_device in uisp_devices:
-        if uisp_device["identification"]["category"] in EXCLUDED_UISP_DEVICE_CATEGORIES:
-            # TODO Better error?
+        uisp_uuid = uisp_device["identification"]["id"]
+        uisp_category = uisp_device["identification"]["category"]
+        uisp_name = uisp_device["identification"]["name"]
+
+        if uisp_category in EXCLUDED_UISP_DEVICE_CATEGORIES:
+            logging.debug(
+                f"During UISP device import, {uisp_name} "
+                f'(UISP ID {uisp_uuid}) was skipped because the "{uisp_category}" has been '
+                "excluded in meshapi.util.uisp_import.constants"
+            )
             continue
 
-        uisp_name = uisp_device["identification"]["name"]
         modified_name = uisp_device["identification"]["name"]
         for find, replace in DEVICE_NAME_NETWORK_NUMBER_SUBSTITUTIONS.items():
             modified_name = modified_name.replace(find, replace)
@@ -42,8 +49,10 @@ def import_and_sync_uisp_devices(uisp_devices: List[UISPDevice]) -> None:
         network_number_matches = re.findall(NETWORK_NUMBER_REGEX_FOR_DEVICE_NAME, modified_name)
 
         if not len(network_number_matches):
-            # TODO Better error
-            logging.error(f"Couldn't find NN in device named: {uisp_name}")
+            logging.warning(
+                f"During UISP device import, {uisp_name} (UISP ID {uisp_uuid}) was skipped "
+                f"because the device name does not include anything that looks like a NN"
+            )
             continue
 
         # Take the first network number we find, since additional network numbers usually
@@ -53,8 +62,11 @@ def import_and_sync_uisp_devices(uisp_devices: List[UISPDevice]) -> None:
         try:
             uisp_node = Node.objects.get(network_number=uisp_network_number)
         except Node.DoesNotExist:
-            # TODO Better error
-            logging.error(f"Could not find Node for NN {uisp_network_number} while loading device: " f"{uisp_name}")
+            logging.warning(
+                f"During UISP device import, {uisp_name} (UISP ID {uisp_uuid}) was skipped "
+                f"because the inferred NN ({uisp_network_number}) did not correspond to any "
+                f"nodes in our database"
+            )
             continue
 
         if not uisp_device["overview"]["status"]:
@@ -66,8 +78,6 @@ def import_and_sync_uisp_devices(uisp_devices: List[UISPDevice]) -> None:
             uisp_status = Device.DeviceStatus.INACTIVE
 
         uisp_last_seen = parse_uisp_datetime(uisp_device["overview"]["lastSeen"])
-
-        uisp_uuid = uisp_device["identification"]["id"]
 
         existing_device: Optional[Device] = Device.objects.filter(uisp_id=uisp_uuid).first()
 
@@ -131,31 +141,40 @@ def import_and_sync_uisp_devices(uisp_devices: List[UISPDevice]) -> None:
 def import_and_sync_uisp_links(uisp_links: List[UISPDataLink]) -> None:
     uisp_session = get_uisp_session()
     for uisp_link in uisp_links:
-        try:
-            if not uisp_link["from"]["device"]:
-                # TODO Better error?
-                continue
-
-            uisp_from_device = Device.objects.get(uisp_id=uisp_link["from"]["device"]["identification"]["id"])
-        except Device.DoesNotExist:
-            # TODO Better error
+        uisp_uuid = uisp_link["id"]
+        if not uisp_link["from"]["device"]:
             logging.warning(
-                f"Skipping UISP link because device "
-                f"{uisp_link['from']['device']['identification']['name']} could not be found"
+                f"During UISP link import link with UISP ID {uisp_uuid} was skipped "
+                f"because the data in UISP does not indicate what device this link connects from"
             )
             continue
 
+        uisp_from_device_uuid = uisp_link["from"]["device"]["identification"]["id"]
         try:
-            if not uisp_link["to"]["device"]:
-                # TODO Better error?
-                continue
-
-            uisp_to_device = Device.objects.get(uisp_id=uisp_link["to"]["device"]["identification"]["id"])
+            uisp_from_device = Device.objects.get(uisp_id=uisp_from_device_uuid)
         except Device.DoesNotExist:
-            # TODO Better error
             logging.warning(
-                f"Skipping UISP link because device "
-                f"{uisp_link['to']['device']['identification']['name']} could not be found"
+                f"During UISP link import link with UISP ID {uisp_uuid} was skipped "
+                f"because the data in UISP references a 'from' device (UISP ID {uisp_from_device_uuid}) "
+                f"which we do not have in our database (perhaps it was skipped at device import time?)"
+            )
+            continue
+
+        if not uisp_link["to"]["device"]:
+            logging.warning(
+                f"During UISP link import link with UISP ID {uisp_uuid} was skipped "
+                f"because the data in UISP does not indicate what device this link connects to"
+            )
+            continue
+
+        uisp_to_device_uuid = uisp_link["to"]["device"]["identification"]["id"]
+        try:
+            uisp_to_device = Device.objects.get(uisp_id=uisp_to_device_uuid)
+        except Device.DoesNotExist:
+            logging.warning(
+                f"During UISP link import link with UISP ID {uisp_uuid} was skipped "
+                f"because the data in UISP references a 'to' device (UISP ID {uisp_to_device_uuid}) "
+                f"which we do not have in our database (perhaps it was skipped at device import time?)"
             )
             continue
 
@@ -166,7 +185,6 @@ def import_and_sync_uisp_links(uisp_links: List[UISPDataLink]) -> None:
 
         uisp_link_type = get_link_type(uisp_link)
 
-        uisp_uuid = uisp_link["id"]
         existing_link: Optional[Link] = Link.objects.filter(uisp_id=uisp_uuid).first()
         if existing_link:
             change_list = update_link_from_uisp_data(
@@ -200,8 +218,16 @@ def sync_link_table_into_los_objects() -> None:
         from_building = get_building_from_network_number(link.from_device.node.network_number)
         to_building = get_building_from_network_number(link.to_device.node.network_number)
 
-        if not from_building or not to_building or from_building == to_building:
-            # TODO: Log something here
+        if not from_building or not to_building:
+            logging.warning(
+                f"Found link: {link} (ID {link.id}) which appears to be missing a building on one or "
+                f"both ends. Please make sure that the following NNs have buildings associated with "
+                f"them {link.from_device.node.network_number} and {link.to_device.node.network_number}"
+            )
+            continue
+
+        if from_building == to_building:
+            # Continue silently, intra-building links are reasonably common
             continue
 
         existing_los_objects = LOS.objects.filter(
