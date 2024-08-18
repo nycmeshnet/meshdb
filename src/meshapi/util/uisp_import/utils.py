@@ -77,7 +77,11 @@ def notify_admins_of_changes(db_object: Union[Device, Link, Sector], change_list
         Link: LinkSerializer,
     }
 
-    if type(db_object) == Device:
+    # Down-class this object if needed, so that the logging messages make sense.
+    # We hide the model inheritance from admins, so they'd be confused if
+    # we called a Sector a "device" in a notification message
+    # (also the admin UI link would be wrong from their perspective)
+    if type(db_object) is Device:
         sector = Sector.objects.filter(device_ptr=db_object).first()
         access_point = AccessPoint.objects.filter(device_ptr=db_object).first()
 

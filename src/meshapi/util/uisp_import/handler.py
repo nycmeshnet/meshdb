@@ -127,8 +127,14 @@ def import_and_sync_uisp_devices(uisp_devices: List[UISPDevice]) -> None:
                 notify_admins_of_changes(
                     sector,
                     [
-                        f"Guessed azimuth of {sector.azimuth} degrees from device name. Please provide a more accurate value if available",
-                        f"Guessed coverage width of {sector.width} degrees from device type. Please provide a more accurate value if available",
+                        (
+                            f"Guessed azimuth of {sector.azimuth} degrees from device name. "
+                            f"Please provide a more accurate value if available"
+                        ),
+                        (
+                            f"Guessed coverage width of {sector.width} degrees from device type. "
+                            f"Please provide a more accurate value if available"
+                        ),
                         f"Set default radius of {sector.radius} km. Please correct if this is not accurate",
                     ],
                     created=True,

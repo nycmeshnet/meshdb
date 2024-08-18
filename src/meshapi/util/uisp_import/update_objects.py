@@ -106,8 +106,8 @@ def update_link_from_uisp_data(
                 existing_link.status = Link.LinkStatus.INACTIVE
 
                 change_messages.append(
-                    f"Marked as {Link.LinkStatus.INACTIVE} due to being offline "
-                    f"for more than {int(UISP_OFFLINE_DURATION_BEFORE_MARKING_INACTIVE.total_seconds() / 60 / 60 / 24)} days"
+                    f"Marked as {Link.LinkStatus.INACTIVE} due to being offline for more than "
+                    f"{int(UISP_OFFLINE_DURATION_BEFORE_MARKING_INACTIVE.total_seconds() / 60 / 60 / 24)} days"
                 )
 
         if uisp_status == Link.LinkStatus.ACTIVE:
