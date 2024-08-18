@@ -17,7 +17,7 @@ from meshapi.util.uisp_import.constants import (
     EXCLUDED_UISP_DEVICE_CATEGORIES,
     NETWORK_NUMBER_REGEX_FOR_DEVICE_NAME,
 )
-from meshapi.util.uisp_import.fetch_uisp import get_uisp_devices, get_uisp_links, get_uisp_session
+from meshapi.util.uisp_import.fetch_uisp import get_uisp_session
 from meshapi.util.uisp_import.update_objects import update_device_from_uisp_data, update_link_from_uisp_data
 from meshapi.util.uisp_import.utils import (
     get_building_from_network_number,
@@ -270,9 +270,3 @@ def sync_link_table_into_los_objects() -> None:
                     existing_los.analysis_date = link.last_functioning_date_estimate
 
                 existing_los.save()
-
-
-def run_uisp_import() -> None:
-    import_and_sync_uisp_devices(get_uisp_devices())
-    import_and_sync_uisp_links(get_uisp_links())
-    sync_link_table_into_los_objects()

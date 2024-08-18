@@ -4,7 +4,12 @@ import os
 from celery.schedules import crontab
 from django.core import management
 
-from meshapi.util.uisp_import.handler import run_uisp_import
+from meshapi.util.uisp_import.fetch_uisp import get_uisp_devices, get_uisp_links
+from meshapi.util.uisp_import.sync_handlers import (
+    import_and_sync_uisp_devices,
+    import_and_sync_uisp_links,
+    sync_link_table_into_los_objects,
+)
 from meshapi.views.panoramas import sync_github_panoramas
 from meshdb.celery import app as celery_app
 
@@ -36,9 +41,11 @@ def run_update_panoramas() -> None:
 
 @celery_app.task
 def run_update_from_uisp() -> None:
-    logging.info("Running UISP import & sync task")
+    logging.info("Running UISP import & sync tasks")
     try:
-        run_uisp_import()
+        import_and_sync_uisp_devices(get_uisp_devices())
+        import_and_sync_uisp_links(get_uisp_links())
+        sync_link_table_into_los_objects()
     except Exception as e:
         # Make sure the failure gets logged.
         logging.exception(e)

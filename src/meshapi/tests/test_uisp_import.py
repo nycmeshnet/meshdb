@@ -7,7 +7,7 @@ from django.test import TestCase
 
 from meshapi.models import LOS, AccessPoint, Building, Device, Link, Node, Sector
 from meshapi.serializers import AccessPointSerializer, DeviceSerializer, SectorSerializer
-from meshapi.util.uisp_import.handler import (
+from meshapi.util.uisp_import.sync_handlers import (
     import_and_sync_uisp_devices,
     import_and_sync_uisp_links,
     sync_link_table_into_los_objects,
@@ -728,8 +728,8 @@ class TestUISPImportHandlers(TestCase):
         )
         self.link2.save()
 
-    @patch("meshapi.util.uisp_import.handler.notify_admins_of_changes")
-    @patch("meshapi.util.uisp_import.handler.update_device_from_uisp_data")
+    @patch("meshapi.util.uisp_import.sync_handlers.notify_admins_of_changes")
+    @patch("meshapi.util.uisp_import.sync_handlers.update_device_from_uisp_data")
     def test_import_and_sync_devices(self, mock_update_device, mock_notify_admins):
         mock_update_device.side_effect = [
             [],
@@ -935,9 +935,9 @@ class TestUISPImportHandlers(TestCase):
 
         self.assertIsNone(Device.objects.filter(uisp_id="uisp-uuid5").first())
 
-    @patch("meshapi.util.uisp_import.handler.get_uisp_session")
-    @patch("meshapi.util.uisp_import.handler.notify_admins_of_changes")
-    @patch("meshapi.util.uisp_import.handler.update_link_from_uisp_data")
+    @patch("meshapi.util.uisp_import.sync_handlers.get_uisp_session")
+    @patch("meshapi.util.uisp_import.sync_handlers.notify_admins_of_changes")
+    @patch("meshapi.util.uisp_import.sync_handlers.update_link_from_uisp_data")
     def test_import_and_sync_links(self, mock_update_link, mock_notify_admins, mock_get_uisp_session):
         mock_update_link.side_effect = [
             [],
@@ -1105,9 +1105,9 @@ class TestUISPImportHandlers(TestCase):
 
         self.assertIsNone(Link.objects.filter(uisp_id="uisp-uuid4").first())
 
-    @patch("meshapi.util.uisp_import.handler.get_uisp_session")
-    @patch("meshapi.util.uisp_import.handler.notify_admins_of_changes")
-    @patch("meshapi.util.uisp_import.handler.update_link_from_uisp_data")
+    @patch("meshapi.util.uisp_import.sync_handlers.get_uisp_session")
+    @patch("meshapi.util.uisp_import.sync_handlers.notify_admins_of_changes")
+    @patch("meshapi.util.uisp_import.sync_handlers.update_link_from_uisp_data")
     def test_import_and_sync_invalid_uisp_links(self, mock_update_link, mock_notify_admins, mock_get_uisp_session):
         mock_get_uisp_session.return_value = "mock_uisp_session"
 
