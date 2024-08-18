@@ -8,6 +8,15 @@ from django.db.models import Q
 from meshapi.models import LOS, Device, Link, Node, Sector
 from meshapi.types.uisp_api.data_links import DataLink as UISPDataLink
 from meshapi.types.uisp_api.devices import Device as UISPDevice
+from meshapi.util.uisp_import.constants import (
+    DEFAULT_SECTOR_AZIMUTH,
+    DEFAULT_SECTOR_RADIUS,
+    DEFAULT_SECTOR_WIDTH,
+    DEVICE_MODEL_TO_BEAM_WIDTH,
+    DEVICE_NAME_NETWORK_NUMBER_SUBSTITUTIONS,
+    EXCLUDED_UISP_DEVICE_CATEGORIES,
+    NETWORK_NUMBER_REGEX_FOR_DEVICE_NAME,
+)
 from meshapi.util.uisp_import.fetch_uisp import get_uisp_devices, get_uisp_links, get_uisp_session
 from meshapi.util.uisp_import.update_objects import update_device_from_uisp_data, update_link_from_uisp_data
 from meshapi.util.uisp_import.utils import (
@@ -17,29 +26,6 @@ from meshapi.util.uisp_import.utils import (
     notify_admins_of_changes,
     parse_uisp_datetime,
 )
-
-EXCLUDED_UISP_DEVICE_CATEGORIES = ["optical"]
-
-
-DEVICE_NAME_NETWORK_NUMBER_SUBSTITUTIONS = {
-    "sn1": "227",
-    "supernode1": "227",
-    "375p": "227",
-    "sn3": "713",
-}
-
-NETWORK_NUMBER_REGEX_FOR_DEVICE_NAME = r"\b\d{1,4}\b"
-
-DEFAULT_SECTOR_AZIMUTH = 0  # decimal degrees (compass heading)
-DEFAULT_SECTOR_WIDTH = 0  # decimal degrees
-DEFAULT_SECTOR_RADIUS = 1  # km
-
-DEVICE_MODEL_TO_BEAM_WIDTH = {
-    "LAP-120": 120,
-    "LAP-GPS": 120,
-    "PS-5AC": 45,  # In reality this is based on the antenna used, this is just a guess based on our historical use
-    "RP-5AC-Gen2": 90,  # In reality this is based on the antenna used, this is just a guess based on our historical use
-}
 
 
 def import_and_sync_uisp_devices(uisp_devices: List[UISPDevice]) -> None:

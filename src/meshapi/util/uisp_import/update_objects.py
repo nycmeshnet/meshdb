@@ -4,9 +4,8 @@ from typing import List, Optional
 import requests
 
 from meshapi.models import Device, Link, Node
+from meshapi.util.uisp_import.constants import UISP_OFFLINE_DURATION_BEFORE_MARKING_INACTIVE
 from meshapi.util.uisp_import.utils import get_uisp_link_last_seen
-
-OFFLINE_DURATION_BEFORE_INACTIVE = datetime.timedelta(days=30)
 
 
 def update_device_from_uisp_data(
@@ -32,13 +31,16 @@ def update_device_from_uisp_data(
         if uisp_status == Device.DeviceStatus.INACTIVE:
             # We wait 30 days to make sure this device is actually inactive,
             # and not just temporarily offline
-            if (datetime.datetime.now(datetime.timezone.utc) - uisp_last_seen) > OFFLINE_DURATION_BEFORE_INACTIVE:
+            if (
+                datetime.datetime.now(datetime.timezone.utc) - uisp_last_seen
+            ) > UISP_OFFLINE_DURATION_BEFORE_MARKING_INACTIVE:
                 existing_device.abandon_date = uisp_last_seen.date()
                 existing_device.status = Device.DeviceStatus.INACTIVE
 
                 change_messages.append(
                     f"Marked as {Device.DeviceStatus.INACTIVE} due to being offline "
-                    f"for more than {int(OFFLINE_DURATION_BEFORE_INACTIVE.total_seconds() / 60 / 60 / 24)} days"
+                    f"for more than "
+                    f"{int(UISP_OFFLINE_DURATION_BEFORE_MARKING_INACTIVE.total_seconds() / 60 / 60 / 24)} days"
                 )
 
         if uisp_status == Device.DeviceStatus.ACTIVE:
@@ -97,13 +99,15 @@ def update_link_from_uisp_data(
         if uisp_status == Link.LinkStatus.INACTIVE:
             # We wait 30 days to make sure this link is actually inactive,
             # and not just temporarily offline
-            if (datetime.datetime.now(datetime.timezone.utc) - uisp_last_seen) > OFFLINE_DURATION_BEFORE_INACTIVE:
+            if (
+                datetime.datetime.now(datetime.timezone.utc) - uisp_last_seen
+            ) > UISP_OFFLINE_DURATION_BEFORE_MARKING_INACTIVE:
                 existing_link.abandon_date = uisp_last_seen.date()
                 existing_link.status = Link.LinkStatus.INACTIVE
 
                 change_messages.append(
                     f"Marked as {Link.LinkStatus.INACTIVE} due to being offline "
-                    f"for more than {int(OFFLINE_DURATION_BEFORE_INACTIVE.total_seconds() / 60 / 60 / 24)} days"
+                    f"for more than {int(UISP_OFFLINE_DURATION_BEFORE_MARKING_INACTIVE.total_seconds() / 60 / 60 / 24)} days"
                 )
 
         if uisp_status == Link.LinkStatus.ACTIVE:
