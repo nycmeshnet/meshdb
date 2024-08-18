@@ -31,8 +31,10 @@ SESSION_SAVE_EVERY_REQUEST = True  # "False" by default
 SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = "DEBUG" in os.environ
+DEBUG = os.environ.get("DEBUG", "False") == "True"
 PROFILING_ENABLED = DEBUG and not os.environ.get("DISABLE_PROFILING", "False") == "True"
+
+USE_X_FORWARDED_HOST = True
 
 ALLOWED_HOSTS = [
     "db.grandsvc.mesh.nycmesh.net",
@@ -40,30 +42,41 @@ ALLOWED_HOSTS = [
     "db.mesh.nycmesh.net",
     "db.mesh",
     "db.nycmesh.net",
-    "127.0.0.1",
     "meshdb",
     "nginx",
-    "host.docker.internal",
     "devdb.mesh.nycmesh.net",
 ]
 
-# FIXME: Shit works, but also doesn't(?) work with the ^ as the first character
-# r"^https://\w+\.nycmesh\.net$",
-# r"^http://\w+\.nycmesh\.net$",
 CORS_ALLOWED_ORIGINS = [
     "http://forms.grandsvc.mesh.nycmesh.net",
     "https://forms.grandsvc.mesh.nycmesh.net",
+    "https://forms.mesh.nycmesh.net",
+    "https://devforms.mesh.nycmesh.net",
     "http://map.grandsvc.mesh.nycmesh.net",
     "https://map.grandsvc.mesh.nycmesh.net",
+    "https://map.mesh.nycmesh.net",
+    "https://devmap.mesh.nycmesh.net",
+    "https://adminmap.mesh.nycmesh.net",
+    "https://devadminmap.mesh.nycmesh.net",
     "http://map.grandsvc.mesh",
     "https://map.grandsvc.mesh",
     "http://forms.grandsvc.mesh",
     "https://forms.grandsvc.mesh",
-    "http://127.0.0.1:3000",
-    "http://localhost:3000",
-    "http://127.0.0.1:80",
-    "http://localhost:80",
 ]
+
+if DEBUG:
+    ALLOWED_HOSTS += [
+        "127.0.0.1",
+        "host.docker.internal",
+    ]
+
+    CORS_ALLOWED_ORIGINS += [
+        "http://127.0.0.1:3000",
+        "http://localhost:3000",
+        "http://127.0.0.1:80",
+        "http://localhost:80",
+    ]
+
 
 CSRF_TRUSTED_ORIGINS = [
     "http://db.grandsvc.mesh.nycmesh.net",
@@ -75,6 +88,8 @@ CSRF_TRUSTED_ORIGINS = [
     "http://nginx:8080",
     "http://devdb.mesh.nycmesh.net",
     "https://devdb.mesh.nycmesh.net",
+    "http://db.mesh.nycmesh.net",
+    "https://db.mesh.nycmesh.net",
 ]
 
 # Application definition
@@ -97,6 +112,7 @@ INSTALLED_APPS = [
     "django_filters",
     "django_jsonform",
     "dbbackup",
+    "import_export",
 ]
 
 MIDDLEWARE = [
@@ -220,7 +236,7 @@ STATICFILES_DIRS = [
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 REST_FRAMEWORK = {
-    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
+    "DEFAULT_PAGINATION_CLASS": "meshapi.util.drf_utils.CustomSizePageNumberPagination",
     "PAGE_SIZE": 100,
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "rest_framework.authentication.SessionAuthentication",
@@ -237,18 +253,42 @@ HOOK_EVENTS = {
     "building.created": "meshapi.Building.created+",
     "member.created": "meshapi.Member.created+",
     "install.created": "meshapi.Install.created+",
+    "node.created": "meshapi.Node.created+",
+    "link.created": "meshapi.Link.created+",
+    "los.created": "meshapi.LOS.created+",
+    "device.created": "meshapi.Device.created+",
+    "sector.created": "meshapi.Sector.created+",
+    "access_point.created": "meshapi.AccessPoint.created+",
     "building.updated": "meshapi.Building.updated+",
     "member.updated": "meshapi.Member.updated+",
     "install.updated": "meshapi.Install.updated+",
+    "node.updated": "meshapi.Node.updated+",
+    "link.updated": "meshapi.Link.updated+",
+    "los.updated": "meshapi.LOS.updated+",
+    "device.updated": "meshapi.Device.updated+",
+    "sector.updated": "meshapi.Sector.updated+",
+    "access_point.updated": "meshapi.AccessPoint.updated+",
     "building.deleted": "meshapi.Building.deleted+",
     "member.deleted": "meshapi.Member.deleted+",
     "install.deleted": "meshapi.Install.deleted+",
+    "node.deleted": "meshapi.Node.deleted+",
+    "link.deleted": "meshapi.Link.deleted+",
+    "los.deleted": "meshapi.LOS.deleted+",
+    "device.deleted": "meshapi.Device.deleted+",
+    "sector.deleted": "meshapi.Sector.deleted+",
+    "access_point.deleted": "meshapi.AccessPoint.deleted+",
 }
 
 HOOK_SERIALIZERS = {
     "meshapi.Building": "meshapi.serializers.model_api.BuildingSerializer",
     "meshapi.Member": "meshapi.serializers.model_api.MemberSerializer",
     "meshapi.Install": "meshapi.serializers.model_api.InstallSerializer",
+    "meshapi.Node": "meshapi.serializers.model_api.NodeSerializer",
+    "meshapi.Link": "meshapi.serializers.model_api.LinkSerializer",
+    "meshapi.LOS": "meshapi.serializers.model_api.LOSSerializer",
+    "meshapi.Device": "meshapi.serializers.model_api.DeviceSerializer",
+    "meshapi.Sector": "meshapi.serializers.model_api.SectorSerializer",
+    "meshapi.AccessPoint": "meshapi.serializers.model_api.AccessPointSerializer",
 }
 
 HOOK_CUSTOM_MODEL = "meshapi_hooks.CelerySerializerHook"
@@ -273,14 +313,23 @@ SPECTACULAR_SETTINGS = {
         },
         {"name": "Links", "description": "Network links between devices"},
         {
+            "name": "LOSes",
+            "description": "Lines of sight between buildings, primarily useful to document potential future links",
+        },
+        {
             "name": "Devices",
             "description": "Devices, one corresponding to each physical device on the mesh (routers, aps, cpes, etc.). "
-            "Includes all Sectors",
+            "Includes all Sectors and Access Points",
         },
         {
             "name": "Sectors",
             "description": 'Special devices with antennas with broad coverage of a radial "slice" of land area. '
             "See https://docs.nycmesh.net/hardware/liteap/",
+        },
+        {
+            "name": "Access Points",
+            "description": "Special devices which provide community WiFi to a given area, usually in a park or "
+            "other public place",
         },
         {"name": "Geographic & KML Data", "description": "Endpoints for geographic and KML data export"},
         {
@@ -302,3 +351,6 @@ SPECTACULAR_SETTINGS = {
         "docExpansion": "none",
     },
 }
+
+IMPORT_EXPORT_IMPORT_PERMISSION_CODE = "add"
+IMPORT_EXPORT_EXPORT_PERMISSION_CODE = "view"

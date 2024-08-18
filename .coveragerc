@@ -1,0 +1,12 @@
+[run]
+omit =
+    *apps.py,
+    */migrations/*,
+    settings.py,
+    */tests/*,
+    */types/*,
+    src/meshdb/utils/spreadsheet_import/*,
+    *wsgi.py,
+    manage.py,
+    venv/*
+    .venv/*

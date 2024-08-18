@@ -61,3 +61,21 @@ jobs:
 
     - name: Pull new Docker image
       run: ssh ${{ secrets.GRANDSVC_SSH_USER }}@${{ secrets.GRANDSVC_TARGET_IP }} "cd ${{ secrets.GRANDSVC_PROJECT_PATH }} && git pull && docker compose pull && docker compose up -d"
+
+  deploy_to_dev3:
+    name: Deploy to dev 3
+    uses: ./.github/workflows/deploy-to-k8s.yaml
+    with:
+      environment: dev3
+    secrets: inherit
+    needs: push_to_registry
+    if: github.ref == 'refs/heads/main'
+
+  deploy_to_prod1:
+    name: Deploy to prod 1
+    uses: ./.github/workflows/deploy-to-k8s.yaml
+    with:
+      environment: prod
+    secrets: inherit
+    needs: push_to_registry
+    if: github.ref == 'refs/heads/main'

@@ -8,23 +8,29 @@ from rest_framework import generics
 from rest_framework.request import Request
 from rest_framework.response import Response
 
-from meshapi.models import Building, Device, Install, Link, Member, Node, Sector
+from meshapi.models import LOS, AccessPoint, Building, Device, Install, Link, Member, Node, Sector
 from meshapi.serializers import (
+    AccessPointSerializer,
     BuildingSerializer,
     DeviceSerializer,
     InstallSerializer,
     LinkSerializer,
+    LOSSerializer,
     MemberSerializer,
     NodeSerializer,
     SectorSerializer,
 )
+
+ADDITIONAL_QUERY_PARAMS = {"page_size", "page"}
 
 
 class FilterRequiredListAPIView(generics.ListAPIView):
     filterset_class: Type[filters.FilterSet]
 
     def get(self, request: Request, *args: Any, **kwargs: Any) -> Response:
-        possible_filters = set(self.filterset_class.get_filters().keys())  # type: ignore[no-untyped-call]
+        possible_filters = set(self.filterset_class.get_filters().keys()).union(  # type: ignore[no-untyped-call]
+            ADDITIONAL_QUERY_PARAMS
+        )
         provided_filters = set(self.request.query_params.keys())
         invalid_filters = provided_filters - possible_filters
 
@@ -338,13 +344,73 @@ class LookupLink(FilterRequiredListAPIView):
     filterset_class = LinkFilter
 
 
+class LOSFilter(filters.FilterSet):
+    network_number = filters.NumberFilter(method="filter_from_to_network_number")
+    install_number = filters.NumberFilter(method="filter_from_to_install_number")
+    building = filters.NumberFilter(method="filter_from_to_building_id")
+
+    def filter_from_to_network_number(self, queryset: QuerySet[LOS], field_name: str, value: int) -> QuerySet[LOS]:
+        return queryset.filter(Q(from_building__nodes=value) | Q(to_building__nodes=value))
+
+    def filter_from_to_install_number(self, queryset: QuerySet[LOS], field_name: str, value: int) -> QuerySet[LOS]:
+        return queryset.filter(Q(from_building__installs=value) | Q(to_building__installs=value))
+
+    def filter_from_to_building_id(self, queryset: QuerySet[LOS], field_name: str, value: int) -> QuerySet[LOS]:
+        return queryset.filter(Q(from_building__id=value) | Q(to_building__id=value))
+
+    class Meta:
+        model = LOS
+        fields = ["source", "analysis_date"]
+
+
+@extend_schema_view(
+    get=extend_schema(
+        tags=["LOSes"],
+        parameters=[
+            OpenApiParameter(
+                "building",
+                OpenApiTypes.INT,
+                OpenApiParameter.QUERY,
+                description="Filter LOSes by the id of the buildings they connect using strict equality",
+                required=False,
+            ),
+            OpenApiParameter(
+                "network_number",
+                OpenApiTypes.INT,
+                OpenApiParameter.QUERY,
+                description="Filter LOSes the by network_numbers of the buildings they connect using strict equality",
+                required=False,
+            ),
+            OpenApiParameter(
+                "install_number",
+                OpenApiTypes.INT,
+                OpenApiParameter.QUERY,
+                description="Filter LOSes by install_numbers of the buildings they connect using strict equality",
+                required=False,
+            ),
+            OpenApiParameter(
+                "source",
+                OpenApiTypes.STR,
+                OpenApiParameter.QUERY,
+                description="Filter LOSes by the source field using strict equality",
+                required=False,
+            ),
+        ],
+    ),
+)
+class LookupLOS(FilterRequiredListAPIView):
+    queryset = LOS.objects.all().order_by("id")
+    serializer_class = LOSSerializer
+    filterset_class = LOSFilter
+
+
 class DeviceFilter(filters.FilterSet):
     network_number = filters.NumberFilter(field_name="node", lookup_expr="exact")
     name = filters.CharFilter(field_name="name", lookup_expr="icontains")
 
     class Meta:
         model = Device
-        fields = ["type", "status", "model", "uisp_id", "ssid"]
+        fields = ["status", "uisp_id"]
 
 
 @extend_schema_view(
@@ -359,13 +425,6 @@ class DeviceFilter(filters.FilterSet):
                 required=False,
             ),
             OpenApiParameter(
-                "type",
-                OpenApiTypes.STR,
-                OpenApiParameter.QUERY,
-                description="Filter devices by the type field using strict equality",
-                required=False,
-            ),
-            OpenApiParameter(
                 "status",
                 OpenApiTypes.STR,
                 OpenApiParameter.QUERY,
@@ -373,24 +432,10 @@ class DeviceFilter(filters.FilterSet):
                 required=False,
             ),
             OpenApiParameter(
-                "model",
-                OpenApiTypes.STR,
-                OpenApiParameter.QUERY,
-                description="Filter devices by the model name field using strict equality",
-                required=False,
-            ),
-            OpenApiParameter(
                 "uisp_id",
                 OpenApiTypes.STR,
                 OpenApiParameter.QUERY,
                 description="Filter devices by the uisp_id field using strict equality",
-                required=False,
-            ),
-            OpenApiParameter(
-                "ssid",
-                OpenApiTypes.STR,
-                OpenApiParameter.QUERY,
-                description="Filter devices by the ssid field using strict equality",
                 required=False,
             ),
             OpenApiParameter(
@@ -404,7 +449,7 @@ class DeviceFilter(filters.FilterSet):
     ),
 )
 class LookupDevice(FilterRequiredListAPIView):
-    queryset = Device.objects.all().order_by("id")
+    queryset = Device.objects.all().order_by("id").prefetch_related("node")
     serializer_class = DeviceSerializer
     filterset_class = DeviceFilter
 
@@ -427,13 +472,6 @@ class SectorFilter(DeviceFilter):
                 required=False,
             ),
             OpenApiParameter(
-                "type",
-                OpenApiTypes.STR,
-                OpenApiParameter.QUERY,
-                description="Filter sectors by the type field using strict equality",
-                required=False,
-            ),
-            OpenApiParameter(
                 "status",
                 OpenApiTypes.STR,
                 OpenApiParameter.QUERY,
@@ -441,24 +479,10 @@ class SectorFilter(DeviceFilter):
                 required=False,
             ),
             OpenApiParameter(
-                "model",
-                OpenApiTypes.STR,
-                OpenApiParameter.QUERY,
-                description="Filter sectors by the model name field using strict equality",
-                required=False,
-            ),
-            OpenApiParameter(
                 "uisp_id",
                 OpenApiTypes.STR,
                 OpenApiParameter.QUERY,
                 description="Filter sectors by the uisp_id field using strict equality",
-                required=False,
-            ),
-            OpenApiParameter(
-                "ssid",
-                OpenApiTypes.STR,
-                OpenApiParameter.QUERY,
-                description="Filter sectors by the ssid field using strict equality",
                 required=False,
             ),
             OpenApiParameter(
@@ -475,3 +499,50 @@ class LookupSector(FilterRequiredListAPIView):
     queryset = Sector.objects.all().order_by("id")
     serializer_class = SectorSerializer
     filterset_class = SectorFilter
+
+
+class AccessPointFilter(DeviceFilter):
+    class Meta:
+        model = AccessPoint
+        fields = DeviceFilter.Meta.fields
+
+
+@extend_schema_view(
+    get=extend_schema(
+        tags=["Access Points"],
+        parameters=[
+            OpenApiParameter(
+                "network_number",
+                OpenApiTypes.INT,
+                OpenApiParameter.QUERY,
+                description="Filter sectors by network_number using strict equality",
+                required=False,
+            ),
+            OpenApiParameter(
+                "status",
+                OpenApiTypes.STR,
+                OpenApiParameter.QUERY,
+                description="Filter sectors by the status field using strict equality",
+                required=False,
+            ),
+            OpenApiParameter(
+                "uisp_id",
+                OpenApiTypes.STR,
+                OpenApiParameter.QUERY,
+                description="Filter sectors by the uisp_id field using strict equality",
+                required=False,
+            ),
+            OpenApiParameter(
+                "name",
+                OpenApiTypes.STR,
+                OpenApiParameter.QUERY,
+                description="Filter sectors by the name field using case-insensitve substring matching",
+                required=False,
+            ),
+        ],
+    ),
+)
+class LookupAccessPoint(FilterRequiredListAPIView):
+    queryset = AccessPoint.objects.all().order_by("id")
+    serializer_class = AccessPointSerializer
+    filterset_class = AccessPointFilter

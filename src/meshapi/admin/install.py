@@ -1,11 +1,25 @@
-from typing import Tuple
+from typing import Any, Tuple
 
+import tablib
 from django import forms
 from django.contrib import admin
 from django.db.models import QuerySet
 from django.http import HttpRequest
+from import_export import resources
+from import_export.admin import ExportActionMixin, ImportExportModelAdmin
 
 from meshapi.models import Install
+
+
+class InstallImportExportResource(resources.ModelResource):
+    def before_import(self, dataset: tablib.Dataset, **kwargs: Any) -> None:
+        if "install_number" not in dataset.headers:
+            dataset.headers.append("install_number")
+        super().before_import(dataset, **kwargs)
+
+    class Meta:
+        model = Install
+        import_id_fields = ("install_number",)
 
 
 class InstallAdminForm(forms.ModelForm):
@@ -18,8 +32,9 @@ class InstallAdminForm(forms.ModelForm):
 
 
 @admin.register(Install)
-class InstallAdmin(admin.ModelAdmin):
+class InstallAdmin(ImportExportModelAdmin, ExportActionMixin):
     form = InstallAdminForm
+    resource_classes = [InstallImportExportResource]
     list_filter = [
         ("node", admin.EmptyFieldListFilter),
         "status",

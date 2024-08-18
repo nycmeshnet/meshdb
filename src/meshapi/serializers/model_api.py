@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
 
-from meshapi.models import Building, Device, Install, Link, Member, Node, Sector
+from meshapi.models import LOS, AccessPoint, Building, Device, Install, Link, Member, Node, Sector
 
 
 class BuildingSerializer(serializers.ModelSerializer):
@@ -68,6 +68,19 @@ class DeviceSerializer(serializers.ModelSerializer):
         source="node", queryset=Node.objects.all(), required=True, allow_null=False
     )
 
+    latitude: serializers.ReadOnlyField = serializers.ReadOnlyField(
+        help_text="Approximate Device latitude in decimal degrees "
+        "(this is read through from the attached Node object, not stored separately)",
+    )
+    longitude: serializers.ReadOnlyField = serializers.ReadOnlyField(
+        help_text="Approximate Device longitude in decimal degrees "
+        "(this is read through from the attached Node object, not stored separately)",
+    )
+    altitude: serializers.ReadOnlyField = serializers.ReadOnlyField(
+        help_text='Approximate Device altitude in "absolute" meters above mean sea level '
+        "(this is read through from the attached Node object, not stored separately)",
+    )
+
     links_from: serializers.PrimaryKeyRelatedField = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
     links_to: serializers.PrimaryKeyRelatedField = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
 
@@ -81,5 +94,37 @@ class SectorSerializer(serializers.ModelSerializer):
         source="node", queryset=Node.objects.all(), required=True, allow_null=False
     )
 
+    latitude: serializers.ReadOnlyField = serializers.ReadOnlyField(
+        help_text="Approximate Device latitude in decimal degrees "
+        "(this is read through from the attached Node object, not stored separately)",
+    )
+    longitude: serializers.ReadOnlyField = serializers.ReadOnlyField(
+        help_text="Approximate Device longitude in decimal degrees "
+        "(this is read through from the attached Node object, not stored separately)",
+    )
+    altitude: serializers.ReadOnlyField = serializers.ReadOnlyField(
+        help_text='Approximate Device altitude in "absolute" meters above mean sea level '
+        "(this is read through from the attached Node object, not stored separately)",
+    )
+
     links_from: serializers.PrimaryKeyRelatedField = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
     links_to: serializers.PrimaryKeyRelatedField = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
+
+
+class AccessPointSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AccessPoint
+        exclude = ("node",)
+
+    network_number: serializers.PrimaryKeyRelatedField = serializers.PrimaryKeyRelatedField(
+        source="node", queryset=Node.objects.all(), required=True, allow_null=False
+    )
+
+    links_from: serializers.PrimaryKeyRelatedField = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
+    links_to: serializers.PrimaryKeyRelatedField = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
+
+
+class LOSSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = LOS
+        fields = "__all__"

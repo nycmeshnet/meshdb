@@ -1,8 +1,9 @@
 import json
 import logging
-import time
+import operator
 from dataclasses import dataclass
 from datetime import date
+from functools import reduce
 from json.decoder import JSONDecodeError
 
 from django.db import IntegrityError, transaction
@@ -14,13 +15,19 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework_dataclasses.serializers import DataclassSerializer
 
-from meshapi.exceptions import AddressAPIError, AddressError
+from meshapi.exceptions import AddressError
 from meshapi.models import Building, Install, Member, Node
 from meshapi.permissions import HasNNAssignPermission, LegacyNNAssignmentPassword
+from meshapi.serializers import MemberSerializer
+from meshapi.util.admin_notifications import notify_administrators_of_data_issue
 from meshapi.util.django_pglocks import advisory_lock
 from meshapi.util.network_number import get_next_available_network_number
-from meshapi.validation import NYCAddressInfo, validate_email_address, validate_phone_number
-from meshapi.zips import NYCZipCodes
+from meshapi.validation import (
+    geocode_nyc_address,
+    normalize_phone_number,
+    validate_email_address,
+    validate_phone_number,
+)
 from meshdb.utils.spreadsheet_import.building.constants import AddressTruthSource
 
 
@@ -94,15 +101,23 @@ def join_form(request: Request) -> Response:
             {"detail": "You must agree to the Network Commons License!"}, status=status.HTTP_400_BAD_REQUEST
         )
 
-    if not validate_email_address(r.email):
+    join_form_full_name = f"{r.first_name} {r.last_name}"
+
+    if not r.email and not r.phone:
+        return Response({"detail": "Must provide an email or phone number"}, status=status.HTTP_400_BAD_REQUEST)
+
+    if r.email and not validate_email_address(r.email):
         return Response({"detail": f"{r.email} is not a valid email"}, status=status.HTTP_400_BAD_REQUEST)
 
     # Expects country code!!!!
-    if not validate_phone_number(r.phone):
+    if r.phone and not validate_phone_number(r.phone):
         return Response({"detail": f"{r.phone} is not a valid phone number"}, status=status.HTTP_400_BAD_REQUEST)
 
-    # We only support the five boroughs of NYC at this time
-    if not NYCZipCodes.match_zip(r.zip):
+    formatted_phone_number = normalize_phone_number(r.phone) if r.phone else None
+
+    try:
+        nyc_addr_info = geocode_nyc_address(r.street_address, r.city, r.state, r.zip)
+    except ValueError:
         return Response(
             {
                 "detail": "Non-NYC registrations are not supported at this time. Check back later, "
@@ -110,48 +125,54 @@ def join_form(request: Request) -> Response:
             },
             status=status.HTTP_400_BAD_REQUEST,
         )
+    except AddressError as e:
+        return Response({"detail": e.args[0]}, status=status.HTTP_400_BAD_REQUEST)
 
-    nyc_addr_info = None
-    attempts_remaining = 2
-    while attempts_remaining > 0:
-        attempts_remaining -= 1
-        try:
-            nyc_addr_info = NYCAddressInfo(r.street_address, r.city, r.state, r.zip)
-            break
-        # If the user has given us an invalid address. Tell them to buzz
-        # off.
-        except AddressError as e:
-            logging.exception("AddressError when validating address")
-            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-        # If we get any other error, then there was probably an issue
-        # using the API, and we should wait a bit and re-try
-        except (AddressAPIError, Exception):
-            logging.exception("(NYC) Something went wrong validating the address. Re-trying...")
-            time.sleep(3)
-    # If we run out of tries, bail.
-    if nyc_addr_info is None:
-        logging.warn(f"Could not parse address: {r.street_address}, {r.city}, {r.state}, {r.zip}")
+    if not nyc_addr_info:
         return Response(
             {"detail": "Your address could not be validated."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
 
-    # Check if there's an existing member. Dedupe on email for now.
-    # A member can have multiple install requests
-    existing_members = Member.objects.filter(
-        Q(primary_email_address=r.email)
-        | Q(stripe_email_address=r.email)
-        | Q(additional_email_addresses__contains=[r.email])
+    # Check if there's an existing member. Group members by matching on both email and phone
+    # A member can have multiple install requests, if they move apartments for example
+    existing_member_filter_criteria = []
+    if r.email:
+        existing_member_filter_criteria.append(
+            Q(primary_email_address=r.email)
+            | Q(stripe_email_address=r.email)
+            | Q(additional_email_addresses__contains=[r.email])
+        )
+
+    if formatted_phone_number:
+        existing_member_filter_criteria.append(
+            Q(phone_number=formatted_phone_number) | Q(additional_phone_numbers=[formatted_phone_number])
+        )
+
+    existing_members = list(
+        Member.objects.filter(
+            reduce(
+                operator.or_,
+                existing_member_filter_criteria,
+            )
+        )
     )
+
     join_form_member = (
         existing_members[0]
         if len(existing_members) > 0
         else Member(
-            name=r.first_name + " " + r.last_name,
+            name=join_form_full_name,
             primary_email_address=r.email,
-            phone_number=r.phone,
+            phone_number=formatted_phone_number,
             slack_handle=None,
         )
     )
+
+    if r.email not in join_form_member.all_email_addresses:
+        join_form_member.additional_email_addresses.append(r.email)
+
+    if formatted_phone_number not in join_form_member.all_phone_numbers:
+        join_form_member.additional_phone_numbers.append(formatted_phone_number)
 
     # Try to map this address to an existing Building or group of buildings
     all_existing_buildings_for_structure = Building.objects.filter(bin=nyc_addr_info.bin)
@@ -250,6 +271,32 @@ def join_form(request: Request) -> Response:
         return Response(
             {"detail": "There was a problem saving your Install information"}, status=status.HTTP_400_BAD_REQUEST
         )
+
+    if existing_members:
+        if join_form_member.name != join_form_full_name:
+            name_change_note = (
+                f"Dropped name change: {join_form_full_name} (install request #{join_form_install.install_number})"
+            )
+            if join_form_member.notes:
+                join_form_member.notes = join_form_member.notes.strip() + "\n" + name_change_note
+            else:
+                join_form_member.notes = name_change_note
+            join_form_member.save()
+
+            notify_administrators_of_data_issue(
+                [join_form_member],
+                MemberSerializer,
+                name_change_note,
+                request,
+            )
+
+        if len(existing_members) > 1:
+            notify_administrators_of_data_issue(
+                existing_members + [join_form_member],
+                MemberSerializer,
+                "Possible duplicate member objects detected",
+                request,
+            )
 
     logging.info(
         f"JoinForm submission success. building_id: {join_form_building.id}, "

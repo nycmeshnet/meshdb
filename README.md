@@ -8,7 +8,7 @@
 
 [![Python 3.11](https://img.shields.io/badge/python-3.11-blue.svg?logo=python)](https://www.python.org/downloads/release/python-3115/)
 [![Deployment Status](https://github.com/WillNilges/meshdb/actions/workflows/publish-and-deploy.yaml/badge.svg)](https://github.com/WillNilges/meshdb/actions/workflows/publish-and-deploy.yaml)
-
+[![codecov](https://codecov.io/github/nycmeshnet/meshdb/graph/badge.svg?token=9PK9R0H6ZO)](https://codecov.io/github/nycmeshnet/meshdb)
 
 We use `MeshDB` to track information about Buildings, Members, Installs, Nodes, 
 Devices, and Links; Any info we need in order to get hardware on a rooftop near you lives in here.
@@ -110,7 +110,7 @@ your database.
 
 ```sh
 cp -R <path_to_data_dump> ./spreadsheet_data/
-./import_spreadsheet_dump.sh
+./scripts/import_spreadsheet_dump.sh
 ```
 
 If you want to do work with celery, you'll need to run a worker as well as a beat.

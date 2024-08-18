@@ -1,6 +1,7 @@
 import datetime
 import json
 import time
+from functools import partial
 from unittest import mock
 
 from django.conf import os
@@ -9,7 +10,6 @@ from django.test import Client, TestCase, TransactionTestCase
 
 from meshapi.models import Building, Install, Member, Node
 
-from ..views import get_next_available_network_number
 from .group_helpers import create_groups
 from .sample_data import sample_building, sample_install, sample_member
 from .util import TestThread
@@ -308,12 +308,6 @@ class TestFindGaps(TestCase):
         self.assertIsNotNone(Building.objects.filter(primary_node_id=131)[0].id)
 
 
-def mocked_slow_nn_lookup():
-    answer = get_next_available_network_number()
-    time.sleep(1)
-    return answer
-
-
 class TestNNRaceCondition(TransactionTestCase):
     admin_c = Client()
 
@@ -344,18 +338,22 @@ class TestNNRaceCondition(TransactionTestCase):
 
         inst["building"] = building_obj1
         inst["member"] = member_obj
+        inst["status"] = Install.InstallStatus.REQUEST_RECEIVED
 
         install_obj1 = Install(**inst)
+        install_obj1.install_number = 10001
         install_obj1.save()
 
         inst["building"] = building_obj2
 
         install_obj2 = Install(**inst)
+        install_obj2.install_number = 10002
         install_obj2.save()
 
         # Unused, just to add something else to the DB to check edge cases
         inst["building"] = building_obj3
         install_obj3 = Install(**inst)
+        install_obj3.install_number = 10003
         install_obj3.save()
 
         self.install_number1 = install_obj1.install_number
@@ -366,7 +364,7 @@ class TestNNRaceCondition(TransactionTestCase):
 
         def invoke_nn_form(install_num: int, outputs_dict: dict):
             # Slow down the call which looks up the NN to force the race condition
-            with mock.patch("meshapi.views.forms.get_next_available_network_number", mocked_slow_nn_lookup):
+            with mock.patch("meshapi.util.network_number.no_op", partial(time.sleep, 1)):
                 result = self.admin_c.post(
                     "/api/v1/nn-assign/",
                     {"install_number": install_num, "password": os.environ.get("NN_ASSIGN_PSK")},
@@ -411,12 +409,78 @@ class TestNNRaceCondition(TransactionTestCase):
             f"status code incorrect for test_nn_valid_install_number. Should be {code}, but got {response2.status_code}",
         )
 
+    def test_save_and_form_race_condition(self):
+        outputs_dict = {}
+
+        def invoke_nn_form(install_num: int, outputs_dict: dict):
+            # Slow down the call which looks up the NN to force the race condition
+            with mock.patch("meshapi.util.network_number.no_op", partial(time.sleep, 1)):
+                result = self.admin_c.post(
+                    "/api/v1/nn-assign/",
+                    {"install_number": install_num, "password": os.environ.get("NN_ASSIGN_PSK")},
+                    content_type="application/json",
+                )
+                outputs_dict[install_num] = result
+
+        def invoke_nn_lookup_from_save(outputs_dict: dict):
+            try:
+                # Slow down the call which looks up the NN to force the race condition
+                with mock.patch("meshapi.util.network_number.no_op", partial(time.sleep, 1)):
+                    node = Node(
+                        status=Node.NodeStatus.PLANNED,
+                        type=Node.NodeType.STANDARD,
+                        latitude=0,
+                        longitude=0,
+                    )
+                    # This save() should cause a call to get_next_available_network_number()
+                    # in order to determine the primary key prior to DB write, but since we slowed it
+                    # down, a race condition will occur unless the save() func properly protects the call
+                    node.save()
+                    node.refresh_from_db()
+                    outputs_dict["save_call"] = node.network_number
+            except Exception as e:
+                outputs_dict["save_call"] = e
+
+        t1 = TestThread(target=invoke_nn_form, args=(self.install_number1, outputs_dict))
+        t2 = TestThread(target=invoke_nn_lookup_from_save, args=(outputs_dict,))
+
+        t1.start()
+        t2.start()
+
+        t1.join()
+        t2.join()
+
+        response1 = outputs_dict[self.install_number1]
+
+        # Re-raise the exception from the .save() call to fail the test if needed
+        # (.join() does not do this propagation automatically)
+        if isinstance(outputs_dict["save_call"], Exception):
+            raise ValueError() from outputs_dict[outputs_dict["save_call"]]
+
+        code = 201
+        self.assertEqual(
+            code,
+            response1.status_code,
+            f"status code incorrect for test_nn_valid_install_number. Should be {code}, but got {response1.status_code}",
+        )
+
+        resp_nns = {
+            json.loads(response1.content.decode("utf-8"))["network_number"],
+            outputs_dict["save_call"],
+        }
+        expected_nns = {101, 102}
+        self.assertEqual(
+            expected_nns,
+            resp_nns,
+            f"NNs incorrect for test_nn_valid_install_number. Should be {expected_nns}, but got {resp_nns}",
+        )
+
     def test_same_install_race_condition(self):
         outputs = []
 
         def invoke_nn_form(install_num: int, outputs: list):
             # Slow down the call which looks up the NN to force the race condition
-            with mock.patch("meshapi.views.forms.get_next_available_network_number", mocked_slow_nn_lookup):
+            with mock.patch("meshapi.util.network_number.no_op", partial(time.sleep, 1)):
                 result = self.admin_c.post(
                     "/api/v1/nn-assign/",
                     {"install_number": install_num, "password": os.environ.get("NN_ASSIGN_PSK")},

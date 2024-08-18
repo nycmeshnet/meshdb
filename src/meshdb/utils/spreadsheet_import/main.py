@@ -203,6 +203,12 @@ def main():
         logging.debug("Top 15 duplicate emails and submission counts:")
         for email, count in sorted(member_duplicate_counts.items(), key=lambda item: item[1], reverse=True)[:15]:
             logging.debug(f"{email}: {count}")
+
+        logging.info(f"Importing devices from UISP & '{sectors_path}'")
+        load_devices_supplement_with_uisp(get_spreadsheet_sectors(sectors_path))
+
+        logging.info(f"Importing links from UISP & '{links_path}'")
+        load_links_supplement_with_uisp(get_spreadsheet_links((links_path)))
     except BaseException as e:
         if isinstance(e, KeyboardInterrupt):
             logging.error("Received keyboard interrupt, exiting early...")
@@ -213,12 +219,6 @@ def main():
         # Always print the failure report on our way out, even if we're interrupted
         print_failure_report(skipped, form_responses_path)
         print_dropped_edit_report(dropped_modifications, form_responses_path)
-
-    logging.info(f"Importing devices from UISP & '{sectors_path}'")
-    load_devices_supplement_with_uisp(get_spreadsheet_sectors(sectors_path))
-
-    logging.info(f"Importing links from UISP & '{links_path}'")
-    load_links_supplement_with_uisp(get_spreadsheet_links((links_path)))
 
 
 if __name__ == "__main__":

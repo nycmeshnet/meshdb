@@ -1,0 +1,137 @@
+# Default values for meshdb.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+pg:
+  dbname: meshdb
+  user: meshdb
+  port: "5432"
+  pvc_name: "meshdb-postgres-pvc"
+  pvc_size: "20Gi"
+  liveness_probe: "true"
+  podSecurityContext: {}
+  # fsGroup: 2000
+  securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+  resources: {}
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+  nodeSelector: {}
+  affinity: {}
+  tolerations: []
+
+meshweb:
+  port: 8081
+  enable_debug: "False"
+  disable_profiling: "True"
+  disable_pano_edits: "True"
+  static_pvc_name: "meshdb-static-pvc"
+  static_pvc_size: "1Gi"
+  liveness_probe: "true"
+  image:
+    repository: willnilges/meshdb
+    tag: main
+  podSecurityContext: {}
+  securityContext: {}
+  resources: {}
+  nodeSelector: {}
+  affinity: {}
+  tolerations: []
+
+pgadmin:
+  port: 80
+  image:
+    repository: docker.io/dpage/pgadmin4
+    tag: 8.9
+  liveness_probe: "false"
+  podSecurityContext: {}
+  securityContext: {}
+  resources: {}
+  nodeSelector: {}
+  affinity: {}
+  tolerations: []
+
+nginx:
+  port: 80
+  podSecurityContext: {}
+  securityContext: {}
+  resources: {}
+  nodeSelector: {}
+  affinity: {}
+  tolerations: []
+
+ingress:
+  enabled: true
+  targetService: meshdb-nginx # Testing this out
+  className: "traefik"
+  annotations: {}
+    # kubernetes.io/ingress.class: nginx
+    # kubernetes.io/tls-acme: "true"
+  hosts:
+    - host: db.mesh.nycmesh.net # This will get overridden. Set Values.ingress.hosts[0].host
+      paths:
+        - path: /
+          pathType: Prefix 
+  tls: []
+
+uisp:
+  url: "https://uisp.mesh.nycmesh.net/nms"
+
+redis:
+  liveness_probe: "true"
+  port: 6379
+  podSecurityContext: {}
+  securityContext: {}
+  resources: {}
+  nodeSelector: {}
+  affinity: {}
+  tolerations: []
+
+pelias:
+  port: 3000
+  podSecurityContext: {}
+  securityContext: {}
+  resources: {}
+  nodeSelector: {}
+  affinity: {}
+  tolerations: []
+
+image:
+  pullPolicy: Always
+
+nameOverride: ""
+fullnameOverride: "meshdb"
+
+#serviceAccount:
+#  # Specifies whether a service account should be created
+#  create: true
+#  # Automatically mount a ServiceAccount's API credentials?
+#  automount: true
+#  # Annotations to add to the service account
+#  annotations: {}
+#  # The name of the service account to use.
+#  # If not set and create is true, a name is generated using the fullname template
+#  name: ""
+
+podAnnotations: {}
+podLabels: {}
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 100
+  targetCPUUtilizationPercentage: 80
+  # targetMemoryUtilizationPercentage: 80

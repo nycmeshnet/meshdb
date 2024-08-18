@@ -7,12 +7,14 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.request import Request
 from rest_framework.response import Response
 
-from meshapi.models import Building, Device, Install, Link, Member, Node, Sector
+from meshapi.models import LOS, AccessPoint, Building, Device, Install, Link, Member, Node, Sector
 from meshapi.serializers import (
+    AccessPointSerializer,
     BuildingSerializer,
     DeviceSerializer,
     InstallSerializer,
     LinkSerializer,
+    LOSSerializer,
     MemberSerializer,
     NodeSerializer,
     SectorSerializer,
@@ -143,11 +145,31 @@ class LinkDetail(generics.RetrieveUpdateDestroyAPIView):
 
 
 @extend_schema_view(
+    get=extend_schema(tags=["LOSes"]),
+    post=extend_schema(tags=["LOSes"]),
+)
+class LOSList(generics.ListCreateAPIView):
+    queryset = LOS.objects.all()
+    serializer_class = LOSSerializer
+
+
+@extend_schema_view(
+    get=extend_schema(tags=["LOSes"]),
+    put=extend_schema(tags=["LOSes"]),
+    patch=extend_schema(tags=["LOSes"]),
+    delete=extend_schema(tags=["LOSes"]),
+)
+class LOSDetail(generics.RetrieveUpdateDestroyAPIView):
+    queryset = LOS.objects.all()
+    serializer_class = LOSSerializer
+
+
+@extend_schema_view(
     get=extend_schema(tags=["Devices"]),
     post=extend_schema(tags=["Devices"]),
 )
 class DeviceList(generics.ListCreateAPIView):
-    queryset = Device.objects.all()
+    queryset = Device.objects.all().prefetch_related("node")
     serializer_class = DeviceSerializer
 
 
@@ -158,7 +180,7 @@ class DeviceList(generics.ListCreateAPIView):
     delete=extend_schema(tags=["Devices"]),
 )
 class DeviceDetail(generics.RetrieveUpdateDestroyAPIView):
-    queryset = Device.objects.all()
+    queryset = Device.objects.all().prefetch_related("node")
     serializer_class = DeviceSerializer
 
 
@@ -180,3 +202,23 @@ class SectorList(generics.ListCreateAPIView):
 class SectorDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = Sector.objects.all()
     serializer_class = SectorSerializer
+
+
+@extend_schema_view(
+    get=extend_schema(tags=["Access Points"]),
+    post=extend_schema(tags=["Access Points"]),
+)
+class AccessPointList(generics.ListCreateAPIView):
+    queryset = AccessPoint.objects.all()
+    serializer_class = AccessPointSerializer
+
+
+@extend_schema_view(
+    get=extend_schema(tags=["Access Points"]),
+    put=extend_schema(tags=["Access Points"]),
+    patch=extend_schema(tags=["Access Points"]),
+    delete=extend_schema(tags=["Access Points"]),
+)
+class AccessPointDetail(generics.RetrieveUpdateDestroyAPIView):
+    queryset = AccessPoint.objects.all()
+    serializer_class = AccessPointSerializer

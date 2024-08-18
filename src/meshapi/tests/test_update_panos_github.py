@@ -5,9 +5,16 @@ from django.contrib.auth.models import User
 from django.test import Client, TestCase
 
 from meshapi.models import Building, Install, Member
-from meshapi.views import panoramas
+from meshapi.models.node import Node
+from meshapi.views.panoramas import (
+    BadPanoramaTitle,
+    PanoramaTitle,
+    get_head_tree_sha,
+    list_files_in_git_directory,
+    set_panoramas,
+)
 
-from .sample_data import sample_building, sample_install, sample_member
+from .sample_data import sample_building, sample_install, sample_member, sample_node
 
 
 class TestPanoPipeline(TestCase):
@@ -23,6 +30,10 @@ class TestPanoPipeline(TestCase):
         self.member.save()
         sample_install_copy["member"] = self.member
 
+        self.node = Node(**sample_node)
+        self.node.save()
+        sample_install_copy["node"] = self.node
+
         self.install = Install(**sample_install_copy)
         self.install.save()
 
@@ -34,24 +45,31 @@ class TestPanoPipeline(TestCase):
     def test_set_panoramas(self):
         # Fabricate some fake panorama photos
         n = self.install.install_number
-        panos = {n: [f"{n}.jpg", f"{n}a.jpg"]}
+        nn = self.install.node.network_number
+        panos = {
+            str(n): PanoramaTitle.from_filenames([f"{n}.jpg", f"{n}a.jpg"]),
+            f"nn{nn}": PanoramaTitle.from_filenames([f"nn{nn}.jpg", f"nn{nn}a.jpg"]),
+        }
 
-        panoramas.set_panoramas(panos)
+        set_panoramas(panos)
 
         # Now check that that worked.
         building = Building.objects.get(id=self.install.building.id)
         saved_panoramas = [
             f"https://node-db.netlify.app/panoramas/{n}.jpg",
             f"https://node-db.netlify.app/panoramas/{n}a.jpg",
+            f"https://node-db.netlify.app/panoramas/nn{nn}.jpg",
+            f"https://node-db.netlify.app/panoramas/nn{nn}a.jpg",
         ]
+        print(building.panoramas)
         self.assertEqual(saved_panoramas, building.panoramas)
 
     def test_update_panoramas(self):
         # Fabricate some fake panorama photos
         n = self.install.install_number
-        panos = {n: [f"{n}.jpg", f"{n}a.jpg"]}
+        panos = {str(n): PanoramaTitle.from_filenames([f"{n}.jpg", f"{n}a.jpg"])}
 
-        panoramas.set_panoramas(panos)
+        set_panoramas(panos)
 
         # Now check that that worked.
         building = Building.objects.get(id=self.install.building.id)
@@ -62,9 +80,9 @@ class TestPanoPipeline(TestCase):
         self.assertEqual(saved_panoramas, building.panoramas)
 
         # Now add one from the previous list, and a new one.
-        panos = {n: [f"{n}.jpg", f"{n}b.jpg"]}
+        panos = {str(n): PanoramaTitle.from_filenames([f"{n}.jpg", f"{n}b.jpg"])}
 
-        panoramas.set_panoramas(panos)
+        set_panoramas(panos)
 
         # Now check that that worked. We want all three
         building = Building.objects.get(id=self.install.building.id)
@@ -132,32 +150,43 @@ class TestPanoUtils(TestCase):
     def test_parse_pano_title(self):
         test_cases = {
             # Normal cases
-            "9035.jpg": ("9035", ""),
-            "9035a.jpg": ("9035", "a"),
+            "9035.jpg": PanoramaTitle("9035.jpg", False, "9035", ""),
+            "9035a.jpg": PanoramaTitle("9035a.jpg", False, "9035", "a"),
+            # Network Numbers
+            "nn632.jpg": PanoramaTitle("nn632.jpg", True, "632", ""),
             # Hypotheticals
-            "903590232289437230978078923047589204710578901457891230587abcdefghijklmnopqrstuv.jpg": (
+            "903590232289437230978078923047589204710578901457891230587abcdefghijklmnopqrstuv.jpg": PanoramaTitle(
+                "903590232289437230978078923047589204710578901457891230587abcdefghijklmnopqrstuv.jpg",
+                False,
                 "903590232289437230978078923047589204710578901457891230587",
                 "abcdefghijklmnopqrstuv",
             ),
-            "888.jpg.jpg": ("888", ".jpg"),
+            "nn903590232289437230978078923047589204710578901457891230587abcdefghijklmnopqrstuv.jpg": PanoramaTitle(
+                "nn903590232289437230978078923047589204710578901457891230587abcdefghijklmnopqrstuv.jpg",
+                True,
+                "903590232289437230978078923047589204710578901457891230587",
+                "abcdefghijklmnopqrstuv",
+            ),
+            "888.jpg.jpg": PanoramaTitle("888.jpg.jpg", False, "888", ".jpg"),
             # Dumb edge cases
-            "IMG_5869.jpg": ("5869", ""),
-            " 11001d.jpg": ("11001", "d"),
+            "IMG_5869.jpg": PanoramaTitle("IMG_5869.jpg", False, "5869", ""),
+            " 11001d.jpg": PanoramaTitle(" 11001d.jpg", False, "11001", "d"),
         }
         for case, expected in test_cases.items():
-            result = panoramas.parse_pano_title(case)
+            result = PanoramaTitle.from_filename(case)
             self.assertEqual(result, expected, f"Expected: {expected}. Result: {result}.")
+            # TODO: Assert that all the URL functions and stuff work
 
     # The GitHub does not have a perfectly uniform set of files.
     def test_parse_pano_bad_title(self):
-        with self.assertRaises(panoramas.BadPanoramaTitle):
+        with self.assertRaises(BadPanoramaTitle):
             test_cases = {
                 "Icon\r": ("", ""),
                 "": ("", ""),
                 "chom": ("", ""),
             }
             for case, _ in test_cases.items():
-                panoramas.parse_pano_title(case)
+                PanoramaTitle.from_filename(case)
 
     # Crude test to sanity check that fn
     # Also this API likes to give me 500s and it would be nice to know if that was
@@ -173,11 +202,11 @@ class TestPanoUtils(TestCase):
         }
         mock_requests.return_value = mock_response
 
-        head_tree_sha = panoramas.get_head_tree_sha(self.owner, self.repo, self.branch)
+        head_tree_sha = get_head_tree_sha(self.owner, self.repo, self.branch)
         assert head_tree_sha is not None
         assert head_tree_sha == "4"
 
-        panorama_files = panoramas.list_files_in_git_directory(self.owner, self.repo, self.directory, head_tree_sha)
+        panorama_files = list_files_in_git_directory(self.owner, self.repo, self.directory, head_tree_sha)
         assert panorama_files is not None
         assert len(panorama_files) == 1
         assert panorama_files[0] == "lol.txt"

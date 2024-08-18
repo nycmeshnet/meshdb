@@ -1,15 +1,22 @@
 import json
 import logging
+import time
 from dataclasses import dataclass
+from typing import List, Optional
 
 import phonenumbers
 import requests
+from django.core.exceptions import ValidationError
 from validate_email import validate_email
 
 from meshapi.exceptions import AddressAPIError, AddressError, OpenDataAPIError
 from meshapi.util.constants import DEFAULT_EXTERNAL_API_TIMEOUT_SECONDS, INVALID_ALTITUDE
+from meshapi.zips import NYCZipCodes
 from meshdb.utils.spreadsheet_import.building.constants import INVALID_BIN_NUMBERS
 from meshdb.utils.spreadsheet_import.building.pelias import humanify_street_address
+
+NYC_PLANNING_LABS_GEOCODE_URL = "https://geosearch.planninglabs.nyc/v2/search"
+DOB_BUILDING_HEIGHT_API_URL = "https://data.cityofnewyork.us/resource/qb5r-6dgf.json"
 
 
 def validate_email_address(email_address: str) -> bool:
@@ -23,15 +30,21 @@ def validate_email_address(email_address: str) -> bool:
     )
 
 
-# Expects country code!!!!
-def validate_phone_number(phone_number: str) -> bool:
+def normalize_phone_number(phone_number: str) -> str:
+    return phonenumbers.format_number(
+        phonenumbers.parse(phone_number, "US"),
+        phonenumbers.PhoneNumberFormat.INTERNATIONAL,
+    )
+
+
+def validate_phone_number(phone_number: str) -> Optional[phonenumbers.PhoneNumber]:
     try:
-        parsed = phonenumbers.parse(phone_number, None)
+        parsed = phonenumbers.parse(phone_number, "US")
         if not phonenumbers.is_possible_number(parsed):
-            return False
+            return None
+        return parsed
     except phonenumbers.NumberParseException:
-        return False
-    return True
+        return None
 
 
 # Used to obtain info about addresses within NYC. Uses a pair of APIs
@@ -49,11 +62,11 @@ class NYCAddressInfo:
     altitude: float | None
     bin: int | None
 
-    def __init__(self, street_address: str, city: str, state: str, zip: int):
+    def __init__(self, street_address: str, city: str, state: str, zip_code: int):
         if state != "New York" and state != "NY":
             raise ValueError(f"(NYC) State '{state}' is not New York.")
 
-        self.address = f"{street_address}, {city}, {state} {zip}"
+        self.address = f"{street_address}, {city}, {state} {zip_code}"
 
         try:
             # Look up BIN in NYC Planning's Authoritative Search
@@ -63,7 +76,7 @@ class NYCAddressInfo:
                 "size": "1",
             }
             nyc_planning_req = requests.get(
-                "https://geosearch.planninglabs.nyc/v2/search",
+                NYC_PLANNING_LABS_GEOCODE_URL,
                 params=query_params,
                 timeout=DEFAULT_EXTERNAL_API_TIMEOUT_SECONDS,
             )
@@ -84,10 +97,10 @@ class NYCAddressInfo:
         # error. Either the error message needs to be re-worked, or additional
         # validation is required to figure out exactly what is wrong.
         found_zip = int(nyc_planning_resp["features"][0]["properties"]["postalcode"])
-        if found_zip != zip:
+        if found_zip != zip_code:
             raise AddressError(
-                f"(NYC) Could not find address '{street_address}, {city}, {state} {zip}'. "
-                f"Zip code ({zip}) is probably not within city limits"
+                f"(NYC) Could not find address '{street_address}, {city}, {state} {zip_code}'. "
+                f"Zip code ({zip_code}) is incorrect or not within city limits"
             )
 
         addr_props = nyc_planning_resp["features"][0]["properties"]
@@ -102,7 +115,10 @@ class NYCAddressInfo:
         # TODO (willnilges): Bail if no BIN. Given that we're guaranteeing this is NYC, if
         # there is no BIN, then we've really foweled something up
         if int(addr_props["addendum"]["pad"]["bin"]) in INVALID_BIN_NUMBERS:
-            raise AddressAPIError
+            raise AddressError(
+                f"(NYC) Could not find address '{street_address}, {city}, {state} {zip_code}'. "
+                f"DOB API returned invalid BIN: {addr_props['addendum']['pad']['bin']}"
+            )
         self.bin = addr_props["addendum"]["pad"]["bin"]
         self.longitude, self.latitude = nyc_planning_resp["features"][0]["geometry"]["coordinates"]
 
@@ -115,7 +131,7 @@ class NYCAddressInfo:
                 "$limit": "1",
             }
             nyc_dataset_req = requests.get(
-                "https://data.cityofnewyork.us/resource/qb5r-6dgf.json",
+                DOB_BUILDING_HEIGHT_API_URL,
                 params=query_params,
                 timeout=DEFAULT_EXTERNAL_API_TIMEOUT_SECONDS,
             )
@@ -141,3 +157,42 @@ class NYCAddressInfo:
         except Exception:
             self.altitude = INVALID_ALTITUDE
             logging.exception(f"An error occurred while trying to find ({self.bin}) in NYC OpenData")
+
+
+def validate_multi_phone_number_field(phone_number_list: List[str]) -> None:
+    for num in phone_number_list:
+        validate_phone_number_field(num)
+
+
+def validate_phone_number_field(phone_number: str) -> None:
+    if not validate_phone_number(phone_number):
+        raise ValidationError(f"Invalid phone number: {phone_number}")
+
+
+def geocode_nyc_address(street_address: str, city: str, state: str, zip_code: int) -> Optional[NYCAddressInfo]:
+    # We only support the five boroughs of NYC at this time
+    if not NYCZipCodes.match_zip(zip_code):
+        raise ValueError(f"Non-NYC zip code detected: {zip_code}")
+
+    attempts_remaining = 2
+    while attempts_remaining > 0:
+        attempts_remaining -= 1
+        try:
+            nyc_addr_info = NYCAddressInfo(street_address, city, state, zip_code)
+            return nyc_addr_info
+        # If the user has given us an invalid address. Tell them to buzz
+        # off.
+        except AddressError as e:
+            logging.exception("AddressError when validating address")
+            # Raise to next level
+            raise e
+
+        # If we get any other error, then there was probably an issue
+        # using the API, and we should wait a bit and re-try
+        except (AddressAPIError, Exception):
+            logging.exception("(NYC) Something went wrong validating the address. Re-trying...")
+            time.sleep(3)
+
+    # If we run out of tries, bail.
+    logging.warning(f"Could not parse address: {street_address}, {city}, {state}, {zip_code}")
+    return None

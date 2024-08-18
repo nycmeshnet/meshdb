@@ -13,7 +13,7 @@ django.setup()
 
 import dateutil.parser
 
-from meshapi.models import Device, Install, Node, Sector
+from meshapi.models import AccessPoint, Device, Install, Node, Sector
 from meshdb.utils.spreadsheet_import.csv_load import (
     SpreadsheetRow,
     SpreadsheetSector,
@@ -66,10 +66,6 @@ def create_device(nn: int, uisp_device: dict, spreadsheet_sector: Optional[Sprea
         logging.error(f'Could not find Node for NN {nn} while loading device: {uisp_device["identification"]["name"]}')
         return
 
-    uisp_model = uisp_device["identification"]["model"]
-    if uisp_model == "UNKNOWN":
-        uisp_model = uisp_device["identification"]["modelName"]
-
     if len(Device.objects.filter(uisp_id=uisp_device["identification"]["id"])):
         logging.warning(
             f'Skipping creation of duplicate device with UISP ID {uisp_device["identification"]["id"]} '
@@ -77,24 +73,7 @@ def create_device(nn: int, uisp_device: dict, spreadsheet_sector: Optional[Sprea
         )
         return
 
-    uisp_ip_addresses = list(
-        set(
-            addr.split("/")[0]
-            for addr in uisp_device["ipAddressList"] + [uisp_device["ipAddress"]]
-            if addr and not addr.startswith("169") and not addr.startswith("192")
-        )
-    )
-    uisp_ip_address = uisp_ip_addresses[0] if uisp_ip_addresses else None
-    if uisp_ip_addresses[1:]:
-        logging.warning(
-            f"Discarding IP addresses: {uisp_ip_addresses[1:]} for UISP device: "
-            f"{uisp_device['identification']['name']}"
-        )
-
     if spreadsheet_sector:
-        if not uisp_model:
-            uisp_model = spreadsheet_sector.device
-
         sector_notes = "\n".join([spreadsheet_sector.notes, spreadsheet_sector.comments]).strip()
 
         if spreadsheet_sector.status == SpreadsheetSectorStatus.active:
@@ -110,25 +89,15 @@ def create_device(nn: int, uisp_device: dict, spreadsheet_sector: Optional[Sprea
             node=node,
             name=uisp_device["identification"]["name"],
             uisp_id=uisp_device["identification"]["id"],
-            model=uisp_model,
-            type=uisp_device["identification"]["role"],
-            ip_address=uisp_ip_address,
             status=status,
-            latitude=node.latitude,
-            longitude=node.longitude,
-            altitude=node.altitude,
             radius=spreadsheet_sector.radius,
             azimuth=spreadsheet_sector.azimuth,
             width=spreadsheet_sector.width,
-            ssid=spreadsheet_sector.ssid,
             install_date=spreadsheet_sector.install_date,
             abandon_date=spreadsheet_sector.abandon_date,
             notes=sector_notes if sector_notes else None,
         )
     else:
-        if not uisp_model:
-            uisp_model = "Unknown"
-
         if not uisp_device["overview"]["status"]:
             # If UISP doesn't have a status value, assume active
             status = Device.DeviceStatus.ACTIVE
@@ -141,13 +110,7 @@ def create_device(nn: int, uisp_device: dict, spreadsheet_sector: Optional[Sprea
             node=node,
             name=uisp_device["identification"]["name"],
             uisp_id=uisp_device["identification"]["id"],
-            model=uisp_model,
-            type=uisp_device["identification"]["role"],
-            ip_address=uisp_ip_address,
             status=status,
-            latitude=node.latitude,
-            longitude=node.longitude,
-            altitude=node.altitude,
             install_date=parse_uisp_datetime(uisp_device["overview"]["createdAt"]),
             abandon_date=(
                 parse_uisp_datetime(uisp_device["overview"]["lastSeen"])
@@ -236,11 +199,9 @@ def load_access_points(spreadsheet_installs: List[SpreadsheetRow]):
         if "AP" in row.notes:
             node = Install.objects.get(install_number=row.id).node
 
-            ap_device = Device(
+            ap_device = AccessPoint(
                 node=node,
                 name=f"{row.nodeName} AP" if row.nodeName else "AP",
-                model="Unknown",
-                type=Device.DeviceType.AP,
                 status=(
                     Device.DeviceStatus.ACTIVE
                     if row.status == SpreadsheetStatus.installed
@@ -248,6 +209,7 @@ def load_access_points(spreadsheet_installs: List[SpreadsheetRow]):
                 ),
                 latitude=row.latitude,
                 longitude=row.longitude,
+                altitude=row.altitude,
                 install_date=row.installDate,
                 abandon_date=row.abandonDate,
                 notes=f"Spreadsheet Notes:\n{row.notes}\n{row.notes2}\n{row.installNotes}\n"

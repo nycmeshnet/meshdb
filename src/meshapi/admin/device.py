@@ -2,11 +2,11 @@ from django import forms
 from django.contrib import admin
 from django.db.models import QuerySet
 from django.http import HttpRequest
+from import_export.admin import ExportActionMixin, ImportExportModelAdmin
 
-from meshapi.admin.admin import device_fieldsets
 from meshapi.admin.inlines import DeviceLinkInline
 from meshapi.models import Device
-from meshapi.widgets import DeviceIPAddressWidget
+from meshapi.widgets import UISPHyperlinkWidget
 
 
 class DeviceAdminForm(forms.ModelForm):
@@ -14,31 +14,57 @@ class DeviceAdminForm(forms.ModelForm):
         model = Device
         fields = "__all__"
         widgets = {
-            "ip_address": DeviceIPAddressWidget(),
+            "uisp_id": UISPHyperlinkWidget(),
         }
 
 
 @admin.register(Device)
-class DeviceAdmin(admin.ModelAdmin):
+class DeviceAdmin(ImportExportModelAdmin, ExportActionMixin):
     form = DeviceAdminForm
-    search_fields = ["name__icontains", "model__icontains", "ssid__icontains", "notes__icontains"]
+    search_fields = ["name__icontains", "notes__icontains"]
     list_display = [
         "__str__",
-        "ssid",
         "name",
-        "model",
     ]
     list_filter = [
         "status",
         "install_date",
-        "model",
     ]
-    fieldsets = device_fieldsets  # type: ignore[assignment]
+    fieldsets = [
+        (
+            "Details",
+            {
+                "fields": [
+                    "status",
+                    "name",
+                    "node",
+                ]
+            },
+        ),
+        (
+            "Dates",
+            {
+                "fields": [
+                    "install_date",
+                    "abandon_date",
+                ]
+            },
+        ),
+        (
+            "Misc",
+            {
+                "fields": [
+                    "uisp_id",
+                    "notes",
+                ]
+            },
+        ),
+    ]
     inlines = [DeviceLinkInline]
 
     def get_queryset(self, request: HttpRequest) -> QuerySet[Device]:
         # Get the base queryset
         queryset = super().get_queryset(request)
         # Filter out sectors
-        queryset = queryset.exclude(sector__isnull=False)
+        queryset = queryset.exclude(sector__isnull=False).exclude(accesspoint__isnull=False)
         return queryset

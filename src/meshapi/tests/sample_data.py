@@ -3,7 +3,7 @@ from meshapi.models import Device, Install, Node
 sample_member = {
     "name": "John Smith",
     "primary_email_address": "john.smith@example.com",
-    "phone_number": "555-555-5555",
+    "phone_number": "+1 555-555-5555",
     "slack_handle": "@jsmith",
 }
 
@@ -28,11 +28,7 @@ sample_node = {
 }
 
 sample_device = {
-    "model": "OmniTik",
     "status": Device.DeviceStatus.ACTIVE,
-    "type": Device.DeviceType.AP,
-    "latitude": 0.0,
-    "longitude": 0.0,
 }
 
 sample_install = {

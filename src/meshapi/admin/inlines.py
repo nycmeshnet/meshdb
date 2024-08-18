@@ -6,7 +6,7 @@ from django.db.models import Model, Q, QuerySet
 from django.http import HttpRequest
 from nonrelated_inlines.admin import NonrelatedTabularInline
 
-from meshapi.models import Building, Device, Install, Link, Member, Node, Sector
+from meshapi.models import LOS, AccessPoint, Building, Device, Install, Link, Member, Node, Sector
 
 
 # Inline with the typical rules we want + Formatting
@@ -92,14 +92,14 @@ class BuildingMembershipInline(admin.TabularInline):
 
 class DeviceInline(BetterInline):
     model = Device
-    fields = ["status", "type", "model"]
+    fields = ["status"]
     readonly_fields = fields  # type: ignore[assignment]
 
     def get_queryset(self, request: HttpRequest) -> QuerySet[Device]:
         # Get the base queryset
         queryset = super().get_queryset(request)
         # Filter out sectors
-        queryset = queryset.exclude(sector__isnull=False)
+        queryset = queryset.exclude(sector__isnull=False).exclude(accesspoint__isnull=False)
         return queryset
 
 
@@ -129,7 +129,13 @@ class DeviceLinkInline(BetterNonrelatedInline):
 
 class SectorInline(BetterInline):
     model = Sector
-    fields = ["status", "type", "model"]
+    fields = ["status"]
+    readonly_fields = fields  # type: ignore[assignment]
+
+
+class AccessPointInline(BetterInline):
+    model = AccessPoint
+    fields = ["status"]
     readonly_fields = fields  # type: ignore[assignment]
 
 
@@ -154,3 +160,12 @@ class InstallInline(BetterInline):
         elif model == Member:
             self.add_button = True
             self.reverse_relation = "member"
+
+
+class BuildingLOSInline(BetterNonrelatedInline):
+    model = LOS
+    fields = ["from_building", "to_building", "source", "analysis_date"]
+    readonly_fields = fields
+
+    def get_form_queryset(self, obj: Building) -> QuerySet[LOS]:
+        return self.model.objects.filter(Q(from_building=obj) | Q(to_building=obj))

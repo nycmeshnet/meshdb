@@ -112,7 +112,7 @@ def normalize_building_node_links(building: models.Building, node: models.Node):
         node
         for node in sorted(
             active_nodes if active_nodes else nodes_in_cluster,
-            key=lambda node: node.install_date or datetime.datetime.max,
+            key=lambda node: node.install_date or datetime.date.max,
         )
     ][0]
 
