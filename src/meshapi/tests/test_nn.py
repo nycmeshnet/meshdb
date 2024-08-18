@@ -338,18 +338,22 @@ class TestNNRaceCondition(TransactionTestCase):
 
         inst["building"] = building_obj1
         inst["member"] = member_obj
+        inst["status"] = Install.InstallStatus.REQUEST_RECEIVED
 
         install_obj1 = Install(**inst)
+        install_obj1.install_number = 10001
         install_obj1.save()
 
         inst["building"] = building_obj2
 
         install_obj2 = Install(**inst)
+        install_obj2.install_number = 10002
         install_obj2.save()
 
         # Unused, just to add something else to the DB to check edge cases
         inst["building"] = building_obj3
         install_obj3 = Install(**inst)
+        install_obj3.install_number = 10003
         install_obj3.save()
 
         self.install_number1 = install_obj1.install_number

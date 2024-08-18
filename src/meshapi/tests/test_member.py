@@ -56,7 +56,7 @@ class TestMember(TestCase):
         test_member = Member(
             name="Stacy Fakename",
             primary_email_address="foo@example.com",
-            phone_number="+1 123-555-5555",
+            phone_number="+1 212-555-5555",
             additional_phone_numbers=["+1 456-555-6666"],
         )
         test_member.save()
@@ -72,9 +72,83 @@ class TestMember(TestCase):
         response_obj = json.loads(response.content)
         self.assertEqual(response_obj["name"], "Stacy Fakename")
         self.assertEqual(response_obj["primary_email_address"], "foo@example.com")
-        self.assertEqual(response_obj["phone_number"], "+1 123-555-5555")
+        self.assertEqual(response_obj["phone_number"], "+1 212-555-5555")
         self.assertEqual(response_obj["additional_phone_numbers"], ["+1 456-555-6666"])
-        self.assertEqual(response_obj["all_phone_numbers"], ["+1 123-555-5555", "+1 456-555-6666"])
+        self.assertEqual(response_obj["all_phone_numbers"], ["+1 212-555-5555", "+1 456-555-6666"])
+
+    def test_member_phone_validation_normalization(self):
+        test_member = Member(
+            name="Stacy Fakename",
+            primary_email_address="foo@example.com",
+            phone_number="+1 212-555-5555",
+            additional_phone_numbers=["+1 456-555-6666"],
+        )
+        test_member.save()
+
+        # Try to make an invalid modification and ensure it causes an error
+        response = self.c.patch(
+            f"/api/v1/members/{test_member.id}/",
+            {"phone_number": "284028"},
+            content_type="application/json",
+        )
+        code = 400
+        self.assertEqual(
+            code,
+            response.status_code,
+            f"status code incorrect. Should be {code}, but got {response.status_code}",
+        )
+
+        # Try to make an invalid modification to the additional numbers and ensure it causes an error
+        response = self.c.patch(
+            f"/api/v1/members/{test_member.id}/",
+            {"additional_phone_numbers": ["284028"]},
+            content_type="application/json",
+        )
+        code = 400
+        self.assertEqual(
+            code,
+            response.status_code,
+            f"status code incorrect. Should be {code}, but got {response.status_code}",
+        )
+
+        # Make sure the phone number is unchanged
+        test_member.refresh_from_db()
+        self.assertEqual(test_member.additional_phone_numbers, ["+1 456-555-6666"])
+
+        # Try to make a valid modification with a badly formatted number and make sure it gets normalized
+        response = self.c.patch(
+            f"/api/v1/members/{test_member.id}/",
+            {"phone_number": "+1 212 5553333"},
+            content_type="application/json",
+        )
+        code = 200
+        self.assertEqual(
+            code,
+            response.status_code,
+            f"status code incorrect. Should be {code}, but got {response.status_code}",
+        )
+
+        # Make sure the phone number is normalized
+        test_member.refresh_from_db()
+        self.assertEqual(test_member.phone_number, "+1 212-555-3333")
+
+        # Try to make a valid modification with a badly formated number to the additional
+        # numbers field and make sure it gets normalized
+        response = self.c.patch(
+            f"/api/v1/members/{test_member.id}/",
+            {"additional_phone_numbers": ["+1 212 5553333"]},
+            content_type="application/json",
+        )
+        code = 200
+        self.assertEqual(
+            code,
+            response.status_code,
+            f"status code incorrect. Should be {code}, but got {response.status_code}",
+        )
+
+        # Make sure the phone number is normalized
+        test_member.refresh_from_db()
+        self.assertEqual(test_member.additional_phone_numbers, ["+1 212-555-3333"])
 
     def test_broken_member(self):
         err_member = {

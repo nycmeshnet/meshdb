@@ -22,6 +22,7 @@ EMAIL_REPLACEMENTS = {
     ",": " ",
     r"\/": " ",
     "gmailcom": "gmail.com",
+    "gmai.com": "gmail.com",
     r"\.\.@gmail\.com": "@gmail.com",
     r"\.\.\.": ".",
     r"\.@gmail\.com": "@gmail.com",
@@ -35,6 +36,110 @@ EMAIL_REPLACEMENTS = {
     r" @hotmail\.com": "@hotmail.com",
     r"@ hotmail\.com": "@hotmail.com",
 }
+
+FAKE_PHONE_NUMBERS = ["+1 999-999-9999", "+1 333-333-3333"]
+
+VOLUNTEER_PHONE_NUMBERS = set()
+VOLUNTEER_EMAIL_ADDRESSES = {"bh@usa.net", "brian@nycmesh.net", "marg@nycmesh.net"}
+
+
+def merge_member_objects(members_and_installs: List[Tuple[Member, List[int]]]) -> Member:
+    if len(members_and_installs) == 0:
+        raise ValueError("members list is empty")
+
+    if len(members_and_installs) == 1:
+        return members_and_installs[0][0]
+
+    merged_member = Member(
+        name=None,
+        primary_email_address=None,
+        stripe_email_address=None,
+        additional_email_addresses=[],
+        phone_number=None,
+        additional_phone_numbers=[],
+        slack_handle=None,
+        notes="",
+    )
+
+    # Sort by ID so that earlier spreadsheet rows take precedence over earlier ones
+    members_and_installs.sort(key=lambda m: m[0].id)
+
+    # Merge many members down into one
+    for member, install_numbers in members_and_installs:
+        name_change_note = None
+        if merged_member.name is None:
+            merged_member.name = member.name
+        else:
+            if merged_member.name != member.name and member.name:
+                logging.info(
+                    f"Dropping name change {repr(merged_member.name)} -> {repr(member.name)} "
+                    f"for member id {members_and_installs[0][0].id} (install number(s) {', '.join(f'#{i}' for i in install_numbers)}"
+                )
+                name_change_note = f"Dropped name change: {member.name}"
+
+        if merged_member.primary_email_address is None:
+            merged_member.primary_email_address = member.primary_email_address
+        if merged_member.stripe_email_address is None:
+            merged_member.stripe_email_address = member.stripe_email_address
+
+        for email in [member.primary_email_address, member.stripe_email_address] + member.additional_email_addresses:
+            if (
+                email
+                and email
+                not in [
+                    merged_member.primary_email_address,
+                    merged_member.stripe_email_address,
+                ]
+                + merged_member.additional_email_addresses
+            ):
+                merged_member.additional_email_addresses.append(email)
+
+        if merged_member.phone_number is None:
+            merged_member.phone_number = member.phone_number
+
+        for phone_number in [member.phone_number] + member.additional_phone_numbers:
+            if (
+                phone_number
+                and phone_number not in [merged_member.phone_number] + merged_member.additional_phone_numbers
+            ):
+                merged_member.additional_phone_numbers.append(phone_number)
+
+        if merged_member.slack_handle is None:
+            merged_member.slack_handle = member.slack_handle
+
+        note_items = []
+        if merged_member.notes:
+            note_items.append(merged_member.notes)
+        if member.notes:
+            note_items.append(member.notes)
+
+        notes_lines = []
+        for notes_item in note_items:
+            for line in notes_item.split("\n"):
+                line_bare = line.strip()
+                if line_bare:
+                    if line_bare not in notes_lines:
+                        notes_lines.append(line_bare)
+
+        merged_member.notes = "\n".join(notes_lines).strip()
+
+        if name_change_note and name_change_note not in merged_member.notes:
+            install_number_addendum = ""
+            if install_numbers:
+                if len(install_numbers) == 1:
+                    install_number_addendum = f"(install #{install_numbers[0]})"
+                else:
+                    install_number_addendum = f"(installs {', '.join(f'#{i}' for i in install_numbers)})"
+
+            merged_member.notes = (name_change_note + " " + install_number_addendum + "\n") + merged_member.notes
+
+    merged_member.save()
+
+    for member, _ in members_and_installs:
+        for install in member.installs.all():
+            merged_member.installs.add(install)
+
+    return merged_member
 
 
 def parse_name(input_name: str) -> Tuple[Optional[str], Optional[str]]:
@@ -59,6 +164,8 @@ def parse_emails(input_emails: str) -> List[str]:
     # Do the same thing for other fake emails used for similar situations
     if "noclientemail@gsg.com" in email_matches:
         email_matches.remove("noclientemail@gsg.com")
+    if "none@example.com" in email_matches:
+        email_matches.remove("none@example.com")
 
     return [
         email
@@ -95,61 +202,10 @@ def parse_phone(input_phone: str) -> Optional[phonenumbers.PhoneNumber]:
         except phonenumbers.NumberParseException:
             return None
 
-    # TODO: Bring this validation to the join form
     if phonenumbers.is_possible_number(parsed):
         return parsed
     else:
         return None
-
-
-def diff_new_member_against_existing(
-    row_id: int,
-    row_status: str,
-    existing_member: models.Member,
-    new_member: models.Member,
-    add_dropped_edit: Callable[[DroppedModification], None],
-) -> str:
-    diff_notes = ""
-    if existing_member.name != new_member.name and new_member.name:
-        add_dropped_edit(
-            DroppedModification(
-                list(install.install_number for install in existing_member.installs.all()),
-                row_id,
-                row_status,
-                existing_member.primary_email_address,
-                "member.name",
-                existing_member.name if existing_member.name else "",
-                new_member.name,
-            )
-        )
-        logging.debug(
-            f"Dropping changed name from install # {row_id} " f"{repr(existing_member.name)} -> {repr(new_member.name)}"
-        )
-        diff_notes += f"\nDropped name change from install #{row_id}: {new_member.name}"
-
-    if (
-        existing_member.phone_number != new_member.phone_number
-        and new_member.phone_number
-        and existing_member.phone_number
-    ):
-        add_dropped_edit(
-            DroppedModification(
-                list(install.install_number for install in existing_member.installs.all()),
-                row_id,
-                row_status,
-                existing_member.primary_email_address,
-                "member.phone_number",
-                existing_member.phone_number,
-                new_member.phone_number,
-            )
-        )
-        logging.debug(
-            f"Dropping changed last name from install # {row_id} "
-            f"{repr(existing_member.phone_number)} -> {repr(new_member.phone_number)}"
-        )
-        diff_notes += f"\nDropped phone number change from install #{row_id}: {new_member.phone_number}"
-
-    return diff_notes
 
 
 def get_or_create_member(
@@ -180,93 +236,97 @@ def get_or_create_member(
 
     notes = ""
 
-    # TODO: this might actually be better in the install notes, since most of
-    #  these relate to specific installs, and only some relate to contact info
-    #  for the member. We should maybe talk to Olivier about this tradeoff?
-    #  (also don't forget to remove the occurrence flagged below if you remove this one)
-    if row.contactNotes:
-        notes += f"Spreadsheet Contact Notes:\n{row.contactNotes}\n\n"
-
     # Keep track of garbage phone numbers just in case we're wrong about
     # their garbage-ness
     if row.phone and not parsed_phone:
-        notes += f"Un-parsable Phone Number: {row.phone}\n"
+        notes += f"Un-parsable Phone Number: {row.phone} (install #{row.id})\n"
 
     # If there were any letters in the phone number
     # (that we didn't parse into an extension)
     # it's probably a contact note like "text only".
     # Record that in the contact notes
     if re.search("[a-zA-Z]", row.phone) and parsed_phone and not parsed_phone.extension:
-        notes += f"Phone Notes: {row.phone}\n"
-
-    if row.contactNotes:
-        notes += f"Spreadsheet Emails:\n{row.email}\n{row.stripeEmail}\n{row.secondEmail}\n"
+        notes += f"Phone Notes: {row.phone} (install #{row.id})\n"
 
     formatted_phone_number = (
-        # TODO: Bring this formatting to the join form
-        phonenumbers.format_number(parsed_phone, phonenumbers.PhoneNumberFormat.INTERNATIONAL)
-        if parsed_phone
-        else None
+        phonenumbers.format_number(parsed_phone, phonenumbers.PhoneNumberFormat.INTERNATIONAL) if parsed_phone else None
     )
 
+    if formatted_phone_number in FAKE_PHONE_NUMBERS:
+        formatted_phone_number = None
+
+    # If this is a volunteer's phone number, drop it from our known information
+    # to prevent it being used to join member objects where the volunteer signed up other people
+    if formatted_phone_number in VOLUNTEER_PHONE_NUMBERS:
+        formatted_phone_number = None
+
+    # So that we don't put volunteer phone numbers in our source code,
+    # learn the phone numbers dynamically during the import process based on the known email
+    # addresses. This has the added bonus of not erasing the phone number on the first pass,
+    # so we don't forget the volunteer's phone number on their actual member object
+    for email in other_emails:
+        if email in VOLUNTEER_EMAIL_ADDRESSES:
+            if formatted_phone_number:
+                VOLUNTEER_PHONE_NUMBERS.add(formatted_phone_number)
+
+    candidate_member = models.Member(
+        name=row.name,
+        primary_email_address=other_emails[0] if len(other_emails) > 0 else None,
+        stripe_email_address=stripe_email,
+        additional_email_addresses=other_emails[1:],
+        phone_number=formatted_phone_number,
+        slack_handle=None,
+        notes=notes if notes else "",
+    )
+
+    existing_member_filter_criteria = []
     if len(other_emails) > 0:
-        existing_members = Member.objects.filter(
-            reduce(
-                operator.or_,
-                (
-                    Q(primary_email_address=email)
-                    | Q(stripe_email_address=email)
-                    | Q(additional_email_addresses__contains=[email])
-                    for email in other_emails + ([stripe_email] if stripe_email else [])
-                ),
-            )
+        existing_member_filter_criteria.extend(
+            Q(primary_email_address=email)
+            | Q(stripe_email_address=email)
+            | Q(additional_email_addresses__contains=[email])
+            for email in other_emails + ([stripe_email] if stripe_email else [])
         )
 
-        if existing_members:
-            if len(existing_members) > 1:
-                logging.error(
-                    f"Duplicate entries detected for {other_emails[0]} at install # {row.id} "
-                    f"This should not happen, these should be consolidated by a previous iteration."
+    if formatted_phone_number:
+        existing_member_filter_criteria.append(Q(phone_number=formatted_phone_number))
+
+    existing_members = []
+    if existing_member_filter_criteria:
+        existing_members = list(
+            Member.objects.filter(
+                reduce(
+                    operator.or_,
+                    existing_member_filter_criteria,
                 )
+            ).order_by("id")
+        )
 
-            diff_notes = diff_new_member_against_existing(
-                row.id,
-                row.status.value,
-                existing_members[0],
-                models.Member(
-                    name=row.name,
-                    phone_number=formatted_phone_number,
-                ),
-                add_dropped_edit,
-            )
+    # This save call is placed strategically below the query above so that we don't get
+    # candidate_member in the existing_members result set. We must save before the call to
+    # merge_member_objects() since that requires doing m2m lookups for install object combination
+    candidate_member.save()
 
-            if formatted_phone_number and not existing_members[0].phone_number:
-                existing_members[0].phone_number = formatted_phone_number
+    if existing_members:
+        members_to_consolidate = [
+            (member, [install.install_number for install in member.installs.all()]) for member in existing_members
+        ] + [(candidate_member, [row.id])]
+        min_id = min(m[0].id for m in members_to_consolidate)
+        logging.debug(
+            f"Duplicate entries detected at install # {row.id}. "
+            f"Consolidating the following members: "
+            f"{[(m.name, m.primary_email_address, m.phone_number, i_list) for m, i_list in members_to_consolidate]}"
+        )
+        merged_member = merge_member_objects(members_to_consolidate)
 
-            # TODO: Don't forget to remove me if we remove the previous use of contact notes above
-            if row.contactNotes:
-                if not existing_members[0].notes:
-                    existing_members[0].notes = ""
+        # Now that we have consolidated down, clear out the objects we
+        # consolidated to avoid duplication, and convert our new object to use the
+        # min id of those objects (since a future merge may happen and if so we want to
+        # ensure that this object is used as the source of truth)
+        for member, _ in members_to_consolidate:
+            member.delete()
 
-                existing_members[0].notes += f"\nSpreadsheet Contact Notes:\n{row.contactNotes}\n\n"
+        Member.objects.filter(id=merged_member.id).update(id=min_id)
+        return Member.objects.get(id=min_id), False
 
-            if diff_notes:
-                if not existing_members[0].notes:
-                    existing_members[0].notes = ""
-
-                existing_members[0].notes += diff_notes
-
-            return existing_members[0], False
-
-    return (
-        models.Member(
-            name=row.name,
-            primary_email_address=other_emails[0] if len(other_emails) > 0 else None,
-            stripe_email_address=stripe_email,
-            additional_email_addresses=other_emails[1:],
-            phone_number=formatted_phone_number,
-            slack_handle=None,
-            notes=notes if notes else None,
-        ),
-        True,
-    )
+    return candidate_member, True

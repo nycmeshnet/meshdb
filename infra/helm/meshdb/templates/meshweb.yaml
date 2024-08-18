@@ -141,6 +141,11 @@ spec:
                 secretKeyRef:
                   name: meshdb-secrets
                   key: uisp-pass
+            - name: SLACK_ADMIN_NOTIFICATIONS_WEBHOOK_URL
+              valueFrom:
+                secretKeyRef:
+                  name: meshdb-secrets
+                  key: slack-webhook
             - name: ADMIN_MAP_BASE_URL
               valueFrom:
                 configMapKeyRef:

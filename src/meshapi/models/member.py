@@ -1,8 +1,10 @@
-from typing import List
+from typing import Any, List
 
 from django.db import models
 from django.db.models.fields import EmailField
 from django_jsonform.models.fields import ArrayField as JSONFormArrayField
+
+from meshapi.validation import normalize_phone_number, validate_multi_phone_number_field, validate_phone_number_field
 
 
 class Member(models.Model):
@@ -22,7 +24,11 @@ class Member(models.Model):
         help_text="Any additional email addresses associated with this member",
     )
     phone_number = models.CharField(
-        default=None, blank=True, null=True, help_text="A primary contact phone number for this member"
+        default=None,
+        blank=True,
+        null=True,
+        help_text="A primary contact phone number for this member",
+        validators=[validate_phone_number_field],
     )
     additional_phone_numbers = JSONFormArrayField(
         models.CharField(),
@@ -30,6 +36,7 @@ class Member(models.Model):
         null=True,
         blank=True,
         help_text="Any additional phone numbers used by this member",
+        validators=[validate_multi_phone_number_field],
     )
     slack_handle = models.CharField(default=None, blank=True, null=True, help_text="The member's slack handle")
     notes = models.TextField(
@@ -75,3 +82,12 @@ class Member(models.Model):
                     all_phone_numbers.append(phone_number)
 
         return all_phone_numbers
+
+    def save(self, *args: Any, **kwargs: Any) -> None:
+        if self.phone_number:
+            self.phone_number = normalize_phone_number(self.phone_number)
+        if self.additional_phone_numbers:
+            self.additional_phone_numbers = [
+                normalize_phone_number(num) for num in self.additional_phone_numbers if num
+            ]
+        super().save(*args, **kwargs)
