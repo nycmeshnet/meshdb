@@ -1,14 +1,18 @@
+import copy
 import json
 import time
 from unittest import mock
 
+import requests_mock
 from django.contrib.auth.models import User
 from django.db.models import Q
 from django.test import Client, TestCase, TransactionTestCase
+from parameterized import parameterized
 
 from meshapi.models import Building, Install, Member, Node
 from meshapi.views import JoinFormRequest
 
+from ..validation import DOB_BUILDING_HEIGHT_API_URL, NYC_PLANNING_LABS_GEOCODE_URL
 from .sample_data import sample_building, sample_node
 from .sample_join_form_data import (
     bronx_join_form_submission,
@@ -83,6 +87,7 @@ def validate_successful_join_form_submission(test_case, test_name, s, response):
 def pull_apart_join_form_submission(submission):
     request = submission.copy()
     del request["parsed_street_address"]
+    del request["dob_addr_response"]
 
     # Make sure that we get the right stuff out of the database afterwards
     s = JoinFormRequest(**request)
@@ -106,26 +111,46 @@ class TestJoinForm(TestCase):
         )
         self.admin_c.login(username="admin", password="admin_password")
 
-    def test_valid_join_form(self):
-        for submission in [
-            valid_join_form_submission,
-            richmond_join_form_submission,
-            kings_join_form_submission,
-            queens_join_form_submission,
-            bronx_join_form_submission,
-        ]:
-            request, s = pull_apart_join_form_submission(submission)
+        self.requests_mocker = requests_mock.Mocker(real_http=True)
+        self.requests_mocker.start()
 
-            response = self.c.post("/api/v1/join/", request, content_type="application/json")
-            code = 201
-            self.assertEqual(
-                code,
-                response.status_code,
-                f"status code incorrect for Valid Join Form. Should be {code}, but got {response.status_code}.\n Response is: {response.content.decode('utf-8')}",
-            )
-            validate_successful_join_form_submission(self, "Valid Join Form", s, response)
+        self.requests_mocker.get(DOB_BUILDING_HEIGHT_API_URL, json=[{"heightroof": 0, "groundelev": 0}])
+
+    def tearDown(self):
+        self.requests_mocker.stop()
+
+    @parameterized.expand(
+        [
+            [valid_join_form_submission],
+            [richmond_join_form_submission],
+            [kings_join_form_submission],
+            [queens_join_form_submission],
+            [bronx_join_form_submission],
+        ]
+    )
+    def test_valid_join_form(self, submission):
+        self.requests_mocker.get(
+            NYC_PLANNING_LABS_GEOCODE_URL,
+            json=submission["dob_addr_response"],
+        )
+
+        request, s = pull_apart_join_form_submission(submission)
+
+        response = self.c.post("/api/v1/join/", request, content_type="application/json")
+        code = 201
+        self.assertEqual(
+            code,
+            response.status_code,
+            f"status code incorrect for Valid Join Form. Should be {code}, but got {response.status_code}.\n Response is: {response.content.decode('utf-8')}",
+        )
+        validate_successful_join_form_submission(self, "Valid Join Form", s, response)
 
     def test_no_ncl(self):
+        self.requests_mocker.get(
+            NYC_PLANNING_LABS_GEOCODE_URL,
+            json=valid_join_form_submission["dob_addr_response"],
+        )
+
         request, _ = pull_apart_join_form_submission(valid_join_form_submission)
 
         request["ncl"] = False
@@ -139,6 +164,11 @@ class TestJoinForm(TestCase):
         )
 
     def test_non_nyc_join_form(self):
+        self.requests_mocker.get(
+            NYC_PLANNING_LABS_GEOCODE_URL,
+            json=non_nyc_join_form_submission["dob_addr_response"],
+        )
+
         # Name, email, phone, location, apt, rooftop, referral
         form, _ = pull_apart_join_form_submission(non_nyc_join_form_submission)
         response = self.c.post("/api/v1/join/", form, content_type="application/json")
@@ -151,6 +181,11 @@ class TestJoinForm(TestCase):
         )
 
     def test_empty_join_form(self):
+        self.requests_mocker.get(
+            NYC_PLANNING_LABS_GEOCODE_URL,
+            json={},
+        )
+
         # Name, email, phone, location, apt, rooftop, referral
         response = self.c.post("/api/v1/join/", {}, content_type="application/json")
 
@@ -180,6 +215,11 @@ class TestJoinForm(TestCase):
         )
 
     def test_bad_phone_join_form(self):
+        self.requests_mocker.get(
+            NYC_PLANNING_LABS_GEOCODE_URL,
+            json=valid_join_form_submission["dob_addr_response"],
+        )
+
         # Name, email, phone, location, apt, rooftop, referral
         form, _ = pull_apart_join_form_submission(valid_join_form_submission)
         form["phone"] = "555-555-5555"
@@ -197,6 +237,11 @@ class TestJoinForm(TestCase):
         self.assertEqual("555-555-5555 is not a valid phone number", con["detail"], "Content is wrong")
 
     def test_bad_email_join_form(self):
+        self.requests_mocker.get(
+            NYC_PLANNING_LABS_GEOCODE_URL,
+            json=valid_join_form_submission["dob_addr_response"],
+        )
+
         # Name, email, phone, location, apt, rooftop, referral
         form, _ = pull_apart_join_form_submission(valid_join_form_submission)
         form["email"] = "notareal@email.meshmeshmeshmeshmesh"
@@ -218,6 +263,11 @@ class TestJoinForm(TestCase):
         )
 
     def test_bad_address_join_form(self):
+        self.requests_mocker.get(
+            NYC_PLANNING_LABS_GEOCODE_URL,
+            json={"features": []},
+        )
+
         # Name, email, phone, location, apt, rooftop, referral
         form, _ = pull_apart_join_form_submission(valid_join_form_submission)
         form["street_address"] = "fjdfahuweildhjweiklfhjkhklfhj"
@@ -239,6 +289,11 @@ class TestJoinForm(TestCase):
         )
 
     def test_member_moved_join_form(self):
+        self.requests_mocker.get(
+            NYC_PLANNING_LABS_GEOCODE_URL,
+            json=valid_join_form_submission["dob_addr_response"],
+        )
+
         # Name, email, phone, location, apt, rooftop, referral
         form, s = pull_apart_join_form_submission(valid_join_form_submission)
         response1 = self.c.post("/api/v1/join/", form, content_type="application/json")
@@ -255,6 +310,13 @@ class TestJoinForm(TestCase):
         # Now test that the member can "move" and still access the join form
         v_sub_2 = valid_join_form_submission.copy()
         v_sub_2["street_address"] = "152 Broome Street"
+        v_sub_2["dob_addr_response"] = copy.deepcopy(valid_join_form_submission["dob_addr_response"])
+        v_sub_2["dob_addr_response"]["features"][0]["properties"]["housenumber"] = "152"
+
+        self.requests_mocker.get(
+            NYC_PLANNING_LABS_GEOCODE_URL,
+            json=v_sub_2["dob_addr_response"],
+        )
 
         form, s = pull_apart_join_form_submission(v_sub_2)
 
@@ -284,6 +346,10 @@ class TestJoinForm(TestCase):
         This test case simulates a new building joining the Jefferson structure to
         make sure we handle the multi-address multi-node structures correctly
         """
+        self.requests_mocker.get(
+            NYC_PLANNING_LABS_GEOCODE_URL,
+            json=jefferson_join_form_submission["dob_addr_response"],
+        )
 
         # Name, email, phone, location, apt, rooftop, referral
         form, s = pull_apart_join_form_submission(jefferson_join_form_submission)
@@ -302,6 +368,14 @@ class TestJoinForm(TestCase):
         v_sub_2 = jefferson_join_form_submission.copy()
         v_sub_2["street_address"] = "16 Cypress Avenue"
         v_sub_2["apartment"] = "13"
+        v_sub_2["dob_addr_response"] = copy.deepcopy(jefferson_join_form_submission["dob_addr_response"])
+        v_sub_2["dob_addr_response"]["features"][0]["properties"]["housenumber"] = "16"
+        v_sub_2["dob_addr_response"]["features"][0]["properties"]["street"] = "Cypress Avenue"
+
+        self.requests_mocker.get(
+            NYC_PLANNING_LABS_GEOCODE_URL,
+            json=v_sub_2["dob_addr_response"],
+        )
 
         building_id_1 = json.loads(
             response1.content.decode("utf-8"),
@@ -362,6 +436,11 @@ class TestJoinForm(TestCase):
         )
 
     def test_member_moved_and_used_stripe_email_join_form(self):
+        self.requests_mocker.get(
+            NYC_PLANNING_LABS_GEOCODE_URL,
+            json=valid_join_form_submission["dob_addr_response"],
+        )
+
         # Name, email, phone, location, apt, rooftop, referral
         form, s = pull_apart_join_form_submission(valid_join_form_submission)
         response1 = self.c.post("/api/v1/join/", form, content_type="application/json")
@@ -385,6 +464,13 @@ class TestJoinForm(TestCase):
         v_sub_2 = valid_join_form_submission.copy()
         v_sub_2["email"] = "jsmith+stripe@gmail.com"
         v_sub_2["street_address"] = "152 Broome Street"
+        v_sub_2["dob_addr_response"] = copy.deepcopy(valid_join_form_submission["dob_addr_response"])
+        v_sub_2["dob_addr_response"]["features"][0]["properties"]["housenumber"] = "152"
+
+        self.requests_mocker.get(
+            NYC_PLANNING_LABS_GEOCODE_URL,
+            json=v_sub_2["dob_addr_response"],
+        )
 
         form, s = pull_apart_join_form_submission(v_sub_2)
 
@@ -413,6 +499,13 @@ class TestJoinForm(TestCase):
         v_sub_3 = valid_join_form_submission.copy()
         v_sub_3["email"] = "jsmith+other@gmail.com"
         v_sub_3["street_address"] = "178 Broome Street"
+        v_sub_3["dob_addr_response"] = copy.deepcopy(valid_join_form_submission["dob_addr_response"])
+        v_sub_3["dob_addr_response"]["features"][0]["properties"]["housenumber"] = "178"
+
+        self.requests_mocker.get(
+            NYC_PLANNING_LABS_GEOCODE_URL,
+            json=v_sub_3["dob_addr_response"],
+        )
 
         form, s = pull_apart_join_form_submission(v_sub_3)
 
@@ -437,6 +530,11 @@ class TestJoinForm(TestCase):
         )
 
     def test_pre_existing_building_and_node(self):
+        self.requests_mocker.get(
+            NYC_PLANNING_LABS_GEOCODE_URL,
+            json=valid_join_form_submission["dob_addr_response"],
+        )
+
         request, s = pull_apart_join_form_submission(valid_join_form_submission)
 
         node = Node(**sample_node)
