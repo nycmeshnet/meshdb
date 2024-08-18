@@ -214,24 +214,20 @@ def sync_link_table_into_los_objects() -> None:
                 from_building=from_building,
                 to_building=to_building,
                 source=LOS.LOSSource.EXISTING_LINK,
-                analysis_date=link.abandon_date
-                if link.status == Link.LinkStatus.INACTIVE and link.abandon_date
-                else datetime.date.today(),
+                analysis_date=link.last_functioning_date_estimate,
                 notes=f"Created automatically from Link ID {link.id} ({str(link)})\n\n",
             )
             los.save()
         else:
             for existing_los in existing_los_objects:
-                if link.status == Link.LinkStatus.ACTIVE:
-                    if existing_los.source == LOS.LOSSource.HUMAN_ANNOTATED:
-                        existing_los.source = LOS.LOSSource.EXISTING_LINK
+                # Supersede manually annotated LOSes with their auto-generated counterparts,
+                # once they come online as links
+                if link.status == Link.LinkStatus.ACTIVE and existing_los.source == LOS.LOSSource.HUMAN_ANNOTATED:
+                    existing_los.source = LOS.LOSSource.EXISTING_LINK
 
-                    if existing_los.source == LOS.LOSSource.EXISTING_LINK:
-                        existing_los.analysis_date = datetime.date.today()
-
-                elif link.status == Link.LinkStatus.INACTIVE and link.abandon_date:
-                    if existing_los.source == LOS.LOSSource.EXISTING_LINK:
-                        existing_los.analysis_date = link.abandon_date
+                # Keep the LOS analysis date accurate for all that come from existing links
+                if existing_los.source == LOS.LOSSource.EXISTING_LINK and link.last_functioning_date_estimate:
+                    existing_los.analysis_date = link.last_functioning_date_estimate
 
                 existing_los.save()
 

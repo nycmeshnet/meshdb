@@ -1,3 +1,6 @@
+import datetime
+from typing import Optional
+
 from django.db import models
 
 from meshapi.models.devices.device import Device
@@ -69,3 +72,25 @@ class Link(models.Model):
         if self.from_device.node.network_number and self.to_device.node.network_number:
             return f"NN{self.from_device.node.network_number} → NN{self.to_device.node.network_number}"
         return f"MeshDB Link ID {self.id}"
+
+    @property
+    def last_functioning_date_estimate(self) -> Optional[datetime.date]:
+        """Estimate the most recent date that we can guarantee this link was functional"""
+
+        # Active and pending links are assumed to currently be functional
+        if self.status != Link.LinkStatus.INACTIVE:
+            return datetime.date.today()
+
+        # For inactive links, we use the abandon date if we have it
+        # (since the link was likely functional on or around this date)
+        if self.abandon_date:
+            return self.abandon_date
+
+        # If we don't have an abandon date, but we do have an installation date,
+        # use that as the estimate instead
+        if self.install_date:
+            return self.install_date
+
+        # If we don't have an install date or an abandon date,
+        # we can't really make an estimate, so we return none
+        return None
