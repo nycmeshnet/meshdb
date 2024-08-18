@@ -850,11 +850,27 @@ class TestUISPImportHandlers(TestCase):
                     "type": "airMax",
                 },
             },
+            {
+                "overview": {
+                    "status": "active",
+                    "createdAt": "2018-11-14T15:20:32.004Z",
+                    "lastSeen": "2024-08-12T02:04:35.335Z",
+                    "wirelessMode": "ap-ptmp",
+                },
+                "identification": {
+                    "id": "uisp-uuid999",
+                    "name": "nycmesh-1234-northsouth",  # this direction makes no sense, causes guess of 0 deg
+                    "model": "LAP-120",
+                    "category": "wireless",
+                    "type": "airMax",
+                },
+            },
         ]
 
         import_and_sync_uisp_devices(uisp_devices)
 
-        created_sector = Sector.objects.get(uisp_id="uisp-uuid99")
+        created_sector1 = Sector.objects.get(uisp_id="uisp-uuid99")
+        created_sector2 = Sector.objects.get(uisp_id="uisp-uuid999")
 
         last_seen_date = datetime.datetime(2024, 8, 12, 2, 4, 35, 335000, tzinfo=tzutc())
         mock_update_device.assert_has_calls(
@@ -869,9 +885,18 @@ class TestUISPImportHandlers(TestCase):
             [
                 call(self.device3, ["Mock update 3"]),
                 call(
-                    created_sector,
+                    created_sector1,
                     [
                         "Guessed azimuth of 90.0 degrees from device name. Please provide a more accurate value if available",
+                        "Guessed coverage width of 120 degrees from device type. Please provide a more accurate value if available",
+                        "Set default radius of 1 km. Please correct if this is not accurate",
+                    ],
+                    created=True,
+                ),
+                call(
+                    created_sector2,
+                    [
+                        "Azimuth defaulted to 0 degrees. Device name did not indicate a cardinal direction. Please provide a more accurate value if available",
                         "Guessed coverage width of 120 degrees from device type. Please provide a more accurate value if available",
                         "Set default radius of 1 km. Please correct if this is not accurate",
                     ],
@@ -888,15 +913,25 @@ class TestUISPImportHandlers(TestCase):
         self.assertEqual(created_device.abandon_date, None)
         self.assertTrue(created_device.notes.startswith("Automatically imported from UISP on"))
 
-        self.assertEqual(created_sector.node, self.node1)
-        self.assertEqual(created_sector.name, "nycmesh-1234-east")
-        self.assertEqual(created_sector.status, Device.DeviceStatus.ACTIVE)
-        self.assertEqual(created_sector.install_date, datetime.date(2018, 11, 14))
-        self.assertEqual(created_sector.abandon_date, None)
-        self.assertEqual(created_sector.width, 120)  # From device model
-        self.assertEqual(created_sector.azimuth, 90)  # From device name ("east")
-        self.assertEqual(created_sector.radius, 1)  # Default for airmax sectors
-        self.assertTrue(created_sector.notes.startswith("Automatically imported from UISP on"))
+        self.assertEqual(created_sector1.node, self.node1)
+        self.assertEqual(created_sector1.name, "nycmesh-1234-east")
+        self.assertEqual(created_sector1.status, Device.DeviceStatus.ACTIVE)
+        self.assertEqual(created_sector1.install_date, datetime.date(2018, 11, 14))
+        self.assertEqual(created_sector1.abandon_date, None)
+        self.assertEqual(created_sector1.width, 120)  # From device model
+        self.assertEqual(created_sector1.azimuth, 90)  # From device name ("east")
+        self.assertEqual(created_sector1.radius, 1)  # Default for airmax sectors
+        self.assertTrue(created_sector1.notes.startswith("Automatically imported from UISP on"))
+
+        self.assertEqual(created_sector2.node, self.node1)
+        self.assertEqual(created_sector2.name, "nycmesh-1234-northsouth")
+        self.assertEqual(created_sector2.status, Device.DeviceStatus.ACTIVE)
+        self.assertEqual(created_sector2.install_date, datetime.date(2018, 11, 14))
+        self.assertEqual(created_sector2.abandon_date, None)
+        self.assertEqual(created_sector2.width, 120)  # From device model
+        self.assertEqual(created_sector2.azimuth, 0)  # Default for nonsense device name
+        self.assertEqual(created_sector2.radius, 1)  # Default for airmax sectors
+        self.assertTrue(created_sector2.notes.startswith("Automatically imported from UISP on"))
 
         self.assertIsNone(Device.objects.filter(uisp_id="uisp-uuid5").first())
 
@@ -1070,6 +1105,52 @@ class TestUISPImportHandlers(TestCase):
 
         self.assertIsNone(Link.objects.filter(uisp_id="uisp-uuid4").first())
 
+    @patch("meshapi.util.uisp_import.handler.get_uisp_session")
+    @patch("meshapi.util.uisp_import.handler.notify_admins_of_changes")
+    @patch("meshapi.util.uisp_import.handler.update_link_from_uisp_data")
+    def test_import_and_sync_invalid_uisp_links(self, mock_update_link, mock_notify_admins, mock_get_uisp_session):
+        mock_get_uisp_session.return_value = "mock_uisp_session"
+
+        uisp_links = [
+            {
+                "from": {"device": None},
+                "to": {
+                    "device": {
+                        "identification": {
+                            "id": "uisp-uuid2",
+                            "category": "wireless",
+                            "name": "nycmesh-5678-dev2",
+                        }
+                    }
+                },
+                "state": "active",
+                "id": "uisp-uuid1",
+                "type": "wireless",
+                "frequency": 5_000,
+            },
+            {
+                "from": {
+                    "device": {
+                        "identification": {
+                            "id": "uisp-uuid1",
+                            "category": "wireless",
+                            "name": "nycmesh-1234-dev1",
+                        }
+                    }
+                },
+                "to": {"device": None},
+                "state": "inactive",
+                "id": "uisp-uuid2",
+                "type": "wireless",
+                "frequency": 60_000,
+            },
+        ]
+
+        import_and_sync_uisp_links(uisp_links)
+
+        mock_update_link.assert_has_calls([])
+        mock_notify_admins.assert_has_calls([])
+
     def test_sync_links_with_los_update_existing(self):
         los1 = LOS(
             from_building=self.building2,
@@ -1143,3 +1224,37 @@ class TestUISPImportHandlers(TestCase):
         self.assertEqual(new_los.source, LOS.LOSSource.EXISTING_LINK)
         self.assertEqual(new_los.analysis_date, datetime.date.today())
         self.assertEqual(new_los.notes, f"Created automatically from Link ID {self.link2.id} (NN1234 → NN9012)\n\n")
+
+    def test_sync_same_building_link_with_los(self):
+        self.device3b = Device(
+            node=self.node3,
+            status=Device.DeviceStatus.ACTIVE,
+            name="nycmesh-9012-dev3b",
+        )
+        self.device3b.save()
+
+        # Clear out the existing links so the only LOS is a building self-loop
+        self.link1.delete()
+        self.link2.delete()
+
+        link = Link(
+            from_device=self.device3,
+            to_device=self.device3b,
+            status=Link.LinkStatus.ACTIVE,
+            type=Link.LinkType.FIVE_GHZ,
+        )
+        link.save()
+
+        sync_link_table_into_los_objects()
+
+        self.assertEqual(0, len(LOS.objects.all()))
+
+    def test_sync_missing_building_link_with_los(self):
+        # Clear out the existing links and a building so the only link is one
+        # that's missing a building on one side
+        self.link2.delete()
+        self.building2.delete()
+
+        sync_link_table_into_los_objects()
+
+        self.assertEqual(0, len(LOS.objects.all()))

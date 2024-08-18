@@ -124,13 +124,21 @@ def import_and_sync_uisp_devices(uisp_devices: List[UISPDevice]) -> None:
                 )
                 sector.save()
 
+                if guessed_compass_heading:
+                    azimuth_message = (
+                        f"Guessed azimuth of {sector.azimuth} degrees from device name. "
+                        f"Please provide a more accurate value if available"
+                    )
+                else:
+                    azimuth_message = (
+                        f"Azimuth defaulted to {sector.azimuth} degrees. Device name did not indicate "
+                        f"a cardinal direction. Please provide a more accurate value if available"
+                    )
+
                 notify_admins_of_changes(
                     sector,
                     [
-                        (
-                            f"Guessed azimuth of {sector.azimuth} degrees from device name. "
-                            f"Please provide a more accurate value if available"
-                        ),
+                        azimuth_message,
                         (
                             f"Guessed coverage width of {sector.width} degrees from device type. "
                             f"Please provide a more accurate value if available"
