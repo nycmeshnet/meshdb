@@ -28,3 +28,5 @@ data:
   UISP_USER: {{ .Values.uisp.user | quote }}
 
   ADMIN_MAP_BASE_URL: {{ .Values.map.base_url | quote }}
+
+  SITE_BASE_URL: {{ .Values.meshdb.site_base_url | quote }}
