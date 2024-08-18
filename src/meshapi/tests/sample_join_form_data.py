@@ -43,6 +43,21 @@ valid_join_form_submission_no_email = {
     "roof_access": True,
     "referral": "Googled it or something IDK",
     "ncl": True,
+    "dob_addr_response": {
+        "features": [
+            {
+                "properties": {
+                    "housenumber": "151",
+                    "street": "Broome Street",
+                    "borough": "New York",
+                    "region_a": "NY",
+                    "postalcode": "10002",
+                    "addendum": {"pad": {"bin": 1077609}},
+                },
+                "geometry": {"coordinates": [0, 0]},
+            }
+        ]
+    },
 }
 
 richmond_join_form_submission = {
