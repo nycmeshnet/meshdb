@@ -69,7 +69,11 @@ def get_uisp_link_last_seen(
     return uisp_last_seen
 
 
-def notify_admins_of_changes(db_object: Union[Device, Link, Sector], change_list: List[str], created=False) -> None:
+def notify_admins_of_changes(
+    db_object: Union[Device, Link, Sector],
+    change_list: List[str],
+    created: bool = False,
+) -> None:
     serializer_lookup = {
         Device: DeviceSerializer,
         Sector: SectorSerializer,
