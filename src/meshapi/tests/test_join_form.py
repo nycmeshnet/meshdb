@@ -12,7 +12,6 @@ from parameterized import parameterized
 from meshapi.models import Building, Install, Member, Node
 from meshapi.views import JoinFormRequest
 
-from ..serializers import MemberSerializer
 from ..validation import DOB_BUILDING_HEIGHT_API_URL, NYC_PLANNING_LABS_GEOCODE_URL
 from .sample_data import sample_building, sample_node
 from .sample_join_form_data import (
