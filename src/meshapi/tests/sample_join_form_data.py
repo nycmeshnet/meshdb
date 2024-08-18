@@ -12,6 +12,21 @@ valid_join_form_submission = {
     "roof_access": True,
     "referral": "Googled it or something IDK",
     "ncl": True,
+    "dob_addr_response": {
+        "features": [
+            {
+                "properties": {
+                    "housenumber": "151",
+                    "street": "Broome Street",
+                    "borough": "New York",
+                    "region_a": "NY",
+                    "postalcode": "10002",
+                    "addendum": {"pad": {"bin": 1077609}},
+                },
+                "geometry": {"coordinates": [0, 0]},
+            }
+        ]
+    },
 }
 
 valid_join_form_submission_no_email = {
@@ -44,6 +59,21 @@ richmond_join_form_submission = {
     "roof_access": True,
     "referral": "Googled it or something IDK",
     "ncl": True,
+    "dob_addr_response": {
+        "features": [
+            {
+                "properties": {
+                    "housenumber": "475",
+                    "street": "Seaview Avenue",
+                    "borough": "Staten Island",
+                    "region_a": "NY",
+                    "postalcode": "10305",
+                    "addendum": {"pad": {"bin": 123456}},
+                },
+                "geometry": {"coordinates": [0, 0]},
+            }
+        ]
+    },
 }
 
 kings_join_form_submission = {
@@ -60,6 +90,21 @@ kings_join_form_submission = {
     "roof_access": True,
     "referral": "Googled it or something IDK",
     "ncl": True,
+    "dob_addr_response": {
+        "features": [
+            {
+                "properties": {
+                    "housenumber": "188",
+                    "street": "Prospect Park West",
+                    "borough": "Brooklyn",
+                    "region_a": "NY",
+                    "postalcode": "11215",
+                    "addendum": {"pad": {"bin": 123456}},
+                },
+                "geometry": {"coordinates": [0, 0]},
+            }
+        ]
+    },
 }
 
 queens_join_form_submission = {
@@ -76,6 +121,21 @@ queens_join_form_submission = {
     "roof_access": True,
     "referral": "Googled it or something IDK",
     "ncl": True,
+    "dob_addr_response": {
+        "features": [
+            {
+                "properties": {
+                    "housenumber": "36-01",
+                    "street": "35 Avenue",
+                    "borough": "Queens",
+                    "region_a": "NY",
+                    "postalcode": "11106",
+                    "addendum": {"pad": {"bin": 123456}},
+                },
+                "geometry": {"coordinates": [0, 0]},
+            }
+        ]
+    },
 }
 
 bronx_join_form_submission = {
@@ -92,6 +152,21 @@ bronx_join_form_submission = {
     "roof_access": True,
     "referral": "Googled it or something IDK",
     "ncl": True,
+    "dob_addr_response": {
+        "features": [
+            {
+                "properties": {
+                    "housenumber": "250",
+                    "street": "Bedford Park Blvd West",
+                    "borough": "Bronx",
+                    "region_a": "NY",
+                    "postalcode": "10468",
+                    "addendum": {"pad": {"bin": 123456}},
+                },
+                "geometry": {"coordinates": [0, 0]},
+            }
+        ]
+    },
 }
 
 non_nyc_join_form_submission = {
@@ -108,6 +183,7 @@ non_nyc_join_form_submission = {
     "roof_access": True,
     "referral": "Googled it or something IDK",
     "ncl": True,
+    "dob_addr_response": {"features": []},
 }
 
 invalid_join_form_submission = {
@@ -123,6 +199,7 @@ invalid_join_form_submission = {
     "apartment": 3,
     "roof_access": True,
     "ncl": "a duck",
+    "dob_addr_response": {"features": []},
 }
 
 
@@ -140,4 +217,19 @@ jefferson_join_form_submission = {
     "roof_access": True,
     "referral": "Googled it or something IDK",
     "ncl": True,
+    "dob_addr_response": {
+        "features": [
+            {
+                "properties": {
+                    "housenumber": "476",
+                    "street": "Jefferson Street",
+                    "borough": "Brooklyn",
+                    "region_a": "NY",
+                    "postalcode": "11237",
+                    "addendum": {"pad": {"bin": 123456}},
+                },
+                "geometry": {"coordinates": [0, 0]},
+            }
+        ]
+    },
 }
