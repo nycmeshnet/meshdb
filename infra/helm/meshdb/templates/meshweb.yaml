@@ -151,6 +151,11 @@ spec:
                 configMapKeyRef:
                   name: meshdbconfig
                   key: ADMIN_MAP_BASE_URL
+            - name: SITE_BASE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: meshdbconfig
+                  key: SITE_BASE_URL
           volumeMounts:
             - name: static-content-vol
               mountPath: /opt/meshdb/static
