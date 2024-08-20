@@ -988,7 +988,7 @@ class TestUISPImportHandlers(TransactionTestCase):
         mock_notify_administrators_of_data_issue.assert_called_once_with(
             [dup_device1, dup_device2],
             DeviceSerializer,
-            message=f"Possible duplicate objects detected, devices share the same UISP ID (uisp-uuid12345)",
+            message="Possible duplicate objects detected, devices share the same UISP ID (uisp-uuid12345)",
         )
 
         self.assertEqual(2, Device.objects.filter(uisp_id="uisp-uuid12345").count())
@@ -1228,7 +1228,7 @@ class TestUISPImportHandlers(TransactionTestCase):
         mock_notify_administrators_of_data_issue.assert_called_once_with(
             [dup_link_1, dup_link_2],
             LinkSerializer,
-            message=f"Possible duplicate objects detected, links share the same UISP ID (uisp-uuid12345)",
+            message="Possible duplicate objects detected, links share the same UISP ID (uisp-uuid12345)",
         )
 
         self.assertEqual(2, Link.objects.filter(uisp_id="uisp-uuid12345").count())

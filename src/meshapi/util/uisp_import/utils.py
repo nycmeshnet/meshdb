@@ -1,9 +1,10 @@
 import datetime
 import math
-from typing import List, Optional, Union
+from typing import List, Optional, Type, Union
 
 import dateutil.parser
 import requests
+from rest_framework.serializers import Serializer
 
 from meshapi.models import AccessPoint, Building, Device, Link, Node, Sector
 from meshapi.serializers import AccessPointSerializer, DeviceSerializer, LinkSerializer, SectorSerializer
@@ -69,7 +70,7 @@ def get_uisp_link_last_seen(
     return uisp_last_seen
 
 
-def get_serializer(db_object: Union[Device, Link, Sector, AccessPoint]):
+def get_serializer(db_object: Union[Device, Link, Sector, AccessPoint]) -> Type[Serializer]:
     serializer_lookup = {
         Device: DeviceSerializer,
         Sector: SectorSerializer,
