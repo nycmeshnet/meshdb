@@ -189,6 +189,10 @@ class TestUISPImportUtils(TestCase):
             {"overview": {"lastSeen": "2020-11-14T15:20:32.004Z"}},
             {"overview": {"lastSeen": "2016-11-14T15:20:32.004Z"}},
             {"overview": {"lastSeen": "2020-11-14T15:20:32.004Z"}},
+            {"overview": {"lastSeen": None}},
+            {"overview": {"lastSeen": "2020-11-14T15:20:32.004Z"}},
+            {"overview": {"lastSeen": None}},
+            {"overview": {"lastSeen": None}},
         ]
 
         last_seen = get_uisp_link_last_seen(
@@ -220,6 +224,23 @@ class TestUISPImportUtils(TestCase):
         self.assertEqual(
             last_seen,
             datetime.datetime(2016, 11, 14, 15, 20, 32, 4000, tzinfo=tzutc()),
+        )
+
+        last_seen = get_uisp_link_last_seen(
+            "mock_from_uuid",
+            "mock_to_uuid",
+        )
+        self.assertEqual(
+            last_seen,
+            datetime.datetime(2020, 11, 14, 15, 20, 32, 4000, tzinfo=tzutc()),
+        )
+        last_seen = get_uisp_link_last_seen(
+            "mock_from_uuid",
+            "mock_to_uuid",
+        )
+        self.assertEqual(
+            last_seen,
+            None,
         )
 
     @patch("meshapi.util.uisp_import.utils.notify_administrators_of_data_issue")
@@ -462,6 +483,27 @@ class TestUISPImportUpdateObjects(TransactionTestCase):
         self.assertEqual(change_messages, [])
 
     @patch("meshapi.util.uisp_import.update_objects.get_uisp_link_last_seen")
+    def test_update_link_unknown_offline_duration(self, mock_get_last_seen):
+        mock_get_last_seen.return_value = None
+
+        change_messages = update_link_from_uisp_data(
+            self.link,
+            uisp_from_device=self.device1,
+            uisp_to_device=self.device2,
+            uisp_status=Link.LinkStatus.INACTIVE,
+            uisp_link_type=Link.LinkType.FIVE_GHZ,
+        )
+
+        self.link.refresh_from_db()
+        self.assertEqual(self.link.from_device, self.device1)
+        self.assertEqual(self.link.to_device, self.device2)
+        self.assertEqual(self.link.status, Link.LinkStatus.ACTIVE)
+        self.assertEqual(self.link.type, Link.LinkType.FIVE_GHZ)
+        self.assertEqual(self.link.abandon_date, None)
+
+        self.assertEqual(change_messages, [])
+
+    @patch("meshapi.util.uisp_import.update_objects.get_uisp_link_last_seen")
     def test_update_link_reactivate_old_device(self, mock_get_last_seen):
         self.link.status = Link.LinkStatus.INACTIVE
         self.link.abandon_date = datetime.date(2018, 11, 14)
@@ -547,6 +589,26 @@ class TestUISPImportUpdateObjects(TransactionTestCase):
                 "Changed network number from 1234 to 5678",
                 "Marked as Inactive due to being offline for more than 30 days",
             ],
+        )
+
+    def test_update_device_uncertain_offline_duration(self):
+        change_messages = update_device_from_uisp_data(
+            self.device1,
+            uisp_node=self.node1,
+            uisp_name="nycmesh-1234-dev1",
+            uisp_status=Device.DeviceStatus.INACTIVE,
+            uisp_last_seen=None,
+        )
+
+        self.device1.refresh_from_db()
+        self.assertEqual(self.device1.name, "nycmesh-1234-dev1")
+        self.assertEqual(self.device1.node, self.node1)
+        self.assertEqual(self.device1.status, Device.DeviceStatus.ACTIVE)
+        self.assertEqual(self.device1.abandon_date, None)
+
+        self.assertEqual(
+            change_messages,
+            [],
         )
 
     def test_update_device_add_abandon_date(self):
