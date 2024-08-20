@@ -20,6 +20,7 @@ def index(request: HttpRequest) -> HttpResponse:
         "Volunteer Tools": [
             ("/admin", "Admin Panel"),
             ("/api/v1/geography/whole-mesh.kml", "KML Download"),
+            ("/pgadmin/", "PG Admin"),
             ("https://forms.grandsvc.mesh.nycmesh.net/", "Other Forms"),
         ],
         "Developer Tools": [
