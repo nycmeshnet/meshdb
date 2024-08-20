@@ -8,6 +8,7 @@ from unittest.mock import patch
 from django.conf import os
 from django.contrib.auth.models import User
 from django.test import Client, TestCase, TransactionTestCase
+from parameterized import parameterized
 
 from meshapi.models import Building, Install, Member, Node
 
@@ -220,6 +221,86 @@ class TestNN(TestCase):
 
         resp_nn = json.loads(response.content.decode("utf-8"))["network_number"]
         expected_nn = 101
+        self.assertEqual(
+            expected_nn,
+            resp_nn,
+            f"nn incorrect for test_nn_valid_install_number. Should be {expected_nn}, but got {resp_nn}",
+        )
+
+        node_object = Node.objects.get(network_number=expected_nn)
+        self.install_obj_low.refresh_from_db()
+        self.assertEqual(self.install_obj_low.node, node_object)
+
+    @parameterized.expand(
+        [
+            Install.InstallStatus.NN_REASSIGNED,
+            Install.InstallStatus.CLOSED,
+        ]
+    )
+    def test_nn_valid_low_install_number_reassigned_but_unused_nn(self, status_to_eval):
+        # Check that install numbers that are valid network numbers (i.e. >10 <8192) are NOT used
+        # as the network number at assignment time, if the status on the install indicates
+        # that it potentially has been used elsewhere, even if there isn't an existing Node with that NN
+
+        self.install_obj_low.status = status_to_eval
+        self.install_obj_low.save()
+
+        response = self.admin_c.post(
+            "/api/v1/nn-assign/",
+            {"install_number": self.install_number_low, "password": os.environ.get("NN_ASSIGN_PSK")},
+            content_type="application/json",
+        )
+
+        code = 201
+        self.assertEqual(
+            code,
+            response.status_code,
+            f"status code incorrect for test_nn_valid_install_number. Should be {code}, but got {response.status_code}",
+        )
+
+        resp_nn = json.loads(response.content.decode("utf-8"))["network_number"]
+        expected_nn = 101
+        self.assertEqual(
+            expected_nn,
+            resp_nn,
+            f"nn incorrect for test_nn_valid_install_number. Should be {expected_nn}, but got {resp_nn}",
+        )
+
+        node_object = Node.objects.get(network_number=expected_nn)
+        self.install_obj_low.refresh_from_db()
+        self.assertEqual(self.install_obj_low.node, node_object)
+
+    @parameterized.expand(
+        [
+            Install.InstallStatus.ACTIVE,
+            Install.InstallStatus.INACTIVE,
+            Install.InstallStatus.PENDING,
+            Install.InstallStatus.BLOCKED,
+        ]
+    )
+    def test_nn_valid_low_install_status_changed_but_unused_nn(self, status_to_eval):
+        # Check that install numbers that are valid network numbers (i.e. >10 <8192) are used
+        # as the network number at assignment time, if the status on the install has been changed
+        # from the default, but to something that doesn't indicate NN reservation or re-use
+
+        self.install_obj_low.status = status_to_eval
+        self.install_obj_low.save()
+
+        response = self.admin_c.post(
+            "/api/v1/nn-assign/",
+            {"install_number": self.install_number_low, "password": os.environ.get("NN_ASSIGN_PSK")},
+            content_type="application/json",
+        )
+
+        code = 201
+        self.assertEqual(
+            code,
+            response.status_code,
+            f"status code incorrect for test_nn_valid_install_number. Should be {code}, but got {response.status_code}",
+        )
+
+        resp_nn = json.loads(response.content.decode("utf-8"))["network_number"]
+        expected_nn = self.install_number_low
         self.assertEqual(
             expected_nn,
             resp_nn,
