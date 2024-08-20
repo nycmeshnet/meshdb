@@ -79,7 +79,9 @@ def import_and_sync_uisp_devices(uisp_devices: List[UISPDevice]) -> None:
         else:
             uisp_status = Device.DeviceStatus.INACTIVE
 
-        uisp_last_seen = parse_uisp_datetime(uisp_device["overview"]["lastSeen"])
+        uisp_last_seen = (
+            parse_uisp_datetime(uisp_device["overview"]["lastSeen"]) if uisp_device["overview"]["lastSeen"] else None
+        )
 
         with transaction.atomic():
             existing_devices: List[Device] = list(Device.objects.filter(uisp_id=uisp_uuid).select_for_update())
@@ -110,7 +112,9 @@ def import_and_sync_uisp_devices(uisp_devices: List[UISPDevice]) -> None:
             "uisp_id": uisp_uuid,
             "status": uisp_status,
             "install_date": parse_uisp_datetime(uisp_device["overview"]["createdAt"]).date(),
-            "abandon_date": uisp_last_seen.date() if uisp_status == Device.DeviceStatus.INACTIVE else None,
+            "abandon_date": uisp_last_seen.date()
+            if uisp_last_seen and uisp_status == Device.DeviceStatus.INACTIVE
+            else None,
             "notes": f"Automatically imported from UISP on {datetime.date.today().isoformat()}\n\n",
         }
 

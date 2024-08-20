@@ -13,7 +13,7 @@ def update_device_from_uisp_data(
     uisp_node: Node,
     uisp_name: str,
     uisp_status: Device.DeviceStatus,
-    uisp_last_seen: datetime.datetime,
+    uisp_last_seen: Optional[datetime.datetime],
 ) -> List[str]:
     change_messages = []
 
@@ -28,7 +28,7 @@ def update_device_from_uisp_data(
         existing_device.node = uisp_node
 
     if existing_device.status != uisp_status:
-        if uisp_status == Device.DeviceStatus.INACTIVE:
+        if uisp_status == Device.DeviceStatus.INACTIVE and uisp_last_seen is not None:
             # We wait 30 days to make sure this device is actually inactive,
             # and not just temporarily offline
             if (
@@ -58,7 +58,11 @@ def update_device_from_uisp_data(
 
             change_messages.append(change_message)
 
-    if existing_device.status == Device.DeviceStatus.INACTIVE and existing_device.abandon_date is None:
+    if (
+        existing_device.status == Device.DeviceStatus.INACTIVE
+        and existing_device.abandon_date is None
+        and uisp_last_seen is not None
+    ):
         existing_device.abandon_date = uisp_last_seen.date()
         change_messages.append(f"Added missing abandon date of {existing_device.abandon_date} based on UISP last-seen")
 
@@ -96,7 +100,7 @@ def update_link_from_uisp_data(
     )
 
     if existing_link.status != uisp_status:
-        if uisp_status == Link.LinkStatus.INACTIVE:
+        if uisp_status == Link.LinkStatus.INACTIVE and uisp_last_seen is not None:
             # We wait 30 days to make sure this link is actually inactive,
             # and not just temporarily offline
             if (
@@ -128,7 +132,11 @@ def update_link_from_uisp_data(
         change_messages.append(f"Changed link type from {existing_link.type} to {uisp_link_type}")
         existing_link.type = uisp_link_type
 
-    if existing_link.status == Link.LinkStatus.INACTIVE and existing_link.abandon_date is None:
+    if (
+        existing_link.status == Link.LinkStatus.INACTIVE
+        and existing_link.abandon_date is None
+        and uisp_last_seen is not None
+    ):
         existing_link.abandon_date = uisp_last_seen.date()
         change_messages.append(f"Added missing abandon date of {existing_link.abandon_date} based on UISP last-seen")
 

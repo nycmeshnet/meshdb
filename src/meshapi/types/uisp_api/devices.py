@@ -6,7 +6,7 @@
 # is marked NotRequired
 
 
-from typing import Dict, List, Literal, NotRequired, TypedDict
+from typing import Dict, List, Literal, NotRequired, Optional, TypedDict
 
 from meshapi.types.uisp_api.literals import (
     CountryCodeLiteral,
@@ -202,7 +202,7 @@ class DeviceOverview(TypedDict):
     frequency: NotRequired[float]
     isLocateRunning: NotRequired[bool]
     keyExchangeStatus: NotRequired[Literal["pending", "complete"]]
-    lastSeen: NotRequired[str]  # ISO 8601 date-time str
+    lastSeen: NotRequired[Optional[str]]  # ISO 8601 date-time str
     linkActiveStationsCount: NotRequired[float]
     linkOutageScore: NotRequired[float]
     linkScore: NotRequired["LinkScore"]

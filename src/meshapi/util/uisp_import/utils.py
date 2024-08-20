@@ -55,19 +55,20 @@ def get_building_from_network_number(network_number: int) -> Optional[Building]:
 
 def get_uisp_link_last_seen(
     from_device_uuid: str, to_device_uuid: str, uisp_session: Optional[requests.Session] = None
-) -> datetime.datetime:
+) -> Optional[datetime.datetime]:
     if not uisp_session:
         uisp_session = get_uisp_session()
 
     from_device_uisp_dict = get_uisp_device_detail(from_device_uuid, uisp_session)
     to_device_uisp_dict = get_uisp_device_detail(to_device_uuid, uisp_session)
 
-    uisp_last_seen = min(
-        parse_uisp_datetime(from_device_uisp_dict["overview"]["lastSeen"]),
-        parse_uisp_datetime(to_device_uisp_dict["overview"]["lastSeen"]),
-    )
+    last_seen_times = [
+        parse_uisp_datetime(date_str)
+        for date_str in [from_device_uisp_dict["overview"]["lastSeen"], to_device_uisp_dict["overview"]["lastSeen"]]
+        if date_str is not None
+    ]
 
-    return uisp_last_seen
+    return min(last_seen_times) if last_seen_times else None
 
 
 def get_serializer(db_object: Union[Device, Link, Sector, AccessPoint]) -> Type[Serializer]:
