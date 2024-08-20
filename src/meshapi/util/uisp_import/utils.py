@@ -69,30 +69,43 @@ def get_uisp_link_last_seen(
     return uisp_last_seen
 
 
-def notify_admins_of_changes(
-    db_object: Union[Device, Link, Sector],
-    change_list: List[str],
-    created: bool = False,
-) -> None:
+def get_serializer(db_object: Union[Device, Link, Sector, AccessPoint]):
     serializer_lookup = {
         Device: DeviceSerializer,
         Sector: SectorSerializer,
         AccessPoint: AccessPointSerializer,
         Link: LinkSerializer,
     }
+    return serializer_lookup[type(db_object)]
 
-    # Down-class this object if needed, so that the logging messages make sense.
-    # We hide the model inheritance from admins, so they'd be confused if
-    # we called a Sector a "device" in a notification message
-    # (also the admin UI link would be wrong from their perspective)
+
+def downclass_device(device: Device) -> Union[Device, Sector, AccessPoint]:
+    """
+    Down-class this device, so that the logging messages make sense.
+    We hide the model inheritance from admins, so they'd be confused if
+    we called a Sector a "device" in a notification message
+    (also the admin UI link would be wrong from their perspective)
+    """
+    sector = Sector.objects.filter(device_ptr=device).first()
+    access_point = AccessPoint.objects.filter(device_ptr=device).first()
+
+    db_object = device
+    if sector:
+        db_object = sector
+    elif access_point:
+        db_object = access_point
+
+    return db_object
+
+
+def notify_admins_of_changes(
+    db_object: Union[Device, Link, Sector, AccessPoint],
+    change_list: List[str],
+    created: bool = False,
+) -> None:
+    # Attempt to downclass if needed (so admin links and such make sense)
     if type(db_object) is Device:
-        sector = Sector.objects.filter(device_ptr=db_object).first()
-        access_point = AccessPoint.objects.filter(device_ptr=db_object).first()
-
-        if sector:
-            db_object = sector
-        elif access_point:
-            db_object = access_point
+        db_object = downclass_device(db_object)
 
     if created:
         message = (
@@ -109,7 +122,7 @@ def notify_admins_of_changes(
 
     notify_administrators_of_data_issue(
         [db_object],
-        serializer_lookup[type(db_object)],
+        get_serializer(db_object),
         message=message,
     )
 

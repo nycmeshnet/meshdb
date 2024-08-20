@@ -3,10 +3,10 @@ from unittest.mock import call, patch
 
 import pytest
 from dateutil.tz import tzutc
-from django.test import TestCase
+from django.test import TestCase, TransactionTestCase
 
 from meshapi.models import LOS, AccessPoint, Building, Device, Link, Node, Sector
-from meshapi.serializers import AccessPointSerializer, DeviceSerializer, SectorSerializer
+from meshapi.serializers import AccessPointSerializer, DeviceSerializer, LinkSerializer, SectorSerializer
 from meshapi.util.uisp_import.sync_handlers import (
     import_and_sync_uisp_devices,
     import_and_sync_uisp_links,
@@ -322,7 +322,7 @@ class TestUISPImportUtils(TestCase):
         )
 
 
-class TestUISPImportUpdateObjects(TestCase):
+class TestUISPImportUpdateObjects(TransactionTestCase):
     def setUp(self):
         self.node1 = Node(
             network_number=1234,
@@ -624,7 +624,7 @@ class TestUISPImportUpdateObjects(TestCase):
         self.assertEqual(change_messages, [])
 
 
-class TestUISPImportHandlers(TestCase):
+class TestUISPImportHandlers(TransactionTestCase):
     def setUp(self):
         self.node1 = Node(
             network_number=1234,
@@ -935,6 +935,64 @@ class TestUISPImportHandlers(TestCase):
 
         self.assertIsNone(Device.objects.filter(uisp_id="uisp-uuid5").first())
 
+    @patch("meshapi.util.uisp_import.sync_handlers.notify_admins_of_changes")
+    @patch("meshapi.util.uisp_import.sync_handlers.update_device_from_uisp_data")
+    @patch("meshapi.util.uisp_import.sync_handlers.notify_administrators_of_data_issue")
+    def test_duplicate_uisp_id_devices(
+        self,
+        mock_notify_administrators_of_data_issue,
+        mock_update_device,
+        mock_notify_admins,
+    ):
+        uisp_devices = [
+            {
+                "overview": {
+                    "status": "active",
+                    "createdAt": "2018-11-14T15:20:32.004Z",
+                    "lastSeen": "2024-08-12T02:04:35.335Z",
+                    "wirelessMode": "sta-ptmp",
+                },
+                "identification": {
+                    "id": "uisp-uuid12345",
+                    "name": "nycmesh-1234-dev1",
+                    "category": "wireless",
+                    "type": "airMax",
+                },
+            },
+        ]
+
+        dup_device1 = Device(
+            node=self.node1,
+            status=Device.DeviceStatus.ACTIVE,
+            name="nycmesh-1234-dev1",
+            uisp_id="uisp-uuid12345",
+        )
+        dup_device1.save()
+
+        dup_device2 = Sector(
+            node=self.node1,
+            status=Device.DeviceStatus.ACTIVE,
+            name="nycmesh-1234-dev1",
+            uisp_id="uisp-uuid12345",
+            width=120,
+            azimuth=0,
+            radius=1,
+        )
+        dup_device2.save()
+
+        import_and_sync_uisp_devices(uisp_devices)
+
+        mock_update_device.assert_has_calls([])
+        mock_notify_admins.assert_has_calls([])
+
+        mock_notify_administrators_of_data_issue.assert_called_once_with(
+            [dup_device1, dup_device2],
+            DeviceSerializer,
+            message=f"Possible duplicate objects detected, devices share the same UISP ID (uisp-uuid12345)",
+        )
+
+        self.assertEqual(2, Device.objects.filter(uisp_id="uisp-uuid12345").count())
+
     @patch("meshapi.util.uisp_import.sync_handlers.get_uisp_session")
     @patch("meshapi.util.uisp_import.sync_handlers.notify_admins_of_changes")
     @patch("meshapi.util.uisp_import.sync_handlers.update_link_from_uisp_data")
@@ -1104,6 +1162,76 @@ class TestUISPImportHandlers(TestCase):
         self.assertTrue(created_link.notes.startswith("Automatically imported from UISP on"))
 
         self.assertIsNone(Link.objects.filter(uisp_id="uisp-uuid4").first())
+
+    @patch("meshapi.util.uisp_import.sync_handlers.get_uisp_session")
+    @patch("meshapi.util.uisp_import.sync_handlers.notify_admins_of_changes")
+    @patch("meshapi.util.uisp_import.sync_handlers.update_link_from_uisp_data")
+    @patch("meshapi.util.uisp_import.sync_handlers.notify_administrators_of_data_issue")
+    def test_duplicate_uisp_id_links(
+        self,
+        mock_notify_administrators_of_data_issue,
+        mock_update_link,
+        mock_notify_admins_of_changes,
+        mock_get_uisp_session,
+    ):
+        mock_get_uisp_session.return_value = "mock_uisp_session"
+
+        uisp_links = [
+            {
+                "from": {
+                    "device": {
+                        "identification": {
+                            "id": "uisp-uuid1",
+                            "category": "wireless",
+                            "name": "nycmesh-1234-dev1",
+                        }
+                    }
+                },
+                "to": {
+                    "device": {
+                        "identification": {
+                            "id": "uisp-uuid2",
+                            "category": "wireless",
+                            "name": "nycmesh-5678-dev2",
+                        }
+                    }
+                },
+                "state": "active",
+                "id": "uisp-uuid12345",
+                "type": "wireless",
+                "frequency": 5_000,
+            },
+        ]
+
+        dup_link_1 = Link(
+            from_device=self.device1,
+            to_device=self.device2,
+            status=Link.LinkStatus.ACTIVE,
+            type=Link.LinkType.FIVE_GHZ,
+            uisp_id="uisp-uuid12345",
+        )
+        dup_link_1.save()
+
+        dup_link_2 = Link(
+            from_device=self.device1,
+            to_device=self.device2,
+            status=Link.LinkStatus.ACTIVE,
+            type=Link.LinkType.FIVE_GHZ,
+            uisp_id="uisp-uuid12345",
+        )
+        dup_link_2.save()
+
+        import_and_sync_uisp_links(uisp_links)
+
+        mock_update_link.assert_has_calls([])
+        mock_notify_admins_of_changes.assert_has_calls([])
+        mock_notify_administrators_of_data_issue.assert_called_once_with(
+            [dup_link_1, dup_link_2],
+            LinkSerializer,
+            message=f"Possible duplicate objects detected, links share the same UISP ID (uisp-uuid12345)",
+        )
+
+        self.assertEqual(2, Link.objects.filter(uisp_id="uisp-uuid12345").count())
 
     @patch("meshapi.util.uisp_import.sync_handlers.get_uisp_session")
     @patch("meshapi.util.uisp_import.sync_handlers.notify_admins_of_changes")
