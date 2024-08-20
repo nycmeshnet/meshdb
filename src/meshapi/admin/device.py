@@ -10,7 +10,7 @@ from meshapi.admin.inlines import DeviceLinkInline
 from meshapi.models import Device
 from meshapi.widgets import ExternalHyperlinkWidget
 
-UISP_URL = os.environ.get("UISP_URL", "https://uisp.mesh.nycmesh.net")
+UISP_URL = os.environ.get("UISP_URL", "https://uisp.mesh.nycmesh.net/nms")
 
 
 class DeviceAdminForm(forms.ModelForm):
@@ -20,7 +20,7 @@ class DeviceAdminForm(forms.ModelForm):
         readonly_fields = ["uisp_link"]
         widgets = {
             "uisp_id": ExternalHyperlinkWidget(
-                lambda uisp_id: f"{UISP_URL}/nms/devices#id={uisp_id}&panelType=device-panel",
+                lambda uisp_id: f"{UISP_URL}/devices#id={uisp_id}&panelType=device-panel",
                 title="View in UISP",
             ),
         }

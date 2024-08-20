@@ -24,10 +24,9 @@ class PanoramaViewer(JSONFormWidget):
             }
         }
 
-    # FIXME (Use SafeString)
     def render(
         self, name: str, value: str, attrs: Optional[Dict[str, Any]] = None, renderer: Optional[Any] = None
-    ) -> str:
+    ) -> SafeString:
         if "DISALLOW_PANO_EDITS" in os.environ:
             super_template = ""
         else:

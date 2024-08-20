@@ -54,6 +54,7 @@ jobs:
         --set meshweb.pano_github_token="${{ secrets.GH_TOKEN }}" \
         --set pgadmin.default_email="${{ secrets.PGADMIN_EMAIL }}" \
         --set pgadmin.default_password="${{ secrets.PGADMIN_PASSWORD }}" \
+        --set uisp.url="${{ secrets.UISP_URL }}" \
         --set uisp.user="${{ secrets.UISP_USER }}" \
         --set uisp.psk="${{ secrets.UISP_PSK }}" \
         --set map.base_url="${{ vars.MAP_URL }}" \
