@@ -73,10 +73,8 @@ def import_and_sync_uisp_devices(uisp_devices: List[UISPDevice]) -> None:
             )
             continue
 
-        if not uisp_device["overview"]["status"]:
-            # If UISP doesn't have a status value, assume active
-            uisp_status = Device.DeviceStatus.ACTIVE
-        elif uisp_device["overview"]["status"] == "active":
+        # If UISP doesn't have a status value, assume active
+        if not uisp_device["overview"]["status"] or uisp_device["overview"]["status"] == "active":
             uisp_status = Device.DeviceStatus.ACTIVE
         else:
             uisp_status = Device.DeviceStatus.INACTIVE
