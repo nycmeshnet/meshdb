@@ -1,3 +1,5 @@
+import datetime
+
 from django import forms
 from django.contrib import admin
 
@@ -26,3 +28,12 @@ class LOSAdmin(admin.ModelAdmin):
     list_filter = ["source"]
 
     autocomplete_fields = ["from_building", "to_building"]
+
+    def get_form(self, request, obj=None, **kwargs):
+        form = super().get_form(request, obj, **kwargs)
+        if not obj:
+            # Autofill the form with today's date, unless we're editing
+            # an existing object (so we don't accidentally mutate something)
+            form.base_fields["analysis_date"].initial = datetime.date.today().isoformat()
+
+        return form
