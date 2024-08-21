@@ -156,6 +156,14 @@ spec:
                 configMapKeyRef:
                   name: meshdbconfig
                   key: SITE_BASE_URL
+            - name: DD_PROFILING_ENABLED
+              value: "true"
+            - name: DD_LOGS_INJECTION
+              value: "true"
+            - name: DD_IAST_ENABLED
+              value: "true"
+            - name: DD_APPSEC_SCA_ENABLED
+              value: "true"
           volumeMounts:
             - name: static-content-vol
               mountPath: /opt/meshdb/static

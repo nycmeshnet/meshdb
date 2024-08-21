@@ -66,6 +66,14 @@ spec:
                   key: postgres-password
             - name: PGDATA
               value: "/var/lib/postgresql/data/meshdb_data"
+            - name: DD_PROFILING_ENABLED
+              value: "true"
+            - name: DD_LOGS_INJECTION
+              value: "true"
+            - name: DD_IAST_ENABLED
+              value: "true"
+            - name: DD_APPSEC_SCA_ENABLED
+              value: "true"
           volumeMounts:
             - name: pg-data-vol
               mountPath: /var/lib/postgresql/data
