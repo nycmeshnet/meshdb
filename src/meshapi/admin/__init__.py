@@ -1,3 +1,4 @@
+from .access_point import *
 from .admin import *
 from .building import *
 from .device import *

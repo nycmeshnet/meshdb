@@ -1,13 +1,12 @@
-from django import forms
 from django.contrib import admin
 from import_export.admin import ExportActionMixin, ImportExportModelAdmin
 
-from meshapi.admin.admin import device_fieldsets
+from meshapi.admin.device import DeviceAdmin, DeviceAdminForm
 from meshapi.admin.inlines import DeviceLinkInline
 from meshapi.models import Sector
 
 
-class SectorAdminForm(forms.ModelForm):
+class SectorAdminForm(DeviceAdminForm):
     class Meta:
         model = Sector
         fields = "__all__"
@@ -16,20 +15,17 @@ class SectorAdminForm(forms.ModelForm):
 @admin.register(Sector)
 class SectorAdmin(ImportExportModelAdmin, ExportActionMixin):
     form = SectorAdminForm
-    search_fields = ["name__icontains", "model__icontains", "ssid__icontains", "notes__icontains"]
+    search_fields = ["name__icontains", "notes__icontains"]
     list_display = [
         "__str__",
-        "ssid",
         "name",
-        "model",
     ]
     list_filter = [
         "status",
         "install_date",
-        "model",
     ]
     inlines = [DeviceLinkInline]
-    fieldsets = device_fieldsets + [
+    fieldsets = DeviceAdmin.fieldsets + [
         (
             "Sector Attributes",
             {

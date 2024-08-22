@@ -84,7 +84,7 @@ class MapDataInstallSerializer(serializers.ModelSerializer):
 
         # Supplement with "Omni" if this node has an omni attached
         for device in install.node.devices.all():
-            if "omni" in device.model.lower():
+            if device.name and "omni" in device.name.lower():
                 synthetic_notes.append("Omni")
 
         return " ".join(synthetic_notes) if synthetic_notes else None
@@ -196,13 +196,11 @@ class MapDataSectorSerializer(serializers.ModelSerializer):
             "azimuth",
             "width",
             "status",
-            "device",
             "installDate",
         )
 
     nodeId = serializers.SerializerMethodField("get_node_id")
     status = serializers.SerializerMethodField("convert_status_to_spreadsheet_status")
-    device = serializers.CharField(source="model")
     installDate = JavascriptDateField(source="install_date")
 
     def get_node_id(self, sector: Sector) -> int:

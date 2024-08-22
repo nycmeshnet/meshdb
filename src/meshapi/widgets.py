@@ -2,6 +2,7 @@ import json
 import os
 from typing import Any, Dict, Optional
 
+from django import forms
 from django.forms import widgets
 from django.template import loader
 from django.utils.safestring import mark_safe
@@ -48,3 +49,27 @@ class PanoramaViewer(JSONFormWidget):
 
 class DeviceIPAddressWidget(widgets.TextInput):
     template_name = "widgets/ip_address.html"
+
+
+class UISPHyperlinkWidget(widgets.TextInput):
+    template_name = "widgets/uisp_link.html"
+
+
+class AutoPopulateLocationWidget(forms.Widget):
+    template_name = "widgets/auto_populate_location.html"
+
+    class Media:
+        css = {
+            "all": ("widgets/auto_populate_location.css",),
+        }
+        js = ["widgets/auto_populate_location.js"]
+
+    def __init__(self, source: str, attrs: Optional[dict] = None):
+        super().__init__(attrs)
+        self.source = source
+
+    def get_context(self, name: str, value: str, attrs: Optional[dict] = None) -> dict:
+        context = super().get_context(name, value, attrs)
+        context["auto_populate_source"] = self.source
+        context["auto_populate_url"] = self.source
+        return context

@@ -31,7 +31,7 @@ SESSION_SAVE_EVERY_REQUEST = True  # "False" by default
 SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = "DEBUG" in os.environ
+DEBUG = os.environ.get("DEBUG", "False") == "True"
 PROFILING_ENABLED = DEBUG and not os.environ.get("DISABLE_PROFILING", "False") == "True"
 
 USE_X_FORWARDED_HOST = True
@@ -42,30 +42,41 @@ ALLOWED_HOSTS = [
     "db.mesh.nycmesh.net",
     "db.mesh",
     "db.nycmesh.net",
-    "127.0.0.1",
     "meshdb",
     "nginx",
-    "host.docker.internal",
     "devdb.mesh.nycmesh.net",
 ]
 
-# FIXME: Shit works, but also doesn't(?) work with the ^ as the first character
-# r"^https://\w+\.nycmesh\.net$",
-# r"^http://\w+\.nycmesh\.net$",
 CORS_ALLOWED_ORIGINS = [
     "http://forms.grandsvc.mesh.nycmesh.net",
     "https://forms.grandsvc.mesh.nycmesh.net",
+    "https://forms.mesh.nycmesh.net",
+    "https://devforms.mesh.nycmesh.net",
     "http://map.grandsvc.mesh.nycmesh.net",
     "https://map.grandsvc.mesh.nycmesh.net",
+    "https://map.mesh.nycmesh.net",
+    "https://devmap.mesh.nycmesh.net",
+    "https://adminmap.mesh.nycmesh.net",
+    "https://devadminmap.mesh.nycmesh.net",
     "http://map.grandsvc.mesh",
     "https://map.grandsvc.mesh",
     "http://forms.grandsvc.mesh",
     "https://forms.grandsvc.mesh",
-    "http://127.0.0.1:3000",
-    "http://localhost:3000",
-    "http://127.0.0.1:80",
-    "http://localhost:80",
 ]
+
+if DEBUG:
+    ALLOWED_HOSTS += [
+        "127.0.0.1",
+        "host.docker.internal",
+    ]
+
+    CORS_ALLOWED_ORIGINS += [
+        "http://127.0.0.1:3000",
+        "http://localhost:3000",
+        "http://127.0.0.1:80",
+        "http://localhost:80",
+    ]
+
 
 CSRF_TRUSTED_ORIGINS = [
     "http://db.grandsvc.mesh.nycmesh.net",
@@ -247,6 +258,7 @@ HOOK_EVENTS = {
     "los.created": "meshapi.LOS.created+",
     "device.created": "meshapi.Device.created+",
     "sector.created": "meshapi.Sector.created+",
+    "access_point.created": "meshapi.AccessPoint.created+",
     "building.updated": "meshapi.Building.updated+",
     "member.updated": "meshapi.Member.updated+",
     "install.updated": "meshapi.Install.updated+",
@@ -255,6 +267,7 @@ HOOK_EVENTS = {
     "los.updated": "meshapi.LOS.updated+",
     "device.updated": "meshapi.Device.updated+",
     "sector.updated": "meshapi.Sector.updated+",
+    "access_point.updated": "meshapi.AccessPoint.updated+",
     "building.deleted": "meshapi.Building.deleted+",
     "member.deleted": "meshapi.Member.deleted+",
     "install.deleted": "meshapi.Install.deleted+",
@@ -263,6 +276,7 @@ HOOK_EVENTS = {
     "los.deleted": "meshapi.LOS.deleted+",
     "device.deleted": "meshapi.Device.deleted+",
     "sector.deleted": "meshapi.Sector.deleted+",
+    "access_point.deleted": "meshapi.AccessPoint.deleted+",
 }
 
 HOOK_SERIALIZERS = {
@@ -274,6 +288,7 @@ HOOK_SERIALIZERS = {
     "meshapi.LOS": "meshapi.serializers.model_api.LOSSerializer",
     "meshapi.Device": "meshapi.serializers.model_api.DeviceSerializer",
     "meshapi.Sector": "meshapi.serializers.model_api.SectorSerializer",
+    "meshapi.AccessPoint": "meshapi.serializers.model_api.AccessPointSerializer",
 }
 
 HOOK_CUSTOM_MODEL = "meshapi_hooks.CelerySerializerHook"
@@ -304,12 +319,17 @@ SPECTACULAR_SETTINGS = {
         {
             "name": "Devices",
             "description": "Devices, one corresponding to each physical device on the mesh (routers, aps, cpes, etc.). "
-            "Includes all Sectors",
+            "Includes all Sectors and Access Points",
         },
         {
             "name": "Sectors",
             "description": 'Special devices with antennas with broad coverage of a radial "slice" of land area. '
             "See https://docs.nycmesh.net/hardware/liteap/",
+        },
+        {
+            "name": "Access Points",
+            "description": "Special devices which provide community WiFi to a given area, usually in a park or "
+            "other public place",
         },
         {"name": "Geographic & KML Data", "description": "Endpoints for geographic and KML data export"},
         {

@@ -73,6 +73,20 @@ nginx:
   affinity: {}
   tolerations: []
 
+ingress:
+  enabled: true
+  targetService: meshdb-nginx # Testing this out
+  className: "traefik"
+  annotations: {}
+    # kubernetes.io/ingress.class: nginx
+    # kubernetes.io/tls-acme: "true"
+  hosts:
+    - host: db.mesh.nycmesh.net # This will get overridden. Set Values.ingress.hosts[0].host
+      paths:
+        - path: /
+          pathType: Prefix 
+  tls: []
+
 uisp:
   url: "https://uisp.mesh.nycmesh.net/nms"
 
@@ -94,9 +108,6 @@ pelias:
   nodeSelector: {}
   affinity: {}
   tolerations: []
-
-map:
-  base_url: "https://admin-map.grandsvc.mesh.nycmesh.net"
 
 image:
   pullPolicy: Always

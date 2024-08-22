@@ -110,7 +110,7 @@ your database.
 
 ```sh
 cp -R <path_to_data_dump> ./spreadsheet_data/
-./import_spreadsheet_dump.sh
+./scripts/import_spreadsheet_dump.sh
 ```
 
 If you want to do work with celery, you'll need to run a worker as well as a beat.

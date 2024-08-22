@@ -141,11 +141,21 @@ spec:
                 secretKeyRef:
                   name: meshdb-secrets
                   key: uisp-pass
+            - name: SLACK_ADMIN_NOTIFICATIONS_WEBHOOK_URL
+              valueFrom:
+                secretKeyRef:
+                  name: meshdb-secrets
+                  key: slack-webhook
             - name: ADMIN_MAP_BASE_URL
               valueFrom:
                 configMapKeyRef:
                   name: meshdbconfig
                   key: ADMIN_MAP_BASE_URL
+            - name: SITE_BASE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: meshdbconfig
+                  key: SITE_BASE_URL
           volumeMounts:
             - name: static-content-vol
               mountPath: /opt/meshdb/static
@@ -159,6 +169,8 @@ spec:
            initialDelaySeconds: 4
            timeoutSeconds: 3
            {{ end }}
+          livenessProbe:
+            {{- toYaml .Values.livenessProbe | nindent 12 }}
           readinessProbe:
             {{- toYaml .Values.readinessProbe | nindent 12 }}
           resources:

@@ -1,20 +1,27 @@
+import logging
+from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple, TypedDict
 
 from django.db.models import Exists, F, OuterRef, Q
 from django.db.models.functions import Greatest
 from django.http import HttpRequest, HttpResponse
 from drf_spectacular.types import OpenApiTypes
-from drf_spectacular.utils import OpenApiResponse, extend_schema
+from drf_spectacular.utils import OpenApiResponse, extend_schema, extend_schema_view, inline_serializer
 from fastkml import Data, ExtendedData, geometry, kml, styles
 from fastkml.enums import AltitudeMode
 from pygeoif import LineString, Point
-from rest_framework import permissions, status
+from rest_framework import permissions, serializers, status
 from rest_framework.negotiation import BaseContentNegotiation
 from rest_framework.parsers import BaseParser
 from rest_framework.renderers import BaseRenderer
+from rest_framework.request import Request
+from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework_dataclasses.serializers import DataclassSerializer
 
+from meshapi.exceptions import AddressError
 from meshapi.models import LOS, Install, Link
+from meshapi.validation import geocode_nyc_address
 
 KML_CONTENT_TYPE = "application/vnd.google-earth.kml+xml"
 KML_CONTENT_TYPE_WITH_CHARSET = f"{KML_CONTENT_TYPE}; charset=utf-8"
@@ -236,7 +243,7 @@ class WholeMeshKML(APIView):
             .prefetch_related("to_device")
             .filter(~Q(status=Link.LinkStatus.INACTIVE))
             .exclude(type=Link.LinkType.VPN)
-            .annotate(highest_altitude=Greatest("from_device__altitude", "to_device__altitude"))
+            .annotate(highest_altitude=Greatest("from_device__node__altitude", "to_device__node__altitude"))
             .order_by(F("highest_altitude").asc(nulls_first=True))
         ):
             mark_active: bool = link.status == Link.LinkStatus.ACTIVE
@@ -251,14 +258,14 @@ class WholeMeshKML(APIView):
                     "mark_active": mark_active,
                     "is_los": False,
                     "from_coord": (
-                        link.from_device.longitude,
-                        link.from_device.latitude,
-                        link.from_device.altitude or DEFAULT_ALTITUDE,
+                        link.from_device.node.longitude,
+                        link.from_device.node.latitude,
+                        link.from_device.node.altitude or DEFAULT_ALTITUDE,
                     ),
                     "to_coord": (
-                        link.to_device.longitude,
-                        link.to_device.latitude,
-                        link.to_device.altitude or DEFAULT_ALTITUDE,
+                        link.to_device.node.longitude,
+                        link.to_device.node.latitude,
+                        link.to_device.node.altitude or DEFAULT_ALTITUDE,
                     ),
                     "extended_data": {
                         "name": f"Links-{link.id}-{link_label}",
@@ -363,5 +370,93 @@ class WholeMeshKML(APIView):
         return HttpResponse(
             kml_root.to_string(),
             content_type=KML_CONTENT_TYPE_WITH_CHARSET,
+            status=status.HTTP_200_OK,
+        )
+
+
+@dataclass
+class GeocodeRequest:
+    street_address: str
+    city: str
+    state: str
+    zip: int
+
+
+class GeocodeSerializer(DataclassSerializer):
+    class Meta:
+        dataclass = GeocodeRequest
+
+
+@extend_schema_view(
+    get=extend_schema(
+        tags=["Geographic & KML Data"],
+        summary="Use the NYC geocoding APIs to look up an address, and return the lat/lon/alt "
+        "corresponding to it or 404 if the address cannot be found within NYC",
+        parameters=[GeocodeSerializer],
+        responses={
+            "201": OpenApiResponse(
+                inline_serializer(
+                    "JoinFormSuccessResponse",
+                    fields={
+                        "BIN": serializers.IntegerField(),
+                        "latitude": serializers.FloatField(),
+                        "longitude": serializers.FloatField(),
+                        "altitude": serializers.FloatField(required=False),
+                    },
+                ),
+                description="Request received, an install has been created (along with member and "
+                "building objects if necessary).",
+            ),
+            "400": OpenApiResponse(
+                inline_serializer("ErrorResponseMissingFields", fields={"detail": serializers.DictField()}),
+                description="Invalid request body JSON or missing required fields",
+            ),
+            "404": OpenApiResponse(
+                inline_serializer("ErrorResponseInvalidAddr", fields={"detail": serializers.CharField()}),
+                description="Invalid address, or not found within NYC",
+            ),
+            "500": OpenApiResponse(
+                inline_serializer("ErrorResponseInternalFailure", fields={"detail": serializers.CharField()}),
+                description="Could not geocode address due to internal failure. Try again?",
+            ),
+        },
+    )
+)
+class NYCGeocodeWrapper(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request: Request) -> Response:
+        serializer = GeocodeSerializer(data=request.query_params)
+        if not serializer.is_valid():
+            return Response({"detail": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            raw_addr: GeocodeRequest = serializer.save()
+            nyc_addr_info = geocode_nyc_address(raw_addr.street_address, raw_addr.city, raw_addr.state, raw_addr.zip)
+        except ValueError:
+            return Response(
+                {
+                    "detail": "Non-NYC registrations are not supported at this time. "
+                    "Please email support@nycmesh.net for more information"
+                },
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        except AddressError as e:
+            logging.exception("AddressError when validating address")
+            return Response({"detail": e.args[0]}, status=status.HTTP_404_NOT_FOUND)
+
+        if not nyc_addr_info:
+            # We failed to contact the city, this is probably a retryable error, return 500
+            return Response(
+                {"detail": "Your address could not be validated."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+        return Response(
+            {
+                "BIN": nyc_addr_info.bin,
+                "latitude": nyc_addr_info.latitude,
+                "longitude": nyc_addr_info.longitude,
+                "altitude": nyc_addr_info.altitude,
+            },
             status=status.HTTP_200_OK,
         )

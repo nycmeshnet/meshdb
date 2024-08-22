@@ -96,6 +96,7 @@ class Building(models.Model):
         help_text="All nodes located on the same structure (i.e. a discrete man-made place identified by the same BIN) "
         "that this Building is located within.",
         related_name="buildings",
+        blank=True,
     )
 
     def save(self, *args: Any, **kwargs: Any) -> None:

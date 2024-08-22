@@ -36,11 +36,7 @@ def create_building_install_node_and_device(member_ref, nn, install_number=None)
 
     device = Device(
         node=node,
-        model="OmniTik",
-        type=Device.DeviceType.ROUTER,
         status=Device.DeviceStatus.ACTIVE,
-        latitude=0,
-        longitude=0,
     )
     device.save()
 
