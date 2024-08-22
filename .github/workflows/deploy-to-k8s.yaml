@@ -58,7 +58,7 @@ jobs:
         --set uisp.psk="${{ secrets.UISP_PSK }}" \
         --set map.base_url="${{ vars.MAP_URL }}" \
         --set meshdb.site_base_url="${{ vars.SITE_BASE_URL }}" \
-        --set meshdb.slack_webhook="${{ secrets.SLACK_ADMIN_NOTIFICATIONS_WEBHOOK_URL }}" \
+        --set meshweb.slack_webhook="${{ secrets.SLACK_ADMIN_NOTIFICATIONS_WEBHOOK_URL }}" \
         --set ingress.hosts[0].host="${{ vars.INGRESS_HOST }}",ingress.hosts[0].paths[0].path=/,ingress.hosts[0].paths[0].pathType=Prefix
 
         # Rolling restart
