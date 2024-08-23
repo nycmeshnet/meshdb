@@ -1,5 +1,5 @@
-from django.http import HttpRequest, HttpResponse
 from django.conf import settings
+from django.http import HttpRequest, HttpResponse
 from django.template import loader
 from drf_spectacular.utils import extend_schema
 from rest_framework import permissions
