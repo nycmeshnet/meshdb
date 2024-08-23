@@ -251,7 +251,7 @@ def import_and_sync_uisp_links(uisp_links: List[UISPDataLink]) -> None:
 
 
 def sync_link_table_into_los_objects() -> None:
-    for link in Link.objects.all():
+    for link in Link.objects.exclude(type=Link.LinkType.ETHERNET).exclude(type=Link.LinkType.FIBER):
         from_building = get_building_from_network_number(link.from_device.node.network_number)
         to_building = get_building_from_network_number(link.to_device.node.network_number)
 

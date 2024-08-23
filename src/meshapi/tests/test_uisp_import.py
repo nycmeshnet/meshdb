@@ -1448,3 +1448,14 @@ class TestUISPImportHandlers(TransactionTestCase):
         sync_link_table_into_los_objects()
 
         self.assertEqual(0, len(LOS.objects.all()))
+
+    def test_sync_fiber_link(self):
+        self.link1.type = Link.LinkType.FIBER
+        self.link1.save()
+        self.link2.type = Link.LinkType.ETHERNET
+        self.link2.save()
+
+        sync_link_table_into_los_objects()
+
+        # Fiber and ethernet links should not generate LOS entries
+        self.assertEqual(0, len(LOS.objects.all()))
