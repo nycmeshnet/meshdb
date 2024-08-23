@@ -21,7 +21,7 @@ from meshapi.permissions import HasNNAssignPermission, LegacyNNAssignmentPasswor
 from meshapi.serializers import MemberSerializer
 from meshapi.util.admin_notifications import notify_administrators_of_data_issue
 from meshapi.util.django_pglocks import advisory_lock
-from meshapi.util.network_number import get_next_available_network_number
+from meshapi.util.network_number import NETWORK_NUMBER_MAX, NETWORK_NUMBER_MIN, get_next_available_network_number
 from meshapi.validation import (
     geocode_nyc_address,
     normalize_phone_number,
@@ -417,13 +417,34 @@ def network_number_assignment(request: Request) -> Response:
     if nn_building.primary_node is not None:
         nn_install.node = nn_building.primary_node
     else:
-        try:
-            free_nn = get_next_available_network_number()
-        except ValueError as exception:
-            return Response({"detail": f"NN Request failed. {exception}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        # Otherwise, try to use the install number if it is a valid number and unused
+        #
+        # We also don't use the install number if the install status indicates the number has been
+        # re-used (even if it hasn't been according to the Node table). This shouldn't be common,
+        # but NN assignment is critical, so we want to be defensive in the case of incongruent
+        # database data. We could expand this list of "prohibited statuses" to align more closely
+        # with the logic used to determine the lowest NN, but that would mean refusing to give low
+        # installs their own (available) NN, just because the install was marked "pending". The
+        # reason for this logic mismatch really is so that we _can_ use it here, (i.e. we  didn't
+        # give their number out in get_next_available_network_number() because we are saving it
+        # specifically for use on their install)
+        candidate_nn = nn_install.install_number
+        if (
+            candidate_nn < NETWORK_NUMBER_MIN
+            or candidate_nn > NETWORK_NUMBER_MAX
+            or len(Node.objects.filter(network_number=candidate_nn))
+            or nn_install.status in [Install.InstallStatus.NN_REASSIGNED, Install.InstallStatus.CLOSED]
+        ):
+            # If that doesn't work, lookup the lowest available number and use that
+            try:
+                candidate_nn = get_next_available_network_number()
+            except ValueError as exception:
+                return Response(
+                    {"detail": f"NN Request failed. {exception.args[0]}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                )
 
         nn_install.node = Node(
-            network_number=free_nn,
+            network_number=candidate_nn,
             status=Node.NodeStatus.ACTIVE,
             latitude=nn_building.latitude,
             longitude=nn_building.longitude,

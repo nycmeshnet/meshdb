@@ -133,11 +133,22 @@ def merge_member_objects(members_and_installs: List[Tuple[Member, List[int]]]) -
 
             merged_member.notes = (name_change_note + " " + install_number_addendum + "\n") + merged_member.notes
 
+    # Change the pk of our new object before we save it, so that it becomes an UPDATE
+    # operation on the pre-existing object with the lowest ID (this is needed since a future
+    # merge may happen and if so we want to ensure that this merged object is used as the
+    # source of truth during that future merge)
+    merged_member.pk = members_and_installs[0][0].id
     merged_member.save()
 
+    # Re-point all the installs for all the members down to our one merged member
     for member, _ in members_and_installs:
         for install in member.installs.all():
-            merged_member.installs.add(install)
+            install.member = merged_member
+
+    # Now that we have consolidated down, clear out the objects we consolidated to avoid duplication
+    for member, _ in members_and_installs:
+        if member.id != merged_member.id:
+            member.delete()
 
     return merged_member
 
@@ -311,22 +322,11 @@ def get_or_create_member(
         members_to_consolidate = [
             (member, [install.install_number for install in member.installs.all()]) for member in existing_members
         ] + [(candidate_member, [row.id])]
-        min_id = min(m[0].id for m in members_to_consolidate)
         logging.debug(
             f"Duplicate entries detected at install # {row.id}. "
             f"Consolidating the following members: "
             f"{[(m.name, m.primary_email_address, m.phone_number, i_list) for m, i_list in members_to_consolidate]}"
         )
-        merged_member = merge_member_objects(members_to_consolidate)
-
-        # Now that we have consolidated down, clear out the objects we
-        # consolidated to avoid duplication, and convert our new object to use the
-        # min id of those objects (since a future merge may happen and if so we want to
-        # ensure that this object is used as the source of truth)
-        for member, _ in members_to_consolidate:
-            member.delete()
-
-        Member.objects.filter(id=merged_member.id).update(id=min_id)
-        return Member.objects.get(id=min_id), False
+        return merge_member_objects(members_to_consolidate), False
 
     return candidate_member, True
