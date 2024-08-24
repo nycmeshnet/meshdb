@@ -1453,9 +1453,19 @@ class TestUISPImportHandlers(TransactionTestCase):
         self.link1.type = Link.LinkType.FIBER
         self.link1.save()
         self.link2.type = Link.LinkType.ETHERNET
+
         self.link2.save()
+
+        link3 = Link(
+            from_device=self.device2,
+            to_device=self.device3,
+            status=Link.LinkStatus.ACTIVE,
+            type=Link.LinkType.VPN,
+            uisp_id="uisp-uuid3",
+        )
+        link3.save()
 
         sync_link_table_into_los_objects()
 
-        # Fiber and ethernet links should not generate LOS entries
+        # Fiber, ethernet, and VPN links should not generate LOS entries
         self.assertEqual(0, len(LOS.objects.all()))
