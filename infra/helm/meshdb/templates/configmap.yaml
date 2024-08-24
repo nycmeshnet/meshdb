@@ -27,6 +27,10 @@ data:
   UISP_URL: {{ .Values.uisp.url | quote }}
   UISP_USER: {{ .Values.uisp.user | quote }}
 
-  ADMIN_MAP_BASE_URL: {{ .Values.map.base_url | quote }}
+  ADMIN_MAP_BASE_URL: {{ .Values.adminmap.base_url | quote }}
+  MAP_BASE_URL: {{ .Values.map.base_url | quote }}
+  LOS_URL: {{ .Values.meshweb.los_url | quote }}
+  PG_ADMIN_URL: {{ .Values.meshweb.pg_admin_url | quote }}
+  FORMS_URL: {{ .Values.meshweb.forms_url | quote }}
 
   SITE_BASE_URL: {{ .Values.meshdb.site_base_url | quote }}
