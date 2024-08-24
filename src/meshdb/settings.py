@@ -36,25 +36,10 @@ PROFILING_ENABLED = DEBUG and not os.environ.get("DISABLE_PROFILING", "False") =
 
 USE_X_FORWARDED_HOST = True
 
-MESHDB_ENVIRONMENT = os.environ.get("MESHDB_ENVIRONMENT", "")
-if MESHDB_ENVIRONMENT == "":
-    # Local or grand
-    LOS_URL = "https://los.grandsvc.mesh.nycmesh.net"
-    MAP_URL = "https://map.grandsvc.mesh.nycmesh.net"
-    PG_ADMIN_URL = "/pgadmin/"
-    FORMS_URL = "https://forms.grandsvc.mesh.nycmesh.net"
-elif MESHDB_ENVIRONMENT == "prod":
-    # k8s prod
-    LOS_URL = "https://los.mesh.nycmesh.net"
-    MAP_URL = "https://map.mesh.nycmesh.net"
-    PG_ADMIN_URL = "/pgadmin/"
-    FORMS_URL = "https://forms.mesh.nycmesh.net"
-elif MESHDB_ENVIRONMENT == "dev3":
-    # k8s dev3
-    LOS_URL = "https://devlos.mesh.nycmesh.net"
-    MAP_URL = "https://devmap.mesh.nycmesh.net"
-    PG_ADMIN_URL = "/pgadmin/"
-    FORMS_URL = "https://devforms.mesh.nycmesh.net"
+LOS_URL = os.environ.get("LOS_URL", "https://devlos.mesh.nycmesh.net")
+MAP_URL = os.environ.get("MAP_BASE_URL", "https://devmap.mesh.nycmesh.net")
+PG_ADMIN_URL = os.environ.get("PG_ADMIN_URL", "/pgadmin/")
+FORMS_URL = os.environ.get("FORMS_URL", "https://devforms.mesh.nycmesh.net")
 
 ALLOWED_HOSTS = [
     "db.grandsvc.mesh.nycmesh.net",
