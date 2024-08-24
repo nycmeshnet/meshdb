@@ -128,9 +128,16 @@ async function updateAdminContent(newUrl, updateHistory = true) {
         }
     } catch (e) {
         const mapWrapper = document.getElementById("map-wrapper");
+
+        const pageLink = document.createElement("a");
+        pageLink.className = "capture-exclude";
+        pageLink.href = newUrl;
+        pageLink.textContent = newUrl;
+
         const errorNotice = document.createElement("p");
         errorNotice.className = "error-box";
-        errorNotice.innerHTML = `<b>Error loading page</b>: <a href="${newUrl}" class="capture-exclude"/>${newUrl}</a><br>${e}`
+        errorNotice.innerHTML = `<b>Error loading page</b>: ${pageLink.outerHTML}<br>${e}`
+
         mapWrapper.parentNode.insertBefore(
             errorNotice,
             mapWrapper
