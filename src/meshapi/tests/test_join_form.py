@@ -1,14 +1,19 @@
+import copy
 import json
 import time
 from unittest import mock
 
+import requests_mock
 from django.contrib.auth.models import User
 from django.db.models import Q
 from django.test import Client, TestCase, TransactionTestCase
+from parameterized import parameterized
 
 from meshapi.models import Building, Install, Member, Node
 from meshapi.views import JoinFormRequest
 
+from ..serializers import MemberSerializer
+from ..validation import DOB_BUILDING_HEIGHT_API_URL, NYC_PLANNING_LABS_GEOCODE_URL
 from .sample_data import sample_building, sample_node
 from .sample_join_form_data import (
     bronx_join_form_submission,
@@ -18,6 +23,7 @@ from .sample_join_form_data import (
     queens_join_form_submission,
     richmond_join_form_submission,
     valid_join_form_submission,
+    valid_join_form_submission_no_email,
 )
 from .util import TestThread
 
@@ -26,28 +32,22 @@ from .util import TestThread
 original_install_init = Install.__init__
 
 
-def validate_successful_join_form_submission(test_case, test_name, s, response):
+def validate_successful_join_form_submission(test_case, test_name, s, response, expected_member_count=1):
     # Make sure that we get the right stuff out of the database afterwards
 
     # Check if the member was created and that we see it when we
     # filter for it.
     existing_members = Member.objects.filter(
-        Q(
-            name=s.first_name + " " + s.last_name,
-            phone_number=s.phone,
-        )
-        & (
-            Q(primary_email_address=s.email)
-            | Q(stripe_email_address=s.email)
-            | Q(additional_email_addresses__contains=[s.email])
-        )
+        Q(phone_number=s.phone)
+        | Q(primary_email_address=s.email)
+        | Q(stripe_email_address=s.email)
+        | Q(additional_email_addresses__contains=[s.email])
     )
 
-    length = 1
     test_case.assertEqual(
         len(existing_members),
-        length,
-        f"Didn't find created member for {test_name}. Should be {length}, but got {len(existing_members)}",
+        expected_member_count,
+        f"Didn't find created member for {test_name}. Should be {expected_member_count}, but got {len(existing_members)}",
     )
 
     # Check if the building was created and that we see it when we
@@ -83,6 +83,7 @@ def validate_successful_join_form_submission(test_case, test_name, s, response):
 def pull_apart_join_form_submission(submission):
     request = submission.copy()
     del request["parsed_street_address"]
+    del request["dob_addr_response"]
 
     # Make sure that we get the right stuff out of the database afterwards
     s = JoinFormRequest(**request)
@@ -106,26 +107,104 @@ class TestJoinForm(TestCase):
         )
         self.admin_c.login(username="admin", password="admin_password")
 
-    def test_valid_join_form(self):
-        for submission in [
-            valid_join_form_submission,
-            richmond_join_form_submission,
-            kings_join_form_submission,
-            queens_join_form_submission,
-            bronx_join_form_submission,
-        ]:
-            request, s = pull_apart_join_form_submission(submission)
+        self.requests_mocker = requests_mock.Mocker(real_http=True)
+        self.requests_mocker.start()
 
-            response = self.c.post("/api/v1/join/", request, content_type="application/json")
-            code = 201
-            self.assertEqual(
-                code,
-                response.status_code,
-                f"status code incorrect for Valid Join Form. Should be {code}, but got {response.status_code}.\n Response is: {response.content.decode('utf-8')}",
-            )
-            validate_successful_join_form_submission(self, "Valid Join Form", s, response)
+        self.requests_mocker.get(DOB_BUILDING_HEIGHT_API_URL, json=[{"heightroof": 0, "groundelev": 0}])
+
+    def tearDown(self):
+        self.requests_mocker.stop()
+
+    @parameterized.expand(
+        [
+            [valid_join_form_submission],
+            [valid_join_form_submission_no_email],
+            [richmond_join_form_submission],
+            [kings_join_form_submission],
+            [queens_join_form_submission],
+            [bronx_join_form_submission],
+        ]
+    )
+    def test_valid_join_form(self, submission):
+        self.requests_mocker.get(
+            NYC_PLANNING_LABS_GEOCODE_URL,
+            json=submission["dob_addr_response"],
+        )
+
+        request, s = pull_apart_join_form_submission(submission)
+
+        response = self.c.post("/api/v1/join/", request, content_type="application/json")
+        code = 201
+        self.assertEqual(
+            code,
+            response.status_code,
+            f"status code incorrect for Valid Join Form. Should be {code}, but got {response.status_code}.\n Response is: {response.content.decode('utf-8')}",
+        )
+        validate_successful_join_form_submission(self, "Valid Join Form", s, response)
+
+    def test_valid_join_form_aussie_intl_phone(self):
+        request, s = pull_apart_join_form_submission(valid_join_form_submission)
+
+        request["phone"] = "+61 3 96 69491 6"  # Australian bureau of meteorology (badly formatted)
+
+        response = self.c.post("/api/v1/join/", request, content_type="application/json")
+        code = 201
+        self.assertEqual(
+            code,
+            response.status_code,
+            f"status code incorrect for Valid Join Form. Should be {code}, but got {response.status_code}.\n Response is: {response.content.decode('utf-8')}",
+        )
+        validate_successful_join_form_submission(self, "Valid Join Form", s, response)
+
+        self.assertEqual(
+            "+61 3 9669 4916",  # Australian bureau of meteorology (Aussie formatted)
+            Member.objects.get(id=json.loads(response.content.decode("utf-8"))["member_id"]).phone_number,
+        )
+
+    def test_valid_join_form_guatemala_intl_phone(self):
+        request, s = pull_apart_join_form_submission(valid_join_form_submission)
+
+        request["phone"] = "+502 23 5 4 00 0 0"  # US Embassy in Guatemala (badly formatted)
+
+        response = self.c.post("/api/v1/join/", request, content_type="application/json")
+        code = 201
+        self.assertEqual(
+            code,
+            response.status_code,
+            f"status code incorrect for Valid Join Form. Should be {code}, but got {response.status_code}.\n Response is: {response.content.decode('utf-8')}",
+        )
+        validate_successful_join_form_submission(self, "Valid Join Form", s, response)
+
+        self.assertEqual(
+            "+502 2354 0000",  # US Embassy in Guatemala (Properly formatted)
+            Member.objects.get(id=json.loads(response.content.decode("utf-8"))["member_id"]).phone_number,
+        )
+
+    def test_valid_join_form_no_country_code_us_phone(self):
+        request, s = pull_apart_join_form_submission(valid_join_form_submission)
+
+        request["phone"] = "212 555 5555"
+
+        response = self.c.post("/api/v1/join/", request, content_type="application/json")
+        code = 201
+        self.assertEqual(
+            code,
+            response.status_code,
+            f"status code incorrect for Valid Join Form. Should be {code}, but got {response.status_code}.\n Response is: {response.content.decode('utf-8')}",
+        )
+        validate_successful_join_form_submission(self, "Valid Join Form", s, response)
+
+        self.assertEqual(
+            "+1 212-555-5555",
+            Member.objects.get(id=json.loads(response.content.decode("utf-8"))["member_id"]).phone_number,
+        )
 
     def test_no_ncl(self):
+        self.requests_mocker.get(
+            NYC_PLANNING_LABS_GEOCODE_URL,
+            json=valid_join_form_submission["dob_addr_response"],
+        )
+
         request, _ = pull_apart_join_form_submission(valid_join_form_submission)
 
         request["ncl"] = False
@@ -138,7 +217,39 @@ class TestJoinForm(TestCase):
             f"status code incorrect for No NCL. Should be {code}, but got {response.status_code}.\n Response is: {response.content.decode('utf-8')}",
         )
 
+    def test_no_phone_or_email(self):
+        request, _ = pull_apart_join_form_submission(valid_join_form_submission)
+
+        request["email"] = None
+        request["phone"] = None
+
+        response = self.c.post("/api/v1/join/", request, content_type="application/json")
+        code = 400
+        self.assertEqual(
+            code,
+            response.status_code,
+            f"status code incorrect for no email & phone. Should be {code}, but got {response.status_code}.\n Response is: {response.content.decode('utf-8')}",
+        )
+
+    def test_invalid_email_valid_phone(self):
+        request, _ = pull_apart_join_form_submission(valid_join_form_submission)
+
+        request["email"] = "aljksdafljkasfjldsaf"
+
+        response = self.c.post("/api/v1/join/", request, content_type="application/json")
+        code = 400
+        self.assertEqual(
+            code,
+            response.status_code,
+            f"status code incorrect for invalid email valid phone. Should be {code}, but got {response.status_code}.\n Response is: {response.content.decode('utf-8')}",
+        )
+
     def test_non_nyc_join_form(self):
+        self.requests_mocker.get(
+            NYC_PLANNING_LABS_GEOCODE_URL,
+            json=non_nyc_join_form_submission["dob_addr_response"],
+        )
+
         # Name, email, phone, location, apt, rooftop, referral
         form, _ = pull_apart_join_form_submission(non_nyc_join_form_submission)
         response = self.c.post("/api/v1/join/", form, content_type="application/json")
@@ -151,6 +262,11 @@ class TestJoinForm(TestCase):
         )
 
     def test_empty_join_form(self):
+        self.requests_mocker.get(
+            NYC_PLANNING_LABS_GEOCODE_URL,
+            json={},
+        )
+
         # Name, email, phone, location, apt, rooftop, referral
         response = self.c.post("/api/v1/join/", {}, content_type="application/json")
 
@@ -180,9 +296,14 @@ class TestJoinForm(TestCase):
         )
 
     def test_bad_phone_join_form(self):
+        self.requests_mocker.get(
+            NYC_PLANNING_LABS_GEOCODE_URL,
+            json=valid_join_form_submission["dob_addr_response"],
+        )
+
         # Name, email, phone, location, apt, rooftop, referral
         form, _ = pull_apart_join_form_submission(valid_join_form_submission)
-        form["phone"] = "555-555-5555"
+        form["phone"] = "555-555-55555"
         response = self.c.post("/api/v1/join/", form, content_type="application/json")
 
         code = 400
@@ -194,9 +315,14 @@ class TestJoinForm(TestCase):
 
         con = json.loads(response.content.decode("utf-8"))
 
-        self.assertEqual("555-555-5555 is not a valid phone number", con["detail"], "Content is wrong")
+        self.assertEqual("555-555-55555 is not a valid phone number", con["detail"], "Content is wrong")
 
     def test_bad_email_join_form(self):
+        self.requests_mocker.get(
+            NYC_PLANNING_LABS_GEOCODE_URL,
+            json=valid_join_form_submission["dob_addr_response"],
+        )
+
         # Name, email, phone, location, apt, rooftop, referral
         form, _ = pull_apart_join_form_submission(valid_join_form_submission)
         form["email"] = "notareal@email.meshmeshmeshmeshmesh"
@@ -218,6 +344,11 @@ class TestJoinForm(TestCase):
         )
 
     def test_bad_address_join_form(self):
+        self.requests_mocker.get(
+            NYC_PLANNING_LABS_GEOCODE_URL,
+            json={"features": []},
+        )
+
         # Name, email, phone, location, apt, rooftop, referral
         form, _ = pull_apart_join_form_submission(valid_join_form_submission)
         form["street_address"] = "fjdfahuweildhjweiklfhjkhklfhj"
@@ -239,6 +370,11 @@ class TestJoinForm(TestCase):
         )
 
     def test_member_moved_join_form(self):
+        self.requests_mocker.get(
+            NYC_PLANNING_LABS_GEOCODE_URL,
+            json=valid_join_form_submission["dob_addr_response"],
+        )
+
         # Name, email, phone, location, apt, rooftop, referral
         form, s = pull_apart_join_form_submission(valid_join_form_submission)
         response1 = self.c.post("/api/v1/join/", form, content_type="application/json")
@@ -254,6 +390,178 @@ class TestJoinForm(TestCase):
 
         # Now test that the member can "move" and still access the join form
         v_sub_2 = valid_join_form_submission.copy()
+        v_sub_2["street_address"] = "152 Broome Street"
+        v_sub_2["dob_addr_response"] = copy.deepcopy(valid_join_form_submission["dob_addr_response"])
+        v_sub_2["dob_addr_response"]["features"][0]["properties"]["housenumber"] = "152"
+
+        self.requests_mocker.get(
+            NYC_PLANNING_LABS_GEOCODE_URL,
+            json=v_sub_2["dob_addr_response"],
+        )
+
+        form, s = pull_apart_join_form_submission(v_sub_2)
+
+        # Name, email, phone, location, apt, rooftop, referral
+        response2 = self.c.post("/api/v1/join/", form, content_type="application/json")
+
+        code = 201
+        self.assertEqual(
+            code,
+            response2.status_code,
+            f"status code incorrect for Valid Join Form. Should be {code}, but got {response2.status_code}.\n Response is: {response2.content.decode('utf-8')}",
+        )
+
+        validate_successful_join_form_submission(self, "Valid Join Form", s, response2)
+
+        self.assertEqual(
+            json.loads(
+                response1.content.decode("utf-8"),
+            )["member_id"],
+            json.loads(
+                response2.content.decode("utf-8"),
+            )["member_id"],
+        )
+
+    @mock.patch("meshapi.views.forms.notify_administrators_of_data_issue")
+    def test_member_moved_join_form_but_somehow_duplicate_objects_already_exist_for_them(self, mock_admin_notif_func):
+        # Create a pre-exsiting duplicate member object,
+        # that won't be matched until the second join form submission
+        pre_existing_member = Member(
+            name="John Smith",
+            primary_email_address="jsmith23@yahoo.com",
+            phone_number="+1-555-555-5555",
+        )
+        pre_existing_member.save()
+
+        # Name, email, phone, location, apt, rooftop, referral
+        form, s = pull_apart_join_form_submission(valid_join_form_submission)
+        response1 = self.c.post("/api/v1/join/", form, content_type="application/json")
+
+        code = 201
+        self.assertEqual(
+            code,
+            response1.status_code,
+            f"status code incorrect for Valid Join Form. Should be {code}, but got {response1.status_code}.\n Response is: {response1.content.decode('utf-8')}",
+        )
+
+        validate_successful_join_form_submission(self, "Valid Join Form", s, response1)
+
+        # Now test that the member can "move" and still access the join form
+        v_sub_2 = valid_join_form_submission.copy()
+        v_sub_2["street_address"] = "152 Broome Street"
+        v_sub_2["phone"] = "+1 555-555-5555"
+
+        form, s = pull_apart_join_form_submission(v_sub_2)
+
+        # Name, email, phone, location, apt, rooftop, referral
+        response2 = self.c.post("/api/v1/join/", form, content_type="application/json")
+
+        code = 201
+        self.assertEqual(
+            code,
+            response2.status_code,
+            f"status code incorrect for Valid Join Form. Should be {code}, but got {response2.status_code}.\n Response is: {response2.content.decode('utf-8')}",
+        )
+
+        validate_successful_join_form_submission(
+            self,
+            "Valid Join Form",
+            s,
+            response2,
+            expected_member_count=2,
+        )
+
+        mock_admin_notif_func.called_once_with(
+            [
+                Member.objects.get(
+                    id=json.loads(
+                        response2.content.decode("utf-8"),
+                    )["member_id"]
+                ),
+                pre_existing_member,
+            ],
+            MemberSerializer,
+            "Possible duplicate member objects detected",
+        )
+
+    @mock.patch("meshapi.views.forms.notify_administrators_of_data_issue")
+    def test_member_moved_and_changed_names_join_form(self, mock_admin_notif_func):
+        # Name, email, phone, location, apt, rooftop, referral
+        form, s = pull_apart_join_form_submission(valid_join_form_submission)
+        response1 = self.c.post("/api/v1/join/", form, content_type="application/json")
+
+        code = 201
+        self.assertEqual(
+            code,
+            response1.status_code,
+            f"status code incorrect for Valid Join Form. Should be {code}, but got {response1.status_code}.\n Response is: {response1.content.decode('utf-8')}",
+        )
+
+        validate_successful_join_form_submission(self, "Valid Join Form", s, response1)
+
+        # Now test that the member can "move", change their name and still access the join form
+        v_sub_2 = valid_join_form_submission.copy()
+        v_sub_2["first_name"] = "Jane"
+        v_sub_2["last_name"] = "Smith"
+        v_sub_2["street_address"] = "152 Broome Street"
+
+        form, s = pull_apart_join_form_submission(v_sub_2)
+
+        # Name, email, phone, location, apt, rooftop, referral
+        response2 = self.c.post("/api/v1/join/", form, content_type="application/json")
+
+        code = 201
+        self.assertEqual(
+            code,
+            response2.status_code,
+            f"status code incorrect for Valid Join Form. Should be {code}, but got {response2.status_code}.\n Response is: {response2.content.decode('utf-8')}",
+        )
+
+        validate_successful_join_form_submission(self, "Valid Join Form", s, response2)
+
+        # Make sure it uses the same member ID
+        self.assertEqual(
+            json.loads(
+                response1.content.decode("utf-8"),
+            )["member_id"],
+            json.loads(
+                response2.content.decode("utf-8"),
+            )["member_id"],
+        )
+
+        # Make sure the member's name wasn't changed (prevents join form griefing)
+        # but also confirm we noted the name change request, and that we sent a notification
+        # to slack
+        member = Member.objects.get(
+            id=json.loads(
+                response1.content.decode("utf-8"),
+            )["member_id"]
+        )
+        self.assertEqual(member.name, "John Smith")
+        self.assertIn("Dropped name change: Jane Smith", member.notes)
+
+        mock_admin_notif_func.called_once_with(
+            [member], MemberSerializer, "Dropped name change: Jane Smith (install #2)"
+        )
+
+    def test_member_moved_and_used_a_new_email_join_form(self):
+        # Name, email, phone, location, apt, rooftop, referral
+        form, s = pull_apart_join_form_submission(valid_join_form_submission)
+        response1 = self.c.post("/api/v1/join/", form, content_type="application/json")
+
+        code = 201
+        self.assertEqual(
+            code,
+            response1.status_code,
+            f"status code incorrect for Valid Join Form. Should be {code}, but got {response1.status_code}.\n Response is: {response1.content.decode('utf-8')}",
+        )
+
+        validate_successful_join_form_submission(self, "Valid Join Form", s, response1)
+
+        # Now test that the member can "move" and still access the join form
+        # (even with a new email, provided they use the same phone number)
+        v_sub_2 = valid_join_form_submission.copy()
+        v_sub_2["email"] = "jsmith1234@yahoo.com"
         v_sub_2["street_address"] = "152 Broome Street"
 
         form, s = pull_apart_join_form_submission(v_sub_2)
@@ -279,11 +587,131 @@ class TestJoinForm(TestCase):
             )["member_id"],
         )
 
+        # Make sure the member's primary email wasn't changed (prevents join form griefing)
+        # but also confirm we noted the new email in additional emails
+        member = Member.objects.get(
+            id=json.loads(
+                response1.content.decode("utf-8"),
+            )["member_id"]
+        )
+        self.assertEqual(member.primary_email_address, "jsmith@gmail.com")
+        self.assertEqual(member.additional_email_addresses, ["jsmith1234@yahoo.com"])
+
+    def test_member_moved_and_used_a_new_phone_number_join_form(self):
+        # Name, email, phone, location, apt, rooftop, referral
+        form, s = pull_apart_join_form_submission(valid_join_form_submission)
+        response1 = self.c.post("/api/v1/join/", form, content_type="application/json")
+
+        code = 201
+        self.assertEqual(
+            code,
+            response1.status_code,
+            f"status code incorrect for Valid Join Form. Should be {code}, but got {response1.status_code}.\n Response is: {response1.content.decode('utf-8')}",
+        )
+
+        validate_successful_join_form_submission(self, "Valid Join Form", s, response1)
+
+        # Now test that the member can "move" and still access the join form
+        # (even with a new phone number, so long as they use the same email)
+        v_sub_2 = valid_join_form_submission.copy()
+        v_sub_2["phone"] = "+1 212-555-5555"
+        v_sub_2["street_address"] = "152 Broome Street"
+
+        form, s = pull_apart_join_form_submission(v_sub_2)
+
+        # Name, email, phone, location, apt, rooftop, referral
+        response2 = self.c.post("/api/v1/join/", form, content_type="application/json")
+
+        code = 201
+        self.assertEqual(
+            code,
+            response2.status_code,
+            f"status code incorrect for Valid Join Form. Should be {code}, but got {response2.status_code}.\n Response is: {response2.content.decode('utf-8')}",
+        )
+
+        validate_successful_join_form_submission(self, "Valid Join Form", s, response2)
+
+        self.assertEqual(
+            json.loads(
+                response1.content.decode("utf-8"),
+            )["member_id"],
+            json.loads(
+                response2.content.decode("utf-8"),
+            )["member_id"],
+        )
+
+        # Make sure the member's primary phone number wasn't changed (prevents join form griefing)
+        # but also confirm we noted the new phone number in additional phone numbers
+        member = Member.objects.get(
+            id=json.loads(
+                response1.content.decode("utf-8"),
+            )["member_id"]
+        )
+        self.assertEqual(member.phone_number, "+1 585-758-3425")
+        self.assertEqual(member.additional_phone_numbers, ["+1 212-555-5555"])
+
+    def test_member_moved_and_used_only_a_badly_formatted_phone_number_join_form(self):
+        # Name, email, phone, location, apt, rooftop, referral
+        form, s = pull_apart_join_form_submission(valid_join_form_submission)
+        response1 = self.c.post("/api/v1/join/", form, content_type="application/json")
+
+        code = 201
+        self.assertEqual(
+            code,
+            response1.status_code,
+            f"status code incorrect for Valid Join Form. Should be {code}, but got {response1.status_code}.\n Response is: {response1.content.decode('utf-8')}",
+        )
+
+        validate_successful_join_form_submission(self, "Valid Join Form", s, response1)
+
+        # Now test that the member can "move" and still access the join form
+        # (even if they don't provide an email, and give a badly formatted phone number)
+        v_sub_2 = valid_join_form_submission.copy()
+        v_sub_2["street_address"] = "152 Broome Street"
+        v_sub_2["phone"] = "+1 5 8 5 75 8-3 425  "
+        v_sub_2["email"] = None
+
+        form, s = pull_apart_join_form_submission(v_sub_2)
+
+        # Name, email, phone, location, apt, rooftop, referral
+        response2 = self.c.post("/api/v1/join/", form, content_type="application/json")
+
+        code = 201
+        self.assertEqual(
+            code,
+            response2.status_code,
+            f"status code incorrect for Valid Join Form. Should be {code}, but got {response2.status_code}.\n Response is: {response2.content.decode('utf-8')}",
+        )
+
+        validate_successful_join_form_submission(self, "Valid Join Form", s, response2)
+
+        # Make sure the member's primary phone number wasn't changed,
+        # and that the member matches up to the original submission
+        self.assertEqual(
+            json.loads(
+                response1.content.decode("utf-8"),
+            )["member_id"],
+            json.loads(
+                response2.content.decode("utf-8"),
+            )["member_id"],
+        )
+        member = Member.objects.get(
+            id=json.loads(
+                response1.content.decode("utf-8"),
+            )["member_id"]
+        )
+        self.assertEqual(member.phone_number, "+1 585-758-3425")
+        self.assertEqual(member.additional_phone_numbers, [])
+
     def test_different_street_addr_same_bin_multi_node(self):
         """ "
         This test case simulates a new building joining the Jefferson structure to
         make sure we handle the multi-address multi-node structures correctly
         """
+        self.requests_mocker.get(
+            NYC_PLANNING_LABS_GEOCODE_URL,
+            json=jefferson_join_form_submission["dob_addr_response"],
+        )
 
         # Name, email, phone, location, apt, rooftop, referral
         form, s = pull_apart_join_form_submission(jefferson_join_form_submission)
@@ -302,6 +730,14 @@ class TestJoinForm(TestCase):
         v_sub_2 = jefferson_join_form_submission.copy()
         v_sub_2["street_address"] = "16 Cypress Avenue"
         v_sub_2["apartment"] = "13"
+        v_sub_2["dob_addr_response"] = copy.deepcopy(jefferson_join_form_submission["dob_addr_response"])
+        v_sub_2["dob_addr_response"]["features"][0]["properties"]["housenumber"] = "16"
+        v_sub_2["dob_addr_response"]["features"][0]["properties"]["street"] = "Cypress Avenue"
+
+        self.requests_mocker.get(
+            NYC_PLANNING_LABS_GEOCODE_URL,
+            json=v_sub_2["dob_addr_response"],
+        )
 
         building_id_1 = json.loads(
             response1.content.decode("utf-8"),
@@ -362,6 +798,11 @@ class TestJoinForm(TestCase):
         )
 
     def test_member_moved_and_used_stripe_email_join_form(self):
+        self.requests_mocker.get(
+            NYC_PLANNING_LABS_GEOCODE_URL,
+            json=valid_join_form_submission["dob_addr_response"],
+        )
+
         # Name, email, phone, location, apt, rooftop, referral
         form, s = pull_apart_join_form_submission(valid_join_form_submission)
         response1 = self.c.post("/api/v1/join/", form, content_type="application/json")
@@ -385,6 +826,13 @@ class TestJoinForm(TestCase):
         v_sub_2 = valid_join_form_submission.copy()
         v_sub_2["email"] = "jsmith+stripe@gmail.com"
         v_sub_2["street_address"] = "152 Broome Street"
+        v_sub_2["dob_addr_response"] = copy.deepcopy(valid_join_form_submission["dob_addr_response"])
+        v_sub_2["dob_addr_response"]["features"][0]["properties"]["housenumber"] = "152"
+
+        self.requests_mocker.get(
+            NYC_PLANNING_LABS_GEOCODE_URL,
+            json=v_sub_2["dob_addr_response"],
+        )
 
         form, s = pull_apart_join_form_submission(v_sub_2)
 
@@ -413,6 +861,13 @@ class TestJoinForm(TestCase):
         v_sub_3 = valid_join_form_submission.copy()
         v_sub_3["email"] = "jsmith+other@gmail.com"
         v_sub_3["street_address"] = "178 Broome Street"
+        v_sub_3["dob_addr_response"] = copy.deepcopy(valid_join_form_submission["dob_addr_response"])
+        v_sub_3["dob_addr_response"]["features"][0]["properties"]["housenumber"] = "178"
+
+        self.requests_mocker.get(
+            NYC_PLANNING_LABS_GEOCODE_URL,
+            json=v_sub_3["dob_addr_response"],
+        )
 
         form, s = pull_apart_join_form_submission(v_sub_3)
 
@@ -437,6 +892,11 @@ class TestJoinForm(TestCase):
         )
 
     def test_pre_existing_building_and_node(self):
+        self.requests_mocker.get(
+            NYC_PLANNING_LABS_GEOCODE_URL,
+            json=valid_join_form_submission["dob_addr_response"],
+        )
+
         request, s = pull_apart_join_form_submission(valid_join_form_submission)
 
         node = Node(**sample_node)
@@ -499,8 +959,10 @@ class TestJoinFormRaceCondition(TransactionTestCase):
 
         member1_submission = valid_join_form_submission.copy()
         member1_submission["email"] = "member1@xyz.com"
+        member1_submission["phone"] = "+1 212 555 5555"
         member2_submission = valid_join_form_submission.copy()
         member2_submission["email"] = "member2@xyz.com"
+        member1_submission["phone"] = "+1 212 555 2222"
 
         def invoke_join_form(submission, results):
             # Slow down the creation of the Install object to force a race condition

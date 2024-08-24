@@ -56,4 +56,14 @@ jobs:
         --set pgadmin.default_password="${{ secrets.PGADMIN_PASSWORD }}" \
         --set uisp.user="${{ secrets.UISP_USER }}" \
         --set uisp.psk="${{ secrets.UISP_PSK }}" \
+        --set adminmap.base_url="${{ vars.ADMIN_MAP_BASE_URL }}" \
+        --set map.base_url="${{ vars.MAP_BASE_URL }}" \
+        --set meshweb.los_url="${{ vars.LOS_URL }}" \
+        --set meshweb.pg_admin_url="${{ vars.PG_ADMIN_URL }}" \
+        --set meshweb.forms_url="${{ vars.FORMS_URL }}" \
+        --set meshdb.site_base_url="${{ vars.SITE_BASE_URL }}" \
+        --set meshweb.slack_webhook="${{ secrets.SLACK_ADMIN_NOTIFICATIONS_WEBHOOK_URL }}" \
         --set ingress.hosts[0].host="${{ vars.INGRESS_HOST }}",ingress.hosts[0].paths[0].path=/,ingress.hosts[0].paths[0].pathType=Prefix
+
+        # Rolling restart
+        kubectl --kubeconfig ./config --server https://${{ secrets.SSH_TARGET_IP }}:6443 -n ${{ vars.APP_NAMESPACE }} rollout restart deploy

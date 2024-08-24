@@ -1,0 +1,94 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "celery.fullname" . }}
+  namespace: meshdb
+  labels:
+    {{- include "celery.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "celery.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "celery.labels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        {{- range .Values.containers }}
+        - name: {{ .name }}
+          securityContext:
+            {{- toYaml $.Values.securityContext | nindent 12 }}
+          image: "{{ $.Values.image.repository }}:{{ $.Values.image.tag | default $.Chart.AppVersion }}"
+          imagePullPolicy: {{ $.Values.image.pullPolicy }}
+          resources:
+            {{- toYaml $.Values.resources | nindent 12 }}
+          command: {{ toJson .command }}
+          # TODO (willnilges): Fix this in a later PR
+          envFrom:
+            - configMapRef:
+                name: meshdbconfig
+          env:
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: meshdb-secrets
+                  key: postgres-password
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: meshdb-secrets
+                  key: aws-access-key-id
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: meshdb-secrets
+                  key: aws-secret-access-key
+            - name: DJANGO_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: meshdb-secrets
+                  key: django-secret-key
+            - name: NN_ASSIGN_PSK
+              valueFrom:
+                secretKeyRef:
+                  name: meshdb-secrets
+                  key: nn-assign-psk
+            - name: QUERY_PSK
+              valueFrom:
+                secretKeyRef:
+                  name: meshdb-secrets
+                  key: query-psk
+            - name: PANO_GITHUB_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: meshdb-secrets
+                  key: pano-github-token
+            - name: UISP_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: meshdb-secrets
+                  key: uisp-pass
+          {{- if .livenessProbe }}
+          livenessProbe:
+            {{- toYaml .livenessProbe | nindent 12 }}
+          {{- end }}
+          {{- if .readinessProbe }}
+          readinessProbe:
+            {{- toYaml .readinessProbe | nindent 12 }}
+          {{- end }}
+      {{- end }}

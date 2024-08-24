@@ -35,27 +35,10 @@ spec:
             - name: http
               containerPort: {{ .Values.meshweb.port }}
               protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: meshdbconfig
           env:
-            - name: DB_NAME
-              valueFrom:
-                configMapKeyRef:
-                  name: meshdbconfig
-                  key: DB_NAME
-            - name: DB_USER
-              valueFrom:
-                configMapKeyRef:
-                  name: meshdbconfig
-                  key: DB_USER
-            - name: DB_HOST
-              valueFrom:
-                configMapKeyRef:
-                  name: meshdbconfig
-                  key: DB_HOST
-            - name: DB_PORT
-              valueFrom:
-                configMapKeyRef:
-                  name: meshdbconfig
-                  key: DB_PORT
             - name: DB_PASSWORD
               valueFrom:
                 secretKeyRef:
@@ -71,31 +54,11 @@ spec:
                 secretKeyRef:
                   name: meshdb-secrets
                   key: aws-secret-access-key
-            - name: BACKUP_S3_BUCKET_NAME
-              valueFrom:
-                configMapKeyRef:
-                  name: meshdbconfig
-                  key: BACKUP_S3_BUCKET_NAME
-            - name: BACKUP_S3_BASE_FOLDER
-              valueFrom:
-                configMapKeyRef:
-                  name: meshdbconfig
-                  key: BACKUP_S3_BASE_FOLDER
-            - name: CELERY_BROKER
-              valueFrom:
-                configMapKeyRef:
-                  name: meshdbconfig
-                  key: CELERY_BROKER
             - name: DJANGO_SECRET_KEY
               valueFrom:
                 secretKeyRef:
                   name: meshdb-secrets
                   key: django-secret-key
-            - name: PELIAS_ADDRESS_PARSER_URL
-              valueFrom:
-                configMapKeyRef:
-                  name: meshdbconfig
-                  key: PELIAS_ADDRESS_PARSER_URL
             - name: NN_ASSIGN_PSK
               valueFrom:
                 secretKeyRef:
@@ -106,46 +69,21 @@ spec:
                 secretKeyRef:
                   name: meshdb-secrets
                   key: query-psk
-            - name: DEBUG
-              valueFrom:
-                configMapKeyRef:
-                  name: meshdbconfig
-                  key: DEBUG
-            - name: DISABLE_PROFILING
-              valueFrom:
-                configMapKeyRef:
-                  name: meshdbconfig
-                  key: DISABLE_PROFILING
-            - name: DISABLE_PANO_EDITS
-              valueFrom:
-                configMapKeyRef:
-                  name: meshdbconfig
-                  key: DISABLE_PANO_EDITS
             - name: PANO_GITHUB_TOKEN
               valueFrom:
                 secretKeyRef:
                   name: meshdb-secrets
                   key: pano-github-token
-            - name: UISP_URL
-              valueFrom:
-                configMapKeyRef:
-                  name: meshdbconfig
-                  key: UISP_URL
-            - name: UISP_USER
-              valueFrom:
-                configMapKeyRef:
-                  name: meshdbconfig
-                  key: UISP_USER
             - name: UISP_PASS
               valueFrom:
                 secretKeyRef:
                   name: meshdb-secrets
                   key: uisp-pass
-            - name: ADMIN_MAP_BASE_URL
+            - name: SLACK_ADMIN_NOTIFICATIONS_WEBHOOK_URL
               valueFrom:
-                configMapKeyRef:
-                  name: meshdbconfig
-                  key: ADMIN_MAP_BASE_URL
+                secretKeyRef:
+                  name: meshdb-secrets
+                  key: slack-webhook
           volumeMounts:
             - name: static-content-vol
               mountPath: /opt/meshdb/static
@@ -159,6 +97,8 @@ spec:
            initialDelaySeconds: 4
            timeoutSeconds: 3
            {{ end }}
+          livenessProbe:
+            {{- toYaml .Values.livenessProbe | nindent 12 }}
           readinessProbe:
             {{- toYaml .Values.readinessProbe | nindent 12 }}
           resources:
