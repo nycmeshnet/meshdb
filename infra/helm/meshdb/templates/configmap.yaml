@@ -34,5 +34,3 @@ data:
   FORMS_URL: {{ .Values.meshweb.forms_url | quote }}
 
   SITE_BASE_URL: {{ .Values.meshdb.site_base_url | quote }}
-
-  MESHDB_ENVIRONMENT: {{ .Values.meshdb.env_name }}
