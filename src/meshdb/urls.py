@@ -25,7 +25,7 @@ from meshdb.settings import PROFILING_ENABLED
 urlpatterns = [
     path("", include("meshweb.urls")),
     path("auth/", include("rest_framework.urls")),
-    path("admin/", admin.site.urls),
+    path("admin/", include("meshapi.admin.urls")),
     path("api/v1/", include("meshapi.urls")),
     path("api-docs/openapi3.json", SpectacularAPIView.as_view(), name="api-docs-schema"),
     path(
