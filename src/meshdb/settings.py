@@ -41,6 +41,14 @@ MAP_URL = os.environ.get("MAP_BASE_URL", "https://devmap.mesh.nycmesh.net")
 PG_ADMIN_URL = os.environ.get("PG_ADMIN_URL", "/pgadmin/")
 FORMS_URL = os.environ.get("FORMS_URL", "https://devforms.mesh.nycmesh.net")
 
+# SMTP Config for password reset emails
+EMAIL_HOST = os.environ.get("SMTP_HOST")
+EMAIL_PORT = os.environ.get("SMTP_PORT")
+EMAIL_HOST_USER = os.environ.get("SMTP_USER", "localhost")
+EMAIL_HOST_PASSWORD = os.environ.get("SMTP_PASSWORD", "localhost")
+EMAIL_USE_TLS = True
+EMAIL_SUBJECT_PREFIX = "[MeshDB] "
+
 ALLOWED_HOSTS = [
     "db.mesh.nycmesh.net",
     "db.mesh",
