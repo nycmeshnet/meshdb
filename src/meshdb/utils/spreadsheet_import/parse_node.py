@@ -9,8 +9,16 @@ from meshdb.utils.spreadsheet_import.csv_load import SpreadsheetRow
 
 # This function is converted roughly from
 # https://github.com/nycmeshnet/network-map/blob/a719fe14ff805a967a3d60e879e1f68ac99e4ce5/src/utils/index.js#L1
-def get_node_type(notes: str) -> Node.NodeType.choices:
+def get_node_type(notes: str, node_name: str = "") -> Node.NodeType.choices:
     lower_notes = notes.lower() if notes else None
+    lower_node_name = node_name.lower() if node_name else ""
+
+    if "pop" in lower_node_name:
+        return Node.NodeType.POP
+
+    if "sn" in lower_node_name or "supernode" in lower_node_name:
+        return Node.NodeType.SUPERNODE
+
     is_supernode = "supernode" in lower_notes if lower_notes else False
     is_pop = "pop" in lower_notes if lower_notes else False
     is_ap = "AP" in notes if notes else False
@@ -77,7 +85,7 @@ def get_or_create_node(
         # Set abandon date now, but it might get cleared later in the status-setting logic
         # (if there's another install connected to this node that is active)
         abandon_date=row.abandonDate,
-        type=get_node_type(row.notes) if row.notes else Node.NodeType.STANDARD,
+        type=get_node_type(row.notes, row.nodeName),
         notes=f"Spreadsheet Notes:\n"
         f"{row.notes if row.notes else None}\n\n"
         f"Spreadsheet Notes2:\n"
