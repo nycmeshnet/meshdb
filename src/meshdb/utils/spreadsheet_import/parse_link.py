@@ -318,7 +318,7 @@ def load_links_supplement_with_uisp(spreadsheet_links: List[SpreadsheetLink]):
             for link in existing_links:
                 link.status = convert_spreadsheet_link_status(spreadsheet_link.status)
                 link.install_date = spreadsheet_link.install_date
-                if link.type == Link.LinkType.FIVE_GHZ:
+                if link.type in [Link.LinkType.FIVE_GHZ, Link.LinkType.ETHERNET]:
                     # If UISP indicates a special type of link, keep that.
                     # Otherwise, defer to the spreadsheet
                     link.type = (
