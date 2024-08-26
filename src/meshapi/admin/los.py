@@ -1,5 +1,6 @@
 from django import forms
 from django.contrib import admin
+from import_export.admin import ExportActionMixin, ImportExportModelAdmin
 
 from meshapi.models import LOS
 
@@ -11,7 +12,7 @@ class LOSAdminForm(forms.ModelForm):
 
 
 @admin.register(LOS)
-class LOSAdmin(admin.ModelAdmin):
+class LOSAdmin(ImportExportModelAdmin, ExportActionMixin):
     form = LOSAdminForm
     search_fields = [
         "from_building__primary_node__name__icontains",
