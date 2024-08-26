@@ -132,15 +132,22 @@ def notify_admins_of_changes(
 def guess_compass_heading_from_device_name(device_name: str) -> Optional[float]:
     contributors = []
 
+    s2o2 = math.sqrt(2) / 2
     cardinal_directions = {
+        "northeast": (s2o2, s2o2),
+        "southeast": (s2o2, -s2o2),
+        "southwest": (-s2o2, -s2o2),
+        "northwest": (-s2o2, s2o2),
         "north": (0, 1),
         "south": (0, -1),
         "east": (1, 0),
         "west": (-1, 0),
     }
 
+    mutated_device_name = device_name.lower()
     for direction, coordinate_pair in cardinal_directions.items():
-        if direction in device_name.lower():
+        if direction in mutated_device_name:
+            mutated_device_name = mutated_device_name.replace(direction, "", 1)
             contributors.append(coordinate_pair)
 
     if not len(contributors):
@@ -150,7 +157,7 @@ def guess_compass_heading_from_device_name(device_name: str) -> Optional[float]:
 
     coord = tuple(sum(x) for x in zip(*contributors))
 
-    if coord == (0, 0):
+    if math.sqrt(coord[0] ** 2 + coord[1] ** 2) < 1:
         raise ValueError(
             f"Invalid device name {device_name}, does this result in a sensible "
             f"cardinal direction? Combining oposite cardinal directions like "
@@ -160,4 +167,4 @@ def guess_compass_heading_from_device_name(device_name: str) -> Optional[float]:
     # Negative sign and plus 90 degrees is used to convert from standard
     # "mathematical" (counter-clockwise degrees from the positive x-axis) to
     # "compass heading" (clockwise degrees from the positive y-axis)
-    return (-math.degrees(math.atan2(coord[1], coord[0])) + 90) % 360
+    return round(-math.degrees(math.atan2(coord[1], coord[0])) + 90, 1) % 360

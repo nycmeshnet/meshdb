@@ -33,11 +33,20 @@ class TestUISPImportUtils(TestCase):
         self.assertEqual(guess_compass_heading_from_device_name("nycmesh-227-northwest"), 315)
         self.assertEqual(guess_compass_heading_from_device_name("nycmesh-227-eastsouth"), 135)
 
+        self.assertEqual(guess_compass_heading_from_device_name("nycmesh-227-northeasteast"), 67.5)
+        self.assertEqual(guess_compass_heading_from_device_name("nycmesh-227-eastsoutheast"), 112.5)
+        self.assertEqual(guess_compass_heading_from_device_name("nycmesh-227-southsoutheast"), 157.5)
+        self.assertEqual(guess_compass_heading_from_device_name("nycmesh-227-westsouthwest"), 247.5)
+        self.assertEqual(guess_compass_heading_from_device_name("nycmesh-227-northnorthwest"), 337.5)
+
         self.assertEqual(guess_compass_heading_from_device_name("nycmesh-227-ev"), None)
         self.assertEqual(guess_compass_heading_from_device_name("nycmesh-227-sector1"), None)
 
         with pytest.raises(ValueError):
             guess_compass_heading_from_device_name("nycmesh-227-northsouth")
+
+        with pytest.raises(ValueError):
+            guess_compass_heading_from_device_name("nycmesh-227-northsoutheast")
 
         with pytest.raises(ValueError):
             guess_compass_heading_from_device_name("nycmesh-227-westeast")
