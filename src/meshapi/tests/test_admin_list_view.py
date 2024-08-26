@@ -1,6 +1,5 @@
 import datetime
 
-from bs4 import BeautifulSoup
 from django.contrib.auth.models import Group, User
 from django.test import Client, TestCase
 from rest_framework.authtoken.models import TokenProxy
