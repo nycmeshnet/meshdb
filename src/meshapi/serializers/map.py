@@ -79,7 +79,11 @@ class MapDataInstallSerializer(serializers.ModelSerializer):
         # Start the notes with the map display type
         synthetic_notes = []
 
-        if install.node.type != Node.NodeType.STANDARD:
+        # In the case of multiple dots per node, we only want to
+        # make the one that actually corresponds to the NN the big dot (the "fake" install)
+        # for the real install numbers that don't match the network number, leave them as red dots
+        is_fake_install_for_node = install.install_number == install.node.network_number
+        if install.node.type != Node.NodeType.STANDARD and is_fake_install_for_node:
             synthetic_notes.append(install.node.type)
 
         # Supplement with "Omni" if this node has an omni attached
