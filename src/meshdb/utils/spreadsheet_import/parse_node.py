@@ -63,6 +63,16 @@ def get_or_create_node(
             # (if there's another install connected to this node that is active)
             node.abandon_date = row.abandonDate
 
+        # For cases where the there is an install request that pre-dates
+        # the install request which was used for the NN (e.g. 1571 & 1933)
+        # and also for standard NN-assigned situations (since the NN-assigned row gets
+        # parsed first and its "type" gets used for the Node object, e.g. 383 & 11516)
+        # We want to make sure we correctly assign this as a hub, etc. if needed, by overriding
+        # boring nodes with more exciting types if applicable
+        new_type = get_node_type(row.notes, row.nodeName)
+        if new_type != Node.NodeType.STANDARD and node.type == Node.NodeType.STANDARD:
+            node.type = new_type
+
         if row.notes or row.notes2:
             node.notes += (
                 f"Spreadsheet Notes (#{row.id}):\n"
