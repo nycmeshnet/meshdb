@@ -47,7 +47,6 @@ EMAIL_PORT = os.environ.get("SMTP_PORT")
 EMAIL_HOST_USER = os.environ.get("SMTP_USER", "localhost")
 EMAIL_HOST_PASSWORD = os.environ.get("SMTP_PASSWORD", "localhost")
 EMAIL_USE_TLS = True
-EMAIL_SUBJECT_PREFIX = "[MeshDB] "
 
 ALLOWED_HOSTS = [
     "db.mesh.nycmesh.net",
