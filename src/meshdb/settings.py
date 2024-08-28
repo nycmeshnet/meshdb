@@ -44,8 +44,8 @@ FORMS_URL = os.environ.get("FORMS_URL", "https://devforms.mesh.nycmesh.net")
 # SMTP Config for password reset emails
 EMAIL_HOST = os.environ.get("SMTP_HOST")
 EMAIL_PORT = os.environ.get("SMTP_PORT")
-EMAIL_HOST_USER = os.environ.get("SMTP_USER", "localhost")
-EMAIL_HOST_PASSWORD = os.environ.get("SMTP_PASSWORD", "localhost")
+EMAIL_HOST_USER = os.environ.get("SMTP_USER")
+EMAIL_HOST_PASSWORD = os.environ.get("SMTP_PASSWORD")
 EMAIL_USE_TLS = True
 
 ALLOWED_HOSTS = [
