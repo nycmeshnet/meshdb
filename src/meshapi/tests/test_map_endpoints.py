@@ -105,6 +105,19 @@ class TestViewsGetUnauthenticated(TestCase):
                 notes="Spreadsheet notes:\nHub: LiteBeamLR to SN1 plus kiosk failover",
             )
         )
+
+        installs.append(
+            Install(
+                install_number=17232,
+                node=nodes[-1],
+                status=Install.InstallStatus.ACTIVE,
+                request_date=datetime.date(2024, 1, 27),
+                roof_access=True,
+                building=buildings[-1],
+                member=member,
+            )
+        )
+
         ap = AccessPoint(
             id=123456,
             node=nodes[-1],
@@ -360,6 +373,14 @@ class TestViewsGetUnauthenticated(TestCase):
                     "requestDate": 1706331600000,
                     "roofAccess": True,
                     "panoramas": [],
+                },
+                {
+                    "id": 17232,
+                    "coordinates": [-73.987881, 40.724868, 27.0],
+                    "requestDate": 1706331600000,
+                    "status": "Installed",
+                    "panoramas": ["3.jpg", "3a.jpg", "3b.jpg"],
+                    "roofAccess": True,
                 },
                 {
                     "id": 1123456,
