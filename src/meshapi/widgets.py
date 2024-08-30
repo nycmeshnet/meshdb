@@ -75,7 +75,7 @@ class ExternalHyperlinkWidget(widgets.TextInput):
         super_context = self.get_context(name, value, attrs)
         super_context["widget"]["value"] = context["widget"]["value"]
         super_context["widget"]["formatted"] = context["widget"]["formatted"]
-        return super()._render(self.template_name, super_context, renderer)  # type: ignore[memberAttributeAccessIssue]
+        return super()._render(self.template_name, super_context, renderer)  # type: ignore
 
 
 class DeviceIPAddressWidget(widgets.TextInput):
