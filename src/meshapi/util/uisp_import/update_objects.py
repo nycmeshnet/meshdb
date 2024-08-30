@@ -75,7 +75,6 @@ def update_link_from_uisp_data(
     uisp_from_device: Device,
     uisp_to_device: Device,
     uisp_status: Link.LinkStatus,
-    uisp_link_type: Link.LinkType,
     uisp_session: Optional[requests.Session] = None,
 ) -> List[str]:
     change_messages = []
@@ -127,10 +126,6 @@ def update_link_from_uisp_data(
                 existing_link.abandon_date = None
 
             change_messages.append(change_message)
-
-    if existing_link.type != uisp_link_type:
-        change_messages.append(f"Changed link type from {existing_link.type} to {uisp_link_type}")
-        existing_link.type = uisp_link_type
 
     if (
         existing_link.status == Link.LinkStatus.INACTIVE

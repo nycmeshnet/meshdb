@@ -420,14 +420,13 @@ class TestUISPImportUpdateObjects(TransactionTestCase):
             uisp_from_device=self.device1,
             uisp_to_device=self.device3,
             uisp_status=Link.LinkStatus.INACTIVE,
-            uisp_link_type=Link.LinkType.SIXTY_GHZ,
         )
 
         self.link.refresh_from_db()
         self.assertEqual(self.link.from_device, self.device1)
         self.assertEqual(self.link.to_device, self.device3)
         self.assertEqual(self.link.status, Link.LinkStatus.INACTIVE)
-        self.assertEqual(self.link.type, Link.LinkType.SIXTY_GHZ)
+        self.assertEqual(self.link.type, Link.LinkType.FIVE_GHZ)
         self.assertEqual(self.link.abandon_date, last_seen_date.date())
 
         self.assertEqual(
@@ -435,7 +434,6 @@ class TestUISPImportUpdateObjects(TransactionTestCase):
             [
                 "Changed connected device pair from [nycmesh-1234-dev1, nycmesh-5678-dev2] to [nycmesh-1234-dev1, nycmesh-9012-dev3]",
                 "Marked as Inactive due to being offline for more than 30 days",
-                "Changed link type from 5 GHz to 60 GHz",
             ],
         )
 
@@ -452,7 +450,6 @@ class TestUISPImportUpdateObjects(TransactionTestCase):
             uisp_from_device=self.device1,
             uisp_to_device=self.device2,
             uisp_status=Link.LinkStatus.INACTIVE,
-            uisp_link_type=Link.LinkType.FIVE_GHZ,
         )
 
         self.link.refresh_from_db()
@@ -479,7 +476,6 @@ class TestUISPImportUpdateObjects(TransactionTestCase):
             uisp_from_device=self.device1,
             uisp_to_device=self.device2,
             uisp_status=Link.LinkStatus.INACTIVE,
-            uisp_link_type=Link.LinkType.FIVE_GHZ,
         )
 
         self.link.refresh_from_db()
@@ -500,7 +496,6 @@ class TestUISPImportUpdateObjects(TransactionTestCase):
             uisp_from_device=self.device1,
             uisp_to_device=self.device2,
             uisp_status=Link.LinkStatus.INACTIVE,
-            uisp_link_type=Link.LinkType.FIVE_GHZ,
         )
 
         self.link.refresh_from_db()
@@ -526,7 +521,6 @@ class TestUISPImportUpdateObjects(TransactionTestCase):
             uisp_from_device=self.device1,
             uisp_to_device=self.device2,
             uisp_status=Link.LinkStatus.ACTIVE,
-            uisp_link_type=Link.LinkType.FIVE_GHZ,
         )
 
         self.link.refresh_from_db()
@@ -554,7 +548,6 @@ class TestUISPImportUpdateObjects(TransactionTestCase):
             uisp_from_device=self.device1,
             uisp_to_device=self.device2,
             uisp_status=Link.LinkStatus.ACTIVE,
-            uisp_link_type=Link.LinkType.FIVE_GHZ,
         )
         self.assertEqual(change_messages, [])
 
@@ -564,7 +557,6 @@ class TestUISPImportUpdateObjects(TransactionTestCase):
             uisp_from_device=self.device2,
             uisp_to_device=self.device1,
             uisp_status=Link.LinkStatus.ACTIVE,
-            uisp_link_type=Link.LinkType.FIVE_GHZ,
         )
         self.assertEqual(change_messages, [])
 
@@ -1206,7 +1198,6 @@ class TestUISPImportHandlers(TransactionTestCase):
                     self.device1,
                     self.device2,
                     Link.LinkStatus.ACTIVE,
-                    Link.LinkType.FIVE_GHZ,
                     "mock_uisp_session",
                 ),
                 call(
@@ -1214,7 +1205,6 @@ class TestUISPImportHandlers(TransactionTestCase):
                     self.device1,
                     self.device3,
                     Link.LinkStatus.INACTIVE,
-                    Link.LinkType.SIXTY_GHZ,
                     "mock_uisp_session",
                 ),
             ]

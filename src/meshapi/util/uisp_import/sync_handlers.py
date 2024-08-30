@@ -228,7 +228,6 @@ def import_and_sync_uisp_links(uisp_links: List[UISPDataLink]) -> None:
                         uisp_from_device,
                         uisp_to_device,
                         uisp_status,
-                        uisp_link_type,
                         uisp_session,
                     )
                     if change_list:
