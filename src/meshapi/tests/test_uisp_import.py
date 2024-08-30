@@ -1187,6 +1187,29 @@ class TestUISPImportHandlers(TransactionTestCase):
                 "type": "wireless",
                 "frequency": 5_000,
             },
+            {
+                "from": {
+                    "device": {
+                        "identification": {
+                            "id": "uisp-uuid1",
+                            "category": "wireless",
+                            "name": "nycmesh-1234-dev1",
+                        }
+                    }
+                },
+                "to": {
+                    "device": {
+                        "identification": {
+                            "id": "uisp-uuid4",
+                            "category": "wireless",
+                            "name": "nycmesh-3456-dev4",
+                        }
+                    }
+                },
+                "state": "active",
+                "id": "uisp-uuid5",
+                "type": "ethernet",
+            },
         ]
 
         import_and_sync_uisp_links(uisp_links)
@@ -1210,19 +1233,42 @@ class TestUISPImportHandlers(TransactionTestCase):
             ]
         )
 
-        mock_notify_admins.assert_called_once_with(self.link2, ["Mock update 2"])
+        created_link3 = Link.objects.get(uisp_id="uisp-uuid3")
+        created_link5 = Link.objects.get(uisp_id="uisp-uuid5")
 
-        created_link = Link.objects.get(uisp_id="uisp-uuid3")
-        self.assertEqual(created_link.from_device, self.device2)
-        self.assertEqual(created_link.to_device, self.device4)
-        self.assertEqual(created_link.status, Link.LinkStatus.ACTIVE)
-        self.assertEqual(created_link.type, Link.LinkType.FIVE_GHZ)
-        self.assertEqual(created_link.install_date, None)
-        self.assertEqual(created_link.abandon_date, None)
-        self.assertEqual(created_link.description, None)
-        self.assertTrue(created_link.notes.startswith("Automatically imported from UISP on"))
+        mock_notify_admins.assert_has_calls(
+            [
+                call(self.link2, ["Mock update 2"]),
+                call(
+                    created_link5,
+                    [
+                        f"Used link type of 'Ethernet' from UISP metadata, however this may not be correct in the "
+                        f"case of VPN or Fiber links. Please provide a more accurate value if available"
+                    ],
+                    created=True,
+                ),
+            ]
+        )
+
+        self.assertEqual(created_link3.from_device, self.device2)
+        self.assertEqual(created_link3.to_device, self.device4)
+        self.assertEqual(created_link3.status, Link.LinkStatus.ACTIVE)
+        self.assertEqual(created_link3.type, Link.LinkType.FIVE_GHZ)
+        self.assertEqual(created_link3.install_date, None)
+        self.assertEqual(created_link3.abandon_date, None)
+        self.assertEqual(created_link3.description, None)
+        self.assertTrue(created_link3.notes.startswith("Automatically imported from UISP on"))
 
         self.assertIsNone(Link.objects.filter(uisp_id="uisp-uuid4").first())
+
+        self.assertEqual(created_link5.from_device, self.device1)
+        self.assertEqual(created_link5.to_device, self.device4)
+        self.assertEqual(created_link5.status, Link.LinkStatus.ACTIVE)
+        self.assertEqual(created_link5.type, Link.LinkType.ETHERNET)
+        self.assertEqual(created_link5.install_date, None)
+        self.assertEqual(created_link5.abandon_date, None)
+        self.assertEqual(created_link5.description, None)
+        self.assertTrue(created_link5.notes.startswith("Automatically imported from UISP on"))
 
     @patch("meshapi.util.uisp_import.sync_handlers.get_uisp_session")
     @patch("meshapi.util.uisp_import.sync_handlers.notify_admins_of_changes")

@@ -248,6 +248,16 @@ def import_and_sync_uisp_links(uisp_links: List[UISPDataLink]) -> None:
         )
         link.save()
 
+        if uisp_link_type == Link.LinkType.ETHERNET:
+            notify_admins_of_changes(
+                link,
+                [
+                    f"Used link type of '{uisp_link_type}' from UISP metadata, however this may not be correct in the "
+                    f"case of VPN or Fiber links. Please provide a more accurate value if available"
+                ],
+                created=True,
+            )
+
 
 def sync_link_table_into_los_objects() -> None:
     for link in (
