@@ -3,14 +3,17 @@ from typing import Any, Iterable, Optional, Type
 from django import forms
 from django.contrib import admin
 from django.contrib.admin import ModelAdmin
+from django.contrib.postgres.search import SearchVector
 from django.db.models import QuerySet
 from django.forms import ModelForm
 from django.http import HttpRequest
 from import_export.admin import ExportActionMixin, ImportExportModelAdmin
 
-from meshapi.admin.inlines import BuildingLOSInline, InstallInline
 from meshapi.models import Building
 from meshapi.widgets import AutoPopulateLocationWidget, PanoramaViewer
+
+from ..inlines import BuildingLOSInline, InstallInline
+from ..ranked_search import RankedSearchMixin
 
 
 class BoroughFilter(admin.SimpleListFilter):
@@ -56,7 +59,7 @@ class BuildingAdminForm(forms.ModelForm):
 
 
 @admin.register(Building)
-class BuildingAdmin(ImportExportModelAdmin, ExportActionMixin):
+class BuildingAdmin(RankedSearchMixin, ImportExportModelAdmin, ExportActionMixin):
     form = BuildingAdminForm
     list_display = ["__str__", "street_address", "primary_node"]
     search_fields = [
@@ -64,21 +67,23 @@ class BuildingAdmin(ImportExportModelAdmin, ExportActionMixin):
         "nodes__name__icontains",
         # Address info
         "street_address__icontains",
-        "city__icontains",
-        "state__icontains",
         "zip_code__iexact",
         "bin__iexact",
         # Search by NN
         "nodes__network_number__iexact",
         "installs__install_number__iexact",
-        # Search by Member info
-        "installs__member__name__icontains",
-        "installs__member__primary_email_address__icontains",
-        "installs__member__phone_number__iexact",
-        "installs__member__slack_handle__iexact",
         # Notes
-        "notes__icontains",
+        "@notes",
     ]
+    search_vector = (
+        SearchVector("nodes__name", weight="A")
+        + SearchVector("street_address", weight="A")
+        + SearchVector("zip_code", weight="A")
+        + SearchVector("bin", weight="A")
+        + SearchVector("nodes__network_number", weight="B")
+        + SearchVector("installs__install_number", weight="B")
+        + SearchVector("notes", weight="D")
+    )
     list_filter = [
         BoroughFilter,
         ("primary_node", admin.EmptyFieldListFilter),

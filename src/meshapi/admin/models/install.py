@@ -4,6 +4,7 @@ from typing import Any, Tuple
 import tablib
 from django import forms
 from django.contrib import admin
+from django.contrib.postgres.search import SearchVector
 from django.db.models import QuerySet
 from django.http import HttpRequest
 from import_export import resources
@@ -13,6 +14,8 @@ from meshapi.models import Install
 from meshapi.widgets import ExternalHyperlinkWidget
 
 OSTICKET_URL = os.environ.get("OSTICKET_URL", "https://support.nycmesh.net")
+
+from ..ranked_search import RankedSearchMixin
 
 
 class InstallImportExportResource(resources.ModelResource):
@@ -40,7 +43,7 @@ class InstallAdminForm(forms.ModelForm):
 
 
 @admin.register(Install)
-class InstallAdmin(ImportExportModelAdmin, ExportActionMixin):
+class InstallAdmin(RankedSearchMixin, ImportExportModelAdmin, ExportActionMixin):
     form = InstallAdminForm
     resource_classes = [InstallImportExportResource]
     list_filter = [
@@ -57,8 +60,6 @@ class InstallAdmin(ImportExportModelAdmin, ExportActionMixin):
         "node__network_number__iexact",
         # Search by building details
         "building__street_address__icontains",
-        "building__city__iexact",
-        "building__state__iexact",
         "building__zip_code__iexact",
         "building__bin__iexact",
         # Search by member details
@@ -67,8 +68,20 @@ class InstallAdmin(ImportExportModelAdmin, ExportActionMixin):
         "member__phone_number__iexact",
         "member__slack_handle__iexact",
         # Notes
-        "notes__icontains",
+        "@notes",
     ]
+    search_vector = (
+        SearchVector("install_number", weight="A")
+        + SearchVector("node__network_number", weight="A")
+        + SearchVector("member__name", weight="A")
+        + SearchVector("member__primary_email_address", weight="B")
+        + SearchVector("member__phone_number", weight="B")
+        + SearchVector("member__slack_handle", weight="C")
+        + SearchVector("building__street_address", weight="C")
+        + SearchVector("building__zip_code", weight="C")
+        + SearchVector("building__bin", weight="C")
+        + SearchVector("notes", weight="D")
+    )
     autocomplete_fields = ["building", "member"]
     fieldsets = [
         (

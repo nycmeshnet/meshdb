@@ -141,6 +141,10 @@ class TestAdminSearchView(TestCase):
         response = self._call("/admin/meshapi/install/?q=101", 200)
         self.assertEqual(1, get_admin_results_count(response.content.decode()))
 
+    def test_search_install_by_nn_exact(self):
+        response = self._call("/admin/meshapi/install/?q=NN101", 200)
+        self.assertEqual(1, get_admin_results_count(response.content.decode()))
+
     def test_search_install_just_nn(self):
         response = self._call("/admin/meshapi/install/?q=nN", 200)
         self.assertEqual(0, get_admin_results_count(response.content.decode()))

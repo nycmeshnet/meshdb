@@ -1,14 +1,16 @@
 from typing import Any, Optional, Type
 
 from django.contrib import admin
+from django.contrib.postgres.search import SearchVector
 from django.forms import Field, ModelForm
 from django.http import HttpRequest
 from import_export.admin import ExportActionMixin, ImportExportModelAdmin
 
-from meshapi.admin.inlines import DeviceLinkInline
-from meshapi.admin.models.device import UISP_URL, DeviceAdmin, DeviceAdminForm
 from meshapi.models import AccessPoint
 from meshapi.widgets import AutoPopulateLocationWidget, DeviceIPAddressWidget, ExternalHyperlinkWidget
+
+from ..ranked_search import RankedSearchMixin
+from .device import UISP_URL, DeviceAdmin, DeviceAdminForm, DeviceLinkInline
 
 
 class AccessPointAdminForm(DeviceAdminForm):
@@ -30,9 +32,10 @@ class AccessPointAdminForm(DeviceAdminForm):
 
 
 @admin.register(AccessPoint)
-class AccessPointAdmin(ImportExportModelAdmin, ExportActionMixin):
+class AccessPointAdmin(RankedSearchMixin, ImportExportModelAdmin, ExportActionMixin):
     form = AccessPointAdminForm
-    search_fields = ["name__icontains", "notes__icontains"]
+    search_fields = ["name__icontains", "@notes"]
+    search_vector = SearchVector("name", weight="A") + SearchVector("notes", weight="D")
     list_display = [
         "__str__",
         "name",
