@@ -109,8 +109,8 @@ def get_representative_device_for_node(node: Node, link_status: SpreadsheetLinkS
             name=f"NN{node.network_number} Placeholder Device",
             status=status,
             notes=f"Automatically created to allow the import of spreadsheet links to/from NN{node.network_number}. "
-            f"Please check the links connected to this device, and connect them to a more accurate device at this node "
-            f"(you may need to create these other devices in MeshDB or UISP first)",
+            "Please check the links connected to this device, and connect them to a more accurate device at this node "
+            "(you may need to create these other devices in MeshDB or UISP first)",
         )
         device.save()
 
