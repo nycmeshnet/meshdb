@@ -1,9 +1,12 @@
+import datetime
+
 from django.contrib.auth.models import User
 from django.test import Client, TestCase
 
-from meshapi.models import AccessPoint, Building, Device, Install, Link, Member, Node, Sector
+from meshapi.models import LOS, AccessPoint, Building, Device, Install, Link, Member, Node, Sector
 
 from .sample_data import sample_building, sample_device, sample_install, sample_member, sample_node
+from .util import get_admin_results_count
 
 
 class TestAdminSearchView(TestCase):
@@ -15,6 +18,17 @@ class TestAdminSearchView(TestCase):
         self.building_1.save()
         sample_install_copy["building"] = self.building_1
 
+        self.building_2 = Building(**sample_building)
+        self.building_2.save()
+
+        self.los = LOS(
+            from_building=self.building_1,
+            to_building=self.building_2,
+            analysis_date=datetime.date(2024, 1, 1),
+            source=LOS.LOSSource.HUMAN_ANNOTATED,
+        )
+        self.los.save()
+
         self.member = Member(**sample_member)
         self.member.save()
         sample_install_copy["member"] = self.member
@@ -24,18 +38,35 @@ class TestAdminSearchView(TestCase):
 
         self.node1 = Node(**sample_node)
         self.node1.save()
+
+        self.building_1.primary_node = self.node1
+        self.building_1.save()
+
         self.node2 = Node(**sample_node)
         self.node2.save()
 
-        self.device1 = Device(**sample_device)
+        self.install.node = self.node1
+        self.install.save()
+
+        self.building_2.primary_node = self.node2
+        self.building_2.save()
+
+        self.device1 = Device(
+            **sample_device,
+            name="Device1",
+        )
         self.device1.node = self.node1
         self.device1.save()
 
-        self.device2 = Device(**sample_device)
+        self.device2 = Device(
+            **sample_device,
+            name="Device2",
+        )
         self.device2.node = self.node2
         self.device2.save()
 
         self.sector = Sector(
+            name="Sector1",
             radius=1,
             azimuth=45,
             width=180,
@@ -46,6 +77,7 @@ class TestAdminSearchView(TestCase):
 
         self.access_point = AccessPoint(
             **sample_device,
+            name="AP1",
             latitude=0,
             longitude=0,
         )
@@ -67,36 +99,52 @@ class TestAdminSearchView(TestCase):
     def _call(self, route, code):
         response = self.c.get(route)
         self.assertEqual(code, response.status_code, f"Call to admin panel route {route} failed. Got code {code}.")
+        return response
 
     def test_search_building(self):
-        self._call("/admin/meshapi/building/?q=1", 200)
+        response = self._call("/admin/meshapi/building/?q=8888", 200)
+        self.assertEqual(2, get_admin_results_count(response.content.decode()))
 
     def test_search_member(self):
-        self._call("/admin/meshapi/member/?q=1", 200)
+        response = self._call("/admin/meshapi/member/?q=1", 200)
+        self.assertEqual(1, get_admin_results_count(response.content.decode()))
 
     def test_search_install(self):
-        self._call("/admin/meshapi/install/?q=1", 200)
+        response = self._call(f"/admin/meshapi/install/?q={self.install.install_number}", 200)
+        self.assertEqual(1, get_admin_results_count(response.content.decode()))
 
     def test_search_link(self):
-        self._call("/admin/meshapi/link/?q=1", 200)
+        response = self._call("/admin/meshapi/link/?q=101", 200)
+        self.assertEqual(1, get_admin_results_count(response.content.decode()))
+
+    def test_search_los(self):
+        response = self._call("/admin/meshapi/los/?q=101", 200)
+        self.assertEqual(1, get_admin_results_count(response.content.decode()))
 
     def test_search_sector(self):
-        self._call("/admin/meshapi/sector/?q=1", 200)
+        response = self._call("/admin/meshapi/sector/?q=1", 200)
+        self.assertEqual(1, get_admin_results_count(response.content.decode()))
 
     def test_search_access_point(self):
-        self._call("/admin/meshapi/accesspoint/?q=1", 200)
+        response = self._call("/admin/meshapi/accesspoint/?q=1", 200)
+        self.assertEqual(1, get_admin_results_count(response.content.decode()))
 
     def test_search_device(self):
-        self._call("/admin/meshapi/device/?q=1", 200)
+        response = self._call("/admin/meshapi/device/?q=1", 200)
+        self.assertEqual(1, get_admin_results_count(response.content.decode()))
 
     def test_search_node(self):
-        self._call("/admin/meshapi/node/?q=1", 200)
+        response = self._call("/admin/meshapi/node/?q=101", 200)
+        self.assertEqual(1, get_admin_results_count(response.content.decode()))
 
     def test_search_install_by_nn(self):
-        self._call("/admin/meshapi/install/?q=nN1", 200)
+        response = self._call("/admin/meshapi/install/?q=101", 200)
+        self.assertEqual(1, get_admin_results_count(response.content.decode()))
 
     def test_search_install_just_nn(self):
-        self._call("/admin/meshapi/install/?q=nN", 200)
+        response = self._call("/admin/meshapi/install/?q=nN", 200)
+        self.assertEqual(0, get_admin_results_count(response.content.decode()))
 
     def test_search_install_empty(self):
-        self._call("/admin/meshapi/install/?q=", 200)
+        response = self._call("/admin/meshapi/install/?q=", 200)
+        self.assertEqual(1, get_admin_results_count(response.content.decode()))
