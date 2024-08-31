@@ -1,11 +1,11 @@
 import json
 import os
-from typing import Any, Dict, Optional
+from typing import Any, Callable, Dict, Optional
 
 from django import forms
 from django.forms import widgets
 from django.template import loader
-from django.utils.safestring import mark_safe
+from django.utils.safestring import SafeString, mark_safe
 from django_jsonform.widgets import JSONFormWidget
 
 
@@ -26,7 +26,7 @@ class PanoramaViewer(JSONFormWidget):
 
     def render(
         self, name: str, value: str, attrs: Optional[Dict[str, Any]] = None, renderer: Optional[Any] = None
-    ) -> str:
+    ) -> SafeString:
         if "DISALLOW_PANO_EDITS" in os.environ:
             super_template = ""
         else:
@@ -45,6 +45,37 @@ class PanoramaViewer(JSONFormWidget):
             "all": ("widgets/panorama_viewer.css", "widgets/flickity.min.css"),
         }
         js = ["widgets/flickity.pkgd.min.js"]
+
+
+class ExternalHyperlinkWidget(widgets.TextInput):
+    template_name = "widgets/external_link.html"
+
+    def __init__(self, formatter: Callable, title: str = ""):
+        self.formatter = formatter
+        self.title = title
+        super().__init__()
+
+    def get_link_context(self, name: str, value: str) -> dict:
+        formatted_value = None
+        if value:
+            formatted_value = self.formatter(value)
+        return {
+            "widget": {
+                "name": name,
+                "value": value,
+                "formatted": formatted_value,
+                "title": self.title,
+            }
+        }
+
+    def render(
+        self, name: str, value: str, attrs: Optional[Dict[str, Any]] = None, renderer: Optional[Any] = None
+    ) -> SafeString:
+        context = self.get_link_context(name, value)
+        super_context = self.get_context(name, value, attrs)
+        super_context["widget"]["value"] = context["widget"]["value"]
+        super_context["widget"]["formatted"] = context["widget"]["formatted"]
+        return super()._render(self.template_name, super_context, renderer)  # type: ignore
 
 
 class DeviceIPAddressWidget(widgets.TextInput):

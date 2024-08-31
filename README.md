@@ -122,6 +122,12 @@ celery -A meshdb worker -l INFO
 celery -A meshdb beat -s /tmp/celerybeat-schedule -l DEBUG
 ```
 
+> [!NOTE]
+> On Apple silicon macs, you may need to run the worker with the `--pool=solo` to avoid segfaults. I.e.
+> ```
+> celery -A meshdb worker -l INFO --pool=solo
+> ```
+
 Then, you can get crackin'
 
 ```sh
