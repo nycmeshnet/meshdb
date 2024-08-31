@@ -144,6 +144,7 @@ def merge_member_objects(members_and_installs: List[Tuple[Member, List[int]]]) -
     for member, _ in members_and_installs:
         for install in member.installs.all():
             install.member = merged_member
+            install.save()
 
     # Now that we have consolidated down, clear out the objects we consolidated to avoid duplication
     for member, _ in members_and_installs:

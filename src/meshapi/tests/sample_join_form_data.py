@@ -29,6 +29,37 @@ valid_join_form_submission = {
     },
 }
 
+valid_join_form_submission_with_apartment_in_address = {
+    "first_name": "John",
+    "last_name": "Smith",
+    "email": "jsmith@gmail.com",
+    "phone": "+1585-758-3425",
+    "street_address": "151 Broome St, Apt 1B",  # Apt shouldn't be here, but this example tests robustness
+    "parsed_street_address": "151 Broome Street",
+    "city": "New York",
+    "state": "NY",
+    "zip": 10002,
+    "apartment": "Apt 1B",
+    "roof_access": True,
+    "referral": "Googled it or something IDK",
+    "ncl": True,
+    "dob_addr_response": {
+        "features": [
+            {
+                "properties": {
+                    "housenumber": "151",
+                    "street": "Broome Street",
+                    "borough": "New York",
+                    "region_a": "NY",
+                    "postalcode": "10002",
+                    "addendum": {"pad": {"bin": 1077609}},
+                },
+                "geometry": {"coordinates": [0, 0]},
+            }
+        ]
+    },
+}
+
 valid_join_form_submission_no_email = {
     "first_name": "John",
     "last_name": "Smith",

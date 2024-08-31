@@ -107,12 +107,7 @@ def get_representative_device_for_node(node: Node, link_status: SpreadsheetLinkS
         device = Device(
             node=node,
             name=f"NN{node.network_number} Core",
-            model="Unknown",
-            type=Device.DeviceType.OTHER,
             status=status,
-            latitude=node.latitude,
-            longitude=node.longitude,
-            altitude=node.altitude,
             notes=f"Automatically created to allow the import of spreadsheet links to/from NN{node.network_number}",
         )
         device.save()
