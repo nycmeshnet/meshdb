@@ -237,7 +237,9 @@ function interceptLinks() {
                 await updateAdminContent(form.action, {method: "POST", body: formData});
             } else if (method.toUpperCase() === "GET") {
                 const params = new URLSearchParams(formData).toString();
-                await updateAdminContent(`${form.action}?${params}`);
+                const actionWithoutParams = new URL(form.action);
+                actionWithoutParams.search = "";
+                await updateAdminContent(`${actionWithoutParams.href}?${params}`);
             }
 
             updateMapForLocation();
