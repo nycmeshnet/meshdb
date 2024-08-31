@@ -1,3 +1,4 @@
+import os
 from typing import Any, Tuple
 
 import tablib
@@ -9,6 +10,9 @@ from import_export import resources
 from import_export.admin import ExportActionMixin, ImportExportModelAdmin
 
 from meshapi.models import Install
+from meshapi.widgets import ExternalHyperlinkWidget
+
+OSTICKET_URL = os.environ.get("OSTICKET_URL", "https://support.nycmesh.net")
 
 
 class InstallImportExportResource(resources.ModelResource):
@@ -28,6 +32,10 @@ class InstallAdminForm(forms.ModelForm):
         fields = "__all__"
         widgets = {
             "unit": forms.TextInput(),
+            "ticket_id": ExternalHyperlinkWidget(
+                lambda ticket_id: f"{OSTICKET_URL}/scp/tickets.php?id={ticket_id}",
+                title="View in OSTicket",
+            ),
         }
 
 

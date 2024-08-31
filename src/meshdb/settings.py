@@ -36,9 +36,19 @@ PROFILING_ENABLED = DEBUG and not os.environ.get("DISABLE_PROFILING", "False") =
 
 USE_X_FORWARDED_HOST = True
 
+LOS_URL = os.environ.get("LOS_URL", "https://devlos.mesh.nycmesh.net")
+MAP_URL = os.environ.get("MAP_BASE_URL", "https://devmap.mesh.nycmesh.net")
+PG_ADMIN_URL = os.environ.get("PG_ADMIN_URL", "/pgadmin/")
+FORMS_URL = os.environ.get("FORMS_URL", "https://devforms.mesh.nycmesh.net")
+
+# SMTP Config for password reset emails
+EMAIL_HOST = os.environ.get("SMTP_HOST")
+EMAIL_PORT = os.environ.get("SMTP_PORT")
+EMAIL_HOST_USER = os.environ.get("SMTP_USER")
+EMAIL_HOST_PASSWORD = os.environ.get("SMTP_PASSWORD")
+EMAIL_USE_TLS = True
+
 ALLOWED_HOSTS = [
-    "db.grandsvc.mesh.nycmesh.net",
-    "db.grandsvc.mesh",
     "db.mesh.nycmesh.net",
     "db.mesh",
     "db.nycmesh.net",
@@ -48,20 +58,12 @@ ALLOWED_HOSTS = [
 ]
 
 CORS_ALLOWED_ORIGINS = [
-    "http://forms.grandsvc.mesh.nycmesh.net",
-    "https://forms.grandsvc.mesh.nycmesh.net",
     "https://forms.mesh.nycmesh.net",
     "https://devforms.mesh.nycmesh.net",
-    "http://map.grandsvc.mesh.nycmesh.net",
-    "https://map.grandsvc.mesh.nycmesh.net",
     "https://map.mesh.nycmesh.net",
     "https://devmap.mesh.nycmesh.net",
     "https://adminmap.mesh.nycmesh.net",
     "https://devadminmap.mesh.nycmesh.net",
-    "http://map.grandsvc.mesh",
-    "https://map.grandsvc.mesh",
-    "http://forms.grandsvc.mesh",
-    "https://forms.grandsvc.mesh",
 ]
 
 if DEBUG:
@@ -79,10 +81,6 @@ if DEBUG:
 
 
 CSRF_TRUSTED_ORIGINS = [
-    "http://db.grandsvc.mesh.nycmesh.net",
-    "https://db.grandsvc.mesh.nycmesh.net",
-    "http://db.grandsvc.mesh",
-    "https://db.grandsvc.mesh",
     "http://127.0.0.1:8080",
     "http://meshdb:8081",
     "http://nginx:8080",

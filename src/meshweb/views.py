@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.http import HttpRequest, HttpResponse
 from django.template import loader
 from drf_spectacular.utils import extend_schema
@@ -13,15 +14,15 @@ def index(request: HttpRequest) -> HttpResponse:
     template = loader.get_template("meshweb/index.html")
     links = {
         "Member Tools": [
-            ("https://forms.grandsvc.mesh.nycmesh.net/join/", "Join Form"),
-            ("https://los.grandsvc.mesh.nycmesh.net/", "Line of Sight Tool"),
-            ("https://map.grandsvc.mesh.nycmesh.net", "Map"),
+            (f"{settings.FORMS_URL}/join/", "Join Form"),
+            (settings.LOS_URL, "Line of Sight Tool"),
+            (settings.MAP_URL, "Map"),
         ],
         "Volunteer Tools": [
             ("/admin", "Admin Panel"),
             ("/api/v1/geography/whole-mesh.kml", "KML Download"),
-            ("/pgadmin/", "PG Admin"),
-            ("https://forms.grandsvc.mesh.nycmesh.net/", "Other Forms"),
+            (settings.PG_ADMIN_URL, "PG Admin"),
+            (settings.FORMS_URL, "Other Forms"),
         ],
         "Developer Tools": [
             ("https://github.com/nycmeshnet/meshdb", "Source Code"),

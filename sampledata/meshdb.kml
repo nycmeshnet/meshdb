@@ -2,7 +2,7 @@
   <name>NYCMesh (from MeshDB)</name>
   <flyToView>0</flyToView>
   <Link>
-    <href>https://db.grandsvc.mesh.nycmesh.net/api/v1/geography/whole-mesh.kml</href>
+    <href>https://db.mesh.nycmesh.net/api/v1/geography/whole-mesh.kml</href>
     <viewRefreshMode>onRequest</viewRefreshMode>
   </Link>
 </NetworkLink>

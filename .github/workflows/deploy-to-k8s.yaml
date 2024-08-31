@@ -46,6 +46,10 @@ jobs:
         --set pg.password="${{ secrets.PG_PASSWORD}}" \
         --set aws.access_key_id="${{ secrets.ACCESS_KEY_ID }}" \
         --set aws.secret_access_key="${{ secrets.SECRET_ACCESS_KEY }}" \
+        --set email.smtp_host="${{ vars.SMTP_HOST }}" \
+        --set email.smtp_port="${{ vars.SMTP_PORT }}" \
+        --set email.smtp_user="${{ vars.SMTP_USER }}" \
+        --set email.smtp_password="${{ secrets.SMTP_PASSWORD }}" \
         --set meshweb.backup_s3_base_folder="${{ vars.BACKUP_S3_BASE_FOLDER }}" \
         --set meshweb.backup_s3_bucket_name="${{ secrets.BACKUP_S3_BUCKET_NAME }}" \
         --set meshweb.django_secret_key="${{ secrets.DJANGO_SECRET_KEY }}" \
@@ -54,9 +58,14 @@ jobs:
         --set meshweb.pano_github_token="${{ secrets.GH_TOKEN }}" \
         --set pgadmin.default_email="${{ secrets.PGADMIN_EMAIL }}" \
         --set pgadmin.default_password="${{ secrets.PGADMIN_PASSWORD }}" \
+        --set uisp.url="${{ secrets.UISP_URL }}" \
         --set uisp.user="${{ secrets.UISP_USER }}" \
         --set uisp.psk="${{ secrets.UISP_PSK }}" \
-        --set map.base_url="${{ vars.MAP_URL }}" \
+        --set adminmap.base_url="${{ vars.ADMIN_MAP_BASE_URL }}" \
+        --set map.base_url="${{ vars.MAP_BASE_URL }}" \
+        --set meshweb.los_url="${{ vars.LOS_URL }}" \
+        --set meshweb.pg_admin_url="${{ vars.PG_ADMIN_URL }}" \
+        --set meshweb.forms_url="${{ vars.FORMS_URL }}" \
         --set meshdb.site_base_url="${{ vars.SITE_BASE_URL }}" \
         --set meshweb.slack_webhook="${{ secrets.SLACK_ADMIN_NOTIFICATIONS_WEBHOOK_URL }}" \
         --set ingress.hosts[0].host="${{ vars.INGRESS_HOST }}",ingress.hosts[0].paths[0].path=/,ingress.hosts[0].paths[0].pathType=Prefix
