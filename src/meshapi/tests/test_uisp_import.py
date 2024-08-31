@@ -1242,8 +1242,8 @@ class TestUISPImportHandlers(TransactionTestCase):
                 call(
                     created_link5,
                     [
-                        f"Used link type of 'Ethernet' from UISP metadata, however this may not be correct in the "
-                        f"case of VPN or Fiber links. Please provide a more accurate value if available"
+                        "Used link type of 'Ethernet' from UISP metadata, however this may not be correct in the "
+                        "case of VPN or Fiber links. Please provide a more accurate value if available"
                     ],
                     created=True,
                 ),
