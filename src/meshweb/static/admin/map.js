@@ -234,6 +234,10 @@ function interceptLinks() {
             const method = form.method;
 
             if (method.toUpperCase() === "POST") {
+                const submitButton = event.submitter;
+                if (submitButton.getAttribute('name')) {
+                    formData.append(submitButton.getAttribute('name'), submitButton.getAttribute('value'));
+                }
                 await updateAdminContent(form.action, {method: "POST", body: formData});
             } else if (method.toUpperCase() === "GET") {
                 const params = new URLSearchParams(formData).toString();
