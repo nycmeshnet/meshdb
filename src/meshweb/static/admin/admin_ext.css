@@ -1,5 +1,9 @@
 /* CSS Styles for additional elements added to the admin UI */
 
+#content {
+    padding: 10px 10px 0 20px;
+}
+
 .header-logo {
     margin-right: 5px;
     margin-top: -5px;
