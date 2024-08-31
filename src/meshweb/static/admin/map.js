@@ -119,10 +119,31 @@ async function loadScripts(scripts, destination) {
     }
 }
 
-async function updateAdminContent(newUrl, updateHistory = true) {
-    const response = await fetch(newUrl);
-    if (!response.ok) {
-        throw new Error("Error loading new contents for page: " + response.status + " " + response.statusText);
+async function updateAdminContent(newUrl, options, updateHistory = true) {
+    let response = null;
+    try {
+        response = await fetch(newUrl, options);
+        if (!response.ok) {
+            throw new Error("Error loading new contents for page: " + response.status + " " + response.statusText);
+        }
+    } catch (e) {
+        console.error(`Error during page nav to %s`, newUrl, e)
+        const mapWrapper = document.getElementById("map-wrapper");
+
+        const pageLink = document.createElement("a");
+        pageLink.className = "capture-exclude";
+        pageLink.href = newUrl;
+        pageLink.textContent = newUrl;
+
+        const errorNotice = document.createElement("p");
+        errorNotice.className = "error-box";
+        errorNotice.innerHTML = `<b>Error loading page</b>: ${pageLink.outerHTML}<br>${e}`
+
+        mapWrapper.parentNode.insertBefore(
+            errorNotice,
+            mapWrapper
+        );
+        return;
     }
 
     if (updateHistory) window.history.pushState(null, '', newUrl);
@@ -168,8 +189,9 @@ async function updateAdminContent(newUrl, updateHistory = true) {
 
 
 function shouldNotIntercept(target) {
-    const url = new URL(target);
+    const url = new URL(target.href);
 
+    if (target.className === "capture-exclude") return true;
     if (!url.pathname.startsWith("/admin/")) return true;
     if (url.pathname.startsWith("/admin/login")) return true;
     if (url.pathname.startsWith("/admin/logout")) return true;
@@ -179,10 +201,11 @@ function shouldNotIntercept(target) {
 }
 
 function interceptLinks() {
+    // Link clicks
     interceptClicks(function(event, el) {
         // Exit early if this navigation shouldn't be intercepted,
         // e.g. if the navigation is cross-origin, or a download request
-        if (shouldNotIntercept(el.href)) return;
+        if (shouldNotIntercept(el)) return;
         async function handler() {
             await updateAdminContent(el.href);
             updateMapForLocation();
@@ -192,15 +215,36 @@ function interceptLinks() {
         event.preventDefault()
     });
 
+    // Browser back
     window.addEventListener('popstate', function(event) {
          async function handler() {
-            await updateAdminContent(location.href, false);
+            await updateAdminContent(location.href, {}, false);
             updateMapForLocation();
         }
         handler()
         // console.log(location.href);
         event.preventDefault()
     }, false)
+
+    // Form submissions
+    window.addEventListener("submit", function (event) {
+        async function handler() {
+            const form = event.target;
+            const formData = new FormData(form);
+            const method = form.method;
+
+            if (method.toUpperCase() === "POST") {
+                await updateAdminContent(form.action, {method: "POST", body: formData});
+            } else if (method.toUpperCase() === "GET") {
+                const params = new URLSearchParams(formData).toString();
+                await updateAdminContent(`${form.action}?${params}`);
+            }
+
+            updateMapForLocation();
+        }
+        handler()
+        event.preventDefault();
+    })
 }
 
 async function nodeSelectedOnMap(selectedNodes) {

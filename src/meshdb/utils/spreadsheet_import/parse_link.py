@@ -1,5 +1,4 @@
 import datetime
-import json
 import logging
 import os
 from typing import List, Optional
@@ -8,6 +7,9 @@ import django
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Q
 
+from meshapi.util.uisp_import.fetch_uisp import get_uisp_device_detail, get_uisp_links, get_uisp_session
+from meshapi.util.uisp_import.utils import get_building_from_network_number, get_link_type
+
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "meshdb.settings")
 django.setup()
 
@@ -15,7 +17,6 @@ django.setup()
 from meshapi import models
 from meshapi.models import LOS, Building, Device, Install, Link, Node
 from meshdb.utils.spreadsheet_import.csv_load import SpreadsheetLink, SpreadsheetLinkStatus, get_spreadsheet_links
-from meshdb.utils.spreadsheet_import.fetch_uisp import download_uisp_links, get_uisp_device_detail, get_uisp_session
 
 
 def convert_spreadsheet_link_type(status: SpreadsheetLinkStatus, notes: Optional[str] = None) -> Link.LinkType:
@@ -61,21 +62,6 @@ def get_node_from_spreadsheet_id(spreadsheet_node_id: int) -> Node:
         return Node.objects.get(network_number=spreadsheet_node_id)
     except Node.DoesNotExist:
         return Install.objects.get(install_number=spreadsheet_node_id).node
-
-
-def get_building_from_network_number(network_number: int) -> Optional[Building]:
-    node = Node.objects.get(network_number=network_number)
-
-    # We need to lookup which buildings have this NN as primary
-    # in the case of multiple buildings, we resolve arbitrarily to the lower ID one
-    building_candidate = Building.objects.filter(primary_node=node).order_by("id").first()
-
-    # If none of the buildings have this as a primary node, maybe one has it as a secondary node?
-    if not building_candidate:
-        building_candidate = Building.objects.filter(nodes=node).order_by("id").first()
-
-    # Okay we did our best, return the building if we have it, or None if we don't
-    return building_candidate
 
 
 def get_building_from_spreadsheet_id(spreadsheet_node_id: int) -> Optional[Building]:
@@ -178,7 +164,7 @@ def load_links_supplement_with_uisp(spreadsheet_links: List[SpreadsheetLink]):
         )
         los.save()
 
-    uisp_links = download_uisp_links()
+    uisp_links = get_uisp_links()
     uisp_session = get_uisp_session()
 
     for uisp_link in uisp_links:
@@ -253,30 +239,11 @@ def load_links_supplement_with_uisp(spreadsheet_links: List[SpreadsheetLink]):
         else:
             status = Link.LinkStatus.INACTIVE
 
-        if uisp_link["type"] == "wireless":
-            if uisp_link["frequency"]:
-                if uisp_link["frequency"] < 7_000:
-                    type = Link.LinkType.FIVE_GHZ
-                elif uisp_link["frequency"] < 40_000:
-                    type = Link.LinkType.TWENTYFOUR_GHZ
-                elif uisp_link["frequency"] < 70_000:
-                    type = Link.LinkType.SIXTY_GHZ
-                else:
-                    type = Link.LinkType.SEVENTY_EIGHTY_GHZ
-            else:
-                type = Link.LinkType.FIVE_GHZ
-        elif uisp_link["type"] == "ethernet":
-            type = Link.LinkType.ETHERNET
-        elif uisp_link["type"] == "pon":
-            type = Link.LinkType.FIBER
-        else:
-            raise ValueError(f"Unexpected UISP link type: {uisp_link['type']} for link {uisp_link['id']}")
-
         link = Link(
             from_device=from_device,
             to_device=to_device,
             status=status,
-            type=type,
+            type=get_link_type(uisp_link),
             uisp_id=uisp_link["id"],
             # UISP doesn't track the following info, but we can maybe fill it in below from spreadsheet data
             install_date=None,

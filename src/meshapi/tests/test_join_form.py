@@ -24,6 +24,7 @@ from .sample_join_form_data import (
     richmond_join_form_submission,
     valid_join_form_submission,
     valid_join_form_submission_no_email,
+    valid_join_form_submission_with_apartment_in_address,
 )
 from .util import TestThread
 
@@ -123,6 +124,7 @@ class TestJoinForm(TestCase):
             [kings_join_form_submission],
             [queens_join_form_submission],
             [bronx_join_form_submission],
+            [valid_join_form_submission_with_apartment_in_address],
         ]
     )
     def test_valid_join_form(self, submission):

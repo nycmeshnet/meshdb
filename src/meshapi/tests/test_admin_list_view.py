@@ -1,8 +1,13 @@
-from django.contrib.auth.models import User
-from django.test import Client, TestCase
+import datetime
 
-from meshapi.models import AccessPoint, Building, Device, Install, Link, Member, Node, Sector
+from django.contrib.auth.models import Group, User
+from django.test import Client, TestCase
+from rest_framework.authtoken.models import TokenProxy
+
+from meshapi.models import LOS, AccessPoint, Building, Device, Install, Link, Member, Node, Sector
 from meshapi.tests.sample_data import sample_building, sample_device, sample_install, sample_member, sample_node
+from meshapi.tests.util import get_admin_results_count
+from meshapi_hooks.hooks import CelerySerializerHook
 
 
 # Sanity check to make sure that the list views in the admin panel still work
@@ -16,6 +21,17 @@ class TestAdminListView(TestCase):
         self.building_1 = Building(**sample_building)
         self.building_1.save()
         sample_install_copy["building"] = self.building_1
+
+        self.building_2 = Building(**sample_building)
+        self.building_2.save()
+
+        self.los = LOS(
+            from_building=self.building_1,
+            to_building=self.building_2,
+            analysis_date=datetime.date(2024, 1, 1),
+            source=LOS.LOSSource.HUMAN_ANNOTATED,
+        )
+        self.los.save()
 
         self.member = Member(**sample_member)
         self.member.save()
@@ -66,30 +82,67 @@ class TestAdminListView(TestCase):
         )
         self.c.login(username="admin", password="admin_password")
 
+        self.test_group = Group.objects.create(name="Test group")
+
+        self.test_auth_token = TokenProxy.objects.create(user=self.admin_user)
+
+        self.test_webhook = CelerySerializerHook.objects.create(
+            user=self.admin_user, target="http://example.com", event="building.created", headers=""
+        )
+
     def _call(self, route, code):
         response = self.c.get(route)
         self.assertEqual(code, response.status_code, f"Could not view {route} in the admin panel.")
+        return response
+
+    def test_list_group(self):
+        response = self._call("/admin/auth/group/", 200)
+        self.assertEqual(1, get_admin_results_count(response.content.decode()))
+
+    def test_list_user(self):
+        response = self._call("/admin/auth/user/", 200)
+        self.assertEqual(1, get_admin_results_count(response.content.decode()))
+
+    def test_list_authtoken(self):
+        response = self._call("/admin/authtoken/tokenproxy/", 200)
+        self.assertEqual(1, get_admin_results_count(response.content.decode()))
+
+    def test_list_hook(self):
+        response = self._call("/admin/meshapi_hooks/celeryserializerhook/", 200)
+        self.assertEqual(1, get_admin_results_count(response.content.decode()))
 
     def test_list_building(self):
-        self._call("/admin/meshapi/building/", 200)
+        response = self._call("/admin/meshapi/building/", 200)
+        self.assertEqual(2, get_admin_results_count(response.content.decode()))
 
     def test_list_member(self):
-        self._call("/admin/meshapi/member/", 200)
+        response = self._call("/admin/meshapi/member/", 200)
+        self.assertEqual(1, get_admin_results_count(response.content.decode()))
 
     def test_list_install(self):
-        self._call("/admin/meshapi/install/", 200)
+        response = self._call("/admin/meshapi/install/", 200)
+        self.assertEqual(1, get_admin_results_count(response.content.decode()))
 
     def test_list_link(self):
-        self._call("/admin/meshapi/link/", 200)
+        response = self._call("/admin/meshapi/link/", 200)
+        self.assertEqual(1, get_admin_results_count(response.content.decode()))
+
+    def test_list_los(self):
+        response = self._call("/admin/meshapi/los/", 200)
+        self.assertEqual(1, get_admin_results_count(response.content.decode()))
 
     def test_list_sector(self):
-        self._call("/admin/meshapi/sector/", 200)
+        response = self._call("/admin/meshapi/sector/", 200)
+        self.assertEqual(1, get_admin_results_count(response.content.decode()))
 
     def test_list_accesspoint(self):
-        self._call("/admin/meshapi/accesspoint/", 200)
+        response = self._call("/admin/meshapi/accesspoint/", 200)
+        self.assertEqual(1, get_admin_results_count(response.content.decode()))
 
     def test_list_device(self):
-        self._call("/admin/meshapi/device/", 200)
+        response = self._call("/admin/meshapi/device/", 200)
+        self.assertEqual(2, get_admin_results_count(response.content.decode()))
 
     def test_list_node(self):
-        self._call("/admin/meshapi/node/", 200)
+        response = self._call("/admin/meshapi/node/", 200)
+        self.assertEqual(2, get_admin_results_count(response.content.decode()))

@@ -5,10 +5,10 @@ from django.forms import Field, ModelForm
 from django.http import HttpRequest
 from import_export.admin import ExportActionMixin, ImportExportModelAdmin
 
-from meshapi.admin.device import DeviceAdmin, DeviceAdminForm
+from meshapi.admin.device import UISP_URL, DeviceAdmin, DeviceAdminForm
 from meshapi.admin.inlines import DeviceLinkInline
 from meshapi.models import AccessPoint
-from meshapi.widgets import AutoPopulateLocationWidget, DeviceIPAddressWidget
+from meshapi.widgets import AutoPopulateLocationWidget, DeviceIPAddressWidget, ExternalHyperlinkWidget
 
 
 class AccessPointAdminForm(DeviceAdminForm):
@@ -22,6 +22,10 @@ class AccessPointAdminForm(DeviceAdminForm):
         fields = "__all__"
         widgets = {
             "ip_address": DeviceIPAddressWidget(),
+            "uisp_id": ExternalHyperlinkWidget(
+                lambda uisp_id: f"{UISP_URL}/devices#id={uisp_id}&panelType=device-panel",
+                title="View in UISP",
+            ),
         }
 
 
