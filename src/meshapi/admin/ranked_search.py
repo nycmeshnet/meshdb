@@ -31,11 +31,16 @@ class RankedSearchMixin(_Base):
             # (and use_distinct to False so that it for sure doesn't happen up there)
             # because the de-duplication method used by the caller requires replacing the queryset
             # which will destroy our ordering
-            queryset = (
+            queryset = self.rank_queryset(queryset, search_term)
+            use_distinct = False
+
+        return queryset, use_distinct
+
+    def rank_queryset(self, queryset: QuerySet, search_term: str) -> QuerySet:
+        if search_term and self.search_vector:
+            return (
                 queryset.annotate(rank=SearchRank(self.search_vector, SearchQuery(search_term)))
                 .order_by("-rank", "pk")
                 .distinct("rank", "pk")
             )
-            use_distinct = False
-
-        return queryset, use_distinct
+        return queryset

@@ -13,9 +13,9 @@ from import_export.admin import ExportActionMixin, ImportExportModelAdmin
 from meshapi.models import Install
 from meshapi.widgets import ExternalHyperlinkWidget
 
-OSTICKET_URL = os.environ.get("OSTICKET_URL", "https://support.nycmesh.net")
-
 from ..ranked_search import RankedSearchMixin
+
+OSTICKET_URL = os.environ.get("OSTICKET_URL", "https://support.nycmesh.net")
 
 
 class InstallImportExportResource(resources.ModelResource):
@@ -146,7 +146,11 @@ class InstallAdmin(RankedSearchMixin, ImportExportModelAdmin, ExportActionMixin)
             upper_search = search_term.upper()
             if len(upper_search) > 2 and upper_search[:2] == "NN":
                 search_term_as_int = int(upper_search[2:])
-                queryset |= self.model.objects.filter(node_id=search_term_as_int)
+                queryset = (
+                    self.rank_queryset(self.model.objects.filter(node_id=search_term_as_int), upper_search[2:])
+                    | queryset  # We do this rather than |= since it floats the more relevant results to the top
+                )
+                may_have_duplicates = False
         except ValueError:
             pass
         return queryset, may_have_duplicates
