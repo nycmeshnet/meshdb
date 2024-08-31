@@ -1,5 +1,9 @@
 /* CSS Styles for additional elements added to the admin UI */
 
+#content {
+    padding: 10px 10px 0 20px;
+}
+
 .header-logo {
     margin-right: 5px;
     margin-top: -5px;
@@ -12,6 +16,15 @@
     /*margin-bottom: 5px;*/
     border-radius: 4px;
     border: black 2px solid;
+    color: black;
+}
+
+.error-box {
+    background-color: #ff8e8e;
+    padding: 10px;
+    margin: 10px 10px 10px 10px;
+    border-radius: 4px;
+    border: #bb0000 2px solid;
     color: black;
 }
 

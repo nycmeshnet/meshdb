@@ -67,7 +67,7 @@ def main():
                 longitude=row.longitude,
                 altitude=row.altitude,
                 status=models.Node.NodeStatus.PLANNED,  # This will get overridden later
-                type=get_node_type(row.notes) if row.notes else models.Node.NodeType.STANDARD,
+                type=get_node_type(row.notes, row.nodeName),
                 notes=f"Spreadsheet Notes:\n"
                 f"{row.notes if row.notes else None}\n\n"
                 f"Spreadsheet Notes2:\n"

@@ -1,3 +1,4 @@
+import datetime
 import json
 
 from django.contrib.auth.models import User
@@ -89,3 +90,38 @@ class TestLink(TestCase):
         self.assertEqual(response_obj["status"], "Active")
         self.assertEqual(response_obj["from_device"], self.device1.id)
         self.assertEqual(response_obj["to_device"], self.device2.id)
+
+    def test_link_last_functioning_date_estimate(self):
+        active_link = Link(
+            from_device=self.device1,
+            to_device=self.device2,
+            status=Link.LinkStatus.ACTIVE,
+        )
+        active_link.save()
+        self.assertEqual(datetime.date.today(), active_link.last_functioning_date_estimate)
+
+        inactive_link_no_dates = Link(
+            from_device=self.device1,
+            to_device=self.device2,
+            status=Link.LinkStatus.INACTIVE,
+        )
+        inactive_link_no_dates.save()
+        self.assertEqual(None, inactive_link_no_dates.last_functioning_date_estimate)
+
+        inactive_link_abandon_date = Link(
+            from_device=self.device1,
+            to_device=self.device2,
+            status=Link.LinkStatus.INACTIVE,
+            abandon_date=datetime.date(2020, 6, 8),
+        )
+        inactive_link_abandon_date.save()
+        self.assertEqual(datetime.date(2020, 6, 8), inactive_link_abandon_date.last_functioning_date_estimate)
+
+        inactive_link_install_date = Link(
+            from_device=self.device1,
+            to_device=self.device2,
+            status=Link.LinkStatus.INACTIVE,
+            install_date=datetime.date(2020, 9, 8),
+        )
+        inactive_link_install_date.save()
+        self.assertEqual(datetime.date(2020, 9, 8), inactive_link_install_date.last_functioning_date_estimate)

@@ -58,6 +58,11 @@ spec:
                 secretKeyRef:
                   name: meshdb-secrets
                   key: aws-secret-access-key
+            - name: SMTP_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: meshdb-secrets
+                  key: smtp-password
             - name: DJANGO_SECRET_KEY
               valueFrom:
                 secretKeyRef:

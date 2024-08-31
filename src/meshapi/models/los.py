@@ -38,6 +38,9 @@ class LOS(models.Model):
     )
 
     analysis_date = models.DateField(
+        default=None,
+        blank=True,
+        null=True,
         help_text="The date we conducted the analysis that concluded this LOS exists. "
         "Important since new buildings might have been built which block the LOS after this date",
     )

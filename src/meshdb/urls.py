@@ -15,7 +15,6 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 
-from django.contrib import admin
 from django.urls import include, path
 from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView
 
@@ -25,7 +24,7 @@ from meshdb.settings import PROFILING_ENABLED
 urlpatterns = [
     path("", include("meshweb.urls")),
     path("auth/", include("rest_framework.urls")),
-    path("admin/", admin.site.urls),
+    path("admin/", include("meshapi.admin.urls")),
     path("api/v1/", include("meshapi.urls")),
     path("api-docs/openapi3.json", SpectacularAPIView.as_view(), name="api-docs-schema"),
     path(
