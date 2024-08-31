@@ -15,6 +15,15 @@
     color: black;
 }
 
+.error-box {
+    background-color: #ff8e8e;
+    padding: 10px;
+    margin: 10px 10px 10px 10px;
+    border-radius: 4px;
+    border: #bb0000 2px solid;
+    color: black;
+}
+
 @media screen and (max-width: 600px) {
     .warning-box {
         display: none;
