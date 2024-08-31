@@ -1,8 +1,8 @@
 from django.contrib import admin
 from import_export.admin import ExportActionMixin, ImportExportModelAdmin
 
-from meshapi.admin.device import UISP_URL, DeviceAdmin, DeviceAdminForm
 from meshapi.admin.inlines import DeviceLinkInline
+from meshapi.admin.models.device import UISP_URL, DeviceAdmin, DeviceAdminForm
 from meshapi.models import Sector
 from meshapi.widgets import ExternalHyperlinkWidget
 

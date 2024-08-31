@@ -5,8 +5,8 @@ from django.forms import Field, ModelForm
 from django.http import HttpRequest
 from import_export.admin import ExportActionMixin, ImportExportModelAdmin
 
-from meshapi.admin.device import UISP_URL, DeviceAdmin, DeviceAdminForm
 from meshapi.admin.inlines import DeviceLinkInline
+from meshapi.admin.models.device import UISP_URL, DeviceAdmin, DeviceAdminForm
 from meshapi.models import AccessPoint
 from meshapi.widgets import AutoPopulateLocationWidget, DeviceIPAddressWidget, ExternalHyperlinkWidget
 
