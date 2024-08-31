@@ -127,6 +127,7 @@ async function updateAdminContent(newUrl, updateHistory = true) {
             throw new Error("Error loading new contents for page: " + response.status + " " + response.statusText);
         }
     } catch (e) {
+        console.error(`Error during page nav to ${newUrl}`, e)
         const mapWrapper = document.getElementById("map-wrapper");
 
         const pageLink = document.createElement("a");
