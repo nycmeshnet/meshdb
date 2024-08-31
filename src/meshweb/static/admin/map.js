@@ -119,15 +119,15 @@ async function loadScripts(scripts, destination) {
     }
 }
 
-async function updateAdminContent(newUrl, updateHistory = true) {
+async function updateAdminContent(newUrl, options, updateHistory = true) {
     let response = null;
     try {
-        response = await fetch(newUrl);
+        response = await fetch(newUrl, options);
         if (!response.ok) {
             throw new Error("Error loading new contents for page: " + response.status + " " + response.statusText);
         }
     } catch (e) {
-        console.error(`Error during page nav to ${newUrl}`, e)
+        console.error(`Error during page nav to %s`, newUrl, e)
         const mapWrapper = document.getElementById("map-wrapper");
 
         const pageLink = document.createElement("a");
@@ -201,6 +201,7 @@ function shouldNotIntercept(target) {
 }
 
 function interceptLinks() {
+    // Link clicks
     interceptClicks(function(event, el) {
         // Exit early if this navigation shouldn't be intercepted,
         // e.g. if the navigation is cross-origin, or a download request
@@ -214,15 +215,36 @@ function interceptLinks() {
         event.preventDefault()
     });
 
+    // Browser back
     window.addEventListener('popstate', function(event) {
          async function handler() {
-            await updateAdminContent(location.href, false);
+            await updateAdminContent(location.href, {}, false);
             updateMapForLocation();
         }
         handler()
         // console.log(location.href);
         event.preventDefault()
     }, false)
+
+    // Form submissions
+    window.addEventListener("submit", function (event) {
+        async function handler() {
+            const form = event.target;
+            const formData = new FormData(form);
+            const method = form.method;
+
+            if (method.toUpperCase() === "POST") {
+                await updateAdminContent(form.action, {method: "POST", body: formData});
+            } else if (method.toUpperCase() === "GET") {
+                const params = new URLSearchParams(formData).toString();
+                await updateAdminContent(`${form.action}?${params}`);
+            }
+
+            updateMapForLocation();
+        }
+        handler()
+        event.preventDefault();
+    })
 }
 
 async function nodeSelectedOnMap(selectedNodes) {
