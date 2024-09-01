@@ -1,8 +1,11 @@
 from django import forms
 from django.contrib import admin
+from django.contrib.postgres.search import SearchVector
 from import_export.admin import ExportActionMixin, ImportExportModelAdmin
 
 from meshapi.models import Link
+
+from ..ranked_search import RankedSearchMixin
 
 
 class LinkAdminForm(forms.ModelForm):
@@ -15,7 +18,7 @@ class LinkAdminForm(forms.ModelForm):
 
 
 @admin.register(Link)
-class LinkAdmin(ImportExportModelAdmin, ExportActionMixin):
+class LinkAdmin(RankedSearchMixin, ImportExportModelAdmin, ExportActionMixin):
     form = LinkAdminForm
     search_fields = [
         "from_device__node__name__icontains",
@@ -24,8 +27,17 @@ class LinkAdmin(ImportExportModelAdmin, ExportActionMixin):
         "to_device__node__buildings__street_address__icontains",
         "from_device__node__network_number__iexact",
         "to_device__node__network_number__iexact",
-        "notes__icontains",
+        "@notes",
     ]
+    search_vector = (
+        SearchVector("from_device__node__network_number", weight="A")
+        + SearchVector("to_device__node__network_number", weight="A")
+        + SearchVector("from_device__node__name", weight="B")
+        + SearchVector("to_device__node__name", weight="B")
+        + SearchVector("from_device__node__buildings__street_address", weight="C")
+        + SearchVector("to_device__node__buildings__street_address", weight="C")
+        + SearchVector("notes", weight="D")
+    )
     list_display = ["__str__", "status", "from_device", "to_device", "description"]
     list_filter = ["status", "type"]
 
