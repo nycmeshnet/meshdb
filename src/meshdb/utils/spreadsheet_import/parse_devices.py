@@ -7,16 +7,14 @@ from typing import List, Optional
 
 import django
 
-from meshapi.util.uisp_import.fetch_uisp import get_uisp_devices
-from meshapi.util.uisp_import.utils import parse_uisp_datetime
-
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "meshdb.settings")
 django.setup()
-
 
 import dateutil.parser
 
 from meshapi.models import AccessPoint, Device, Install, Node, Sector
+from meshapi.util.uisp_import.fetch_uisp import get_uisp_devices
+from meshapi.util.uisp_import.utils import parse_uisp_datetime
 from meshdb.utils.spreadsheet_import.csv_load import (
     SpreadsheetRow,
     SpreadsheetSector,
@@ -35,6 +33,11 @@ nn_subsitutions = {
 
 def find_uisp_device_with_ssid(devices: List[dict], ssid: str):
     for i, uisp_dev in enumerate(devices):
+        # We exclude 60Ghz sectors from SSID matching, since sometimes
+        # they have the same SSID as the 5 GHz ones and they can get confused
+        if uisp_dev["features"].get("has60GhzRadio"):
+            continue
+
         if uisp_dev["attributes"] and uisp_dev["attributes"].get("ssid") == ssid:
             return uisp_dev, i
 
