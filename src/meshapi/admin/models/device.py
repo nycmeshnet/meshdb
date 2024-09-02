@@ -2,13 +2,16 @@ import os
 
 from django import forms
 from django.contrib import admin
+from django.contrib.postgres.search import SearchVector
 from django.db.models import QuerySet
 from django.http import HttpRequest
 from import_export.admin import ExportActionMixin, ImportExportModelAdmin
 
-from meshapi.admin.inlines import DeviceLinkInline
 from meshapi.models import Device
 from meshapi.widgets import ExternalHyperlinkWidget
+
+from ..inlines import DeviceLinkInline
+from ..ranked_search import RankedSearchMixin
 
 UISP_URL = os.environ.get("UISP_URL", "https://uisp.mesh.nycmesh.net/nms")
 
@@ -27,9 +30,10 @@ class DeviceAdminForm(forms.ModelForm):
 
 
 @admin.register(Device)
-class DeviceAdmin(ImportExportModelAdmin, ExportActionMixin):
+class DeviceAdmin(RankedSearchMixin, ImportExportModelAdmin, ExportActionMixin):
     form = DeviceAdminForm
-    search_fields = ["name__icontains", "notes__icontains"]
+    search_fields = ["name__icontains", "@notes"]
+    search_vector = SearchVector("name", weight="A") + SearchVector("notes", weight="D")
     list_display = [
         "__str__",
         "name",

@@ -1,9 +1,12 @@
 from django import forms
 from django.contrib import admin
+from django.contrib.postgres.search import SearchVector
 from import_export.admin import ExportActionMixin, ImportExportModelAdmin
 
-from meshapi.admin.inlines import InstallInline
 from meshapi.models import Member
+
+from ..inlines import InstallInline
+from ..ranked_search import RankedSearchMixin
 
 
 class MemberAdminForm(forms.ModelForm):
@@ -19,7 +22,7 @@ class MemberAdminForm(forms.ModelForm):
 
 
 @admin.register(Member)
-class MemberAdmin(ImportExportModelAdmin, ExportActionMixin):
+class MemberAdmin(RankedSearchMixin, ImportExportModelAdmin, ExportActionMixin):
     form = MemberAdminForm
     search_fields = [
         # Search by name
@@ -30,18 +33,24 @@ class MemberAdmin(ImportExportModelAdmin, ExportActionMixin):
         "phone_number__icontains",
         "additional_phone_numbers__icontains",
         "slack_handle__icontains",
-        # Search by building details
-        "installs__building__street_address__icontains",
-        "installs__building__city__iexact",
-        "installs__building__state__iexact",
-        "installs__building__zip_code__iexact",
-        "installs__building__bin__iexact",
         # Search by network number
         "installs__node__network_number__iexact",
         "installs__install_number__iexact",
         # Notes
-        "notes__icontains",
+        "@notes",
     ]
+    search_vector = (
+        SearchVector("name", weight="A")
+        + SearchVector("primary_email_address", weight="A")
+        + SearchVector("stripe_email_address", weight="A")
+        + SearchVector("additional_email_addresses", weight="A")
+        + SearchVector("phone_number", weight="A")
+        + SearchVector("additional_phone_numbers", weight="A")
+        + SearchVector("slack_handle", weight="A")
+        + SearchVector("installs__node__network_number", weight="B")
+        + SearchVector("installs__install_number", weight="B")
+        + SearchVector("notes", weight="D")
+    )
     list_display = [
         "__str__",
         "name",
