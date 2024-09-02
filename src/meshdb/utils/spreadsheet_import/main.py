@@ -8,7 +8,6 @@ from typing import Dict, List
 import django
 
 from meshdb.utils.spreadsheet_import import logger
-from meshdb.utils.spreadsheet_import.parse_devices import load_access_points, load_devices_supplement_with_uisp
 
 logger.configure()
 
@@ -27,6 +26,7 @@ from meshdb.utils.spreadsheet_import.csv_load import (
     print_failure_report,
 )
 from meshdb.utils.spreadsheet_import.parse_building import get_or_create_building
+from meshdb.utils.spreadsheet_import.parse_devices import load_access_points, load_devices_supplement_with_uisp
 from meshdb.utils.spreadsheet_import.parse_install import create_install, normalize_install_to_primary_building_node
 from meshdb.utils.spreadsheet_import.parse_link import load_links_supplement_with_uisp
 from meshdb.utils.spreadsheet_import.parse_member import get_or_create_member
