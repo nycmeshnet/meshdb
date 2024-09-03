@@ -54,10 +54,12 @@ class MemberFilter(filters.FilterSet):
             Q(primary_email_address__icontains=value)
             | Q(stripe_email_address__icontains=value)
             | Q(additional_email_addresses__icontains=value)
-        )
+        ).distinct("id")
 
     def filter_on_all_phone_numbers(self, queryset: QuerySet[Member], field_name: str, value: str) -> QuerySet[Member]:
-        return queryset.filter(Q(phone_number__icontains=value) | Q(additional_phone_numbers__icontains=value))
+        return queryset.filter(
+            Q(phone_number__icontains=value) | Q(additional_phone_numbers__icontains=value)
+        ).distinct("id")
 
     class Meta:
         model = Member
@@ -101,6 +103,7 @@ class LookupMember(FilterRequiredListAPIView):
 
 class InstallFilter(filters.FilterSet):
     network_number = filters.NumberFilter(field_name="node__network_number", lookup_expr="exact")
+    node = filters.UUIDFilter(field_name="node__id", lookup_expr="exact")
 
     class Meta:
         model = Install
@@ -150,7 +153,11 @@ class LookupInstall(FilterRequiredListAPIView):
 
 class BuildingFilter(filters.FilterSet):
     network_number = filters.NumberFilter(field_name="nodes__network_number", lookup_expr="exact")
-    primary_network_number = filters.NumberFilter(field_name="primary_node", lookup_expr="exact")
+    primary_network_number = filters.NumberFilter(field_name="primary_node__network_number", lookup_expr="exact")
+
+    node = filters.UUIDFilter(field_name="nodes__id", lookup_expr="exact")
+    primary_node = filters.UUIDFilter(field_name="primary_node__id", lookup_expr="exact")
+
     install_number = filters.NumberFilter(field_name="installs__install_number", lookup_expr="exact")
     street_address = filters.CharFilter(field_name="street_address", lookup_expr="icontains")
     city = filters.CharFilter(field_name="city", lookup_expr="iexact")
@@ -233,7 +240,7 @@ class LookupBuilding(FilterRequiredListAPIView):
 class NodeFilter(filters.FilterSet):
     install_number = filters.NumberFilter(field_name="installs__install_number", lookup_expr="exact")
     name = filters.CharFilter(field_name="name", lookup_expr="icontains")
-    building = filters.NumberFilter(field_name="buildings", lookup_expr="exact")
+    building = filters.UUIDFilter(field_name="buildings", lookup_expr="exact")
 
     class Meta:
         model = Node
@@ -283,13 +290,19 @@ class LookupNode(FilterRequiredListAPIView):
 
 class LinkFilter(filters.FilterSet):
     network_number = filters.NumberFilter(method="filter_from_to_network_number")
+    node = filters.UUIDFilter(method="filter_from_to_node")
     device = filters.NumberFilter(method="filter_from_to_device_id")
 
     def filter_from_to_network_number(self, queryset: QuerySet[Link], field_name: str, value: str) -> QuerySet[Link]:
-        return queryset.filter(Q(from_device__node__network_number=value) | Q(to_device__node__network_number=value))
+        return queryset.filter(
+            Q(from_device__node__network_number=value) | Q(to_device__node__network_number=value)
+        ).distinct("id")
+
+    def filter_from_to_node(self, queryset: QuerySet[Link], field_name: str, value: str) -> QuerySet[Link]:
+        return queryset.filter(Q(from_device__node__id=value) | Q(to_device__node__id=value)).distinct("id")
 
     def filter_from_to_device_id(self, queryset: QuerySet[Link], field_name: str, value: str) -> QuerySet[Link]:
-        return queryset.filter(Q(from_device__id=value) | Q(to_device__id=value))
+        return queryset.filter(Q(from_device__id=value) | Q(to_device__id=value)).distinct("id")
 
     class Meta:
         model = Link
@@ -346,17 +359,25 @@ class LookupLink(FilterRequiredListAPIView):
 
 class LOSFilter(filters.FilterSet):
     network_number = filters.NumberFilter(method="filter_from_to_network_number")
+    node = filters.UUIDFilter(method="filter_from_to_node")
     install_number = filters.NumberFilter(method="filter_from_to_install_number")
-    building = filters.NumberFilter(method="filter_from_to_building_id")
+    building = filters.UUIDFilter(method="filter_from_to_building_id")
 
     def filter_from_to_network_number(self, queryset: QuerySet[LOS], field_name: str, value: int) -> QuerySet[LOS]:
-        return queryset.filter(Q(from_building__nodes=value) | Q(to_building__nodes=value))
+        return queryset.filter(
+            Q(from_building__nodes__network_number=value) | Q(to_building__nodes__network_number=value)
+        ).distinct("id")
+
+    def filter_from_to_node(self, queryset: QuerySet[LOS], field_name: str, value: int) -> QuerySet[LOS]:
+        return queryset.filter(Q(from_building__nodes__id=value) | Q(to_building__id=value)).distinct("id")
 
     def filter_from_to_install_number(self, queryset: QuerySet[LOS], field_name: str, value: int) -> QuerySet[LOS]:
-        return queryset.filter(Q(from_building__installs=value) | Q(to_building__installs=value))
+        return queryset.filter(
+            Q(from_building__installs__install_number=value) | Q(to_building__installs__install_number=value)
+        ).distinct("id")
 
     def filter_from_to_building_id(self, queryset: QuerySet[LOS], field_name: str, value: int) -> QuerySet[LOS]:
-        return queryset.filter(Q(from_building__id=value) | Q(to_building__id=value))
+        return queryset.filter(Q(from_building__id=value) | Q(to_building__id=value)).distinct("id")
 
     class Meta:
         model = LOS
@@ -405,7 +426,8 @@ class LookupLOS(FilterRequiredListAPIView):
 
 
 class DeviceFilter(filters.FilterSet):
-    network_number = filters.NumberFilter(field_name="node", lookup_expr="exact")
+    node = filters.UUIDFilter(field_name="node__id", lookup_expr="exact")
+    network_number = filters.NumberFilter(field_name="node__network_number", lookup_expr="exact")
     name = filters.CharFilter(field_name="name", lookup_expr="icontains")
 
     class Meta:

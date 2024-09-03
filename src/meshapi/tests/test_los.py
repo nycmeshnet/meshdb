@@ -87,8 +87,8 @@ class TestLOS(TestCase):
 
         response_obj = json.loads(response.content)
         self.assertEqual(response_obj["source"], "Human Annotated")
-        self.assertEqual(response_obj["from_building"], self.building1.id)
-        self.assertEqual(response_obj["to_building"], self.building2.id)
+        self.assertEqual(response_obj["from_building"], str(self.building1.id))
+        self.assertEqual(response_obj["to_building"], str(self.building2.id))
         self.assertEqual(response_obj["analysis_date"], self.today.isoformat())
 
     def test_string_name(self):
@@ -107,8 +107,6 @@ class TestLOS(TestCase):
         test_member.save()
 
         sample_install_minimal = sample_install.copy()
-        del sample_install_minimal["building"]
-        del sample_install_minimal["member"]
         test_install = Install(**sample_install_minimal)
         test_install.install_number = 12345
         test_install.building = self.building2

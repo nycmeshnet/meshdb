@@ -1,21 +1,26 @@
+import uuid
 from typing import Optional
 
 from django.db import models
-from django.db.models import FloatField
+from django.db.models import F, FloatField, IntegerField
 
 from meshapi.models.node import Node
 
 
 class Device(models.Model):
+    class Meta:
+        ordering = [F("install_date").desc(nulls_last=True)]
+
     class DeviceStatus(models.TextChoices):
         INACTIVE = "Inactive"
         ACTIVE = "Active"
         POTENTIAL = "Potential"
 
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+
     node = models.ForeignKey(
         Node,
         related_name="devices",
-        db_column="network_number",
         on_delete=models.PROTECT,
         help_text="The logical node this Device is located within. The integer value of this field is "
         "also the network number, which corresponds to the static IP address and OSPF ID of this device "
@@ -60,6 +65,10 @@ class Device(models.Model):
     uisp_id = models.CharField(
         default=None, blank=True, null=True, help_text="The UUID used to indentify this device in UISP (if applicable)"
     )
+
+    @property
+    def network_number(self) -> IntegerField | Optional[int]:
+        return self.node.network_number
 
     @property
     def latitude(self) -> FloatField | float:

@@ -1,4 +1,5 @@
 import datetime
+import uuid
 from unittest.mock import call, patch
 
 import pytest
@@ -1311,6 +1312,7 @@ class TestUISPImportHandlers(TransactionTestCase):
         ]
 
         dup_link_1 = Link(
+            id=uuid.UUID("6a86c400-550d-489b-86d5-106fd95ae1e6"),
             from_device=self.device1,
             to_device=self.device2,
             status=Link.LinkStatus.ACTIVE,
@@ -1320,6 +1322,7 @@ class TestUISPImportHandlers(TransactionTestCase):
         dup_link_1.save()
 
         dup_link_2 = Link(
+            id=uuid.UUID("ed6f24b6-8b1d-4650-9f1d-471c25828935"),
             from_device=self.device1,
             to_device=self.device2,
             status=Link.LinkStatus.ACTIVE,

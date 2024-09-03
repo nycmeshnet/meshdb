@@ -131,6 +131,8 @@ if PROFILING_ENABLED:
     MIDDLEWARE.append("silk.middleware.SilkyMiddleware")
     MIDDLEWARE.append("django_cprofile_middleware.middleware.ProfilerMiddleware")
 
+SILKY_IGNORE_PATHS = ["/admin/jsi18n/"]
+
 DJANGO_CPROFILE_MIDDLEWARE_REQUIRE_STAFF = False
 
 ROOT_URLCONF = "meshdb.urls"

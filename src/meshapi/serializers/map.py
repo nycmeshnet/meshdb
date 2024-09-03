@@ -163,10 +163,10 @@ class MapDataLinkSerializer(serializers.ModelSerializer):
 
         return "active"
 
-    def get_to_node_number(self, link: Link) -> int:
+    def get_to_node_number(self, link: Link) -> Optional[int]:
         return link.to_device.node.network_number
 
-    def get_from_node_number(self, link: Link) -> int:
+    def get_from_node_number(self, link: Link) -> Optional[int]:
         return link.from_device.node.network_number
 
     def get_fields(self) -> dict:
@@ -207,7 +207,7 @@ class MapDataSectorSerializer(serializers.ModelSerializer):
     status = serializers.SerializerMethodField("convert_status_to_spreadsheet_status")
     installDate = JavascriptDateField(source="install_date")
 
-    def get_node_id(self, sector: Sector) -> int:
+    def get_node_id(self, sector: Sector) -> Optional[int]:
         return sector.node.network_number
 
     def convert_status_to_spreadsheet_status(self, sector: Sector) -> str:

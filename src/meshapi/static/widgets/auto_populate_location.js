@@ -15,14 +15,16 @@ $(document).ready(function($) {
         }
     });
 
-    $('#id_Building_nodes-0-building_id').on('change', function () {
-        searchId = this.value;
-        if (this.value) {
-            $('#location_autocomplete_button').removeClass("disabled-button")
-        } else {
-            $('#location_autocomplete_button').addClass("disabled-button")
+    $(document).change(function (e){
+        if (e.target.id === "id_Building_nodes-0-building") {
+            searchId = e.target.value;
+            if (e.target.value) {
+                $('#location_autocomplete_button').removeClass("disabled-button")
+            } else {
+                $('#location_autocomplete_button').addClass("disabled-button")
+            }
         }
-    });
+    })
 
     function buildAddressQuery(){
         const streetAddr = $('#id_street_address').val();

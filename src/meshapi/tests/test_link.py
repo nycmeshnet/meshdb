@@ -88,8 +88,8 @@ class TestLink(TestCase):
 
         response_obj = json.loads(response.content)
         self.assertEqual(response_obj["status"], "Active")
-        self.assertEqual(response_obj["from_device"], self.device1.id)
-        self.assertEqual(response_obj["to_device"], self.device2.id)
+        self.assertEqual(response_obj["from_device"], str(self.device1.id))
+        self.assertEqual(response_obj["to_device"], str(self.device2.id))
 
     def test_link_last_functioning_date_estimate(self):
         active_link = Link(

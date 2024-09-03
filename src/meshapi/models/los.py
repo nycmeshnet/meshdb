@@ -1,3 +1,5 @@
+import uuid
+
 from django.db import models
 
 from meshapi.models import Building
@@ -19,10 +21,13 @@ class LOS(models.Model):
     class Meta:
         verbose_name = "LOS"
         verbose_name_plural = "LOSes"
+        ordering = ["id"]
 
     class LOSSource(models.TextChoices):
         HUMAN_ANNOTATED = "Human Annotated"
         EXISTING_LINK = "Existing Link"
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
     from_building = models.ForeignKey(
         Building,
@@ -58,7 +63,7 @@ class LOS(models.Model):
 
     def __str__(self) -> str:
         def building_to_number(building: Building) -> str:
-            if building.primary_node:
+            if building.primary_node and building.primary_node.network_number:
                 return f"NN{building.primary_node.network_number}"
 
             install = building.installs.first()

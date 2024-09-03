@@ -1,6 +1,8 @@
 """
 !!!!
 
+NB: This file is no longer used, but needs to be maintained for the sake of migrations not having issues
+
 This file 100% copied from
 https://forum.djangoproject.com/t/add-ability-to-define-custom-column-names-in-the-table-created-by-the-manytomanyfield/25427/6
 except for two added lines (marked with "Andrew added me from the Django Forum post!")

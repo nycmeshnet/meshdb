@@ -37,6 +37,7 @@ class TestNN(TestCase):
         self.building.save()
 
         inst = sample_install.copy()
+        inst["status"] = Install.InstallStatus.REQUEST_RECEIVED
         if inst["abandon_date"] == "":
             inst["abandon_date"] = None
 
@@ -78,13 +79,14 @@ class TestNN(TestCase):
         )
 
         node_object = Node.objects.get(network_number=expected_nn)
-        self.assertEqual(node_object.status, Node.NodeStatus.ACTIVE)
+        self.assertEqual(node_object.status, Node.NodeStatus.PLANNED)
         self.assertEqual(node_object.latitude, self.building.latitude)
         self.assertEqual(node_object.longitude, self.building.longitude)
         self.assertEqual(node_object.install_date, datetime.date.today())
 
         self.install.refresh_from_db()
         self.assertEqual(self.install.node, node_object)
+        self.assertEqual(self.install.status, Install.InstallStatus.PENDING)
 
         # Now test to make sure that we get 200 for dupes
         response = self.admin_c.post(
@@ -106,6 +108,26 @@ class TestNN(TestCase):
             resp_nn,
             f"nn incorrect for test_nn_valid_install_number. Should be {expected_nn}, but got {resp_nn}",
         )
+
+    def test_doesnt_change_the_status_of_active_nodes(self):
+        self.install.status = Install.InstallStatus.ACTIVE
+        self.install.save()
+
+        response = self.admin_c.post(
+            "/api/v1/nn-assign/",
+            {"install_number": self.install_number, "password": os.environ.get("NN_ASSIGN_PSK")},
+            content_type="application/json",
+        )
+
+        code = 201
+        self.assertEqual(
+            code,
+            response.status_code,
+            f"status code incorrect for test_nn_valid_install_number. Should be {code}, but got {response.status_code}",
+        )
+
+        self.install.refresh_from_db()
+        self.assertEqual(self.install.status, Install.InstallStatus.ACTIVE)
 
     def test_building_already_has_nn(self):
         node = Node(
@@ -143,6 +165,199 @@ class TestNN(TestCase):
 
         self.install.refresh_from_db()
         self.assertEqual(self.install.node, node)
+        self.assertEqual(self.install.status, Install.InstallStatus.PENDING)
+        self.assertEqual(node.status, Node.NodeStatus.ACTIVE)
+
+    def test_node_already_exists_no_nn(self):
+        node = Node(
+            status=Node.NodeStatus.PLANNED,
+            type=Node.NodeType.STANDARD,
+            latitude=0,
+            longitude=0,
+        )
+        node.save()
+
+        node.refresh_from_db()
+        self.assertIsNone(node.network_number)
+
+        self.install.node = node
+        self.install.save()
+
+        response = self.admin_c.post(
+            "/api/v1/nn-assign/",
+            {"install_number": self.install_number, "password": os.environ.get("NN_ASSIGN_PSK")},
+            content_type="application/json",
+        )
+
+        node.refresh_from_db()
+        self.assertIsNotNone(node.network_number)
+        self.assertEqual(node.status, Node.NodeStatus.PLANNED)
+
+        code = 201
+        self.assertEqual(
+            code,
+            response.status_code,
+            f"status code incorrect for test_nn_valid_install_number. Should be {code}, but got {response.status_code}",
+        )
+
+        resp_nn = json.loads(response.content.decode("utf-8"))["network_number"]
+        expected_nn = node.network_number
+        self.assertEqual(
+            expected_nn,
+            resp_nn,
+            f"nn incorrect for test_nn_valid_install_number. Should be {expected_nn}, but got {resp_nn}",
+        )
+
+        self.install.refresh_from_db()
+        self.assertEqual(self.install.node, node)
+        self.assertEqual(self.install.status, Install.InstallStatus.PENDING)
+        self.building.refresh_from_db()
+        self.assertEqual(self.building.primary_node, node)
+
+    def test_node_already_exists_inactive_no_nn(self):
+        node = Node(
+            status=Node.NodeStatus.INACTIVE,
+            type=Node.NodeType.STANDARD,
+            latitude=0,
+            longitude=0,
+        )
+        node.save()
+
+        node.refresh_from_db()
+
+        self.assertIsNone(node.network_number)
+
+        self.install.node = node
+        self.install.save()
+
+        response = self.admin_c.post(
+            "/api/v1/nn-assign/",
+            {"install_number": self.install_number, "password": os.environ.get("NN_ASSIGN_PSK")},
+            content_type="application/json",
+        )
+
+        node.refresh_from_db()
+        self.assertIsNotNone(node.network_number)
+        self.assertEqual(node.status, Node.NodeStatus.PLANNED)
+
+        code = 201
+        self.assertEqual(
+            code,
+            response.status_code,
+            f"status code incorrect for test_nn_valid_install_number. Should be {code}, but got {response.status_code}",
+        )
+
+        resp_nn = json.loads(response.content.decode("utf-8"))["network_number"]
+        expected_nn = node.network_number
+        self.assertEqual(
+            expected_nn,
+            resp_nn,
+            f"nn incorrect for test_nn_valid_install_number. Should be {expected_nn}, but got {resp_nn}",
+        )
+
+        self.install.refresh_from_db()
+        self.assertEqual(self.install.node, node)
+        self.assertEqual(self.install.status, Install.InstallStatus.PENDING)
+        self.building.refresh_from_db()
+        self.assertEqual(self.building.primary_node, node)
+
+    def test_node_already_exists_on_building_no_nn(self):
+        node = Node(
+            status=Node.NodeStatus.PLANNED,
+            type=Node.NodeType.STANDARD,
+            latitude=0,
+            longitude=0,
+        )
+        node.save()
+
+        node.refresh_from_db()
+
+        self.building.primary_node = node
+        self.building.save()
+
+        self.assertIsNone(node.network_number)
+        self.assertEqual(node.status, Node.NodeStatus.PLANNED)
+
+        response = self.admin_c.post(
+            "/api/v1/nn-assign/",
+            {"install_number": self.install_number, "password": os.environ.get("NN_ASSIGN_PSK")},
+            content_type="application/json",
+        )
+
+        node.refresh_from_db()
+        self.assertIsNotNone(node.network_number)
+        self.assertEqual(node.status, Node.NodeStatus.PLANNED)
+
+        code = 201
+        self.assertEqual(
+            code,
+            response.status_code,
+            f"status code incorrect for test_nn_valid_install_number. Should be {code}, but got {response.status_code}",
+        )
+
+        resp_nn = json.loads(response.content.decode("utf-8"))["network_number"]
+        expected_nn = node.network_number
+        self.assertEqual(
+            expected_nn,
+            resp_nn,
+            f"nn incorrect for test_nn_valid_install_number. Should be {expected_nn}, but got {resp_nn}",
+        )
+
+        self.install.refresh_from_db()
+        self.assertEqual(self.install.node, node)
+        self.assertEqual(self.install.status, Install.InstallStatus.PENDING)
+        self.building.refresh_from_db()
+        self.assertEqual(self.building.primary_node, node)
+
+    def test_node_already_exists_on_building_and_install_no_nn(self):
+        node = Node(
+            status=Node.NodeStatus.PLANNED,
+            type=Node.NodeType.STANDARD,
+            latitude=0,
+            longitude=0,
+        )
+        node.save()
+
+        node.refresh_from_db()
+
+        self.building.primary_node = node
+        self.building.save()
+
+        self.install.node = node
+        self.install.save()
+
+        self.assertIsNone(node.network_number)
+
+        response = self.admin_c.post(
+            "/api/v1/nn-assign/",
+            {"install_number": self.install_number, "password": os.environ.get("NN_ASSIGN_PSK")},
+            content_type="application/json",
+        )
+
+        node.refresh_from_db()
+        self.assertIsNotNone(node.network_number)
+        self.assertEqual(node.status, Node.NodeStatus.PLANNED)
+
+        code = 201
+        self.assertEqual(
+            code,
+            response.status_code,
+            f"status code incorrect for test_nn_valid_install_number. Should be {code}, but got {response.status_code}",
+        )
+
+        resp_nn = json.loads(response.content.decode("utf-8"))["network_number"]
+        expected_nn = node.network_number
+        self.assertEqual(
+            expected_nn,
+            resp_nn,
+            f"nn incorrect for test_nn_valid_install_number. Should be {expected_nn}, but got {resp_nn}",
+        )
+
+        self.install.refresh_from_db()
+        self.assertEqual(self.install.node, node)
+        self.assertEqual(self.install.status, Install.InstallStatus.PENDING)
+        self.building.refresh_from_db()
+        self.assertEqual(self.building.primary_node, node)
 
     @patch("meshapi.views.forms.get_next_available_network_number")
     def test_next_nn_failure(self, mock_get_next_nn):
@@ -192,6 +407,7 @@ class TestNN(TestCase):
         node_object = Node.objects.get(network_number=expected_nn)
         self.install_obj_low.refresh_from_db()
         self.assertEqual(self.install_obj_low.node, node_object)
+        self.assertEqual(node_object.status, Node.NodeStatus.PLANNED)
 
     def test_nn_valid_low_install_number_used_nn(self):
         # Check that install numbers that are valid network numbers (i.e. >10 <8192) are NOT used
@@ -230,6 +446,7 @@ class TestNN(TestCase):
         node_object = Node.objects.get(network_number=expected_nn)
         self.install_obj_low.refresh_from_db()
         self.assertEqual(self.install_obj_low.node, node_object)
+        self.assertEqual(node_object.status, Node.NodeStatus.PLANNED)
 
     @parameterized.expand(
         [
@@ -269,6 +486,7 @@ class TestNN(TestCase):
         node_object = Node.objects.get(network_number=expected_nn)
         self.install_obj_low.refresh_from_db()
         self.assertEqual(self.install_obj_low.node, node_object)
+        self.assertEqual(node_object.status, Node.NodeStatus.PLANNED)
 
     @parameterized.expand(
         [
@@ -310,6 +528,7 @@ class TestNN(TestCase):
         node_object = Node.objects.get(network_number=expected_nn)
         self.install_obj_low.refresh_from_db()
         self.assertEqual(self.install_obj_low.node, node_object)
+        self.assertEqual(node_object.status, Node.NodeStatus.PLANNED)
 
     def test_nn_invalid_password(self):
         unauth_client = Client()
@@ -419,7 +638,7 @@ class TestFindGaps(TestCase):
         member_obj = Member(**m)
         i["member"] = member_obj
         i["ticket_id"] = index
-        install_obj = Install(**i)
+        install_obj = Install(**i, install_number=index)
 
         if create_node:
             node = Node(
@@ -461,12 +680,10 @@ class TestFindGaps(TestCase):
 
         # Inactive install, reserves the install number as an NN even though
         # no NN is technically assigned
-        inst["install_number"] = 130
         inst["status"] = Install.InstallStatus.INACTIVE
         self.add_data(build, memb, inst, index=130, create_node=False)
 
         # Old join request, doesn't reserve the NN
-        inst["install_number"] = 131
         inst["status"] = Install.InstallStatus.REQUEST_RECEIVED
         self.add_data(build, memb, inst, index=131, create_node=False)
 
@@ -475,17 +692,17 @@ class TestFindGaps(TestCase):
         b2 = sample_building.copy()
         m2 = sample_member.copy()
         self.inst2 = sample_install.copy()
-        self.inst2 = self.add_data(b2, m2, self.inst2, index=5002, create_node=False)
+        self.inst2 = self.add_data(b2, m2, self.inst2, index=50002, create_node=False)
 
         b3 = sample_building.copy()
         m3 = sample_member.copy()
         self.inst3 = sample_install.copy()
-        self.inst3 = self.add_data(b3, m3, self.inst3, index=5003, create_node=False)
+        self.inst3 = self.add_data(b3, m3, self.inst3, index=50003, create_node=False)
 
         b4 = sample_building.copy()
         m4 = sample_member.copy()
         self.inst4 = sample_install.copy()
-        self.inst4 = self.add_data(b4, m4, self.inst4, index=5004, create_node=False)
+        self.inst4 = self.add_data(b4, m4, self.inst4, index=50004, create_node=False)
 
     def test_nn_search_for_new_number(self):
         # Try to give NNs to all the installs. Should end up with two right
@@ -516,11 +733,11 @@ class TestFindGaps(TestCase):
             )
 
         # Sanity check that the other buildings actually exist
-        self.assertIsNotNone(Install.objects.filter(node_id=129)[0].install_number)
-        self.assertIsNotNone(Building.objects.filter(primary_node_id=129)[0].id)
+        self.assertIsNotNone(Install.objects.filter(node__network_number=129)[0].install_number)
+        self.assertIsNotNone(Building.objects.filter(primary_node__network_number=129)[0].id)
 
-        self.assertIsNotNone(Install.objects.filter(node_id=131)[0].install_number)
-        self.assertIsNotNone(Building.objects.filter(primary_node_id=131)[0].id)
+        self.assertIsNotNone(Install.objects.filter(node__network_number=131)[0].install_number)
+        self.assertIsNotNone(Building.objects.filter(primary_node__network_number=131)[0].id)
 
 
 class TestNNRaceCondition(TransactionTestCase):
@@ -642,7 +859,7 @@ class TestNNRaceCondition(TransactionTestCase):
                 # Slow down the call which looks up the NN to force the race condition
                 with mock.patch("meshapi.util.network_number.no_op", partial(time.sleep, 1)):
                     node = Node(
-                        status=Node.NodeStatus.PLANNED,
+                        status=Node.NodeStatus.ACTIVE,
                         type=Node.NodeType.STANDARD,
                         latitude=0,
                         longitude=0,

@@ -226,13 +226,8 @@ class TestMeshAPIWebhooks(TransactionTestCase):
             if key not in ["building", "member"]:
                 assert flask_request["data"][key] == value
 
-        # The user we created doesn't have permission to access the details of the building, so
-        # the member payload should only include an id and nothing else
-        assert flask_request["data"]["building"] == self.building_obj.id
-
-        # They do have access to the details of the member,
-        # so they should be able to see the email, etc
-        assert flask_request["data"]["member"] == self.member_obj.id
+        assert flask_request["data"]["building"] == str(self.building_obj.id)
+        assert flask_request["data"]["member"] == str(self.member_obj.id)
         assert flask_request["data"]["install_number"] == install_obj.install_number
         assert flask_request["data"]["network_number"] is None
 

@@ -69,7 +69,7 @@ def validate_successful_join_form_submission(test_case, test_name, s, response, 
 
     # Check that a install was created
     install_number = json.loads(response.content.decode("utf-8"))["install_number"]
-    join_form_installs = Install.objects.filter(pk=install_number)
+    join_form_installs = Install.objects.filter(install_number=install_number)
 
     length = 1
     test_case.assertEqual(
@@ -852,7 +852,7 @@ class TestJoinForm(TestCase):
         validate_successful_join_form_submission(self, "", s, response2)
 
         self.assertEqual(
-            member_object.id,
+            str(member_object.id),
             json.loads(
                 response2.content.decode("utf-8"),
             )["member_id"],
@@ -887,7 +887,7 @@ class TestJoinForm(TestCase):
         validate_successful_join_form_submission(self, "Valid Join Form", s, response3)
 
         self.assertEqual(
-            member_object.id,
+            str(member_object.id),
             json.loads(
                 response3.content.decode("utf-8"),
             )["member_id"],

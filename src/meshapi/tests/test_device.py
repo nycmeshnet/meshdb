@@ -28,7 +28,7 @@ class TestDevice(TestCase):
             "/api/v1/devices/",
             {
                 "status": Device.DeviceStatus.INACTIVE,
-                "network_number": self.node1.network_number,
+                "node": str(self.node1.id),
             },
         )
         code = 201
@@ -57,7 +57,7 @@ class TestDevice(TestCase):
         response = self.c.post(
             "/api/v1/devices/",
             {
-                "node": self.node1.network_number,
+                "node": str(self.node1.id),
                 # Missing status
             },
         )

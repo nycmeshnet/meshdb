@@ -123,7 +123,8 @@ class TestAdminChangeView(TestCase):
         form_data["_save"] = "Save"
         del form_data["_addanother"]
         del form_data["_continue"]
-        del form_data["_export-item"]
+        if "_export-item" in form_data:
+            del form_data["_export-item"]
 
         response = self.c.post(route, data=form_data)
         response_soup = bs4.BeautifulSoup(response.content.decode(), "html.parser")
@@ -153,7 +154,7 @@ class TestAdminChangeView(TestCase):
         self._submit_form(change_url, bs4.BeautifulSoup(response.content.decode()).find(id="member_form"), 302)
 
     def test_change_install(self):
-        change_url = f"/admin/meshapi/install/{self.install.install_number}/change/"
+        change_url = f"/admin/meshapi/install/{self.install.id}/change/"
         response = self._call(change_url, 200)
         self._submit_form(change_url, bs4.BeautifulSoup(response.content.decode()).find(id="install_form"), 302)
 
@@ -183,6 +184,6 @@ class TestAdminChangeView(TestCase):
         self._submit_form(change_url, bs4.BeautifulSoup(response.content.decode()).find(id="accesspoint_form"), 302)
 
     def test_change_node(self):
-        change_url = f"/admin/meshapi/node/{self.node1.network_number}/change/"
+        change_url = f"/admin/meshapi/node/{self.node1.id}/change/"
         response = self._call(change_url, 200)
         self._submit_form(change_url, bs4.BeautifulSoup(response.content.decode()).find(id="node_form"), 302)

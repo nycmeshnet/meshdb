@@ -1,6 +1,6 @@
 import logging
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Tuple, TypedDict
+from typing import Any, Dict, List, Optional, Tuple, TypedDict, cast
 
 from django.db.models import Exists, F, OuterRef, Q
 from django.db.models.functions import Greatest
@@ -221,7 +221,7 @@ class WholeMeshKML(APIView):
 
             # Add an extra placemark for the Node, once for each NN
             # this makes searching much easier
-            if install.node and install.node.network_number not in mapped_nns:
+            if install.node and install.node.network_number and install.node.network_number not in mapped_nns:
                 node_placemark = create_placemark(
                     str(install.node.network_number),
                     Point(
@@ -242,14 +242,20 @@ class WholeMeshKML(APIView):
             Link.objects.prefetch_related("from_device")
             .prefetch_related("to_device")
             .filter(~Q(status=Link.LinkStatus.INACTIVE))
+            .filter(from_device__node__network_number__isnull=False)
+            .filter(to_device__node__network_number__isnull=False)
             .exclude(type=Link.LinkType.VPN)
             .annotate(highest_altitude=Greatest("from_device__node__altitude", "to_device__node__altitude"))
             .order_by(F("highest_altitude").asc(nulls_first=True))
         ):
             mark_active: bool = link.status == Link.LinkStatus.ACTIVE
             link_label: str = f"{str(link.from_device.node)}-{str(link.to_device.node)}"
-            from_identifier = link.from_device.node.network_number
-            to_identifier = link.to_device.node.network_number
+            from_identifier = cast(  # Cast is safe due to corresponding filter above
+                int, link.from_device.node.network_number
+            )
+            to_identifier = cast(  # Cast is safe due to corresponding filter above
+                int, link.to_device.node.network_number
+            )
 
             all_links_set.add(tuple(sorted((from_identifier, to_identifier))))
             kml_links.append(

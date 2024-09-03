@@ -1,5 +1,7 @@
+import uuid
 from typing import TYPE_CHECKING, Any
 
+from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator
 from django.db import models, transaction
 
@@ -15,6 +17,9 @@ class Node(models.Model):
     # This should be added automatically by django-stubs, but for some reason it's not :(
     buildings: models.QuerySet["Building"]
 
+    class Meta:
+        ordering = ["network_number"]
+
     class NodeStatus(models.TextChoices):
         INACTIVE = "Inactive"
         ACTIVE = "Active"
@@ -28,9 +33,11 @@ class Node(models.Model):
         AP = "AP"
         REMOTE = "Remote"
 
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4)
+
     network_number = models.IntegerField(
-        primary_key=True,
-        db_column="network_number",
+        unique=True,
+        null=True,
         validators=[MaxValueValidator(NETWORK_NUMBER_MAX)],
     )
 
@@ -91,19 +98,37 @@ class Node(models.Model):
     )
 
     def save(self, *args: Any, **kwargs: Any) -> None:
-        if not self.network_number:
+        if not self.network_number and self.status == self.NodeStatus.ACTIVE:
             with transaction.atomic():
                 with advisory_lock("nn_assignment_lock"):
                     self.network_number = get_next_available_network_number()
                     super().save(*args, **kwargs)
         else:
+            if not self._state.adding:
+                original = Node.objects.get(pk=self.pk)
+                if original.network_number is not None and self.network_number != original.network_number:
+                    raise ValidationError("Network number is immutable once set")
+
             super().save(*args, **kwargs)
 
     def __str__(self) -> str:
-        if self.name:
-            return f"NN{str(self.network_number)} ({str(self.name)})"
+        output = []
+        if self.network_number:
+            output.append(f"NN{self.network_number}")
 
-        return f"NN{str(self.network_number)}"
+        if self.name:
+            if output:
+                output.append(f"({self.name})")
+            else:
+                output.append(self.name)
+
+        if output:
+            return " ".join(output)
+        else:
+            return f"Node ID {self.id}"
 
     def __network_number__(self) -> str:
-        return f"NN{str(self.network_number)}"
+        if self.network_number:
+            return f"NN{str(self.network_number)}"
+        else:
+            return "-"

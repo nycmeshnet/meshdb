@@ -84,7 +84,7 @@ class NonrelatedBuildingInline(BetterNonrelatedInline):
 class BuildingMembershipInline(admin.TabularInline):
     model = Building.nodes.through
     extra = 0
-    autocomplete_fields = ["building_id"]
+    autocomplete_fields = ["building"]
     classes = ["collapse"]
     verbose_name = "Building"
     verbose_name_plural = "Edit Related Buildings"
