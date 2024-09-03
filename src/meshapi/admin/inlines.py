@@ -161,6 +161,9 @@ class InstallInline(BetterInline):
             self.add_button = True
             self.reverse_relation = "member"
 
+    def get_queryset(self, request: HttpRequest) -> QuerySet[Install]:
+        return super().get_queryset(request).order_by("install_number")
+
 
 class BuildingLOSInline(BetterNonrelatedInline):
     model = LOS
