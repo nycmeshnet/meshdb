@@ -8,6 +8,12 @@ from meshapi.validation import normalize_phone_number, validate_multi_phone_numb
 
 
 class Member(models.Model):
+
+    class PaymentPreference(models.TextChoices):
+        CASH = "cash", "Cash"
+        STRIPE = "stripe", "Stripe"
+        NONE = None, "None"
+
     name = models.CharField(help_text='Member full name in the format: "First Last"')
     primary_email_address = models.EmailField(null=True, help_text="Primary email address used to contact the member")
     stripe_email_address = models.EmailField(
@@ -47,6 +53,11 @@ class Member(models.Model):
         "For Members imported from the spreadsheet, this starts with a formatted block of information about the "
         "import process and original spreadsheet data. However this structure can be changed by admins at any "
         "time and should not be relied on by automated systems. ",
+    )
+    payment_preference = models.CharField(
+        max_length=6,
+        choices=PaymentPreference.choices,
+        default=PaymentPreference.NONE
     )
 
     def __str__(self) -> str:

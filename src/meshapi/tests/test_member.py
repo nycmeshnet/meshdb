@@ -150,6 +150,27 @@ class TestMember(TestCase):
         test_member.refresh_from_db()
         self.assertEqual(test_member.additional_phone_numbers, ["+1 212-555-3333"])
 
+    def test_member_payment_preference(self):
+        test_member = Member(
+            name="John Doe",
+            primary_email_address="john@example.com",
+            payment_preference=Member.PaymentPreference.STRIPE,
+        )
+        test_member.save()
+
+        response = self.c.get(f"/api/v1/members/{test_member.id}/")
+        code = 200
+        self.assertEqual(
+            code,
+            response.status_code,
+            f"status code incorrect. Should be {code}, but got {response.status_code}",
+        )
+
+        response_obj = json.loads(response.content)
+        self.assertEqual(response_obj["name"], "John Doe")
+        self.assertEqual(response_obj["primary_email_address"], "john@example.com")
+        self.assertEqual(response_obj["payment_preference"], Member.PaymentPreference.STRIPE.value)
+
     def test_broken_member(self):
         err_member = {
             "id": "Error",
