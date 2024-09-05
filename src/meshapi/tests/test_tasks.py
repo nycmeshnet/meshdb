@@ -4,7 +4,6 @@ from unittest import mock
 from django.test import TestCase
 
 from meshapi.tasks import reset_dev_database, run_database_backup
-from meshapi.util import task_utils
 
 
 # Not intended to test the functionality of, say, dbbackup. More intended
