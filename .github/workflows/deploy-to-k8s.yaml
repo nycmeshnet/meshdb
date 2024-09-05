@@ -68,6 +68,7 @@ jobs:
         --set meshweb.forms_url="${{ vars.FORMS_URL }}" \
         --set meshdb.site_base_url="${{ vars.SITE_BASE_URL }}" \
         --set meshweb.slack_webhook="${{ secrets.SLACK_ADMIN_NOTIFICATIONS_WEBHOOK_URL }}" \
+        --set meshweb.environment="${{ inputs.environment }}" \
         --set ingress.hosts[0].host="${{ vars.INGRESS_HOST }}",ingress.hosts[0].paths[0].path=/,ingress.hosts[0].paths[0].pathType=Prefix
 
         # Rolling restart
