@@ -26,9 +26,7 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser: ArgumentParser) -> None:
         parser.add_argument(
-            "--noinput",
-            action="store_true",
-            help="Tells Django to NOT prompt the user for input of any kind."
+            "--noinput", action="store_true", help="Tells Django to NOT prompt the user for input of any kind."
         )
         parser.add_argument(
             "--skip-members",
