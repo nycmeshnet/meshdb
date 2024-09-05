@@ -173,8 +173,8 @@ DATABASES = {
 
 DBBACKUP_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
 DBBACKUP_STORAGE_OPTIONS = {
-    "bucket_name": os.environ.get("BACKUP_S3_BUCKET_NAME"),
-    "location": os.environ.get("BACKUP_S3_BASE_FOLDER"),
+    "bucket_name": "meshdb-data-backups",
+    "location": "meshdb-backups/prod1/",
 }
 
 DBBACKUP_CONNECTORS = {
