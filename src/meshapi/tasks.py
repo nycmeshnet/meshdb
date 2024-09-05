@@ -1,10 +1,10 @@
 import logging
 import os
 
-import boto3
 from celery.schedules import crontab
 from django.core import management
 
+from meshapi.util import task_utils
 from meshapi.util.uisp_import.fetch_uisp import get_uisp_devices, get_uisp_links
 from meshapi.util.uisp_import.sync_handlers import (
     import_and_sync_uisp_devices,
@@ -17,17 +17,17 @@ from meshdb.settings import DBBACKUP_STORAGE_OPTIONS
 
 
 @celery_app.task
-def run_database_backup() -> None:
+def run_database_backup() -> bool:
     # Don't run a backup unless it's prod1
     environment = f"\"{os.environ.get('MESHDB_ENVIRONMENT', '')}\""
     if os.environ.get("MESHDB_ENVIRONMENT") != "prod1":
         logging.warn(f"Not running database backup. This environment is: {environment}")
-        return
+        return False
 
     logging.info(f"Running database backup task. This environment is {environment}")
     if not os.environ.get("AWS_ACCESS_KEY_ID") or not os.environ.get("AWS_SECRET_ACCESS_KEY"):
         logging.error("Could not run backup. Missing AWS credentials!")
-        return
+        return False
 
     try:
         management.call_command("dbbackup")
@@ -35,47 +35,38 @@ def run_database_backup() -> None:
         logging.exception(e)
         raise e
 
+    return True
+
 
 @celery_app.task
-def reset_dev_database() -> None:
-    def get_most_recent_object(bucket_name: str, prefix: str) -> str | None:
-        s3_client = boto3.client("s3")
-        objects = s3_client.list_objects_v2(Bucket=bucket_name, Prefix=prefix)
-
-        if "Contents" not in objects:
-            logging.error(f"No objects found in '{bucket_name}/{prefix}'.")
-            return None
-
-        most_recent_object = max(objects["Contents"], key=lambda obj: obj["LastModified"])
-
-        object_key = most_recent_object["Key"]
-        last_modified = most_recent_object["LastModified"]
-
-        logging.info(f"Most recent object: {object_key}, Last modified: {last_modified}")
-        return object_key
-
+def reset_dev_database() -> bool:
     # Only reset dev environments (very important!)
     environment = f"\"{os.environ.get('MESHDB_ENVIRONMENT', '')}\""
     if "dev" not in os.environ.get("MESHDB_ENVIRONMENT", ""):
-        logging.warn(f"Not resetting this environment. This environment is: {environment}")
-        return
+        logging.warn(f"Not resetting this database. This environment is: {environment}")
+        return False
 
     logging.info(f"Running database reset task. This environment is: {environment}")
 
     if not os.environ.get("AWS_ACCESS_KEY_ID") or not os.environ.get("AWS_SECRET_ACCESS_KEY"):
         logging.error("Could not run backup. Missing AWS credentials!")
-        return
+        return False
 
     try:
-        latest_backup = get_most_recent_object(
+        latest_backup = task_utils.get_most_recent_object(
             DBBACKUP_STORAGE_OPTIONS["bucket_name"], DBBACKUP_STORAGE_OPTIONS["location"]
         )
+
+        if not latest_backup:
+            raise ValueError("Could not get most recent dbbackup while resetting dev environment.")
 
         management.call_command("dbrestore", "--noinput", "-i", latest_backup)
         management.call_command("scramble_members", "--noinput")
     except Exception as e:
         logging.exception(e)
         raise e
+
+    return True
 
 
 @celery_app.task
