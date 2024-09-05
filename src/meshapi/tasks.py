@@ -71,7 +71,8 @@ def reset_dev_database() -> None:
             DBBACKUP_STORAGE_OPTIONS["bucket_name"], DBBACKUP_STORAGE_OPTIONS["location"]
         )
 
-        management.call_command("dbrestore", "-i", latest_backup)
+        management.call_command("dbrestore", "--noinput", "-i", latest_backup)
+        management.call_command("scramble_members", "--noinput")
     except Exception as e:
         logging.exception(e)
         raise e

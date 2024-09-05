@@ -26,6 +26,11 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser: ArgumentParser) -> None:
         parser.add_argument(
+            "--noinput",
+            action="store_true",
+            help="Tells Django to NOT prompt the user for input of any kind."
+        )
+        parser.add_argument(
             "--skip-members",
             action="store_true",
             help="Skip scrambling members",
@@ -41,11 +46,12 @@ class Command(BaseCommand):
         logging.info("Scrambling database with fake information")
 
         # Confirm with user
-        should_continue = input("WARNING: This is destructive. Are you sure? (y/N): ")
-        logging.info(should_continue)
-        if should_continue.lower() != "yes" and should_continue.lower() != "y":
-            logging.warning("Operation cancelled.")
-            return
+        if not options["noinput"]:
+            should_continue = input("WARNING: This is destructive. Are you sure? (y/N): ")
+            logging.info(should_continue)
+            if should_continue.lower() != "yes" and should_continue.lower() != "y":
+                logging.warning("Operation cancelled.")
+                return
 
         logging.info("Continuing with scramble operation!!!")
 
