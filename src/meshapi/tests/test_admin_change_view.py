@@ -1,4 +1,5 @@
 import datetime
+from typing import Dict
 
 import bs4
 from django.contrib.auth.models import Group, User
@@ -9,6 +10,20 @@ from meshapi.models import LOS, AccessPoint, Building, Device, Install, Link, Me
 from meshapi_hooks.hooks import CelerySerializerHook
 
 from .sample_data import sample_building, sample_device, sample_install, sample_member, sample_node
+
+
+def fill_in_admin_form(soup: bs4.BeautifulSoup, form_data: Dict[str, str]) -> None:
+    for tag_id, value in form_data.items():
+        tag = soup.find(id=tag_id)
+        if tag.name == "input":
+            tag["value"] = value
+        if tag.name == "textarea":
+            tag.string = value
+        elif tag.name == "select":
+            for option in tag.find_all("option"):
+                del option["selected"]
+
+            tag.find("option", value=value)["selected"] = ""
 
 
 class TestAdminChangeView(TestCase):
@@ -90,7 +105,9 @@ class TestAdminChangeView(TestCase):
 
     def _call(self, route, code):
         response = self.c.get(route)
-        self.assertEqual(code, response.status_code, f"Call to admin panel route {route} failed. Got code {code}.")
+        self.assertEqual(
+            code, response.status_code, f"Call to admin panel route {route} failed. Got code {response.status_code}."
+        )
         return response
 
     def _submit_form(self, route, form: bs4.Tag, code):
@@ -101,6 +118,12 @@ class TestAdminChangeView(TestCase):
             name = input_tag.get("name")
             value = input_tag.get("value", "")
             if name is not None:
+                form_data[name] = value
+
+        for textarea_tag in form.find_all("textarea"):
+            name = textarea_tag.get("name")
+            value = textarea_tag.text
+            if name is not None and not textarea_tag.get("data-django-jsonform"):
                 form_data[name] = value
 
         for select_tag in form.find_all("select"):
@@ -120,9 +143,9 @@ class TestAdminChangeView(TestCase):
             if value:
                 form_data[name] = value
 
-        form_data["_save"] = "Save"
+        del form_data["_save"]
         del form_data["_addanother"]
-        del form_data["_continue"]
+        form_data["_continue"] = "Save and continue editing"
         if "_export-item" in form_data:
             del form_data["_export-item"]
 
@@ -138,7 +161,7 @@ class TestAdminChangeView(TestCase):
         self.assertEqual(
             code,
             response.status_code,
-            f"Call to admin panel route {route} failed. Got code {code}. "
+            f"Call to admin panel route {route} failed. Got code {response.status_code}. "
             f"Response body: {response.content.decode()}",
         )
         return response
@@ -187,3 +210,103 @@ class TestAdminChangeView(TestCase):
         change_url = f"/admin/meshapi/node/{self.node1.id}/change/"
         response = self._call(change_url, 200)
         self._submit_form(change_url, bs4.BeautifulSoup(response.content.decode()).find(id="node_form"), 302)
+
+    def test_add_new_node(self):
+        change_url = f"/admin/meshapi/node/add/"
+        response = self._call(change_url, 200)
+        form_soup = bs4.BeautifulSoup(response.content.decode()).find(id="node_form")
+        fill_in_admin_form(
+            form_soup,
+            {
+                "id_network_number": "123",
+                "id_status": "Active",
+                "id_type": "Standard",
+                "id_name": "Test Node",
+                "id_latitude": "0",
+                "id_longitude": "0",
+                "id_altitude": "0",
+                "id_install_date": "2022-02-23",
+                "id_abandon_date": "2022-02-23",
+                "id_notes": "Test notes",
+            },
+        )
+        response = self._submit_form(change_url, form_soup, 302)
+        node_id = response.url.split("/")[-3]
+        node = Node.objects.get(id=node_id)
+
+        self.assertEqual(node.network_number, 123)
+        self.assertEqual(node.status, Node.NodeStatus.ACTIVE)
+        self.assertEqual(node.type, Node.NodeType.STANDARD)
+        self.assertEqual(node.name, "Test Node")
+        self.assertEqual(node.latitude, 0)
+        self.assertEqual(node.longitude, 0)
+        self.assertEqual(node.altitude, 0)
+        self.assertEqual(node.install_date, datetime.date(2022, 2, 23))
+        self.assertEqual(node.abandon_date, datetime.date(2022, 2, 23))
+        self.assertEqual(node.notes, "Test notes")
+
+    def test_add_new_node_no_nn(self):
+        change_url = f"/admin/meshapi/node/add/"
+        response = self._call(change_url, 200)
+        form_soup = bs4.BeautifulSoup(response.content.decode()).find(id="node_form")
+        fill_in_admin_form(
+            form_soup,
+            {
+                "id_status": "Active",
+                "id_type": "Standard",
+                "id_name": "Test Node",
+                "id_latitude": "0",
+                "id_longitude": "0",
+                "id_altitude": "0",
+                "id_install_date": "2022-02-23",
+                "id_abandon_date": "2022-02-23",
+                "id_notes": "Test notes",
+            },
+        )
+        response = self._submit_form(change_url, form_soup, 302)
+        node_id = response.url.split("/")[-3]
+        node = Node.objects.get(id=node_id)
+
+        self.assertIsNotNone(node.network_number)
+        self.assertEqual(node.status, Node.NodeStatus.ACTIVE)
+        self.assertEqual(node.type, Node.NodeType.STANDARD)
+        self.assertEqual(node.name, "Test Node")
+        self.assertEqual(node.latitude, 0)
+        self.assertEqual(node.longitude, 0)
+        self.assertEqual(node.altitude, 0)
+        self.assertEqual(node.install_date, datetime.date(2022, 2, 23))
+        self.assertEqual(node.abandon_date, datetime.date(2022, 2, 23))
+        self.assertEqual(node.notes, "Test notes")
+
+    def test_add_new_planned_node_no_nn(self):
+        change_url = f"/admin/meshapi/node/add/"
+        response = self._call(change_url, 200)
+        form_soup = bs4.BeautifulSoup(response.content.decode()).find(id="node_form")
+        fill_in_admin_form(
+            form_soup,
+            {
+                "id_status": "Planned",
+                "id_type": "Standard",
+                "id_name": "Test Node",
+                "id_latitude": "0",
+                "id_longitude": "0",
+                "id_altitude": "0",
+                "id_install_date": "2022-02-23",
+                "id_abandon_date": "2022-02-23",
+                "id_notes": "Test notes",
+            },
+        )
+        response = self._submit_form(change_url, form_soup, 302)
+        node_id = response.url.split("/")[-3]
+        node = Node.objects.get(id=node_id)
+
+        self.assertIsNone(node.network_number)
+        self.assertEqual(node.status, Node.NodeStatus.PLANNED)
+        self.assertEqual(node.type, Node.NodeType.STANDARD)
+        self.assertEqual(node.name, "Test Node")
+        self.assertEqual(node.latitude, 0)
+        self.assertEqual(node.longitude, 0)
+        self.assertEqual(node.altitude, 0)
+        self.assertEqual(node.install_date, datetime.date(2022, 2, 23))
+        self.assertEqual(node.abandon_date, datetime.date(2022, 2, 23))
+        self.assertEqual(node.notes, "Test notes")
