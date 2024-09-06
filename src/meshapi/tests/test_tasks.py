@@ -73,29 +73,29 @@ class TestTaskUtils(TestCase):
     def setUp(self):
         pass
 
-    def test_get_most_recent_object(self):
-        with mock.patch("boto3.client") as mock_boto_client:
-            mock_s3_client = mock.MagicMock()
-            key = "not-a-backup.psql.bin"
-            mock_s3_client.list_objects_v2.return_value = {
-                "Contents": [
-                    {
-                        "Key": key,
-                        "LastModified": datetime(2015, 1, 1),
-                        "ETag": "string",
-                        "ChecksumAlgorithm": [
-                            "SHA256",
-                        ],
-                        "Size": 123,
-                        "StorageClass": "STANDARD",
-                        "Owner": {"DisplayName": "string", "ID": "string"},
-                        "RestoreStatus": {"IsRestoreInProgress": False, "RestoreExpiryDate": datetime(2015, 1, 1)},
-                    },
-                ],
-            }
+    @mock.patch("boto3.client")
+    def test_get_most_recent_object(self, mock_boto_client):
+        mock_s3_client = mock.MagicMock()
+        key = "not-a-backup.psql.bin"
+        mock_s3_client.list_objects_v2.return_value = {
+            "Contents": [
+                {
+                    "Key": key,
+                    "LastModified": datetime(2015, 1, 1),
+                    "ETag": "string",
+                    "ChecksumAlgorithm": [
+                        "SHA256",
+                    ],
+                    "Size": 123,
+                    "StorageClass": "STANDARD",
+                    "Owner": {"DisplayName": "string", "ID": "string"},
+                    "RestoreStatus": {"IsRestoreInProgress": False, "RestoreExpiryDate": datetime(2015, 1, 1)},
+                },
+            ],
+        }
 
-            mock_boto_client.return_value = mock_s3_client
+        mock_boto_client.return_value = mock_s3_client
 
-            backup = get_most_recent_object("not-a-bucket", "notprod1/")
-            print(backup)
-            self.assertEqual(backup, key)
+        backup = get_most_recent_object("not-a-bucket", "notprod1/")
+        print(backup)
+        self.assertEqual(backup, key)
