@@ -203,6 +203,24 @@ class TestNodeModel(TestCase):
         self.assertEqual(node.id, uuid.UUID("23ef170c-f37d-44e3-aaac-93dae636c86e"))
         self.assertEqual(node.network_number, 45)
 
+    def test_node_str(self):
+        node_data = self.sample_node.copy()
+        node_data["status"] = Node.NodeStatus.PLANNED
+        node_data["name"] = None
+        node = Node(**node_data)
+        node.save()
+
+        self.assertEqual(f"Node ID {node.id}", str(node))
+
+        node.name = "Test Node"
+        self.assertEqual("Test Node", str(node))
+
+        node.network_number = 45
+        self.assertEqual("NN45 (Test Node)", str(node))
+
+        node.name = None
+        self.assertEqual("NN45", str(node))
+
 
 class TestNodeAPI(TestCase):
     c = Client()
