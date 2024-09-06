@@ -1,9 +1,11 @@
+from datetime import datetime
 import os
 from unittest import mock
 
 from django.test import TestCase
 
 from meshapi.tasks import reset_dev_database, run_database_backup
+from meshapi.util.task_utils import get_most_recent_object
 
 
 # Not intended to test the functionality of, say, dbbackup. More intended
@@ -65,3 +67,35 @@ class TestTasks(TestCase):
         os.environ["AWS_ACCESS_KEY_ID"] = ""
         os.environ["AWS_SECRET_ACCESS_KEY"] = ""
         self.assertFalse(reset_dev_database())
+
+
+class TestTaskUtils(TestCase):
+    def setUp(self):
+        pass
+
+    def test_get_most_recent_object(self):
+        with mock.patch("boto3.client") as mock_boto_client:
+            mock_s3_client = mock.MagicMock()
+            key = "not-a-backup.psql.bin"
+            mock_s3_client.list_objects_v2.return_value = {
+                "Contents": [
+                    {
+                        "Key": key,
+                        "LastModified": datetime(2015, 1, 1),
+                        "ETag": "string",
+                        "ChecksumAlgorithm": [
+                            "SHA256",
+                        ],
+                        "Size": 123,
+                        "StorageClass": "STANDARD",
+                        "Owner": {"DisplayName": "string", "ID": "string"},
+                        "RestoreStatus": {"IsRestoreInProgress": False, "RestoreExpiryDate": datetime(2015, 1, 1)},
+                    },
+                ],
+            }
+
+            mock_boto_client.return_value = mock_s3_client
+
+            backup = get_most_recent_object("not-a-bucket", "notprod1/")
+            print(backup)
+            self.assertEqual(backup, key)
