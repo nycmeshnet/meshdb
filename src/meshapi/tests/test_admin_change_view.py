@@ -212,7 +212,7 @@ class TestAdminChangeView(TestCase):
         self._submit_form(change_url, bs4.BeautifulSoup(response.content.decode()).find(id="node_form"), 302)
 
     def test_add_new_node(self):
-        change_url = f"/admin/meshapi/node/add/"
+        change_url = "/admin/meshapi/node/add/"
         response = self._call(change_url, 200)
         form_soup = bs4.BeautifulSoup(response.content.decode()).find(id="node_form")
         fill_in_admin_form(
@@ -246,7 +246,7 @@ class TestAdminChangeView(TestCase):
         self.assertEqual(node.notes, "Test notes")
 
     def test_add_new_node_no_nn(self):
-        change_url = f"/admin/meshapi/node/add/"
+        change_url = "/admin/meshapi/node/add/"
         response = self._call(change_url, 200)
         form_soup = bs4.BeautifulSoup(response.content.decode()).find(id="node_form")
         fill_in_admin_form(
@@ -279,7 +279,7 @@ class TestAdminChangeView(TestCase):
         self.assertEqual(node.notes, "Test notes")
 
     def test_add_new_planned_node_no_nn(self):
-        change_url = f"/admin/meshapi/node/add/"
+        change_url = "/admin/meshapi/node/add/"
         response = self._call(change_url, 200)
         form_soup = bs4.BeautifulSoup(response.content.decode()).find(id="node_form")
         fill_in_admin_form(
