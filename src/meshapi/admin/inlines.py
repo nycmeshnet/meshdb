@@ -70,7 +70,7 @@ class NonrelatedBuildingInline(BetterNonrelatedInline):
     fields = ["primary_node", "bin", "street_address", "city", "zip_code"]
     readonly_fields = fields
 
-    add_button = True
+    add_button = False
     reverse_relation = "primary_node"
 
     # Hack to get the NN
@@ -78,7 +78,7 @@ class NonrelatedBuildingInline(BetterNonrelatedInline):
 
     def get_form_queryset(self, obj: Node) -> QuerySet[Building]:
         self.network_number = obj.pk
-        return self.model.objects.filter(nodes=obj)
+        return self.model.objects.filter(nodes=obj).prefetch_related("primary_node")
 
 
 class BuildingMembershipInline(admin.TabularInline):
