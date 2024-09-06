@@ -97,5 +97,13 @@ class TestTaskUtils(TestCase):
         mock_boto_client.return_value = mock_s3_client
 
         backup = get_most_recent_object("not-a-bucket", "notprod1/")
-        print(backup)
         self.assertEqual(backup, key)
+
+    @mock.patch("boto3.client")
+    def test_get_most_recent_object_empty_bucket(self, mock_boto_client):
+        mock_s3_client = mock.MagicMock()
+        mock_s3_client.list_objects_v2.return_value = {}
+        mock_boto_client.return_value = mock_s3_client
+
+        backup = get_most_recent_object("not-a-bucket", "notprod1/")
+        self.assertEqual(backup, None)
