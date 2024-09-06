@@ -54,12 +54,10 @@ class MemberFilter(filters.FilterSet):
             Q(primary_email_address__icontains=value)
             | Q(stripe_email_address__icontains=value)
             | Q(additional_email_addresses__icontains=value)
-        ).distinct("id")
+        )
 
     def filter_on_all_phone_numbers(self, queryset: QuerySet[Member], field_name: str, value: str) -> QuerySet[Member]:
-        return queryset.filter(
-            Q(phone_number__icontains=value) | Q(additional_phone_numbers__icontains=value)
-        ).distinct("id")
+        return queryset.filter(Q(phone_number__icontains=value) | Q(additional_phone_numbers__icontains=value))
 
     class Meta:
         model = Member
@@ -294,15 +292,13 @@ class LinkFilter(filters.FilterSet):
     device = filters.NumberFilter(method="filter_from_to_device_id")
 
     def filter_from_to_network_number(self, queryset: QuerySet[Link], field_name: str, value: str) -> QuerySet[Link]:
-        return queryset.filter(
-            Q(from_device__node__network_number=value) | Q(to_device__node__network_number=value)
-        ).distinct("id")
+        return queryset.filter(Q(from_device__node__network_number=value) | Q(to_device__node__network_number=value))
 
     def filter_from_to_node(self, queryset: QuerySet[Link], field_name: str, value: str) -> QuerySet[Link]:
-        return queryset.filter(Q(from_device__node__id=value) | Q(to_device__node__id=value)).distinct("id")
+        return queryset.filter(Q(from_device__node__id=value) | Q(to_device__node__id=value))
 
     def filter_from_to_device_id(self, queryset: QuerySet[Link], field_name: str, value: str) -> QuerySet[Link]:
-        return queryset.filter(Q(from_device__id=value) | Q(to_device__id=value)).distinct("id")
+        return queryset.filter(Q(from_device__id=value) | Q(to_device__id=value))
 
     class Meta:
         model = Link
@@ -366,18 +362,18 @@ class LOSFilter(filters.FilterSet):
     def filter_from_to_network_number(self, queryset: QuerySet[LOS], field_name: str, value: int) -> QuerySet[LOS]:
         return queryset.filter(
             Q(from_building__nodes__network_number=value) | Q(to_building__nodes__network_number=value)
-        ).distinct("id")
+        )
 
     def filter_from_to_node(self, queryset: QuerySet[LOS], field_name: str, value: int) -> QuerySet[LOS]:
-        return queryset.filter(Q(from_building__nodes__id=value) | Q(to_building__id=value)).distinct("id")
+        return queryset.filter(Q(from_building__nodes__id=value) | Q(to_building__id=value))
 
     def filter_from_to_install_number(self, queryset: QuerySet[LOS], field_name: str, value: int) -> QuerySet[LOS]:
         return queryset.filter(
             Q(from_building__installs__install_number=value) | Q(to_building__installs__install_number=value)
-        ).distinct("id")
+        )
 
     def filter_from_to_building_id(self, queryset: QuerySet[LOS], field_name: str, value: int) -> QuerySet[LOS]:
-        return queryset.filter(Q(from_building__id=value) | Q(to_building__id=value)).distinct("id")
+        return queryset.filter(Q(from_building__id=value) | Q(to_building__id=value))
 
     class Meta:
         model = LOS
