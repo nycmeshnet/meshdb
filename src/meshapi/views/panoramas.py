@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Union
 
 import requests
+from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.request import Request
@@ -116,6 +117,7 @@ class GitHubError(Exception):
 
 
 # View called to make MeshDB refresh the panoramas.
+@extend_schema_view(post=extend_schema(tags=["Panoramas"]))
 @api_view(["POST"])
 @permission_classes([HasPanoramaUpdatePermission])
 def update_panoramas(request: Request) -> Response:

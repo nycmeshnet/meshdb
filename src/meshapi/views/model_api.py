@@ -105,6 +105,12 @@ class InstallDetail(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = InstallSerializer
 
 
+@extend_schema_view(
+    get=extend_schema(tags=["Installs"]),
+    put=extend_schema(tags=["Installs"]),
+    patch=extend_schema(tags=["Installs"]),
+    delete=extend_schema(tags=["Installs"]),
+)
 class InstallDetailByInstallNumber(InstallDetail):
     lookup_field = "install_number"
 
@@ -129,6 +135,12 @@ class NodeDetail(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = NodeEditSerializer
 
 
+@extend_schema_view(
+    get=extend_schema(tags=["Nodes"]),
+    put=extend_schema(tags=["Nodes"]),
+    patch=extend_schema(tags=["Nodes"]),
+    delete=extend_schema(tags=["Nodes"]),
+)
 class NodeDetailByNetworkNumber(NodeDetail):
     lookup_field = "network_number"
 
