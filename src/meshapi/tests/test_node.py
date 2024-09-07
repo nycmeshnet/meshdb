@@ -6,8 +6,8 @@ from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.test import Client, TestCase
 
-from ..models import Node
-from .sample_data import sample_node
+from ..models import Building, Install, Member, Node
+from .sample_data import sample_building, sample_install, sample_member, sample_node
 
 
 class TestNodeModel(TestCase):
@@ -83,6 +83,91 @@ class TestNodeModel(TestCase):
 
         self.assertIsNotNone(node2.id)
         self.assertEqual(node2.network_number, 89)
+
+    def test_construct_node_with_network_number_stolen_from_active_install(self):
+        building = Building(**sample_building)
+        building.save()
+
+        member = Member(**sample_member)
+        member.save()
+
+        victim_install = Install(
+            **sample_install,
+            install_number=45,
+            building=building,
+            member=member,
+        )
+        victim_install.save()
+
+        active_node_data = self.sample_node.copy()
+        active_node_data["status"] = Node.NodeStatus.ACTIVE
+        node = Node(**active_node_data, network_number=45)
+
+        with pytest.raises(ValidationError):
+            node.save()
+
+        victim_install.refresh_from_db()
+
+        self.assertIsNone(Node.objects.filter(network_number=45).first())
+        self.assertEqual(victim_install.status, Install.InstallStatus.ACTIVE)
+        self.assertEqual(victim_install.install_number, 45)
+
+    def test_construct_node_with_network_number_stolen_from_inactive_install(self):
+        building = Building(**sample_building)
+        building.save()
+
+        member = Member(**sample_member)
+        member.save()
+
+        victim_install = Install(
+            **sample_install,
+            install_number=45,
+            building=building,
+            member=member,
+        )
+        victim_install.status = Install.InstallStatus.REQUEST_RECEIVED
+        victim_install.save()
+
+        active_node_data = self.sample_node.copy()
+        active_node_data["status"] = Node.NodeStatus.ACTIVE
+        active_node_data["notes"] = "Test node"
+        node = Node(**active_node_data, network_number=45)
+        node.save()
+
+        node.refresh_from_db()
+        victim_install.refresh_from_db()
+
+        self.assertEqual(node.network_number, 45)
+        self.assertEqual(node.notes, "Test node")
+        self.assertEqual(victim_install.status, Install.InstallStatus.NN_REASSIGNED)
+        self.assertEqual(victim_install.install_number, 45)
+
+        node.notes = "fooo"
+        node.save()
+
+        self.assertEqual(node.network_number, 45)
+        self.assertEqual(node.notes, "fooo")
+        self.assertEqual(victim_install.status, Install.InstallStatus.NN_REASSIGNED)
+        self.assertEqual(victim_install.install_number, 45)
+
+        # Edit the status so we can confirm the node2.save() below doesn't touch it
+        victim_install.status = Install.InstallStatus.CLOSED
+        victim_install.save()
+
+        # Trying to steal it a second time should fail without modifying the Install object,
+        # it is already in use
+        active_node_data = self.sample_node.copy()
+        active_node_data["status"] = Node.NodeStatus.ACTIVE
+        active_node_data["notes"] = "Test node"
+        node2 = Node(**active_node_data, network_number=45)
+        with pytest.raises(ValidationError):
+            node2.save()
+
+        node45 = Node.objects.get(network_number=45)
+
+        self.assertEqual(node, node45)
+        self.assertEqual(victim_install.status, Install.InstallStatus.CLOSED)
+        self.assertEqual(victim_install.install_number, 45)
 
     def test_construct_planned_node_yes_id_no_network_number(self):
         node = Node(

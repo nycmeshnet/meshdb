@@ -1,6 +1,7 @@
 import uuid
 from typing import TYPE_CHECKING, Any
 
+from django.apps import apps
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator
 from django.db import models, transaction
@@ -11,6 +12,7 @@ from meshapi.util.network_number import NETWORK_NUMBER_MAX, get_next_available_n
 if TYPE_CHECKING:
     # Gate the import to avoid cycles
     from meshapi.models.building import Building
+    from meshapi.models.install import Install  # noqa: F401
 
 
 class Node(models.Model):
@@ -108,6 +110,24 @@ class Node(models.Model):
                 original = Node.objects.get(pk=self.pk)
                 if original.network_number is not None and self.network_number != original.network_number:
                     raise ValidationError("Network number is immutable once set")
+
+            if self.network_number:
+                pre_existing_node_with_nn = Node.objects.filter(network_number=self.network_number).first()
+                if pre_existing_node_with_nn is not None and pre_existing_node_with_nn != self:
+                    raise ValidationError("Network number already in use by another node")
+
+                if not TYPE_CHECKING:
+                    Install = apps.get_model(app_label="meshapi", model_name="Install")  # noqa: F811
+                    install_for_nn: Install = Install.objects.filter(  # type: ignore
+                        install_number=self.network_number
+                    ).first()
+                    if install_for_nn and install_for_nn.node != self:
+                        if install_for_nn.status == Install.InstallStatus.ACTIVE:
+                            raise ValidationError("Active install number cannot be reused as a network number")
+
+                        if install_for_nn.status != Install.InstallStatus.NN_REASSIGNED:
+                            install_for_nn.status = Install.InstallStatus.NN_REASSIGNED
+                            install_for_nn.save()
 
             super().save(*args, **kwargs)
 

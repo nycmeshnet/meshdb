@@ -490,7 +490,6 @@ class TestNN(TestCase):
 
     @parameterized.expand(
         [
-            Install.InstallStatus.ACTIVE,
             Install.InstallStatus.INACTIVE,
             Install.InstallStatus.PENDING,
             Install.InstallStatus.BLOCKED,
