@@ -49,7 +49,7 @@ def reset_dev_database() -> bool:
     logging.info(f"Running database reset task. This environment is: {environment}")
 
     if not os.environ.get("AWS_ACCESS_KEY_ID") or not os.environ.get("AWS_SECRET_ACCESS_KEY"):
-        logging.error("Could not run backup. Missing AWS credentials!")
+        logging.error("Could not run database reset. Missing AWS credentials!")
         return False
 
     try:
