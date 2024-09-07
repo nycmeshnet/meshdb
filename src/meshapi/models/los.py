@@ -13,9 +13,9 @@ class LOS(models.Model):
 
     This is needed because unlike the legacy spreadsheet, MeshDB's Link table stores connections
     between Device objects, not between install numbers. This means among other things that in order
-    to show a potential link on the map, we'd need to assign NNs to those buildings (very gross). Instead,
-    with this table, we can represent potential links between any pair of street addresses (MeshDB
-    Buildings), no need to create any other DB objects.
+    to show a potential link on the map, we'd need to create fake devices and node objects for each
+    of those buildings (very messy). Instead, with this table, we can represent potential links
+    between any pair of street addresses (MeshDB Buildings), no need to create any other DB objects.
     """
 
     class Meta:
