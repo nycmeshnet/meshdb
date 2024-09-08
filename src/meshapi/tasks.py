@@ -19,7 +19,7 @@ from meshdb.settings import MESHDB_ENVIRONMENT
 def run_database_backup() -> bool:
     # Don't run a backup unless it's prod1
     if MESHDB_ENVIRONMENT != "prod1":
-        logging.warn(f'Not running database backup. This environment is: "{MESHDB_ENVIRONMENT}"')
+        logging.warning(f'Not running database backup. This environment is: "{MESHDB_ENVIRONMENT}"')
         return False
 
     logging.info(f'Running database backup task. This environment is "{MESHDB_ENVIRONMENT}"')
@@ -40,7 +40,7 @@ def run_database_backup() -> bool:
 def reset_dev_database() -> bool:
     # Only reset dev environments (very important!)
     if "dev" not in MESHDB_ENVIRONMENT:
-        logging.warn(f'Not resetting this database. This environment is: "{MESHDB_ENVIRONMENT}"')
+        logging.warning(f'Not resetting this database. This environment is: "{MESHDB_ENVIRONMENT}"')
         return False
 
     logging.info(f'Running database reset task. This environment is: "{MESHDB_ENVIRONMENT}"')

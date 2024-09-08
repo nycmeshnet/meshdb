@@ -10,8 +10,8 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
-import os
 import logging
+import os
 from pathlib import Path
 
 from dotenv import load_dotenv
