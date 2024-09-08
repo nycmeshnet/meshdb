@@ -1,4 +1,5 @@
 import datetime
+import json
 from typing import Dict, Optional
 
 import bs4
@@ -49,6 +50,9 @@ class TestAdminChangeView(TestCase):
         self.member = Member(**sample_member)
         self.member.save()
         sample_install_copy["member"] = self.member
+
+        self.member2 = Member(name="Test Member")
+        self.member2.save()
 
         self.install = Install(**sample_install_copy)
         self.install.save()
@@ -132,7 +136,9 @@ class TestAdminChangeView(TestCase):
         for textarea_tag in form.find_all("textarea"):
             name = textarea_tag.get("name")
             value = textarea_tag.text
-            if name is not None and not textarea_tag.get("data-django-jsonform"):
+            if textarea_tag.get("data-django-jsonform") and value == "":
+                value = json.loads(textarea_tag.get("data-django-jsonform"))["data"]
+            if name is not None:
                 form_data[name] = value
 
         for select_tag in form.find_all("select"):
@@ -193,6 +199,69 @@ class TestAdminChangeView(TestCase):
         change_url = f"/admin/meshapi/member/{self.member.id}/change/"
         response = self._call(change_url, 200)
         self._submit_form(change_url, bs4.BeautifulSoup(response.content.decode()).find(id="member_form"), 302)
+
+    def test_change_member_no_email(self):
+        change_url = f"/admin/meshapi/member/{self.member2.id}/change/"
+        response = self._call(change_url, 200)
+        self._submit_form(change_url, bs4.BeautifulSoup(response.content.decode()).find(id="member_form"), 302)
+
+        self.member2.refresh_from_db()
+        self.assertIsNone(self.member2.primary_email_address)
+
+    def test_add_new_member(self):
+        change_url = "/admin/meshapi/member/add/"
+        response = self._call(change_url, 200)
+        form_soup = bs4.BeautifulSoup(response.content.decode()).find(id="member_form")
+        fill_in_admin_form(
+            form_soup,
+            {
+                "id_name": "Test Member",
+                "id_primary_email_address": "test1@example.com",
+                "id_stripe_email_address": "test2@example.com",
+                "id_additional_email_addresses": json.dumps(["test3@example.com", "test4@example.com"]),
+                "id_phone_number": "+1 123 555 5555",
+                "id_additional_phone_numbers": json.dumps(["+1 123 555 5566", "+1 123 555 5577"]),
+                "id_slack_handle": "abcdef",
+                "id_notes": "Test notes",
+            },
+        )
+
+        response = self._submit_form(change_url, form_soup, 302)
+        member_id = response.url.split("/")[-3]
+        member = Member.objects.get(id=member_id)
+
+        self.assertEqual(member.name, "Test Member")
+        self.assertEqual(member.primary_email_address, "test1@example.com")
+        self.assertEqual(member.stripe_email_address, "test2@example.com")
+        self.assertEqual(member.additional_email_addresses, ["test3@example.com", "test4@example.com"])
+        self.assertEqual(member.phone_number, "+1 1235555555")
+        self.assertEqual(member.additional_phone_numbers, ["+1 1235555566", "+1 1235555577"])
+        self.assertEqual(member.slack_handle, "abcdef")
+        self.assertEqual(member.notes, "Test notes")
+
+    def test_add_new_member_name_only(self):
+        change_url = "/admin/meshapi/member/add/"
+        response = self._call(change_url, 200)
+        form_soup = bs4.BeautifulSoup(response.content.decode()).find(id="member_form")
+        fill_in_admin_form(
+            form_soup,
+            {
+                "id_name": "Test Member",
+            },
+        )
+
+        response = self._submit_form(change_url, form_soup, 302)
+        member_id = response.url.split("/")[-3]
+        member = Member.objects.get(id=member_id)
+
+        self.assertEqual(member.name, "Test Member")
+        self.assertIsNone(member.primary_email_address)
+        self.assertIsNone(member.stripe_email_address)
+        self.assertEqual(member.additional_email_addresses, [])
+        self.assertIsNone(member.phone_number)
+        self.assertEqual(member.additional_phone_numbers, [])
+        self.assertIsNone(member.slack_handle)
+        self.assertEqual(member.notes, "")
 
     def test_change_install(self):
         change_url = f"/admin/meshapi/install/{self.install.id}/change/"
