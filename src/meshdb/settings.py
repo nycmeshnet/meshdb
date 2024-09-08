@@ -71,6 +71,15 @@ CORS_ALLOWED_ORIGINS = [
     "https://devadminmap.mesh.nycmesh.net",
 ]
 
+CSRF_TRUSTED_ORIGINS = [
+    "http://meshdb:8081",
+    "http://nginx:8080",
+    "http://devdb.mesh.nycmesh.net",
+    "https://devdb.mesh.nycmesh.net",
+    "http://db.mesh.nycmesh.net",
+    "https://db.mesh.nycmesh.net",
+]
+
 if DEBUG:
     ALLOWED_HOSTS += [
         "127.0.0.1",
@@ -83,17 +92,11 @@ if DEBUG:
         "http://127.0.0.1:80",
         "http://localhost:80",
     ]
-
-
-CSRF_TRUSTED_ORIGINS = [
-    "http://127.0.0.1:8080",
-    "http://meshdb:8081",
-    "http://nginx:8080",
-    "http://devdb.mesh.nycmesh.net",
-    "https://devdb.mesh.nycmesh.net",
-    "http://db.mesh.nycmesh.net",
-    "https://db.mesh.nycmesh.net",
-]
+    
+    CSRF_TRUSTED_ORIGINS += [
+        "http://127.0.0.1:8080",
+        "http://127.0.0.1",
+     ]
 
 # Application definition
 
@@ -177,6 +180,7 @@ DATABASES = {
 # https://django-dbbackup.readthedocs.io/en/master/installation.html
 
 DBBACKUP_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
+DBBACKUP_FILENAME_TEMPLATE = "{datetime}.{extension}"
 DBBACKUP_STORAGE_OPTIONS = {
     "bucket_name": "meshdb-data-backups",
     "location": "meshdb-backups/prod1/",
