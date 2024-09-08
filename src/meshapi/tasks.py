@@ -13,18 +13,17 @@ from meshapi.util.uisp_import.sync_handlers import (
 )
 from meshapi.views.panoramas import sync_github_panoramas
 from meshdb.celery import app as celery_app
-from meshdb.settings import DBBACKUP_STORAGE_OPTIONS
+from meshdb.settings import DBBACKUP_STORAGE_OPTIONS, MESHDB_ENVIRONMENT
 
 
 @celery_app.task
 def run_database_backup() -> bool:
     # Don't run a backup unless it's prod1
-    environment = f"\"{os.environ.get('MESHDB_ENVIRONMENT', '')}\""
-    if os.environ.get("MESHDB_ENVIRONMENT") != "prod1":
-        logging.warn(f"Not running database backup. This environment is: {environment}")
+    if MESHDB_ENVIRONMENT != "prod1":
+        logging.warn(f"Not running database backup. This environment is: \"{MESHDB_ENVIRONMENT}\"")
         return False
 
-    logging.info(f"Running database backup task. This environment is {environment}")
+    logging.info(f"Running database backup task. This environment is \"{MESHDB_ENVIRONMENT}\"")
     if not os.environ.get("AWS_ACCESS_KEY_ID") or not os.environ.get("AWS_SECRET_ACCESS_KEY"):
         logging.error("Could not run backup. Missing AWS credentials!")
         return False
@@ -41,12 +40,11 @@ def run_database_backup() -> bool:
 @celery_app.task
 def reset_dev_database() -> bool:
     # Only reset dev environments (very important!)
-    environment = f"\"{os.environ.get('MESHDB_ENVIRONMENT', '')}\""
-    if "dev" not in os.environ.get("MESHDB_ENVIRONMENT", ""):
-        logging.warn(f"Not resetting this database. This environment is: {environment}")
+    if "dev" not in MESHDB_ENVIRONMENT:
+        logging.warn(f"Not resetting this database. This environment is: \"{MESHDB_ENVIRONMENT}\"")
         return False
 
-    logging.info(f"Running database reset task. This environment is: {environment}")
+    logging.info(f"Running database reset task. This environment is: \"{MESHDB_ENVIRONMENT}\"")
 
     if not os.environ.get("AWS_ACCESS_KEY_ID") or not os.environ.get("AWS_SECRET_ACCESS_KEY"):
         logging.error("Could not run database reset. Missing AWS credentials!")
@@ -102,12 +100,16 @@ celery_app.conf.beat_schedule = {
         "task": "meshapi.tasks.run_update_panoramas",
         "schedule": crontab(minute="10", hour="*/1"),
     },
-    "run-database-backup-hourly": {
+}
+
+if MESHDB_ENVIRONMENT == 'prod1':
+    celery_app.conf.beat_schedule["run-database-backup-hourly"] = {
         "task": "meshapi.tasks.run_database_backup",
         "schedule": crontab(minute="20", hour="*/1"),
-    },
-    "run-reset-dev-database-daily": {
+    }
+
+if MESHDB_ENVIRONMENT == 'dev3':
+    celery_app.conf.beat_schedule["run-reset-dev-database-daily"] = {
         "task": "meshapi.tasks.run_database_backup",
-        "schedule": crontab(minute="0", hour="0"),
-    },
-}
+        "schedule": crontab(minute="30", hour="0"),
+    }
