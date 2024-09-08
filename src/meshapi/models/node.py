@@ -40,6 +40,7 @@ class Node(models.Model):
 
     network_number = models.IntegerField(
         unique=True,
+        blank=True,
         null=True,
         validators=[MaxValueValidator(NETWORK_NUMBER_MAX)],
     )
