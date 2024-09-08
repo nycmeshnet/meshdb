@@ -39,6 +39,8 @@ SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY")
 DEBUG = os.environ.get("DEBUG", "False") == "True"
 PROFILING_ENABLED = DEBUG and not os.environ.get("DISABLE_PROFILING", "False") == "True"
 
+MAINTENANCE = os.environ.get("MAINTENANCE", "False") == "True"
+
 USE_X_FORWARDED_HOST = True
 
 LOS_URL = os.environ.get("LOS_URL", "https://devlos.mesh.nycmesh.net")
@@ -131,6 +133,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "meshweb.middleware.MaintenanceModeMiddleware",
 ]
 
 

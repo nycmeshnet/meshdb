@@ -33,3 +33,8 @@ def index(request: HttpRequest) -> HttpResponse:
     }
     context = {"links": links}
     return HttpResponse(template.render(context, request))
+
+
+def maintenance(request):
+    template = loader.get_template("meshweb/maintenance.html")
+    return HttpResponse(template.render({}, request))
