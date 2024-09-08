@@ -8,6 +8,7 @@ from typing import Dict, List
 import django
 
 from meshdb.utils.spreadsheet_import import logger
+from meshdb.utils.spreadsheet_import.fetch_osticket_data import import_ticket_numbers_from_osticket
 
 logger.configure()
 
@@ -209,6 +210,9 @@ def main():
 
         logging.info(f"Importing links from UISP & '{links_path}'")
         load_links_supplement_with_uisp(get_spreadsheet_links((links_path)))
+
+        logging.info(f"Importing ticket numbers from OSTicket")
+        import_ticket_numbers_from_osticket()
     except BaseException as e:
         if isinstance(e, KeyboardInterrupt):
             logging.error("Received keyboard interrupt, exiting early...")
