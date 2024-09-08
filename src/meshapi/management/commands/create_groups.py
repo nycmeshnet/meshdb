@@ -4,6 +4,8 @@ from typing import Any
 from django.contrib.auth.models import Group, Permission
 from django.core.management.base import BaseCommand
 
+from meshapi.models.permission import sync_custom_permissions
+
 
 class Command(BaseCommand):
     help = "Creates basic MeshDB groups"
@@ -12,6 +14,9 @@ class Command(BaseCommand):
         pass
 
     def handle(self, *args: Any, **options: Any) -> None:
+        # Hack for maintenance mode
+        sync_custom_permissions()
+
         models = [
             "building",
             "member",
@@ -46,5 +51,7 @@ class Command(BaseCommand):
                 or act == "view"
                 or obj in ["user", "token", "tokenproxy", "celeryserialzerhook"]
                 or code == "assign_nn"
+                or code == "update_panoramas"
+                or code == "maintenance_mode"
             ):
                 admin.permissions.add(p)

@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.http import HttpRequest, HttpResponse
+from django.shortcuts import redirect
 from django.template import loader
 from drf_spectacular.utils import extend_schema
 from rest_framework import permissions
@@ -37,8 +38,9 @@ def index(request: HttpRequest) -> HttpResponse:
     context = {"links": links}
     return HttpResponse(template.render(context, request))
 
-
-def maintenance(request):
+def maintenance(request: HttpRequest) -> HttpResponse:
+    if not MAINTENANCE_FILE.is_file():
+        return redirect("main") 
     template = loader.get_template("meshweb/maintenance.html")
     context = {
         "message": "Please check back later.",
@@ -52,7 +54,7 @@ def maintenance(request):
 
 @api_view(["GET"])
 @permission_classes([HasMaintenanceModePermission])
-def enable_maintenance(request):
+def enable_maintenance(request: HttpRequest) -> HttpResponse:
     MAINTENANCE_FILE.touch()
     template = loader.get_template("meshweb/maintenance.html")
     context = {
@@ -64,7 +66,9 @@ def enable_maintenance(request):
 
 @api_view(["GET"])
 @permission_classes([HasMaintenanceModePermission])
-def disable_maintenance(request):
+def disable_maintenance(request: HttpRequest) -> HttpResponse:
+    if not MAINTENANCE_FILE.is_file():
+        return redirect("main") 
     MAINTENANCE_FILE.unlink()
     template = loader.get_template("meshweb/maintenance.html")
     context = {
