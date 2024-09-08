@@ -42,24 +42,10 @@ do
 	cat "spreadsheet_data/$table_name.sql" | $DOCKER_PG_COMMAND
 done
 
-# Fix the numbering
-for table_name in "${tables[@]}"
-do
-    if [[ "$table_name" == "meshapi_accesspoint" || "$table_name" == "meshapi_sector" ]]; then
-	continue
-    fi
+# Fix the auto numbering sequence for installs
+max_install_number=$(($($DOCKER_PG_COMMAND -c "SELECT MAX(install_number) FROM $table_name" -At) + 1))
+$DOCKER_PG_COMMAND -c "ALTER SEQUENCE "$table_name"_install_number_seq RESTART WITH $max_install_number"
 
-    if [[ "$table_name" == "meshapi_install" ]]; then
-        max_id=$(($($DOCKER_PG_COMMAND -c "SELECT MAX(install_number) FROM $table_name" -At) + 1))
-        $DOCKER_PG_COMMAND -c "ALTER SEQUENCE "$table_name"_install_number_seq RESTART WITH $max_id"
-    elif [[ "$table_name" == "meshapi_node" ]]; then
-        : # Do nothing, we don't use the database to auto-increment node numbers,
-        # they are assigned via a dedicated python function
-    else
-        max_id=$(($($DOCKER_PG_COMMAND -c "SELECT MAX(id) FROM $table_name" -At) + 1))
-        $DOCKER_PG_COMMAND -c "ALTER SEQUENCE "$table_name"_id_seq RESTART WITH $max_id"
-    fi
-done
 
 
 
