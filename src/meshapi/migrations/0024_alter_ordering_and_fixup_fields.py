@@ -60,7 +60,14 @@ class Migration(migrations.Migration):
             model_name="node",
             name="network_number",
             field=models.IntegerField(
-                null=True, unique=True, validators=[django.core.validators.MaxValueValidator(8192)]
+                blank=True, null=True, unique=True, validators=[django.core.validators.MaxValueValidator(8192)]
+            ),
+        ),
+        migrations.AlterField(
+            model_name="member",
+            name="primary_email_address",
+            field=models.EmailField(
+                blank=True, help_text="Primary email address used to contact the member", max_length=254, null=True
             ),
         ),
     ]
