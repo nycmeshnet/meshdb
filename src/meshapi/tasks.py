@@ -4,7 +4,6 @@ import os
 from celery.schedules import crontab
 from django.core import management
 
-from meshapi.util import task_utils
 from meshapi.util.uisp_import.fetch_uisp import get_uisp_devices, get_uisp_links
 from meshapi.util.uisp_import.sync_handlers import (
     import_and_sync_uisp_devices,
@@ -51,14 +50,7 @@ def reset_dev_database() -> bool:
         return False
 
     try:
-        latest_backup = task_utils.get_most_recent_object(
-            DBBACKUP_STORAGE_OPTIONS["bucket_name"], DBBACKUP_STORAGE_OPTIONS["location"]
-        )
-
-        if not latest_backup:
-            raise ValueError("Could not get most recent dbbackup while resetting dev environment.")
-
-        management.call_command("dbrestore", "--noinput", "-i", latest_backup)
+        management.call_command("dbrestore", "--noinput")
         management.call_command("scramble_members", "--noinput")
     except Exception as e:
         logging.exception(e)
