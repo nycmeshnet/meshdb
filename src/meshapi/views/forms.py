@@ -222,7 +222,7 @@ def join_form(request: Request) -> Response:
 
     join_form_install = Install(
         status=Install.InstallStatus.REQUEST_RECEIVED,
-        ticket_id=None,
+        ticket_number=None,
         request_date=date.today(),
         install_date=None,
         abandon_date=None,

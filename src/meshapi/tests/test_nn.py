@@ -418,7 +418,7 @@ class TestFindGaps(TestCase):
         m["primary_email_address"] = f"john{index}@gmail.com"
         member_obj = Member(**m)
         i["member"] = member_obj
-        i["ticket_id"] = index
+        i["ticket_number"] = index
         install_obj = Install(**i)
 
         if create_node:
