@@ -1,11 +1,9 @@
 import os
-from datetime import datetime
 from unittest import mock
 
 from django.test import TestCase
 
 from meshapi.tasks import reset_dev_database, run_database_backup
-from meshdb.settings import MESHDB_ENVIRONMENT
 
 
 # Not intended to test the functionality of, say, dbbackup. More intended
