@@ -5,6 +5,9 @@ from drf_spectacular.utils import extend_schema
 from rest_framework import permissions
 from rest_framework.decorators import api_view, permission_classes
 
+from meshapi.permissions import HasMaintenanceModePermission
+from meshweb.middleware import MAINTENANCE_FILE
+
 
 # Home view
 @extend_schema(exclude=True)  # Don't show on docs page
@@ -37,4 +40,35 @@ def index(request: HttpRequest) -> HttpResponse:
 
 def maintenance(request):
     template = loader.get_template("meshweb/maintenance.html")
-    return HttpResponse(template.render({}, request))
+    context = {
+        "message": "Please check back later.",
+        "redirect": "",
+    }
+    return HttpResponse(template.render(context, request))
+
+
+# TODO (wdn): Can I make a "disable maintenance mode" button visible for admins?
+
+
+@api_view(["GET"])
+@permission_classes([HasMaintenanceModePermission])
+def enable_maintenance(request):
+    MAINTENANCE_FILE.touch()
+    template = loader.get_template("meshweb/maintenance.html")
+    context = {
+        "message": "Enabled maintenance mode.",
+        "redirect": "maintenance",
+    }
+    return HttpResponse(template.render(context, request))
+
+
+@api_view(["GET"])
+@permission_classes([HasMaintenanceModePermission])
+def disable_maintenance(request):
+    MAINTENANCE_FILE.unlink()
+    template = loader.get_template("meshweb/maintenance.html")
+    context = {
+        "message": "Disabled maintenance mode.",
+        "redirect": "main",
+    }
+    return HttpResponse(template.render(context, request))

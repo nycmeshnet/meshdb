@@ -1,5 +1,7 @@
+from pathlib import Path
 from django.shortcuts import reverse, redirect
-from django.conf import settings
+
+MAINTENANCE_FILE = Path("/tmp/meshdb_maintenance")
 
 
 class MaintenanceModeMiddleware:
@@ -9,7 +11,11 @@ class MaintenanceModeMiddleware:
     def __call__(self, request):
         path = request.META.get("PATH_INFO", "")
 
-        if settings.MAINTENANCE and path != reverse("maintenance"):
+        if MAINTENANCE_FILE.is_file() and path not in [
+            reverse("maintenance"),
+            reverse("enable-maintenance"),
+            reverse("disable-maintenance"),
+        ]:
             response = redirect(reverse("maintenance"))
             return response
 

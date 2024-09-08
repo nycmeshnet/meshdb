@@ -40,6 +40,10 @@ class HasPanoramaUpdatePermission(HasDjangoPermission):
     django_permission = "meshapi.update_panoramas"
 
 
+class HasMaintenanceModePermission(HasDjangoPermission):
+    django_permission = "meshapi.maintenance_mode"
+
+
 # Janky
 class LegacyMeshQueryPassword(permissions.BasePermission):
     def has_permission(self, request: Request, view: Any) -> bool:
