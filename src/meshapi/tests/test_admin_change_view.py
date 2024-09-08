@@ -1,5 +1,5 @@
 import datetime
-from typing import Dict
+from typing import Dict, Optional
 
 import bs4
 from django.contrib.auth.models import Group, User
@@ -55,8 +55,10 @@ class TestAdminChangeView(TestCase):
 
         self.node1 = Node(**sample_node)
         self.node1.save()
+        self.node1.buildings.add(self.building_1)
         self.node2 = Node(**sample_node)
         self.node2.save()
+        self.node2.buildings.add(self.building_1)
 
         self.device1 = Device(**sample_device)
         self.device1.node = self.node1
@@ -110,7 +112,14 @@ class TestAdminChangeView(TestCase):
         )
         return response
 
-    def _submit_form(self, route, form: bs4.Tag, code):
+    def _submit_form(
+        self,
+        route: str,
+        form: bs4.Tag,
+        code: int,
+        additional_form_data: Optional[Dict[str, str]] = None,
+        expect_failure=False,
+    ):
         inputs = form.find_all("input")
 
         form_data = {}
@@ -149,13 +158,22 @@ class TestAdminChangeView(TestCase):
         if "_export-item" in form_data:
             del form_data["_export-item"]
 
+        if additional_form_data:
+            for key, value in additional_form_data.items():
+                form_data[key] = value
+
         response = self.c.post(route, data=form_data)
         response_soup = bs4.BeautifulSoup(response.content.decode(), "html.parser")
         response_forms = response_soup.find_all("form")
-        self.assertEqual(
-            0,
+        assertion_func = self.assertEqual
+
+        if expect_failure:
+            assertion_func = self.assertGreater
+
+        assertion_func(
             len(response_soup.findAll(class_="errornote")),
-            f"Expected no errors on page, make sure editing works on {route}. Form contents: "
+            0,
+            f"Expected{'' if expect_failure else ' no'} errors on page, check editing on {route}. Form contents: "
             f"{response_forms[1].prettify() if len(response_forms) > 1 else 'None'}",
         )
         self.assertEqual(
@@ -211,6 +229,20 @@ class TestAdminChangeView(TestCase):
         response = self._call(change_url, 200)
         self._submit_form(change_url, bs4.BeautifulSoup(response.content.decode()).find(id="node_form"), 302)
 
+    def test_change_node_remove_building(self):
+        change_url = f"/admin/meshapi/node/{self.node1.id}/change/"
+        response = self._call(change_url, 200)
+        soup = bs4.BeautifulSoup(response.content.decode()).find(id="node_form")
+        fill_in_admin_form(
+            soup,
+            {
+                "id_Building_nodes-0-DELETE": "on",
+            },
+        )
+
+        # Deselecting all buildings for the node should result in a validation failure
+        self._submit_form(change_url, soup, 200, expect_failure=True)
+
     def test_add_new_node(self):
         change_url = "/admin/meshapi/node/add/"
         response = self._call(change_url, 200)
@@ -230,7 +262,16 @@ class TestAdminChangeView(TestCase):
                 "id_notes": "Test notes",
             },
         )
-        response = self._submit_form(change_url, form_soup, 302)
+
+        additional_form_data = {
+            "Building_nodes-TOTAL_FORMS": "1",
+            "Building_nodes-INITIAL_FORMS": "0",
+            "Building_nodes-0-id": "",
+            "Building_nodes-0-node": "",
+            "Building_nodes-0-building": str(self.building_1.id),
+        }
+
+        response = self._submit_form(change_url, form_soup, 302, additional_form_data)
         node_id = response.url.split("/")[-3]
         node = Node.objects.get(id=node_id)
 
@@ -244,6 +285,29 @@ class TestAdminChangeView(TestCase):
         self.assertEqual(node.install_date, datetime.date(2022, 2, 23))
         self.assertEqual(node.abandon_date, datetime.date(2022, 2, 23))
         self.assertEqual(node.notes, "Test notes")
+
+    def test_add_new_node_no_building(self):
+        change_url = "/admin/meshapi/node/add/"
+        response = self._call(change_url, 200)
+        form_soup = bs4.BeautifulSoup(response.content.decode()).find(id="node_form")
+        fill_in_admin_form(
+            form_soup,
+            {
+                "id_network_number": "123",
+                "id_status": "Active",
+                "id_type": "Standard",
+                "id_name": "Test Node",
+                "id_latitude": "0",
+                "id_longitude": "0",
+                "id_altitude": "0",
+                "id_install_date": "2022-02-23",
+                "id_abandon_date": "2022-02-23",
+                "id_notes": "Test notes",
+            },
+        )
+
+        # Not selecting a building for the new node should result in a validation failure
+        self._submit_form(change_url, form_soup, 200, expect_failure=True)
 
     def test_add_new_node_no_nn(self):
         change_url = "/admin/meshapi/node/add/"
@@ -263,7 +327,16 @@ class TestAdminChangeView(TestCase):
                 "id_notes": "Test notes",
             },
         )
-        response = self._submit_form(change_url, form_soup, 302)
+
+        additional_form_data = {
+            "Building_nodes-TOTAL_FORMS": "1",
+            "Building_nodes-INITIAL_FORMS": "0",
+            "Building_nodes-0-id": "",
+            "Building_nodes-0-node": "",
+            "Building_nodes-0-building": str(self.building_1.id),
+        }
+
+        response = self._submit_form(change_url, form_soup, 302, additional_form_data)
         node_id = response.url.split("/")[-3]
         node = Node.objects.get(id=node_id)
 
@@ -296,7 +369,16 @@ class TestAdminChangeView(TestCase):
                 "id_notes": "Test notes",
             },
         )
-        response = self._submit_form(change_url, form_soup, 302)
+
+        additional_form_data = {
+            "Building_nodes-TOTAL_FORMS": "1",
+            "Building_nodes-INITIAL_FORMS": "0",
+            "Building_nodes-0-id": "",
+            "Building_nodes-0-node": "",
+            "Building_nodes-0-building": str(self.building_1.id),
+        }
+
+        response = self._submit_form(change_url, form_soup, 302, additional_form_data)
         node_id = response.url.split("/")[-3]
         node = Node.objects.get(id=node_id)
 

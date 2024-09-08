@@ -5,6 +5,7 @@ from django.apps import apps
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator
 from django.db import models, transaction
+from django.db.models.manager import Manager
 
 from meshapi.util.django_pglocks import advisory_lock
 from meshapi.util.network_number import NETWORK_NUMBER_MAX, get_next_available_network_number
@@ -17,7 +18,7 @@ if TYPE_CHECKING:
 
 class Node(models.Model):
     # This should be added automatically by django-stubs, but for some reason it's not :(
-    buildings: models.QuerySet["Building"]
+    buildings: Manager["Building"]
 
     class Meta:
         ordering = ["network_number"]
