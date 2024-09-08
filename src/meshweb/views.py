@@ -38,9 +38,10 @@ def index(request: HttpRequest) -> HttpResponse:
     context = {"links": links}
     return HttpResponse(template.render(context, request))
 
+
 def maintenance(request: HttpRequest) -> HttpResponse:
     if not MAINTENANCE_FILE.is_file():
-        return redirect("main") 
+        return redirect("main")
     template = loader.get_template("meshweb/maintenance.html")
     context = {
         "message": "Please check back later.",
@@ -68,7 +69,7 @@ def enable_maintenance(request: HttpRequest) -> HttpResponse:
 @permission_classes([HasMaintenanceModePermission])
 def disable_maintenance(request: HttpRequest) -> HttpResponse:
     if not MAINTENANCE_FILE.is_file():
-        return redirect("main") 
+        return redirect("main")
     MAINTENANCE_FILE.unlink()
     template = loader.get_template("meshweb/maintenance.html")
     context = {

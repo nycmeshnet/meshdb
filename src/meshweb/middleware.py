@@ -1,14 +1,18 @@
 from pathlib import Path
-from django.shortcuts import reverse, redirect
+from typing import Callable
+
+from django.http import HttpRequest, HttpResponse
+from django.shortcuts import redirect
+from django.urls import reverse
 
 MAINTENANCE_FILE = Path("/tmp/meshdb_maintenance")
 
 
 class MaintenanceModeMiddleware:
-    def __init__(self, get_response):
+    def __init__(self, get_response: Callable) -> None:
         self.get_response = get_response
 
-    def __call__(self, request):
+    def __call__(self, request: HttpRequest) -> HttpResponse:
         path = request.META.get("PATH_INFO", "")
 
         if MAINTENANCE_FILE.is_file() and path not in [

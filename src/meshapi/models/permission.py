@@ -11,17 +11,12 @@ class Permission(models.Model):
         abstract = True
 
 
-def sync_custom_permissions():
-    content_type = ContentType.objects.get_for_model(
-                                        Permission,
-                                        for_concrete_model=False)
+def sync_custom_permissions() -> None:
+    content_type = ContentType.objects.get_for_model(Permission, for_concrete_model=False)
 
     permissions = [
         ("maintenance_mode", "Can toggle maintenance mode"),
     ]
 
     for codename, name in permissions:
-        DjangoPermission.objects.get_or_create(name=name,
-                                         codename=codename,
-                                         content_type=content_type)
-
+        DjangoPermission.objects.get_or_create(name=name, codename=codename, content_type=content_type)
