@@ -342,7 +342,7 @@ class MapDataLinkList(generics.ListAPIView):
                         if link.to_ap_id
                         else link.to_device.node.network_number
                     ),
-                    "status": self.get_serializer().convert_status_to_spreadsheet_status(link),
+                    "status": MapDataLinkSerializer().convert_status_to_spreadsheet_status(link),
                 }
             )
 
