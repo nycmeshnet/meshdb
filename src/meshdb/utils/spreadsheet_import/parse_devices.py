@@ -213,7 +213,7 @@ def load_access_points(spreadsheet_installs: List[SpreadsheetRow]):
                 altitude=row.altitude,
                 install_date=row.installDate,
                 abandon_date=row.abandonDate,
-                notes=f"Spreadsheet Notes:\n{row.notes}\n{row.notes2}\n{row.installNotes}\n"
+                notes=f"Automatically imported from Install #{row.id} in the spreadsheet\n\nSpreadsheet Notes:\n{row.notes}\n{row.notes2}\n{row.installNotes}\n"
                 f"Location: {row.apartment}\n"
                 f"Name: {row.nodeName}\n",
             )
