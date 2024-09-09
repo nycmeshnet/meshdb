@@ -1010,14 +1010,14 @@ class TestViewsGetUnauthenticated(TestCase):
                     "status": "planned",
                 },
                 {
-                    "from": 1934,
-                    "status": "60GHz",
-                    "to": 1706171,
-                },
-                {
                     "from": 1706171,
                     "status": "60GHz",
                     "to": 1150732,
+                },
+                {
+                    "from": 1934,
+                    "status": "60GHz",
+                    "to": 1706171,
                 },
             ],
         )

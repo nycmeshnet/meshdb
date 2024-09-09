@@ -326,7 +326,7 @@ class MapDataLinkList(generics.ListAPIView):
                     AccessPoint.objects.filter(device_ptr=OuterRef("to_device")).values("device_ptr_id")[:1]
                 )
             )
-            .order_by("from_device__node__network_number", "to_device__node__network_number")
+            .order_by("id")
         )
         ap_links = []
         for link in ap_links_queryset:
