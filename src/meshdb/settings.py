@@ -40,7 +40,10 @@ SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY")
 DEBUG = os.environ.get("DEBUG", "False") == "True"
 PROFILING_ENABLED = DEBUG and not os.environ.get("DISABLE_PROFILING", "False") == "True"
 
-MAINTENANCE = os.environ.get("MAINTENANCE", "False") == "True"
+
+FLAGS = {
+    'MAINTENANCE_MODE': []
+}
 
 USE_X_FORWARDED_HOST = True
 
@@ -123,6 +126,7 @@ INSTALLED_APPS = [
     "django_jsonform",
     "dbbackup",
     "import_export",
+    "flags",
 ]
 
 MIDDLEWARE = [
@@ -158,6 +162,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                "django.template.context_processors.request",
             ],
         },
     },

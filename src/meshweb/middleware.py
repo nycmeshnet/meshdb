@@ -4,8 +4,7 @@ from typing import Callable
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import redirect
 from django.urls import reverse
-
-MAINTENANCE_FILE = Path("/tmp/meshdb_maintenance")
+from flags.state import flag_enabled
 
 
 class MaintenanceModeMiddleware:
@@ -14,12 +13,10 @@ class MaintenanceModeMiddleware:
 
     def __call__(self, request: HttpRequest) -> HttpResponse:
         path = request.META.get("PATH_INFO", "")
-
-        if MAINTENANCE_FILE.is_file() and path not in [
+        if flag_enabled('MAINTENANCE_MODE') and path not in [
             reverse("maintenance"),
-            reverse("enable-maintenance"),
-            reverse("disable-maintenance"),
         ]:
+
             response = redirect(reverse("maintenance"))
             return response
 

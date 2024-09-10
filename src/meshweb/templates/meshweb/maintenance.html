@@ -19,9 +19,6 @@
       <img src="{% static 'meshweb/meshdb.png' %}" height="300px" style="margin: 30px 0"/>
       <h1><a href="{% url 'main' %}">MeshDB</a> is in Maintenance Mode.</h1>
       <h2>{{ message }}</h2>
-      {% if redirect != "" %}
-      <meta http-equiv="refresh" content="1;url={% url redirect %}" />
-      {% endif %}
     </div>
   </div>
 </body>
