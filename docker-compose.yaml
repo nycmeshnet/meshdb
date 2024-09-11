@@ -69,7 +69,7 @@ services:
     volumes:
       - static_files:/opt/meshdb/static
       - meshdb_logs:/var/log/meshdb
-    image: meshdb-dev #willnilges/meshdb:main
+    image: willnilges/meshdb:main
     build:
       context: .
       dockerfile: ./Dockerfile

@@ -1,8 +1,6 @@
-from pathlib import Path
 from typing import Callable
 
-from django.http import HttpRequest, HttpResponse
-from django.shortcuts import redirect
+from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
 from django.urls import reverse
 from flags.state import flag_enabled
 
@@ -13,13 +11,13 @@ class MaintenanceModeMiddleware:
 
     def __call__(self, request: HttpRequest) -> HttpResponse:
         path = request.META.get("PATH_INFO", "")
-        if flag_enabled('MAINTENANCE_MODE') and path not in [
+        if flag_enabled("MAINTENANCE_MODE") and path not in [
             reverse("maintenance"),
             reverse("maintenance-enable"),
             reverse("maintenance-disable"),
             reverse("rest_framework:login"),
         ]:
-            response = redirect(reverse("maintenance"))
+            response = HttpResponseRedirect(reverse("maintenance"))
             return response
 
         response = self.get_response(request)

@@ -41,9 +41,7 @@ DEBUG = os.environ.get("DEBUG", "False") == "True"
 PROFILING_ENABLED = DEBUG and not os.environ.get("DISABLE_PROFILING", "False") == "True"
 
 
-FLAGS = {
-    'MAINTENANCE_MODE': []
-}
+FLAGS = {"MAINTENANCE_MODE": []}
 
 USE_X_FORWARDED_HOST = True
 

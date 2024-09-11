@@ -1,6 +1,5 @@
 from django.conf import settings
-from django.http import HttpRequest, HttpResponse
-from django.shortcuts import redirect
+from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
 from django.template import loader
 from django.urls import reverse
 from drf_spectacular.utils import extend_schema
@@ -9,6 +8,7 @@ from rest_framework import permissions
 from rest_framework.decorators import api_view, permission_classes
 
 from meshapi.permissions import IsSuperUser
+
 
 # Home view
 @extend_schema(exclude=True)  # Don't show on docs page
@@ -38,9 +38,10 @@ def index(request: HttpRequest) -> HttpResponse:
     context = {"links": links}
     return HttpResponse(template.render(context, request))
 
+
 def maintenance(request: HttpRequest) -> HttpResponse:
-    if not flag_enabled('MAINTENANCE_MODE'):
-        return redirect(reverse("main"))
+    if not flag_enabled("MAINTENANCE_MODE"):
+        return HttpResponseRedirect(reverse("main"))
     template = loader.get_template("meshweb/maintenance.html")
     context = {
         "message": "Please check back later.",
@@ -48,7 +49,9 @@ def maintenance(request: HttpRequest) -> HttpResponse:
     }
     return HttpResponse(template.render(context, request))
 
+
 # TODO (wdn): Can I make a "disable maintenance mode" button visible for admins?
+
 
 @api_view(["POST"])
 @permission_classes([IsSuperUser])
@@ -66,7 +69,7 @@ def enable_maintenance(request: HttpRequest) -> HttpResponse:
 @permission_classes([IsSuperUser])
 def disable_maintenance(request: HttpRequest) -> HttpResponse:
     if not flag_enabled("MAINTENANCE_MODE"):
-        return redirect("main")
+        return HttpResponseRedirect("main")
     disable_flag("MAINTENANCE_MODE")
     template = loader.get_template("meshweb/maintenance.html")
     context = {

@@ -15,6 +15,7 @@ class IsSuperUser(BasePermission):
     def has_permission(self, request: Request, view: APIView) -> bool:
         return bool(request.user.is_superuser)
 
+
 class IsReadOnly(BasePermission):
     """
     The request is a read-only request. Add this to any View that needs to be accessible to
