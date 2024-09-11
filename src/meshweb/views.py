@@ -8,6 +8,8 @@ from flags.state import disable_flag, enable_flag, flag_enabled
 from rest_framework import permissions
 from rest_framework.decorators import api_view, permission_classes
 
+from meshapi.permissions import IsSuperUser
+
 # Home view
 @extend_schema(exclude=True)  # Don't show on docs page
 @api_view(["GET"])
@@ -49,6 +51,7 @@ def maintenance(request: HttpRequest) -> HttpResponse:
 # TODO (wdn): Can I make a "disable maintenance mode" button visible for admins?
 
 @api_view(["POST"])
+@permission_classes([IsSuperUser])
 def enable_maintenance(request: HttpRequest) -> HttpResponse:
     enable_flag("MAINTENANCE_MODE")
     template = loader.get_template("meshweb/maintenance.html")
@@ -60,6 +63,7 @@ def enable_maintenance(request: HttpRequest) -> HttpResponse:
 
 
 @api_view(["POST"])
+@permission_classes([IsSuperUser])
 def disable_maintenance(request: HttpRequest) -> HttpResponse:
     if not flag_enabled("MAINTENANCE_MODE"):
         return redirect("main")

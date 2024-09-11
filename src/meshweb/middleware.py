@@ -15,8 +15,10 @@ class MaintenanceModeMiddleware:
         path = request.META.get("PATH_INFO", "")
         if flag_enabled('MAINTENANCE_MODE') and path not in [
             reverse("maintenance"),
+            reverse("maintenance-enable"),
+            reverse("maintenance-disable"),
+            reverse("rest_framework:login"),
         ]:
-
             response = redirect(reverse("maintenance"))
             return response
 

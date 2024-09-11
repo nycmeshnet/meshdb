@@ -8,7 +8,12 @@ from rest_framework import permissions
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import BasePermission
 from rest_framework.request import Request
+from rest_framework.views import APIView
 
+
+class IsSuperUser(BasePermission):
+    def has_permission(self, request: Request, view: APIView) -> bool:
+        return bool(request.user.is_superuser)
 
 class IsReadOnly(BasePermission):
     """
@@ -17,14 +22,14 @@ class IsReadOnly(BasePermission):
         permission_classes = [permissions.DjangoModelPermissions | IsReadOnly]
     """
 
-    def has_permission(self, request: Request, view: Any) -> bool:
+    def has_permission(self, request: Request, view: APIView) -> bool:
         return bool(request.method in permissions.SAFE_METHODS)
 
 
 class HasDjangoPermission(BasePermission):
     django_permission: str | None = None
 
-    def has_permission(self, request: Request, view: Any) -> bool:
+    def has_permission(self, request: Request, view: APIView) -> bool:
         if not self.django_permission:
             raise NotImplementedError(
                 "You must subclass HasDjangoPermission and specify the django_permission attribute"

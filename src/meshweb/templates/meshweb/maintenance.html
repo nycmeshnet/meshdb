@@ -21,5 +21,8 @@
       <h2>{{ message }}</h2>
     </div>
   </div>
+  {% if redirect != "" %}
+      <meta http-equiv="refresh" content="1;url={% url redirect %}" />
+  {% endif %}
 </body>
 </html>
