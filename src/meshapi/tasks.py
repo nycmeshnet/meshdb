@@ -3,6 +3,7 @@ import os
 
 from celery.schedules import crontab
 from django.core import management
+from flags.state import disable_flag, enable_flag
 
 from meshapi.util.uisp_import.fetch_uisp import get_uisp_devices, get_uisp_links
 from meshapi.util.uisp_import.sync_handlers import (
@@ -50,8 +51,10 @@ def reset_dev_database() -> bool:
         return False
 
     try:
+        enable_flag("MAINTENANCE_MODE")
         management.call_command("dbrestore", "--noinput")
         management.call_command("scramble_members", "--noinput")
+        disable_flag("MAINTENANCE_MODE")
     except Exception as e:
         logging.exception(e)
         raise e
