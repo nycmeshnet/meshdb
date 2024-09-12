@@ -50,9 +50,6 @@ def maintenance(request: HttpRequest) -> HttpResponse:
     return HttpResponse(template.render(context, request))
 
 
-# TODO (wdn): Can I make a "disable maintenance mode" button visible for admins?
-
-
 @api_view(["POST"])
 @permission_classes([IsSuperUser])
 def enable_maintenance(request: HttpRequest) -> HttpResponse:
