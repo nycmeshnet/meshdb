@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 import logging
 import os
 from pathlib import Path
+from typing import Any, Dict
 
 from dotenv import load_dotenv
 
@@ -41,7 +42,7 @@ DEBUG = os.environ.get("DEBUG", "False") == "True"
 PROFILING_ENABLED = DEBUG and not os.environ.get("DISABLE_PROFILING", "False") == "True"
 
 
-FLAGS = {"MAINTENANCE_MODE": []}
+FLAGS: Dict[str, Any] = {"MAINTENANCE_MODE": []}
 
 USE_X_FORWARDED_HOST = True
 
