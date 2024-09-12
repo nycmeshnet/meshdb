@@ -4,6 +4,7 @@
     padding: 10px 10px 0 20px;
 }
 
+
 .header-logo {
     margin-right: 5px;
     margin-top: -5px;
@@ -39,11 +40,14 @@
     background: var(--body-bg);
     border: 1px solid var(--hairline-color);
     border-radius: 4px;
-    overflow: hidden;
     width: 40em !important;
     min-width: 300px;
     margin: 100px auto;
     height: auto;
+}
+
+.login #content {
+    width: 37em !important;
 }
 
 /* This is an override of the styles at admin/css/login.css in the admin site */
