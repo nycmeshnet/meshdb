@@ -166,3 +166,15 @@
 .gm-control-active:active > img:nth-child(3) {
     display:block;
 }
+
+.module caption {
+    border-radius: 5px 5px 0px 0px;
+}
+
+fieldset h2 {
+    border-radius: 5px 5px 0px 0px;
+}
+
+#nav-sidebar .module caption {
+    border-radius: 0px 0px 0px 0px;
+}
