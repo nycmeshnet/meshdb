@@ -47,6 +47,5 @@ class Command(BaseCommand):
                 or obj in ["user", "token", "tokenproxy", "celeryserialzerhook"]
                 or code == "assign_nn"
                 or code == "update_panoramas"
-                or code == "maintenance_mode"
             ):
                 admin.permissions.add(p)

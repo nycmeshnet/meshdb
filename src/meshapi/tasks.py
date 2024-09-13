@@ -17,16 +17,14 @@ from meshdb.settings import MESHDB_ENVIRONMENT
 
 
 @celery_app.task
-def run_database_backup() -> bool:
+def run_database_backup():
     # Don't run a backup unless it's prod1
     if MESHDB_ENVIRONMENT != "prod1":
-        logging.warning(f'Not running database backup. This environment is: "{MESHDB_ENVIRONMENT}"')
-        return False
+        raise EnvironmentError(f'Not running database backup. This environment is: "{MESHDB_ENVIRONMENT}"')
 
     logging.info(f'Running database backup task. This environment is "{MESHDB_ENVIRONMENT}"')
     if not os.environ.get("AWS_ACCESS_KEY_ID") or not os.environ.get("AWS_SECRET_ACCESS_KEY"):
-        logging.error("Could not run backup. Missing AWS credentials!")
-        return False
+        raise ValueError("Could not run backup. Missing AWS credentials!")
 
     try:
         management.call_command("dbbackup")
@@ -34,21 +32,17 @@ def run_database_backup() -> bool:
         logging.exception(e)
         raise e
 
-    return True
-
 
 @celery_app.task
-def reset_dev_database() -> bool:
+def reset_dev_database():
     # Only reset dev environments (very important!)
     if "dev" not in MESHDB_ENVIRONMENT:
-        logging.warning(f'Not resetting this database. This environment is: "{MESHDB_ENVIRONMENT}"')
-        return False
+        raise EnvironmentError(f'Not resetting this database. This environment is: "{MESHDB_ENVIRONMENT}"')
 
     logging.info(f'Running database reset task. This environment is: "{MESHDB_ENVIRONMENT}"')
 
     if not os.environ.get("AWS_ACCESS_KEY_ID") or not os.environ.get("AWS_SECRET_ACCESS_KEY"):
-        logging.error("Could not run database reset. Missing AWS credentials!")
-        return False
+        raise ValueError("Could not run database reset. Missing AWS credentials!")
 
     try:
         enable_flag("MAINTENANCE_MODE")
@@ -58,8 +52,6 @@ def reset_dev_database() -> bool:
     except Exception as e:
         logging.exception(e)
         raise e
-
-    return True
 
 
 @celery_app.task

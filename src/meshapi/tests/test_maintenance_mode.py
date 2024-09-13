@@ -5,7 +5,6 @@ from flags.state import disable_flag, enable_flag, flag_disabled, flag_enabled
 
 
 class TestMaintenanceMode(TestCase):
-    c = Client()
     admin_c = Client()
 
     def setUp(self):
@@ -16,21 +15,21 @@ class TestMaintenanceMode(TestCase):
 
     # Very basic sanity check
     def test_maintenance_mode(self):
-        response = self.c.get("/api/v1/")
+        response = self.client.get("/api/v1/")
         self.assertEqual(
             200,
             response.status_code,
             f"status code incorrect for /api/v1/. Should be 200, but got {response.status_code}",
         )
         enable_flag("MAINTENANCE_MODE")
-        response = self.c.get("/api/v1/")
+        response = self.client.get("/api/v1/")
         self.assertEqual(
             302,
             response.status_code,
             f"status code incorrect for /api/v1/. Should be 302, but got {response.status_code}",
         )
         disable_flag("MAINTENANCE_MODE")
-        response = self.c.get("/api/v1/")
+        response = self.client.get("/api/v1/")
         self.assertEqual(
             200,
             response.status_code,
@@ -40,7 +39,7 @@ class TestMaintenanceMode(TestCase):
     def test_maintenance_mode_redirect(self):
         route = "/maintenance/"
         expected_code = 302
-        response = self.c.get(route)
+        response = self.client.get(route)
         self.assertEqual(
             response.status_code,
             expected_code,
@@ -50,7 +49,7 @@ class TestMaintenanceMode(TestCase):
     def test_maintenance_mode_routes(self):
         route = "/maintenance/enable/"
         expected_code = 403
-        response = self.c.post(route)
+        response = self.client.post(route)
         self.assertEqual(
             response.status_code,
             expected_code,
@@ -70,7 +69,7 @@ class TestMaintenanceMode(TestCase):
 
         route = "/maintenance/disable/"
         expected_code = 403
-        response = self.c.post(route)
+        response = self.client.post(route)
         self.assertEqual(
             response.status_code,
             expected_code,
