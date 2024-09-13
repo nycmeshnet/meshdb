@@ -17,7 +17,7 @@ from meshdb.settings import MESHDB_ENVIRONMENT
 
 
 @celery_app.task
-def run_database_backup():
+def run_database_backup() -> None:
     # Don't run a backup unless it's prod1
     if MESHDB_ENVIRONMENT != "prod1":
         raise EnvironmentError(f'Not running database backup. This environment is: "{MESHDB_ENVIRONMENT}"')
@@ -34,7 +34,7 @@ def run_database_backup():
 
 
 @celery_app.task
-def reset_dev_database():
+def reset_dev_database() -> None:
     # Only reset dev environments (very important!)
     if "dev" not in MESHDB_ENVIRONMENT:
         raise EnvironmentError(f'Not resetting this database. This environment is: "{MESHDB_ENVIRONMENT}"')

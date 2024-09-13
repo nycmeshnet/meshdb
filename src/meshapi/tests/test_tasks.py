@@ -15,9 +15,7 @@ class TestRunDatabaseBackupTask(TestCase):
         os.environ["AWS_ACCESS_KEY_ID"] = "fake"
         os.environ["AWS_SECRET_ACCESS_KEY"] = "alsofake"
         run_database_backup()
-        mock_call_command_func.assert_has_calls(
-            [mock.call("dbbackup")]
-        )
+        mock_call_command_func.assert_has_calls([mock.call("dbbackup")])
 
     @mock.patch("django.core.management.call_command")
     @mock.patch("meshapi.tasks.MESHDB_ENVIRONMENT", "dev3")
@@ -34,6 +32,7 @@ class TestRunDatabaseBackupTask(TestCase):
         os.environ["AWS_SECRET_ACCESS_KEY"] = ""
         with self.assertRaises(ValueError):
             run_database_backup()
+
 
 class TestResetDevDatabaseTask(TestCase):
     @mock.patch("django.core.management.call_command")
