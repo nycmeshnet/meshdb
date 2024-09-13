@@ -75,10 +75,6 @@ class NodeSerializer(serializers.ModelSerializer, InstallsForeignKeyMixin):
 
 
 class NodeEditSerializer(NodeSerializer):
-    class Meta:
-        model = Node
-        fields = "__all__"
-
     network_number = serializers.IntegerField(
         required=False,
         allow_null=True,
