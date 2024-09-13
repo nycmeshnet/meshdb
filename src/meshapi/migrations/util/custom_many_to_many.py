@@ -2,6 +2,7 @@
 !!!!
 
 NB: This file is no longer used, but needs to be maintained for the sake of migrations not having issues
+Once these are re-consolidated, we can delete the entire file
 
 This file 100% copied from
 https://forum.djangoproject.com/t/add-ability-to-define-custom-column-names-in-the-table-created-by-the-manytomanyfield/25427/6
