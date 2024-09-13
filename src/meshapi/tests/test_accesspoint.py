@@ -29,7 +29,7 @@ class TestAccessPoint(TestCase):
         response = self.c.post(
             "/api/v1/accesspoints/",
             {
-                "node": self.node.id,
+                "node.id": self.node.id,
                 "status": Device.DeviceStatus.ACTIVE,
                 "latitude": 0,
                 "longitude": 0,
@@ -82,8 +82,8 @@ class TestAccessPoint(TestCase):
 
         response_obj = json.loads(response.content)
         self.assertEqual(response_obj["status"], "Active")
-        self.assertEqual(response_obj["network_number"], node.network_number)
-        self.assertEqual(response_obj["node"], str(node.id))
+        self.assertEqual(response_obj["node"]["network_number"], node.network_number)
+        self.assertEqual(response_obj["node"]["id"], str(node.id))
 
     def test_modify_latitude(self):
         accesspoint = AccessPoint(

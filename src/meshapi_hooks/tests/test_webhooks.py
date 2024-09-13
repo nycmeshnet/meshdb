@@ -229,7 +229,7 @@ class TestMeshAPIWebhooks(TransactionTestCase):
         assert flask_request["data"]["building"] == str(self.building_obj.id)
         assert flask_request["data"]["member"] == str(self.member_obj.id)
         assert flask_request["data"]["install_number"] == install_obj.install_number
-        assert flask_request["data"]["network_number"] is None
+        assert flask_request["data"]["node"] is None
 
         assert flask_request["hook"]["event"] == "install.created"
         assert flask_request["hook"]["target"] == "http://localhost:8091/webhook"

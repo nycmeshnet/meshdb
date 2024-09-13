@@ -11,6 +11,9 @@ class InstallReferenceSerializer(serializers.ModelSerializer):
         model = Install
         fields = ("id", "install_number")
 
+    def to_internal_value(self, data):
+        return Install.objects.get(pk=data["id"])
+
 
 class NodeReferenceSerializer(serializers.ModelSerializer):
     """Serialize a Node object with just the bare minimum fields to reference it from another serializer"""
@@ -19,16 +22,19 @@ class NodeReferenceSerializer(serializers.ModelSerializer):
         model = Node
         fields = ("id", "network_number")
 
+    def to_internal_value(self, data):
+        return Node.objects.get(pk=data["id"])
+
 
 class BuildingSerializer(serializers.ModelSerializer):
     class Meta:
         model = Building
         fields = "__all__"
 
-    installs = InstallReferenceSerializer(many=True)
-    nodes = NodeReferenceSerializer(many=True)
+    installs = InstallReferenceSerializer(many=True, required=False)
+    nodes = NodeReferenceSerializer(many=True, required=False)
 
-    primary_node = NodeReferenceSerializer()
+    primary_node = NodeReferenceSerializer(required=False)
 
 
 class MemberSerializer(serializers.ModelSerializer):
@@ -39,7 +45,7 @@ class MemberSerializer(serializers.ModelSerializer):
     all_email_addresses: serializers.ReadOnlyField = serializers.ReadOnlyField()
     all_phone_numbers: serializers.ReadOnlyField = serializers.ReadOnlyField()
 
-    installs = InstallReferenceSerializer(many=True)
+    installs = InstallReferenceSerializer(many=True, required=False)
 
 
 class InstallSerializer(serializers.ModelSerializer):
@@ -47,7 +53,7 @@ class InstallSerializer(serializers.ModelSerializer):
         model = Install
         fields = "__all__"
 
-    node = NodeReferenceSerializer()
+    node = NodeReferenceSerializer(required=False)
     install_number = serializers.IntegerField(read_only=True)
 
 
@@ -69,7 +75,7 @@ class NodeSerializer(serializers.ModelSerializer):
 
     buildings: serializers.PrimaryKeyRelatedField = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
     devices: serializers.PrimaryKeyRelatedField = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
-    installs = InstallReferenceSerializer(many=True)
+    installs = InstallReferenceSerializer(many=True, required=False)
 
 
 class NodeEditSerializer(NodeSerializer):
@@ -97,7 +103,7 @@ class DeviceSerializer(serializers.ModelSerializer):
         model = Device
         fields = "__all__"
 
-    node = NodeReferenceSerializer()
+    node = NodeReferenceSerializer(required=True)
 
     latitude: serializers.ReadOnlyField = serializers.ReadOnlyField(
         help_text="Approximate Device latitude in decimal degrees "
@@ -121,7 +127,7 @@ class SectorSerializer(serializers.ModelSerializer):
         model = Sector
         fields = "__all__"
 
-    node = NodeReferenceSerializer()
+    node = NodeReferenceSerializer(required=True)
 
     latitude: serializers.ReadOnlyField = serializers.ReadOnlyField(
         help_text="Approximate Device latitude in decimal degrees "
@@ -145,7 +151,7 @@ class AccessPointSerializer(serializers.ModelSerializer):
         model = AccessPoint
         fields = "__all__"
 
-    node = NodeReferenceSerializer()
+    node = NodeReferenceSerializer(required=True)
 
     links_from: serializers.PrimaryKeyRelatedField = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
     links_to: serializers.PrimaryKeyRelatedField = serializers.PrimaryKeyRelatedField(many=True, read_only=True)

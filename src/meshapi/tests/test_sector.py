@@ -29,7 +29,7 @@ class TestSector(TestCase):
         response = self.c.post(
             "/api/v1/sectors/",
             {
-                "node": self.node.id,
+                "node.id": self.node.id,
                 "status": Device.DeviceStatus.ACTIVE,
                 "azimuth": 0,
                 "width": 120,
@@ -87,4 +87,4 @@ class TestSector(TestCase):
 
         response_obj = json.loads(response.content)
         self.assertEqual(response_obj["status"], "Active")
-        self.assertEqual(response_obj["network_number"], node.network_number)
+        self.assertEqual(response_obj["node"]["network_number"], node.network_number)

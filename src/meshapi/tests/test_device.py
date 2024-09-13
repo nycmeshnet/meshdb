@@ -28,7 +28,7 @@ class TestDevice(TestCase):
             "/api/v1/devices/",
             {
                 "status": Device.DeviceStatus.INACTIVE,
-                "node": str(self.node1.id),
+                "node.id": str(self.node1.id),
             },
         )
         code = 201
