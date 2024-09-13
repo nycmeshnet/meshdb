@@ -11,7 +11,7 @@ class InstallReferenceSerializer(serializers.ModelSerializer):
         model = Install
         fields = ("id", "install_number")
 
-    def to_internal_value(self, data):
+    def to_internal_value(self, data: dict) -> Install:
         return Install.objects.get(pk=data["id"])
 
 
@@ -22,7 +22,7 @@ class NodeReferenceSerializer(serializers.ModelSerializer):
         model = Node
         fields = ("id", "network_number")
 
-    def to_internal_value(self, data):
+    def to_internal_value(self, data: dict) -> Node:
         return Node.objects.get(pk=data["id"])
 
 
