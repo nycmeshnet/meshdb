@@ -1,9 +1,9 @@
 import uuid
-from typing import Any, Optional, Sequence
+from typing import Any, Optional
 
 from django.core.exceptions import ValidationError
 from django.db import models
-from django.db.models import Field, IntegerField
+from django.db.models import IntegerField
 
 from .building import Building
 from .member import Member

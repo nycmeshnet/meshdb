@@ -1,7 +1,6 @@
 import uuid
 from typing import TYPE_CHECKING, Any
 
-from django.apps import apps
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator
 from django.db import models, transaction

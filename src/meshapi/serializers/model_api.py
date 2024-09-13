@@ -1,6 +1,3 @@
-from typing import List, Optional, TypedDict
-from uuid import UUID
-
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
 

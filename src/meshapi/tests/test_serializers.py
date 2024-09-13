@@ -2,7 +2,7 @@ import datetime
 import json
 
 from django.contrib.auth.models import User
-from django.test import Client, TestCase
+from django.test import TestCase
 
 from meshapi.models import LOS, AccessPoint, Building, Device, Install, Link, Member, Node, Sector
 from meshapi.tests.sample_data import sample_building, sample_device, sample_install, sample_member, sample_node

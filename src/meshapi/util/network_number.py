@@ -2,7 +2,6 @@ import uuid
 from typing import Optional
 
 from django.apps import apps
-from django.core.exceptions import ValidationError
 
 NETWORK_NUMBER_MIN = 101
 NETWORK_NUMBER_MAX = 8192
@@ -44,9 +43,7 @@ def validate_network_number_unused_and_claim_install_if_needed(
     if pre_existing_node_with_nn is not None and pre_existing_node_with_nn.id != pre_existing_node_id:
         raise ValueError("Network number already in use by another node")
 
-    nn_donor_install: Install = (
-        Install.objects.select_for_update().filter(install_number=network_number_candidate).first()
-    )
+    nn_donor_install = Install.objects.select_for_update().filter(install_number=network_number_candidate).first()
     if nn_donor_install:
         if pre_existing_node_id and nn_donor_install.node_id == pre_existing_node_id:
             # If the install is already connected to the node that is going to receive the network number,
