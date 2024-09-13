@@ -7,7 +7,7 @@ from flags.state import disable_flag, enable_flag, flag_enabled
 from rest_framework import permissions
 from rest_framework.decorators import api_view, permission_classes
 
-from meshapi.permissions import IsSuperUser
+from meshapi.permissions import HasMaintenanceModePermission
 
 
 # Home view
@@ -51,7 +51,7 @@ def maintenance(request: HttpRequest) -> HttpResponse:
 
 
 @api_view(["POST"])
-@permission_classes([IsSuperUser])
+@permission_classes([HasMaintenanceModePermission])
 def enable_maintenance(request: HttpRequest) -> HttpResponse:
     enable_flag("MAINTENANCE_MODE")
     template = loader.get_template("meshweb/maintenance.html")
@@ -63,7 +63,7 @@ def enable_maintenance(request: HttpRequest) -> HttpResponse:
 
 
 @api_view(["POST"])
-@permission_classes([IsSuperUser])
+@permission_classes([HasMaintenanceModePermission])
 def disable_maintenance(request: HttpRequest) -> HttpResponse:
     if not flag_enabled("MAINTENANCE_MODE"):
         return HttpResponseRedirect("main")
