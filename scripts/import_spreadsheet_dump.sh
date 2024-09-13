@@ -43,8 +43,8 @@ do
 done
 
 # Fix the auto numbering sequence for installs
-max_install_number=$(($(${DOCKER_PG_COMMAND} -c "SELECT MAX(install_number) FROM ${table_name}" -At) + 1))
-${DOCKER_PG_COMMAND} -c "ALTER SEQUENCE ${table_name}_install_number_seq RESTART WITH ${max_install_number}"
+max_install_number=$(($(${DOCKER_PG_COMMAND} -c "SELECT MAX(install_number) FROM meshapi_install" -At) + 1))
+${DOCKER_PG_COMMAND} -c "ALTER SEQUENCE meshapi_install_install_number_seq RESTART WITH ${max_install_number}"
 
 
 
