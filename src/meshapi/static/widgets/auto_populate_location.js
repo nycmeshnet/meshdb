@@ -24,7 +24,7 @@ $(document).ready(function($) {
                 $('#location_autocomplete_button').addClass("disabled-button")
             }
         }
-    })
+    });
 
     function buildAddressQuery(){
         const streetAddr = $('#id_street_address').val();
