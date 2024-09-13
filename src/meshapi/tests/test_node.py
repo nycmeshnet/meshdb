@@ -103,7 +103,7 @@ class TestNodeModel(TestCase):
         active_node_data["status"] = Node.NodeStatus.ACTIVE
         node = Node(**active_node_data, network_number=45)
 
-        with pytest.raises(ValidationError):
+        with pytest.raises(ValueError):
             node.save()
 
         victim_install.refresh_from_db()
@@ -160,7 +160,7 @@ class TestNodeModel(TestCase):
         active_node_data["status"] = Node.NodeStatus.ACTIVE
         active_node_data["notes"] = "Test node"
         node2 = Node(**active_node_data, network_number=45)
-        with pytest.raises(ValidationError):
+        with pytest.raises(ValueError):
             node2.save()
 
         node45 = Node.objects.get(network_number=45)
@@ -581,3 +581,37 @@ class TestNodeAPI(TestCase):
         )
 
         self.assertEqual(0, len(Node.objects.filter(network_number=network_num)))
+
+    def test_nn_valid_low_install_number_unused_nn_via_node_save(self):
+        building = Building(**sample_building)
+        building.save()
+
+        member = Member(**sample_member)
+        member.save()
+
+        install_obj_low = Install(
+            **sample_install,
+            install_number=45,
+            building=building,
+            member=member,
+        )
+        install_obj_low.save()
+
+        node_object = Node(
+            status=Node.NodeStatus.PLANNED,
+            type=Node.NodeType.STANDARD,
+            latitude=0,
+            longitude=0,
+        )
+        node_object.save()
+
+        install_obj_low.node = node_object
+        install_obj_low.save()
+
+        node_object.network_number = install_obj_low.install_number
+        node_object.save()
+
+        install_obj_low.refresh_from_db()
+        self.assertEqual(install_obj_low.node, node_object)
+        self.assertEqual(node_object.status, Node.NodeStatus.PLANNED)  # unchanged
+        self.assertEqual(install_obj_low.status, Install.InstallStatus.ACTIVE)  # unchanged

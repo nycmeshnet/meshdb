@@ -408,6 +408,7 @@ class TestNN(TestCase):
         self.install_obj_low.refresh_from_db()
         self.assertEqual(self.install_obj_low.node, node_object)
         self.assertEqual(node_object.status, Node.NodeStatus.PLANNED)
+        self.assertEqual(self.install_obj_low.status, Install.InstallStatus.PENDING)
 
     def test_nn_valid_low_install_number_used_nn(self):
         # Check that install numbers that are valid network numbers (i.e. >10 <8192) are NOT used
