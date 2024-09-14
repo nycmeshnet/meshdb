@@ -79,15 +79,18 @@ class DeviceSerializer(NestedKeyRelatedMixIn, serializers.ModelSerializer):
             "node": {"additional_keys": ("network_number",)},
         }
 
-    latitude: serializers.ReadOnlyField = serializers.ReadOnlyField(
+    latitude = serializers.FloatField(
+        read_only=True,
         help_text="Approximate Device latitude in decimal degrees "
         "(this is read through from the attached Node object, not stored separately)",
     )
-    longitude: serializers.ReadOnlyField = serializers.ReadOnlyField(
+    longitude = serializers.FloatField(
+        read_only=True,
         help_text="Approximate Device longitude in decimal degrees "
         "(this is read through from the attached Node object, not stored separately)",
     )
-    altitude: serializers.ReadOnlyField = serializers.ReadOnlyField(
+    altitude = serializers.FloatField(
+        read_only=True,
         help_text='Approximate Device altitude in "absolute" meters above mean sea level '
         "(this is read through from the attached Node object, not stored separately)",
     )
@@ -104,15 +107,18 @@ class SectorSerializer(NestedKeyRelatedMixIn, serializers.ModelSerializer):
             "node": {"additional_keys": ("network_number",)},
         }
 
-    latitude: serializers.ReadOnlyField = serializers.ReadOnlyField(
+    latitude = serializers.FloatField(
+        read_only=True,
         help_text="Approximate Device latitude in decimal degrees "
         "(this is read through from the attached Node object, not stored separately)",
     )
-    longitude: serializers.ReadOnlyField = serializers.ReadOnlyField(
+    longitude = serializers.FloatField(
+        read_only=True,
         help_text="Approximate Device longitude in decimal degrees "
         "(this is read through from the attached Node object, not stored separately)",
     )
-    altitude: serializers.ReadOnlyField = serializers.ReadOnlyField(
+    altitude = serializers.FloatField(
+        read_only=True,
         help_text='Approximate Device altitude in "absolute" meters above mean sea level '
         "(this is read through from the attached Node object, not stored separately)",
     )

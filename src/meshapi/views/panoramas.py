@@ -5,8 +5,8 @@ from pathlib import Path
 from typing import Union
 
 import requests
-from drf_spectacular.utils import extend_schema, extend_schema_view
-from rest_framework import status
+from drf_spectacular.utils import OpenApiResponse, extend_schema, extend_schema_view, inline_serializer
+from rest_framework import serializers, status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -17,6 +17,7 @@ from meshapi.models.node import Node
 from meshapi.permissions import HasPanoramaUpdatePermission
 from meshapi.util.constants import DEFAULT_EXTERNAL_API_TIMEOUT_SECONDS
 from meshapi.util.django_pglocks import advisory_lock
+from meshapi.views import form_err_response_schema
 
 # Config for gathering/generating panorama links
 PANO_REPO_OWNER = "nycmeshnet"
@@ -117,7 +118,27 @@ class GitHubError(Exception):
 
 
 # View called to make MeshDB refresh the panoramas.
-@extend_schema_view(post=extend_schema(tags=["Panoramas"]))
+@extend_schema_view(
+    post=extend_schema(
+        tags=["Panoramas"],
+        responses={
+            "200": OpenApiResponse(
+                inline_serializer(
+                    "UpdatePanoramasSuccessResponse",
+                    fields={
+                        "detail": serializers.CharField(),
+                        "saved": serializers.IntegerField(),
+                        "warnings": serializers.IntegerField(),
+                        "warn_install_nums": serializers.ListField(child=serializers.CharField()),
+                    },
+                ),
+                description="Request received, an install has been created (along with member and "
+                "building objects if necessary).",
+            ),
+            "500": OpenApiResponse(form_err_response_schema, description="Unexpected internal error"),
+        },
+    )
+)
 @api_view(["POST"])
 @permission_classes([HasPanoramaUpdatePermission])
 def update_panoramas(request: Request) -> Response:

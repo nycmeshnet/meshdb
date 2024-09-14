@@ -402,7 +402,7 @@ class GeocodeSerializer(DataclassSerializer):
         responses={
             "201": OpenApiResponse(
                 inline_serializer(
-                    "JoinFormSuccessResponse",
+                    "GeocodeSuccessResponse",
                     fields={
                         "BIN": serializers.IntegerField(),
                         "latitude": serializers.FloatField(),

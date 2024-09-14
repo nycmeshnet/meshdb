@@ -41,9 +41,9 @@ class Install(models.Model):
         null=True,
         related_name="installs",
         on_delete=models.PROTECT,
-        help_text="The node this install is associated with, the integer value of this field is "
-        "also the network number, which corresponds to the static IP address and OSPF ID of the "
-        "router this install utilizes, the DHCP range it receives an address from, etc.",
+        help_text="The node this install is associated with. This node's network_number field "
+        "corresponds to the static IP address and OSPF ID of the router this install utilizes, "
+        "the DHCP range it receives an address from, etc.",
     )
 
     # Summary status of install
