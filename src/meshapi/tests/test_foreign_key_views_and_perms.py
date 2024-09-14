@@ -51,8 +51,8 @@ class TestViewsGetLimitedPermissions(TestCase):
 
         response = self.c.get(f"/api/v1/installs/{self.install.id}/").json()
         self.assertEqual(response["unit"], "3")
-        self.assertEqual(response["member"], str(self.member.id))
-        self.assertEqual(response["building"], str(self.building.id))
+        self.assertEqual(response["member"]["id"], str(self.member.id))
+        self.assertEqual(response["building"]["id"], str(self.building.id))
 
         self.c.login(username="limited_member", password="password")
 
@@ -101,8 +101,8 @@ class TestViewsGetAdmin(TestCase):
 
         response = self.c.get(f"/api/v1/installs/{self.install.id}/").json()
         self.assertEqual(response["unit"], "3")
-        self.assertEqual(response["member"], str(self.member.id))
-        self.assertEqual(response["building"], str(self.building.id))
+        self.assertEqual(response["member"]["id"], str(self.member.id))
+        self.assertEqual(response["building"]["id"], str(self.building.id))
 
     def test_views_get_member(self):
         self.c.login(username="admin", password="admin_password")
@@ -139,11 +139,15 @@ class TestViewsPutAdmin(TestCase):
         if inst["abandon_date"] == "":
             inst["abandon_date"] = None
 
-        inst["building"] = str(self.building.id)
-        inst["member"] = str(self.member.id)
+        inst["building"] = {"id": str(self.building.id)}
+        inst["member"] = {"id": str(self.member.id)}
         inst["install_number"] = 2001
 
-        response = self.c.post("/api/v1/installs/", inst)
+        response = self.c.post(
+            "/api/v1/installs/",
+            inst,
+            content_type="application/json",
+        )
         self.assertEqual(response.status_code, 201)
 
         install = Install.objects.get(install_number=response.json()["install_number"])
@@ -160,11 +164,15 @@ class TestViewsPutAdmin(TestCase):
         if inst["abandon_date"] == "":
             inst["abandon_date"] = None
 
-        inst["building"] = self.building.id
+        inst["building"] = {"id": str(self.building.id)}
         inst["member"] = sample_member
         inst["install_number"] = 2001
 
-        response = self.c.post("/api/v1/installs/", inst)
+        response = self.c.post(
+            "/api/v1/installs/",
+            inst,
+            content_type="application/json",
+        )
         self.assertEqual(response.status_code, 400)
 
     def test_views_put_install_with_nested_data_not_allowed(self):
@@ -175,7 +183,7 @@ class TestViewsPutAdmin(TestCase):
         if inst["abandon_date"] == "":
             inst["abandon_date"] = None
 
-        inst["building"] = str(self.building.id)
+        inst["building"] = {"id": str(self.building.id)}
         inst["member"] = sample_member
         inst["install_number"] = 2000
 

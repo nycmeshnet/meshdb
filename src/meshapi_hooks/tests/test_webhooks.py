@@ -226,8 +226,8 @@ class TestMeshAPIWebhooks(TransactionTestCase):
             if key not in ["building", "member"]:
                 assert flask_request["data"][key] == value
 
-        assert flask_request["data"]["building"] == str(self.building_obj.id)
-        assert flask_request["data"]["member"] == str(self.member_obj.id)
+        assert flask_request["data"]["building"]["id"] == str(self.building_obj.id)
+        assert flask_request["data"]["member"]["id"] == str(self.member_obj.id)
         assert flask_request["data"]["install_number"] == install_obj.install_number
         assert flask_request["data"]["node"] is None
 

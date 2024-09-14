@@ -37,11 +37,12 @@ class TestLOS(TestCase):
         response = self.c.post(
             "/api/v1/loses/",
             {
-                "from_building": self.building1.id,
-                "to_building": self.building2.id,
+                "from_building": {"id": str(self.building1.id)},
+                "to_building": {"id": str(self.building2.id)},
                 "source": "Human Annotated",
                 "analysis_date": "2024-07-24",
             },
+            content_type="application/json",
         )
         code = 201
         self.assertEqual(
@@ -54,11 +55,12 @@ class TestLOS(TestCase):
         response = self.c.post(
             "/api/v1/loses/",
             {
-                "from_building": "",
-                "to_building": self.building2.id,
+                "from_building": {"id": ""},
+                "to_building": {"id": str(self.building2.id)},
                 "source": "Human Annotated",
                 "analysis_date": "2024-07-24",
             },
+            content_type="application/json",
         )
         code = 400
         self.assertEqual(
@@ -87,8 +89,8 @@ class TestLOS(TestCase):
 
         response_obj = json.loads(response.content)
         self.assertEqual(response_obj["source"], "Human Annotated")
-        self.assertEqual(response_obj["from_building"], str(self.building1.id))
-        self.assertEqual(response_obj["to_building"], str(self.building2.id))
+        self.assertEqual(response_obj["from_building"]["id"], str(self.building1.id))
+        self.assertEqual(response_obj["to_building"]["id"], str(self.building2.id))
         self.assertEqual(response_obj["analysis_date"], self.today.isoformat())
 
     def test_string_name(self):

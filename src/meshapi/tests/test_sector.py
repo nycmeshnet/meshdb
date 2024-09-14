@@ -29,12 +29,13 @@ class TestSector(TestCase):
         response = self.c.post(
             "/api/v1/sectors/",
             {
-                "node.id": self.node.id,
+                "node": {"id": str(self.node.id)},
                 "status": Device.DeviceStatus.ACTIVE,
                 "azimuth": 0,
                 "width": 120,
                 "radius": 0.3,
             },
+            content_type="application/json",
         )
         code = 201
         self.assertEqual(
@@ -48,13 +49,14 @@ class TestSector(TestCase):
             "/api/v1/sectors/",
             {
                 "name": "Vernon",
-                "node": self.node.id,
+                "node": {"id": str(self.node.id)},
                 "latitude": 0,
                 "longitude": 0,
                 "azimuth": 0,
                 "width": 120,
                 "radius": 0.3,
             },
+            content_type="application/json",
         )
         code = 400
         self.assertEqual(

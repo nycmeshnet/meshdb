@@ -28,8 +28,9 @@ class TestDevice(TestCase):
             "/api/v1/devices/",
             {
                 "status": Device.DeviceStatus.INACTIVE,
-                "node.id": str(self.node1.id),
+                "node": {"id": str(self.node1.id)},
             },
+            content_type="application/json",
         )
         code = 201
         self.assertEqual(
@@ -45,6 +46,7 @@ class TestDevice(TestCase):
                 "status": Device.DeviceStatus.INACTIVE,
                 # Missing node
             },
+            content_type="application/json",
         )
         code = 400
         self.assertEqual(
@@ -57,9 +59,10 @@ class TestDevice(TestCase):
         response = self.c.post(
             "/api/v1/devices/",
             {
-                "node": str(self.node1.id),
+                "node": {"id": str(self.node1.id)},
                 # Missing status
             },
+            content_type="application/json",
         )
         code = 400
         self.assertEqual(

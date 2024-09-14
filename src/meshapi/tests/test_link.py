@@ -41,10 +41,11 @@ class TestLink(TestCase):
         response = self.c.post(
             "/api/v1/links/",
             {
-                "from_device": self.device1.id,
-                "to_device": self.device2.id,
+                "from_device": {"id": str(self.device1.id)},
+                "to_device": {"id": str(self.device2.id)},
                 "status": "Active",
             },
+            content_type="application/json",
         )
         code = 201
         self.assertEqual(
@@ -61,6 +62,7 @@ class TestLink(TestCase):
                 "to_building": self.device2.id,
                 "status": "Active",
             },
+            content_type="application/json",
         )
         code = 400
         self.assertEqual(
@@ -88,8 +90,8 @@ class TestLink(TestCase):
 
         response_obj = json.loads(response.content)
         self.assertEqual(response_obj["status"], "Active")
-        self.assertEqual(response_obj["from_device"], str(self.device1.id))
-        self.assertEqual(response_obj["to_device"], str(self.device2.id))
+        self.assertEqual(response_obj["from_device"]["id"], str(self.device1.id))
+        self.assertEqual(response_obj["to_device"]["id"], str(self.device2.id))
 
     def test_link_last_functioning_date_estimate(self):
         active_link = Link(

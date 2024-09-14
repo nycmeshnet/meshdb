@@ -331,6 +331,7 @@ class TestNodeAPI(TestCase):
                 "longitude": 0,
                 "status": "Active",
             },
+            content_type="application/json",
         )
         code = 201
         self.assertEqual(
@@ -371,6 +372,7 @@ class TestNodeAPI(TestCase):
                 "longitude": 0,
                 "status": "Active",
             },
+            content_type="application/json",
         )
         code = 201
         self.assertEqual(
@@ -388,6 +390,7 @@ class TestNodeAPI(TestCase):
                 "longitude": 0,
                 "status": "Active",
             },
+            content_type="application/json",
         )
         code = 201
         self.assertEqual(
@@ -407,6 +410,7 @@ class TestNodeAPI(TestCase):
                 "longitude": 0,
                 # Missing status
             },
+            content_type="application/json",
         )
         code = 400
         self.assertEqual(
@@ -424,6 +428,7 @@ class TestNodeAPI(TestCase):
                 "longitude": 0,
                 "status": "Active",
             },
+            content_type="application/json",
         )
         code = 400
         self.assertEqual(

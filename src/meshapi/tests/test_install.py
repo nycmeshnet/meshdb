@@ -139,9 +139,10 @@ class TestInstallAPI(TestCase):
             {
                 **self.sample_install_copy,
                 "install_number": 123,
-                "member": str(self.member.id),
-                "building": str(self.building_1.id),
+                "member": {"id": str(self.member.id)},
+                "building": {"id": str(self.building_1.id)},
             },
+            content_type="application/json",
         )
         code = 201
         self.assertEqual(
@@ -157,8 +158,8 @@ class TestInstallAPI(TestCase):
             {
                 **self.sample_install_copy,
                 "install_number": None,
-                "member": str(self.member.id),
-                "building": str(self.building_1.id),
+                "member": {"id": str(self.member.id)},
+                "building": {"id": str(self.building_1.id)},
             },
             content_type="application/json",
         )
@@ -175,9 +176,10 @@ class TestInstallAPI(TestCase):
             "/api/v1/installs/",
             {
                 **self.sample_install_copy,
-                "member": str(self.member.id),
-                "building": str(self.building_1.id),
+                "member": {"id": str(self.member.id)},
+                "building": {"id": str(self.building_1.id)},
             },
+            content_type="application/json",
         )
 
         code = 201
@@ -194,9 +196,10 @@ class TestInstallAPI(TestCase):
             "/api/v1/installs/",
             {
                 **self.sample_install_copy,
-                "member": str(self.member.id),
+                "member": {"id": str(self.member.id)},
                 # Missing building
             },
+            content_type="application/json",
         )
         code = 400
         self.assertEqual(
@@ -211,9 +214,10 @@ class TestInstallAPI(TestCase):
             {
                 **self.sample_install_copy,
                 "install_number": 1,
-                "member": str(self.member.id),
-                "building": str(self.building_1.id),
+                "member": {"id": str(self.member.id)},
+                "building": {"id": str(self.building_1.id)},
             },
+            content_type="application/json",
         )
         code = 201
         self.assertEqual(
@@ -313,7 +317,7 @@ class TestInstallAPI(TestCase):
 
         response = self.client.patch(
             f"/api/v1/installs/{self.install28.id}/",
-            {"network_number": None},
+            {"node": None},
             content_type="application/json",
         )
 
@@ -333,8 +337,8 @@ class TestInstallAPI(TestCase):
             f"/api/v1/installs/{self.install28.id}/",
             {
                 **self.sample_install_copy,
-                "member": str(self.member.id),
-                "building": str(self.building_1.id),
+                "member": {"id": str(self.member.id)},
+                "building": {"id": str(self.building_1.id)},
             },
             content_type="application/json",
         )

@@ -29,11 +29,12 @@ class TestAccessPoint(TestCase):
         response = self.c.post(
             "/api/v1/accesspoints/",
             {
-                "node.id": self.node.id,
+                "node": {"id": str(self.node.id)},
                 "status": Device.DeviceStatus.ACTIVE,
                 "latitude": 0,
                 "longitude": 0,
             },
+            content_type="application/json",
         )
         code = 201
         self.assertEqual(
@@ -47,10 +48,11 @@ class TestAccessPoint(TestCase):
             "/api/v1/accesspoints/",
             {
                 "name": "Vernon",
-                "node": self.node.id,
+                "node": {"id": str(self.node.id)},
                 "latitude": 0,
                 "longitude": 0,
             },
+            content_type="application/json",
         )
         code = 400
         self.assertEqual(
