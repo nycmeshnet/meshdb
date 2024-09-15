@@ -46,6 +46,8 @@ spec:
                 secretKeyRef:
                   name: meshdb-secrets
                   key: pgadmin-default-password
+            - name: PGADMIN_CONFIG_ENHANCED_COOKIE_PROTECTION
+              value: "False"
           {{ if eq .Values.pgadmin.liveness_probe "true" }}
           livenessProbe:
            exec:
