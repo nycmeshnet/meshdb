@@ -65,7 +65,6 @@ jobs:
         --set adminmap.base_url="${{ vars.ADMIN_MAP_BASE_URL }}" \
         --set map.base_url="${{ vars.MAP_BASE_URL }}" \
         --set meshweb.los_url="${{ vars.LOS_URL }}" \
-        --set meshweb.pg_admin_url="${{ vars.PG_ADMIN_URL }}" \
         --set meshweb.forms_url="${{ vars.FORMS_URL }}" \
         --set meshdb.site_base_url="${{ vars.SITE_BASE_URL }}" \
         --set meshweb.slack_webhook="${{ secrets.SLACK_ADMIN_NOTIFICATIONS_WEBHOOK_URL }}" \
