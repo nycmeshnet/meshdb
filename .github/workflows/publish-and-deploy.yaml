@@ -3,7 +3,7 @@ name: Publish and Deploy
 
 on:
   push:
-    branches: [ main, james/pgadminfqdn ]
+    branches: [ main, james/pgadminfqdn  ]
 
 permissions: read-all
 
