@@ -4,6 +4,7 @@ metadata:
   name: meshdbconfig
   namespace: {{ .Values.meshdb_app_namespace }}
 data:
+  MESHDB_ENVIRONMENT: {{ .Values.meshweb.environment }}
   DB_NAME: {{ .Values.pg.dbname }}
   DB_USER: {{ .Values.pg.user | quote }}
   DB_HOST: {{ include "meshdb.fullname" . }}-postgres.{{ .Values.meshdb_app_namespace }}.svc.cluster.local
