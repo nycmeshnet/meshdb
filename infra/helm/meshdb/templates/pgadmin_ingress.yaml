@@ -35,11 +35,11 @@ spec:
             backend:
               {{- if semverCompare ">=1.19-0" $.Capabilities.KubeVersion.GitVersion }}
               service:
-                name: pgadmin-service
+                name: {{ include "meshdb.fullname" . }}-pgadmin
                 port:
                   number: {{ $svcPort }}
               {{- else }}
-              serviceName: pgadmin-service
+              serviceName: {{ include "meshdb.fullname" . }}-pgadmin
               servicePort: {{ $svcPort }}
               {{- end }}
 {{- end }}
