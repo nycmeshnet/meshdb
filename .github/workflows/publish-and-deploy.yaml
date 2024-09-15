@@ -3,7 +3,7 @@ name: Publish and Deploy
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, james/pgadminfqdn ]
 
 permissions: read-all
 
@@ -11,6 +11,7 @@ jobs:
   push_to_registry:
     name: Push Docker Image to Docker Hub
     runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
     steps:
       - name: Check out the repo
         uses: actions/checkout@v4
@@ -42,8 +43,8 @@ jobs:
     with:
       environment: dev3
     secrets: inherit
-    needs: push_to_registry
-    if: github.ref == 'refs/heads/main'
+    #needs: push_to_registry
+    #if: github.ref == 'refs/heads/main'
 
   deploy_to_prod1:
     name: Deploy to prod 1
