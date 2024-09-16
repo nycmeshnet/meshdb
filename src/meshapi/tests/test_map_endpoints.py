@@ -725,6 +725,48 @@ class TestViewsGetUnauthenticated(TestCase):
         )
         inactive_omni.save()
 
+        access_point_1 = AccessPoint(
+            id=uuid.UUID("3caca726-f072-4faf-93c9-95e0b305393b"),
+            node=grand,
+            status=Device.DeviceStatus.ACTIVE,
+            latitude=0,
+            longitude=0,
+            altitude=0,
+        )
+        access_point_1.save()
+
+        access_point_2 = AccessPoint(
+            id=uuid.UUID("efe0b029-084e-427e-abb2-ac24c207a68c"),
+            node=grand,
+            status=Device.DeviceStatus.ACTIVE,
+            latitude=0,
+            longitude=0,
+            altitude=0,
+        )
+        access_point_2.save()
+
+        links.append(
+            Link(
+                id=uuid.UUID("a8bf7b1f-99c8-4c41-8123-59eb12faaff3"),
+                from_device=grand_omni,
+                to_device=access_point_1,
+                status=Link.LinkStatus.ACTIVE,
+                type=Link.LinkType.SIXTY_GHZ,
+                install_date=datetime.date(2024, 1, 26),
+            )
+        )
+
+        links.append(
+            Link(
+                id=uuid.UUID("0d1e7aaa-ada3-461d-b69d-fac439eb1778"),
+                from_device=access_point_1,
+                to_device=access_point_2,
+                status=Link.LinkStatus.ACTIVE,
+                type=Link.LinkType.SIXTY_GHZ,
+                install_date=datetime.date(2024, 1, 26),
+            )
+        )
+
         links.append(
             Link(
                 id=uuid.UUID("d36b2c85-72fc-4f7f-a1f3-e642a6fefae1"),
@@ -942,6 +984,12 @@ class TestViewsGetUnauthenticated(TestCase):
                     "status": "planned",
                 },
                 {
+                    "from": 1934,
+                    "installDate": 1706245200000,
+                    "status": "60GHz",
+                    "to": 1934,
+                },
+                {
                     "from": 56789,
                     "to": 123,
                     "status": "active",
@@ -960,6 +1008,16 @@ class TestViewsGetUnauthenticated(TestCase):
                     "from": 413,
                     "to": 88892,
                     "status": "planned",
+                },
+                {
+                    "from": 1706171,
+                    "status": "60GHz",
+                    "to": 1150732,
+                },
+                {
+                    "from": 1934,
+                    "status": "60GHz",
+                    "to": 1706171,
                 },
             ],
         )
