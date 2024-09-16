@@ -13,7 +13,7 @@ spec:
   template:
     metadata:
       annotations:
-        admission.datadoghq.com/python-lib.version: v2.11.2
+        admission.datadoghq.com/python-lib.version: v2.12
       {{- with .Values.podAnnotations }}
         {{- toYaml . | nindent 8 }}
       {{- end }}
