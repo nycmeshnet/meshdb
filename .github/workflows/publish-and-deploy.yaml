@@ -11,6 +11,7 @@ jobs:
   push_to_registry:
     name: Push Docker Image to Docker Hub
     runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
     steps:
       - name: Check out the repo
         uses: actions/checkout@v4
@@ -51,5 +52,5 @@ jobs:
     with:
       environment: prod
     secrets: inherit
-    needs: push_to_registry
+    needs: deploy_to_dev3
     if: github.ref == 'refs/heads/main'

@@ -77,6 +77,7 @@ class TestUISPImportUtils(TestCase):
         self.assertEqual(
             # TODO: Once 6 GHz becomes a thing, this will probably need to be tweaked
             #  for now we consider anything < 7 GHz as 5 GHz
+            #  https://github.com/nycmeshnet/meshdb/issues/518
             get_link_type({"type": "wireless", "frequency": 6100}),
             Link.LinkType.FIVE_GHZ,
         )

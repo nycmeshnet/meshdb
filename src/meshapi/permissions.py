@@ -4,10 +4,16 @@ from typing import Any, Optional
 
 from django.contrib.auth.models import User
 from django.db.models import Model
+from django.views.generic import View
 from rest_framework import permissions
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import BasePermission
 from rest_framework.request import Request
+
+
+class IsSuperUser(BasePermission):
+    def has_permission(self, request: Request, view: View) -> bool:
+        return bool(request.user.is_superuser)
 
 
 class IsReadOnly(BasePermission):
@@ -17,14 +23,14 @@ class IsReadOnly(BasePermission):
         permission_classes = [permissions.DjangoModelPermissions | IsReadOnly]
     """
 
-    def has_permission(self, request: Request, view: Any) -> bool:
+    def has_permission(self, request: Request, view: View) -> bool:
         return bool(request.method in permissions.SAFE_METHODS)
 
 
 class HasDjangoPermission(BasePermission):
     django_permission: str | None = None
 
-    def has_permission(self, request: Request, view: Any) -> bool:
+    def has_permission(self, request: Request, view: View) -> bool:
         if not self.django_permission:
             raise NotImplementedError(
                 "You must subclass HasDjangoPermission and specify the django_permission attribute"
@@ -40,9 +46,13 @@ class HasPanoramaUpdatePermission(HasDjangoPermission):
     django_permission = "meshapi.update_panoramas"
 
 
+class HasMaintenanceModePermission(HasDjangoPermission):
+    django_permission = "meshapi.maintenance_mode"
+
+
 # Janky
 class LegacyMeshQueryPassword(permissions.BasePermission):
-    def has_permission(self, request: Request, view: Any) -> bool:
+    def has_permission(self, request: Request, view: View) -> bool:
         if (
             request.headers["Authorization"]
             and request.headers["Authorization"] == f"Bearer {os.environ.get('QUERY_PSK')}"
