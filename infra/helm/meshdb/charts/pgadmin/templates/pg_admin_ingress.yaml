@@ -27,7 +27,7 @@ spec:
   ingressClassName: {{ .Values.ingress.className }}
   {{- end }}
   rules:
-    - host: {{ .Values.pgadmin.fqdn | quote }}
+    - host: {{ .Values.global.pgadmin.fqdn | quote }}
       http:
         paths:
           - path: /
