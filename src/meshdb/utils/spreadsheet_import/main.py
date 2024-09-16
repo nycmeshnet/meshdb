@@ -76,7 +76,7 @@ def main():
             )
             node.save()
             dob_bin = row.bin if row.bin and row.bin > 0 and row.bin not in INVALID_BIN_NUMBERS else None
-            if dob_bin:
+            if dob_bin and node.network_number:
                 nn_bin_map[node.network_number] = dob_bin
 
         member_duplicate_counts = defaultdict(lambda: 1)
@@ -109,6 +109,25 @@ def main():
 
             if not node and building.primary_node:
                 node = building.primary_node
+
+            node_type_from_row = get_node_type(row.notes, row.nodeName)
+            if not node and node_type_from_row in [
+                models.Node.NodeType.HUB,
+                models.Node.NodeType.SUPERNODE,
+                models.Node.NodeType.POP,
+            ]:
+                node = models.Node(
+                    name=row.nodeName if row.nodeName else None,
+                    latitude=row.latitude,
+                    longitude=row.longitude,
+                    altitude=row.altitude,
+                    status=models.Node.NodeStatus.PLANNED,
+                    type=node_type_from_row,
+                    notes=f"Spreadsheet Notes:\n"
+                    f"{row.notes if row.notes else None}\n\n"
+                    f"Spreadsheet Notes2:\n"
+                    f"{row.notes2 if row.notes2 else None}\n\n",
+                )
 
             install = create_install(row)
 

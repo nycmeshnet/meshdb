@@ -1,11 +1,11 @@
 import typing
-from typing import Optional, Tuple
+from typing import Dict, List, Optional, Tuple, Type
 
 from django.contrib.admin import ModelAdmin
-from django.contrib.admin.views.main import ORDER_VAR
+from django.contrib.admin.views.main import ORDER_VAR, ChangeList
 from django.contrib.postgres.search import SearchQuery, SearchRank, SearchVector
 from django.db.models import QuerySet
-from django.db.models.expressions import CombinedExpression
+from django.db.models.expressions import CombinedExpression, Expression
 from django.http import HttpRequest
 
 # Trick stolen from https://stackoverflow.com/a/56991089 to make mypy happy about mixin types
@@ -13,6 +13,14 @@ if typing.TYPE_CHECKING:
     _Base = ModelAdmin
 else:
     _Base = object
+
+
+class GentleOrderingChangelist(ChangeList):
+    def get_ordering(self, request: HttpRequest, qs: QuerySet) -> List[Expression | str]:
+        if qs.query.order_by:
+            return list(qs.query.order_by)
+
+        return super().get_ordering(request, qs)
 
 
 class RankedSearchMixin(_Base):
@@ -44,3 +52,6 @@ class RankedSearchMixin(_Base):
                 .distinct("rank", "pk")
             )
         return queryset
+
+    def get_changelist(self, request: HttpRequest, **kwargs: Dict) -> Type[ChangeList]:
+        return GentleOrderingChangelist

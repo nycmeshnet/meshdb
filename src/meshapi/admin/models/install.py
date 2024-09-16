@@ -54,6 +54,7 @@ class InstallAdmin(RankedSearchMixin, ImportExportModelAdmin, ExportActionMixin)
         "abandon_date",
     ]
     list_display = ["__str__", "status", "node", "member", "building", "unit"]
+    list_select_related = ["node", "member", "building"]
     search_fields = [
         # Install number
         "install_number__iexact",
@@ -83,11 +84,13 @@ class InstallAdmin(RankedSearchMixin, ImportExportModelAdmin, ExportActionMixin)
         + SearchVector("notes", weight="D")
     )
     autocomplete_fields = ["building", "member"]
+    readonly_fields = ["install_number"]
     fieldsets = [
         (
             "Details",
             {
                 "fields": [
+                    "install_number",
                     "status",
                     "ticket_number",
                     "member",
@@ -147,7 +150,10 @@ class InstallAdmin(RankedSearchMixin, ImportExportModelAdmin, ExportActionMixin)
             if len(upper_search) > 2 and upper_search[:2] == "NN":
                 search_term_as_int = int(upper_search[2:])
                 queryset = (
-                    self.rank_queryset(self.model.objects.filter(node_id=search_term_as_int), upper_search[2:])
+                    self.rank_queryset(
+                        self.model.objects.filter(node__network_number=search_term_as_int),
+                        upper_search[2:],
+                    )
                     | queryset  # We do this rather than |= since it floats the more relevant results to the top
                 )
                 may_have_duplicates = False

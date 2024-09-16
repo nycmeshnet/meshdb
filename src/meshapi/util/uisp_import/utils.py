@@ -38,7 +38,10 @@ def get_link_type(uisp_link: USIPDataLink) -> Link.LinkType:
     raise ValueError(f"Unexpected UISP link type: {uisp_link['type']} for link {uisp_link['id']}")
 
 
-def get_building_from_network_number(network_number: int) -> Optional[Building]:
+def get_building_from_network_number(network_number: Optional[int]) -> Optional[Building]:
+    if not network_number:
+        return None
+
     node = Node.objects.get(network_number=network_number)
 
     # We need to lookup which buildings have this NN as primary

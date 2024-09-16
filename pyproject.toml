@@ -4,11 +4,8 @@ version = "0.1"
 dependencies = [
     "celery[redis]==5.3.*",
     "django==4.2.*",
-    # We need djangorestframework features that are coming in 3.15.*
-    # but that release hasn't shipped yet, so grab the commit that is likely to ship.
-    # This will likely have a small diff with the final 3.15.* release, but is much better
-    # then pulling their master branch (which changes constantly)
-    # FIXME: Go back to PyPI once https://github.com/encode/django-rest-framework/pull/8794 is merged
+    # FIXME: Go back to PyPI once DRF adds support for using Django's read-only permissions
+    #  https://github.com/nycmeshnet/meshdb/issues/524
     "djangorestframework@git+https://github.com/encode/django-rest-framework.git@4bbfa8d4556b5847e91ba95f457cc862b7a0f027",
     "drf-hooks==0.1.3",
     "psycopg2-binary==2.9.*",
@@ -24,20 +21,25 @@ dependencies = [
     "django-cors-headers==4.3.*",
     "nameparser==1.1.*",
     "inflect==7.0.*",
-    "fastkml[lxml]==1.0a12", # FIXME: Update me to stable, once 1.0 is released officially
+    # FIXME: Update me to stable, once 1.0 is released officially
+    #  https://github.com/nycmeshnet/meshdb/issues/525
+    "fastkml[lxml]==1.0a12",
     "drf-spectacular==0.27.*",
     "djangorestframework-dataclasses==1.3.*",
     "django-nonrelated-inlines==0.2.*",
     "django-filter==24.1",
-    # FIXME: Go back to PyPI when https://github.com/bhch/django-jsonform/pull/162 is merged
+    # FIXME: Go back to PyPI when https://github.com/bhch/django-jsonform/pull/162 is available on PyPi
+    #  https://github.com/nycmeshnet/meshdb/issues/526
     "django-jsonform@git+https://github.com/willnilges/django-jsonform.git@51cbed42ccdaec81a35c97a919d054e2c9ca0207",
     "faker==24.3.*",
     # FIXME: Go back to PyPI when https://github.com/jazzband/django-dbbackup/pull/515 or https://github.com/jazzband/django-dbbackup/pull/511 is merged
+    #  https://github.com/nycmeshnet/meshdb/issues/527
     "django-dbbackup@git+https://github.com/willnilges/django-dbbackup.git@62048411ff5beac4beac1578f686824214f1f33a",
     "django-storages==1.14.*",
     "django-import-export==4.0.*",
     "boto3==1.34.*",
     "six==1.16.0",
+    "django-flags==5.0.*",
 ]
 
 [project.optional-dependencies]

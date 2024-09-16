@@ -258,6 +258,7 @@ def load_links_supplement_with_uisp(spreadsheet_links: List[SpreadsheetLink]):
     for spreadsheet_link in spreadsheet_links:
         try:
             # TODO: this method of node lookup doesn't work for campus links like the vernon APs
+            #  https://github.com/nycmeshnet/meshdb/issues/514
             from_node = get_node_from_spreadsheet_id(spreadsheet_link.from_node_id)
             to_node = get_node_from_spreadsheet_id(spreadsheet_link.to_node_id)
 

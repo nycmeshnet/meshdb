@@ -37,10 +37,8 @@ sample_install = {
     "request_date": "2022-02-27",
     "install_date": "2022-03-01",
     "abandon_date": "9999-01-01",
-    "building": 1,
     "unit": "3",
     "roof_access": True,
-    "member": 1,
     "notes": "Referral: Read about it on the internet",
 }
 

@@ -16,7 +16,6 @@ class TestSlackNotification(TestCase):
     @patch("meshapi.util.admin_notifications.SLACK_ADMIN_NOTIFICATIONS_WEBHOOK_URL", "https://mock-slack-url")
     def test_slack_notification_for_name_change(self, requests_mocker):
         member = Member(
-            id=1,
             name="Stacy Maidenname",
             primary_email_address="stacy@example.com",
             phone_number="+1 2125555555",
@@ -42,15 +41,15 @@ class TestSlackNotification(TestCase):
             request_payload["text"],
             "Encountered the following data issue which may require admin attention: "
             "*Dropped name change: Stacy Marriedname (install request #98232)*. When processing "
-            "the following members: <http://testserver/admin/meshapi/member/1/change/|Stacy "
+            f"the following members: <http://testserver/admin/meshapi/member/{member.id}/change/|Stacy "
             "Maidenname>. Please open the database admin UI using the provided links to correct "
             "this.\n"
             "\n"
-            "The current database state of these objects is: \n"
+            "The current database state of these object(s) is: \n"
             "```\n"
             "[\n"
             "  {\n"
-            '    "id": 1,\n'
+            f'    "id": "{member.id}",\n'
             '    "all_email_addresses": [\n'
             '      "stacy@example.com"\n'
             "    ],\n"
@@ -75,7 +74,6 @@ class TestSlackNotification(TestCase):
     @patch("meshapi.util.admin_notifications.SLACK_ADMIN_NOTIFICATIONS_WEBHOOK_URL", "https://mock-slack-url")
     def test_slack_notification_for_duplicate_members(self, requests_mocker):
         member1 = Member(
-            id=1,
             name="Stacy Fakename",
             primary_email_address="stacy1@example.com",
             phone_number="+1 2125555555",
@@ -83,7 +81,6 @@ class TestSlackNotification(TestCase):
         member1.save()
 
         member2 = Member(
-            id=2,
             name="Stacy Fakename",
             primary_email_address="stacy1@example.com",
             phone_number="+1 2125553333",
@@ -108,15 +105,15 @@ class TestSlackNotification(TestCase):
             request_payload["text"],
             "Encountered the following data issue which may require admin attention: "
             "*Possible duplicate member objects detected*. When processing the following members: "
-            "<http://testserver/admin/meshapi/member/1/change/|Stacy Fakename>, "
-            "<http://testserver/admin/meshapi/member/2/change/|Stacy Fakename>. "
+            f"<http://testserver/admin/meshapi/member/{member1.id}/change/|Stacy Fakename>, "
+            f"<http://testserver/admin/meshapi/member/{member2.id}/change/|Stacy Fakename>. "
             "Please open the database admin UI using the provided links to correct this.\n"
             "\n"
-            "The current database state of these objects is: \n"
+            "The current database state of these object(s) is: \n"
             "```\n"
             "[\n"
             "  {\n"
-            '    "id": 1,\n'
+            f'    "id": "{member1.id}",\n'
             '    "all_email_addresses": [\n'
             '      "stacy1@example.com"\n'
             "    ],\n"
@@ -134,7 +131,7 @@ class TestSlackNotification(TestCase):
             '    "notes": null\n'
             "  },\n"
             "  {\n"
-            '    "id": 2,\n'
+            f'    "id": "{member2.id}",\n'
             '    "all_email_addresses": [\n'
             '      "stacy1@example.com"\n'
             "    ],\n"
@@ -159,7 +156,6 @@ class TestSlackNotification(TestCase):
     @patch("meshapi.util.admin_notifications.SLACK_ADMIN_NOTIFICATIONS_WEBHOOK_URL", None)
     def test_slack_notification_for_name_change_no_env_var(self, requests_mocker):
         member = Member(
-            id=1,
             name="Stacy Maidenname",
             primary_email_address="stacy@example.com",
             phone_number="+1 2125555555",
@@ -183,7 +179,6 @@ class TestSlackNotification(TestCase):
     @patch("meshapi.util.admin_notifications.SLACK_ADMIN_NOTIFICATIONS_WEBHOOK_URL", "https://mock-slack-url")
     def test_slack_notification_for_name_change_slack_failure(self, requests_mocker):
         member = Member(
-            id=1,
             name="Stacy Maidenname",
             primary_email_address="stacy@example.com",
             phone_number="+1 2125555555",
@@ -212,7 +207,6 @@ class TestSlackNotification(TestCase):
     @patch("meshapi.util.admin_notifications.SITE_BASE_URL", None)
     def test_slack_notification_no_request_no_env_variable(self, requests_mocker):
         member = Member(
-            id=1,
             name="Stacy Maidenname",
             primary_email_address="stacy@example.com",
             phone_number="+1 2125555555",
@@ -235,7 +229,6 @@ class TestSlackNotification(TestCase):
     @patch("meshapi.util.admin_notifications.SITE_BASE_URL", "https://mock-meshdb-url.example")
     def test_slack_notification_no_request_env_variable_fallback(self, requests_mocker):
         member = Member(
-            id=1,
             name="Stacy Maidenname",
             primary_email_address="stacy@example.com",
             phone_number="+1 2125555555",

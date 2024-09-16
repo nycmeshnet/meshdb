@@ -2,7 +2,7 @@
 
 from django.db import migrations
 
-import meshapi.models.util.custom_many_to_many
+import meshapi.migrations.util.custom_many_to_many
 
 
 class Migration(migrations.Migration):
@@ -14,7 +14,7 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name="building",
             name="nodes",
-            field=meshapi.models.util.custom_many_to_many.CustomColumnNameManyToManyField(
+            field=meshapi.migrations.util.custom_many_to_many.CustomColumnNameManyToManyField(
                 blank=True,
                 db_from_column_name="building_id",
                 db_to_column_name="network_number",

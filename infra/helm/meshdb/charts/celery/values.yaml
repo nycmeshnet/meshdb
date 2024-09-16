@@ -26,11 +26,11 @@ ingress:
 
 resources:
   limits:
+    cpu: 1
+    memory: 512Mi
+  requests:
     cpu: 100m
     memory: 512Mi
-  #requests:
-  #  cpu: 100m
-  #  memory: 128Mi
 
 containers:
   - name: celery-worker
@@ -45,7 +45,7 @@ containers:
           - "sh"
           - "-c"
           - "python scripts/celery/probes/celery_liveness.py"
-      initialDelaySeconds: 30  # startup takes some time
+      initialDelaySeconds: 60  # startup takes some time
       periodSeconds: 60  # default is quite often and celery uses a lot cpu/ram then.
       timeoutSeconds: 10  # default is too low
     readinessProbe:
@@ -55,7 +55,7 @@ containers:
           - "sh"
           - "-c"
           - "python scripts/celery/probes/celery_readiness.py"
-      initialDelaySeconds: 30
+      initialDelaySeconds: 60
       periodSeconds: 60
       timeoutSeconds: 10
   - name: celery-beat
@@ -70,7 +70,7 @@ containers:
           - "sh"
           - "-c"
           - "python scripts/celery/probes/celery_beat_liveness.py"
-      initialDelaySeconds: 30
+      initialDelaySeconds: 60
       periodSeconds: 60
       timeoutSeconds: 10
     readinessProbe:
@@ -80,7 +80,7 @@ containers:
           - "sh"
           - "-c"
           - "python scripts/celery/probes/celery_beat_readiness.py"
-      initialDelaySeconds: 30
+      initialDelaySeconds: 60
       periodSeconds: 60
       timeoutSeconds: 10
 

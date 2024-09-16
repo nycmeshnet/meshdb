@@ -2,129 +2,144 @@ from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
 
 from meshapi.models import LOS, AccessPoint, Building, Device, Install, Link, Member, Node, Sector
+from meshapi.serializers.nested_key_object_related_field import NestedKeyObjectRelatedField, NestedKeyRelatedMixIn
 
 
-class BuildingSerializer(serializers.ModelSerializer):
+class BuildingSerializer(NestedKeyRelatedMixIn, serializers.ModelSerializer):
     class Meta:
         model = Building
-        exclude = ("primary_node", "nodes")
+        fields = "__all__"
+        extra_kwargs = {
+            "primary_node": {"additional_keys": ("network_number",)},
+            "nodes": {"additional_keys": ("network_number",), "required": False},
+        }
 
-    installs: serializers.PrimaryKeyRelatedField = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
-    network_numbers: serializers.PrimaryKeyRelatedField = serializers.PrimaryKeyRelatedField(
-        source="nodes", many=True, read_only=True
-    )
-    primary_network_number: serializers.PrimaryKeyRelatedField = serializers.PrimaryKeyRelatedField(
-        source="primary_node", queryset=Node.objects.all(), required=False, allow_null=True
-    )
+    installs = NestedKeyObjectRelatedField(many=True, read_only=True, additional_keys=("install_number",))
 
 
-class MemberSerializer(serializers.ModelSerializer):
+class MemberSerializer(NestedKeyRelatedMixIn, serializers.ModelSerializer):
     class Meta:
         model = Member
         fields = "__all__"
 
     all_email_addresses: serializers.ReadOnlyField = serializers.ReadOnlyField()
     all_phone_numbers: serializers.ReadOnlyField = serializers.ReadOnlyField()
-    installs: serializers.PrimaryKeyRelatedField = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
+
+    installs = NestedKeyObjectRelatedField(many=True, read_only=True, additional_keys=("install_number",))
 
 
-class InstallSerializer(serializers.ModelSerializer):
+class InstallSerializer(NestedKeyRelatedMixIn, serializers.ModelSerializer):
+    serializer_related_field = NestedKeyObjectRelatedField
+
     class Meta:
         model = Install
-        exclude = ("node",)
+        fields = "__all__"
+        extra_kwargs = {
+            "node": {"additional_keys": ("network_number",)},
+            "install_number": {"read_only": True},
+        }
 
-    network_number = serializers.PrimaryKeyRelatedField(
-        source="node", queryset=Node.objects.all(), required=False, allow_null=True
-    )
 
-
-class NodeSerializer(serializers.ModelSerializer):
+class NodeSerializer(NestedKeyRelatedMixIn, serializers.ModelSerializer):
     class Meta:
         model = Node
         fields = "__all__"
+        extra_kwargs = {
+            "network_number": {
+                "validators": [
+                    UniqueValidator(
+                        queryset=Node.objects.all(),
+                        message="node with this network number already exists.",
+                    )
+                ],
+            }
+        }
 
-    network_number = serializers.IntegerField(
-        required=False,
-        allow_null=False,
-        validators=[UniqueValidator(queryset=Node.objects.all())],
-        read_only=True,
-    )
-    buildings: serializers.PrimaryKeyRelatedField = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
-    devices: serializers.PrimaryKeyRelatedField = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
+    buildings = NestedKeyObjectRelatedField(many=True, read_only=True)
+    devices = NestedKeyObjectRelatedField(many=True, read_only=True)
+    installs = NestedKeyObjectRelatedField(many=True, read_only=True, additional_keys=("install_number",))
 
 
-class LinkSerializer(serializers.ModelSerializer):
+class NodeEditSerializer(NodeSerializer):
+    class Meta(NodeSerializer.Meta):
+        read_only_fields = ("network_number",)
+
+
+class LinkSerializer(NestedKeyRelatedMixIn, serializers.ModelSerializer):
     class Meta:
         model = Link
         fields = "__all__"
 
 
-class DeviceSerializer(serializers.ModelSerializer):
+class DeviceSerializer(NestedKeyRelatedMixIn, serializers.ModelSerializer):
     class Meta:
         model = Device
-        exclude = ("node",)
+        fields = "__all__"
+        extra_kwargs = {
+            "node": {"additional_keys": ("network_number",)},
+        }
 
-    network_number = serializers.PrimaryKeyRelatedField(
-        source="node", queryset=Node.objects.all(), required=True, allow_null=False
-    )
-
-    latitude: serializers.ReadOnlyField = serializers.ReadOnlyField(
+    latitude = serializers.FloatField(
+        read_only=True,
         help_text="Approximate Device latitude in decimal degrees "
         "(this is read through from the attached Node object, not stored separately)",
     )
-    longitude: serializers.ReadOnlyField = serializers.ReadOnlyField(
+    longitude = serializers.FloatField(
+        read_only=True,
         help_text="Approximate Device longitude in decimal degrees "
         "(this is read through from the attached Node object, not stored separately)",
     )
-    altitude: serializers.ReadOnlyField = serializers.ReadOnlyField(
+    altitude = serializers.FloatField(
+        read_only=True,
         help_text='Approximate Device altitude in "absolute" meters above mean sea level '
         "(this is read through from the attached Node object, not stored separately)",
     )
 
-    links_from: serializers.PrimaryKeyRelatedField = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
-    links_to: serializers.PrimaryKeyRelatedField = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
+    links_from = NestedKeyObjectRelatedField(many=True, read_only=True)
+    links_to = NestedKeyObjectRelatedField(many=True, read_only=True)
 
 
-class SectorSerializer(serializers.ModelSerializer):
+class SectorSerializer(NestedKeyRelatedMixIn, serializers.ModelSerializer):
     class Meta:
         model = Sector
-        exclude = ("node",)
+        fields = "__all__"
+        extra_kwargs = {
+            "node": {"additional_keys": ("network_number",)},
+        }
 
-    network_number: serializers.PrimaryKeyRelatedField = serializers.PrimaryKeyRelatedField(
-        source="node", queryset=Node.objects.all(), required=True, allow_null=False
-    )
-
-    latitude: serializers.ReadOnlyField = serializers.ReadOnlyField(
+    latitude = serializers.FloatField(
+        read_only=True,
         help_text="Approximate Device latitude in decimal degrees "
         "(this is read through from the attached Node object, not stored separately)",
     )
-    longitude: serializers.ReadOnlyField = serializers.ReadOnlyField(
+    longitude = serializers.FloatField(
+        read_only=True,
         help_text="Approximate Device longitude in decimal degrees "
         "(this is read through from the attached Node object, not stored separately)",
     )
-    altitude: serializers.ReadOnlyField = serializers.ReadOnlyField(
+    altitude = serializers.FloatField(
+        read_only=True,
         help_text='Approximate Device altitude in "absolute" meters above mean sea level '
         "(this is read through from the attached Node object, not stored separately)",
     )
 
-    links_from: serializers.PrimaryKeyRelatedField = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
-    links_to: serializers.PrimaryKeyRelatedField = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
+    links_from = NestedKeyObjectRelatedField(many=True, read_only=True)
+    links_to = NestedKeyObjectRelatedField(many=True, read_only=True)
 
 
-class AccessPointSerializer(serializers.ModelSerializer):
+class AccessPointSerializer(NestedKeyRelatedMixIn, serializers.ModelSerializer):
     class Meta:
         model = AccessPoint
-        exclude = ("node",)
+        fields = "__all__"
+        extra_kwargs = {
+            "node": {"additional_keys": ("network_number",)},
+        }
 
-    network_number: serializers.PrimaryKeyRelatedField = serializers.PrimaryKeyRelatedField(
-        source="node", queryset=Node.objects.all(), required=True, allow_null=False
-    )
-
-    links_from: serializers.PrimaryKeyRelatedField = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
-    links_to: serializers.PrimaryKeyRelatedField = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
+    links_from = NestedKeyObjectRelatedField(many=True, read_only=True)
+    links_to = NestedKeyObjectRelatedField(many=True, read_only=True)
 
 
-class LOSSerializer(serializers.ModelSerializer):
+class LOSSerializer(NestedKeyRelatedMixIn, serializers.ModelSerializer):
     class Meta:
         model = LOS
         fields = "__all__"

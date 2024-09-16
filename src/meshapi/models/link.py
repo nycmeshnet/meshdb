@@ -1,4 +1,5 @@
 import datetime
+import uuid
 from typing import Optional
 
 from django.db import models
@@ -20,6 +21,11 @@ class Link(models.Model):
         VPN = "VPN"
         FIBER = "Fiber"
         ETHERNET = "Ethernet"
+
+    class Meta:
+        ordering = ["id"]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
     from_device = models.ForeignKey(
         Device,

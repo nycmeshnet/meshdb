@@ -29,12 +29,13 @@ class TestSector(TestCase):
         response = self.c.post(
             "/api/v1/sectors/",
             {
-                "network_number": self.node.network_number,
+                "node": {"id": str(self.node.id)},
                 "status": Device.DeviceStatus.ACTIVE,
                 "azimuth": 0,
                 "width": 120,
                 "radius": 0.3,
             },
+            content_type="application/json",
         )
         code = 201
         self.assertEqual(
@@ -48,13 +49,14 @@ class TestSector(TestCase):
             "/api/v1/sectors/",
             {
                 "name": "Vernon",
-                "network_number": self.node.network_number,
+                "node": {"id": str(self.node.id)},
                 "latitude": 0,
                 "longitude": 0,
                 "azimuth": 0,
                 "width": 120,
                 "radius": 0.3,
             },
+            content_type="application/json",
         )
         code = 400
         self.assertEqual(
@@ -67,7 +69,6 @@ class TestSector(TestCase):
         node = Node(**sample_node)
         node.save()
         sector = Sector(
-            id=1,
             name="Vernon",
             status="Active",
             azimuth=0,
@@ -88,4 +89,4 @@ class TestSector(TestCase):
 
         response_obj = json.loads(response.content)
         self.assertEqual(response_obj["status"], "Active")
-        self.assertEqual(response_obj["network_number"], node.network_number)
+        self.assertEqual(response_obj["node"]["network_number"], node.network_number)

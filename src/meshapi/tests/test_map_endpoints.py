@@ -1,5 +1,6 @@
 import datetime
 import json
+import uuid
 
 import requests_mock
 from django.test import Client, TestCase
@@ -11,9 +12,6 @@ from meshapi.views import LINKNYC_KIOSK_DATA_URL
 
 class TestViewsGetUnauthenticated(TestCase):
     c = Client()
-
-    # def setUp(self) -> None:
-    #
 
     def test_views_get_unauthenticated(self):
         routes = [
@@ -313,7 +311,7 @@ class TestViewsGetUnauthenticated(TestCase):
                     "id": 3,
                     "name": "Brian",
                     "status": "Installed",
-                    "coordinates": [-73.987881, 40.724868, 27.0],
+                    "coordinates": [-73.987881, 40.724868, None],
                     "requestDate": 1426392000000,
                     "installDate": 1413259200000,
                     "roofAccess": False,
@@ -330,7 +328,7 @@ class TestViewsGetUnauthenticated(TestCase):
                 {
                     "id": 567,
                     "name": "Fancy Node",
-                    "coordinates": [-73.9917741, 40.6962265, 66.0],
+                    "coordinates": [-73.987881, 40.724868, None],
                     "requestDate": 1706331600000,
                     "roofAccess": True,
                     "panoramas": [],
@@ -338,7 +336,7 @@ class TestViewsGetUnauthenticated(TestCase):
                 {
                     "id": 888,
                     "status": "NN assigned",
-                    "coordinates": [-73.9917741, 40.6962265, 66.0],
+                    "coordinates": [-73.987881, 40.724868, None],
                     "requestDate": 1706331600000,
                     "roofAccess": True,
                     "panoramas": [],
@@ -505,10 +503,14 @@ class TestViewsGetUnauthenticated(TestCase):
     def test_link_data(self):
         links = []
 
-        member = Member(name="Fake Name")
+        member = Member(
+            id=uuid.UUID("f0128b91-dbc6-466b-a030-298e39eb4733"),
+            name="Fake Name",
+        )
         member.save()
 
         grand = Node(
+            id=uuid.UUID("ffa22d49-d99d-480f-a872-569f3bb8b5fb"),
             network_number=1934,
             status=Node.NodeStatus.ACTIVE,
             latitude=0,
@@ -516,12 +518,14 @@ class TestViewsGetUnauthenticated(TestCase):
         )
         grand.save()
         grand_omni = Device(
+            id=uuid.UUID("e8b87c95-fe52-4ee6-8ea6-682d4f838861"),
             node=grand,
             status=Device.DeviceStatus.ACTIVE,
         )
         grand_omni.save()
 
         sn1 = Node(
+            id=uuid.UUID("23d4acb4-43fc-4832-9ddd-219c12bdbc28"),
             network_number=227,
             status=Node.NodeStatus.ACTIVE,
             latitude=0,
@@ -529,10 +533,17 @@ class TestViewsGetUnauthenticated(TestCase):
         )
         sn1.save()
 
-        sn1_building = Building(address_truth_sources=[], latitude=0, longitude=0, primary_node=sn1)
+        sn1_building = Building(
+            id=uuid.UUID("2ea7d857-3ade-42c6-92f1-18e30cd7c934"),
+            address_truth_sources=[],
+            latitude=0,
+            longitude=0,
+            primary_node=sn1,
+        )
         sn1_building.save()
 
         sn1_install = Install(
+            id=uuid.UUID("1fc94b13-6eaa-46a8-898b-44894bbd70dd"),
             member=member,
             install_number=227,
             building=sn1_building,
@@ -543,12 +554,14 @@ class TestViewsGetUnauthenticated(TestCase):
         sn1_install.save()
 
         sn1_omni = Device(
+            id=uuid.UUID("116368d5-2437-4cfb-9d25-540533c8bfec"),
             node=sn1,
             status=Device.DeviceStatus.ACTIVE,
         )
         sn1_omni.save()
 
         sn10 = Node(
+            id=uuid.UUID("e3919c3e-2a96-46f6-8941-b29875c8664c"),
             network_number=10,
             status=Node.NodeStatus.ACTIVE,
             latitude=0,
@@ -556,12 +569,14 @@ class TestViewsGetUnauthenticated(TestCase):
         )
         sn10.save()
         sn10_omni = Device(
+            id=uuid.UUID("0f1259af-1cd0-471d-9294-7dbfac9cb6a9"),
             node=sn10,
             status=Device.DeviceStatus.ACTIVE,
         )
         sn10_omni.save()
 
         sn3 = Node(
+            id=uuid.UUID("75e771be-d4cc-4ea2-bb48-4c8c83720822"),
             network_number=713,
             latitude=0,
             longitude=0,
@@ -569,15 +584,23 @@ class TestViewsGetUnauthenticated(TestCase):
         )
         sn3.save()
         sn3_omni = Device(
+            id=uuid.UUID("e8ce0468-e6c2-467c-92a4-97e1759ce35a"),
             node=sn3,
             status=Device.DeviceStatus.ACTIVE,
         )
         sn3_omni.save()
 
-        sn3_building = Building(address_truth_sources=[], latitude=0, longitude=0, primary_node=sn3)
+        sn3_building = Building(
+            id=uuid.UUID("fd768f67-75a0-444f-a18d-c4faa09359b6"),
+            address_truth_sources=[],
+            latitude=0,
+            longitude=0,
+            primary_node=sn3,
+        )
         sn3_building.save()
 
         sn3_install = Install(
+            id=uuid.UUID("6b45c3a4-d9e2-4919-b415-0b1a6f6d27e5"),
             member=member,
             install_number=713,
             building=sn3_building,
@@ -588,6 +611,7 @@ class TestViewsGetUnauthenticated(TestCase):
         sn3_install.save()
 
         brian = Node(
+            id=uuid.UUID("e7e3432e-eaee-403d-b400-5ddd8bd2e75b"),
             network_number=3,
             latitude=0,
             longitude=0,
@@ -595,12 +619,14 @@ class TestViewsGetUnauthenticated(TestCase):
         )
         brian.save()
         brian_omni = Device(
+            id=uuid.UUID("cc3ee525-d32b-4fa6-8b40-abc5babfd342"),
             node=brian,
             status=Device.DeviceStatus.ACTIVE,
         )
         brian_omni.save()
 
         random = Node(
+            id=uuid.UUID("efe899b4-6a0c-4e28-8b1b-2d28669463cd"),
             network_number=123,
             latitude=0,
             longitude=0,
@@ -608,6 +634,7 @@ class TestViewsGetUnauthenticated(TestCase):
         )
         random.save()
         random_building = Building(
+            id=uuid.UUID("9b5ae47b-4525-4b0f-92b5-637b20341e0b"),
             latitude=0,
             longitude=0,
             address_truth_sources=[],
@@ -615,6 +642,7 @@ class TestViewsGetUnauthenticated(TestCase):
         )
         random_building.save()
         random_install = Install(
+            id=uuid.UUID("89b821a4-9aee-40d3-bfbf-a61785e1530a"),
             install_number=123,
             building=random_building,
             node=random,
@@ -625,12 +653,14 @@ class TestViewsGetUnauthenticated(TestCase):
         random_install.save()
         random.save()
         random_omni = Device(
+            id=uuid.UUID("a6106205-8d04-4a52-b3af-f0ffc1b84fcc"),
             node=random,
             status=Device.DeviceStatus.ACTIVE,
         )
         random_omni.save()
 
         random_addl_building = Building(
+            id=uuid.UUID("adf61d61-5f69-42e6-b625-c7c6485fed80"),
             latitude=0,
             longitude=0,
             address_truth_sources=[],
@@ -639,6 +669,7 @@ class TestViewsGetUnauthenticated(TestCase):
         random_addl_building.save()
 
         random_addl_install = Install(
+            id=uuid.UUID("f7f95143-e8f9-418e-9210-0b9718dfe884"),
             install_number=56789,
             building=random_addl_building,
             node=random,
@@ -649,6 +680,7 @@ class TestViewsGetUnauthenticated(TestCase):
         random_addl_install.save()
 
         random_addl_install_2 = Install(
+            id=uuid.UUID("05b1bce9-8c9d-4366-9eab-700073ba5f69"),
             install_number=56790,
             building=random_addl_building,
             node=random,
@@ -659,6 +691,7 @@ class TestViewsGetUnauthenticated(TestCase):
         random_addl_install_2.save()
 
         random_addl_building_inactive = Building(
+            id=uuid.UUID("f139a043-da80-46d4-a50d-03e200730b42"),
             latitude=0,
             longitude=0,
             address_truth_sources=[],
@@ -667,6 +700,7 @@ class TestViewsGetUnauthenticated(TestCase):
         random_addl_building_inactive.save()
 
         random_addl_install_inactive = Install(
+            id=uuid.UUID("3522b840-8d20-4fd2-86e1-0d20db8a38f8"),
             install_number=56791,
             building=random_addl_building_inactive,
             node=random,
@@ -677,6 +711,7 @@ class TestViewsGetUnauthenticated(TestCase):
         random_addl_install_inactive.save()
 
         inactive = Node(
+            id=uuid.UUID("97c3fb73-e3f0-4eee-b1aa-d7a5bacd6122"),
             network_number=123456,
             latitude=0,
             longitude=0,
@@ -684,6 +719,7 @@ class TestViewsGetUnauthenticated(TestCase):
         )
         inactive.save()
         inactive_omni = Device(
+            id=uuid.UUID("3d33ef96-35fc-4703-8562-b154d701dbe6"),
             node=inactive,
             status=Device.DeviceStatus.ACTIVE,
         )
@@ -691,6 +727,7 @@ class TestViewsGetUnauthenticated(TestCase):
 
         links.append(
             Link(
+                id=uuid.UUID("d36b2c85-72fc-4f7f-a1f3-e642a6fefae1"),
                 from_device=sn1_omni,
                 to_device=sn3_omni,
                 status=Link.LinkStatus.ACTIVE,
@@ -701,6 +738,7 @@ class TestViewsGetUnauthenticated(TestCase):
 
         links.append(
             Link(
+                id=uuid.UUID("2cd0c189-1b7d-4c2b-9530-f7eec74f28af"),
                 from_device=sn1_omni,
                 to_device=grand_omni,
                 status=Link.LinkStatus.ACTIVE,
@@ -710,6 +748,7 @@ class TestViewsGetUnauthenticated(TestCase):
 
         links.append(
             Link(
+                id=uuid.UUID("d08c32d3-0909-4d62-8138-a1f7ce96d552"),
                 from_device=sn1_omni,
                 to_device=brian_omni,
                 status=Link.LinkStatus.ACTIVE,
@@ -719,6 +758,7 @@ class TestViewsGetUnauthenticated(TestCase):
 
         links.append(
             Link(
+                id=uuid.UUID("56d45e5a-f880-4b97-893a-fa87189f23ab"),
                 from_device=grand_omni,
                 to_device=sn10_omni,
                 status=Link.LinkStatus.ACTIVE,
@@ -728,6 +768,7 @@ class TestViewsGetUnauthenticated(TestCase):
 
         links.append(
             Link(
+                id=uuid.UUID("d85058c9-44d5-4e7b-9eff-062ead6b5869"),
                 from_device=grand_omni,
                 to_device=random_omni,
                 status=Link.LinkStatus.PLANNED,
@@ -737,6 +778,7 @@ class TestViewsGetUnauthenticated(TestCase):
 
         links.append(
             Link(
+                id=uuid.UUID("33986527-28a9-4146-bcd3-fee73034c45f"),
                 from_device=sn1_omni,
                 to_device=random_omni,
                 status=Link.LinkStatus.INACTIVE,
@@ -746,6 +788,7 @@ class TestViewsGetUnauthenticated(TestCase):
 
         links.append(
             Link(
+                id=uuid.UUID("76d35477-0497-46ea-b66d-eb61b59f63c5"),
                 from_device=sn1_omni,
                 to_device=inactive_omni,
                 status=Link.LinkStatus.ACTIVE,
@@ -757,6 +800,7 @@ class TestViewsGetUnauthenticated(TestCase):
             link.save()
 
         modern_hub = Node(
+            id=uuid.UUID("4e30718c-05e5-4ea6-999c-753d871c31c5"),
             network_number=413,
             latitude=0,
             longitude=0,
@@ -765,6 +809,7 @@ class TestViewsGetUnauthenticated(TestCase):
         modern_hub.save()
 
         modern_hub_building = Building(
+            id=uuid.UUID("3e7c144d-6d7f-4f98-ab20-74ac26817781"),
             latitude=0,
             longitude=0,
             address_truth_sources=[],
@@ -773,6 +818,7 @@ class TestViewsGetUnauthenticated(TestCase):
         modern_hub_building.save()
 
         modern_hub_install = Install(
+            id=uuid.UUID("729f80a3-1657-4a35-ad55-43dce7b69320"),
             install_number=123323,
             building=modern_hub_building,
             node=modern_hub,
@@ -783,6 +829,7 @@ class TestViewsGetUnauthenticated(TestCase):
         modern_hub_install.save()
 
         potential_building = Building(
+            id=uuid.UUID("d316be11-9199-40fa-819f-fb30fefa833f"),
             latitude=0,
             longitude=0,
             address_truth_sources=[],
@@ -790,6 +837,7 @@ class TestViewsGetUnauthenticated(TestCase):
         potential_building.save()
 
         potential_install = Install(
+            id=uuid.UUID("5d3ec95d-b5f2-4563-a9b5-be3f1525f6ac"),
             install_number=88892,
             building=potential_building,
             status=Install.InstallStatus.REQUEST_RECEIVED,
@@ -799,6 +847,7 @@ class TestViewsGetUnauthenticated(TestCase):
         potential_install.save()
 
         no_installs_building = Building(
+            id=uuid.UUID("308d4701-0ad8-40a5-bc32-d42cec013808"),
             latitude=0,
             longitude=0,
             address_truth_sources=[],
@@ -807,6 +856,7 @@ class TestViewsGetUnauthenticated(TestCase):
 
         today = datetime.date.today()
         los = LOS(
+            id=uuid.UUID("4dd407f0-4ec1-4c10-aeb6-a0be6c54bdd7"),
             from_building=random_building,
             to_building=potential_building,
             source=LOS.LOSSource.HUMAN_ANNOTATED,
@@ -815,6 +865,7 @@ class TestViewsGetUnauthenticated(TestCase):
         los.save()
 
         los_duplicative = LOS(
+            id=uuid.UUID("65545d65-4eab-481f-bc15-f4378285af97"),
             from_building=sn1_building,
             to_building=sn3_building,
             source=LOS.LOSSource.HUMAN_ANNOTATED,
@@ -823,6 +874,7 @@ class TestViewsGetUnauthenticated(TestCase):
         los_duplicative.save()
 
         los_no_installs = LOS(
+            id=uuid.UUID("e1ebf096-5d36-4a4b-b08c-b49b62aaeebd"),
             from_building=no_installs_building,
             to_building=random_building,
             source=LOS.LOSSource.HUMAN_ANNOTATED,
@@ -831,6 +883,7 @@ class TestViewsGetUnauthenticated(TestCase):
         los_no_installs.save()
 
         modern_hub_los = LOS(
+            id=uuid.UUID("655de0bf-28f0-4ec7-a85d-edcc432ed145"),
             from_building=modern_hub_building,
             to_building=potential_building,
             source=LOS.LOSSource.EXISTING_LINK,
@@ -839,6 +892,7 @@ class TestViewsGetUnauthenticated(TestCase):
         modern_hub_los.save()
 
         modern_hub_los_duplicate = LOS(
+            id=uuid.UUID("daa6ad4f-64d6-49dc-8df5-360525d4c3d0"),
             from_building=modern_hub_building,
             to_building=potential_building,
             source=LOS.LOSSource.EXISTING_LINK,
@@ -847,6 +901,7 @@ class TestViewsGetUnauthenticated(TestCase):
         modern_hub_los_duplicate.save()
 
         self_loop_los = LOS(
+            id=uuid.UUID("af8b485b-9b6f-47d9-a8c2-f2498de1c31e"),
             from_building=modern_hub_building,
             to_building=modern_hub_building,
             source=LOS.LOSSource.HUMAN_ANNOTATED,
@@ -862,6 +917,11 @@ class TestViewsGetUnauthenticated(TestCase):
             [
                 {
                     "from": 227,
+                    "to": 3,
+                    "status": "active",
+                },
+                {
+                    "from": 227,
                     "to": 713,
                     "status": "vpn",
                     "installDate": 1643173200000,
@@ -870,11 +930,6 @@ class TestViewsGetUnauthenticated(TestCase):
                     "from": 227,
                     "to": 1934,
                     "status": "60GHz",
-                },
-                {
-                    "from": 227,
-                    "to": 3,
-                    "status": "active",
                 },
                 {
                     "from": 1934,
@@ -1000,6 +1055,7 @@ class TestViewsGetUnauthenticated(TestCase):
 
         links.append(
             Link(
+                id=uuid.UUID("1395f182-0b06-4a38-b7ed-26a1170f5f7f"),
                 from_device=sn1_omni,
                 to_device=grand_omni,
                 status=Link.LinkStatus.ACTIVE,
@@ -1008,6 +1064,7 @@ class TestViewsGetUnauthenticated(TestCase):
         )
         links.append(
             Link(
+                id=uuid.UUID("b2d6f7a8-7fe5-4d38-8d04-d0e14f3530e8"),
                 from_device=sn1_additional_device,
                 to_device=grand_additional_device,
                 status=Link.LinkStatus.ACTIVE,
@@ -1016,6 +1073,7 @@ class TestViewsGetUnauthenticated(TestCase):
         )
         links.append(
             Link(
+                id=uuid.UUID("def40fc6-32cc-4c2a-8dac-4999b5306e6e"),
                 from_device=grand2_omni,
                 to_device=grand_omni,
                 status=Link.LinkStatus.ACTIVE,
@@ -1271,13 +1329,13 @@ class TestViewsGetUnauthenticated(TestCase):
             json.loads(response.content.decode("UTF8")),
             [
                 {
-                    "from": 555,
-                    "to": 99,
+                    "from": 99,
+                    "to": 731,
                     "status": "active",
                 },
                 {
-                    "from": 99,
-                    "to": 731,
+                    "from": 555,
+                    "to": 99,
                     "status": "active",
                 },
                 {

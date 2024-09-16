@@ -4,6 +4,7 @@ metadata:
   name: meshdbconfig
   namespace: {{ .Values.meshdb_app_namespace }}
 data:
+  MESHDB_ENVIRONMENT: {{ .Values.meshweb.environment }}
   DB_NAME: {{ .Values.pg.dbname }}
   DB_USER: {{ .Values.pg.user | quote }}
   DB_HOST: {{ include "meshdb.fullname" . }}-postgres.{{ .Values.meshdb_app_namespace }}.svc.cluster.local
@@ -34,7 +35,7 @@ data:
   ADMIN_MAP_BASE_URL: {{ .Values.adminmap.base_url | quote }}
   MAP_BASE_URL: {{ .Values.map.base_url | quote }}
   LOS_URL: {{ .Values.meshweb.los_url | quote }}
-  PG_ADMIN_URL: {{ .Values.meshweb.pg_admin_url | quote }}
+  PG_ADMIN_URL: https://{{ .Values.global.pgadmin.fqdn }}
   FORMS_URL: {{ .Values.meshweb.forms_url | quote }}
 
   SITE_BASE_URL: {{ .Values.meshdb.site_base_url | quote }}

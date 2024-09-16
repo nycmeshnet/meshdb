@@ -4,6 +4,8 @@ from collections import OrderedDict
 from typing import List, Optional, Tuple
 from urllib.parse import urlparse
 
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from meshapi.models import Install, Link, Node, Sector
@@ -15,6 +17,7 @@ EXCLUDED_INSTALL_STATUSES = {
 ALLOWED_INSTALL_STATUSES = set(Install.InstallStatus.values) - EXCLUDED_INSTALL_STATUSES
 
 
+@extend_schema_field(OpenApiTypes.INT)
 class JavascriptDateField(serializers.Field):
     def to_internal_value(self, date_int_val: Optional[int]) -> Optional[datetime.date]:
         if date_int_val is None:
@@ -53,16 +56,21 @@ class MapDataInstallSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(source="install_number")
     name = serializers.SerializerMethodField("get_node_name")
     status = serializers.SerializerMethodField("convert_status_to_spreadsheet_status")
-    coordinates = serializers.SerializerMethodField("get_building_coordinates")
+    coordinates = serializers.SerializerMethodField("get_coordinates")
     requestDate = JavascriptDateField(source="request_date")
     installDate = JavascriptDateField(source="install_date")
     roofAccess = serializers.BooleanField(source="roof_access")
     notes = serializers.SerializerMethodField("get_synthetic_notes")
     panoramas = serializers.SerializerMethodField("get_panorama_filename")
 
-    def get_building_coordinates(self, install: Install) -> Tuple[float, float, Optional[float]]:
-        building = install.building
-        return (building.longitude, building.latitude, building.altitude)
+    def get_coordinates(self, install: Install) -> Tuple[float, float, Optional[float]]:
+        if install.node and (
+            install.status == Install.InstallStatus.NN_REASSIGNED
+            or install.install_number == install.node.network_number
+        ):
+            return install.node.longitude, install.node.latitude, install.node.altitude
+        else:
+            return install.building.longitude, install.building.latitude, install.building.altitude
 
     def get_node_name(self, install: Install) -> Optional[str]:
         # Only include the node name if this is an old-school "node as install" situation
@@ -163,10 +171,10 @@ class MapDataLinkSerializer(serializers.ModelSerializer):
 
         return "active"
 
-    def get_to_node_number(self, link: Link) -> int:
+    def get_to_node_number(self, link: Link) -> Optional[int]:
         return link.to_device.node.network_number
 
-    def get_from_node_number(self, link: Link) -> int:
+    def get_from_node_number(self, link: Link) -> Optional[int]:
         return link.from_device.node.network_number
 
     def get_fields(self) -> dict:
@@ -207,7 +215,7 @@ class MapDataSectorSerializer(serializers.ModelSerializer):
     status = serializers.SerializerMethodField("convert_status_to_spreadsheet_status")
     installDate = JavascriptDateField(source="install_date")
 
-    def get_node_id(self, sector: Sector) -> int:
+    def get_node_id(self, sector: Sector) -> Optional[int]:
         return sector.node.network_number
 
     def convert_status_to_spreadsheet_status(self, sector: Sector) -> str:

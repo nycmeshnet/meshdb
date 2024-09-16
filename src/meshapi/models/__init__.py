@@ -5,3 +5,4 @@ from .link import *
 from .los import *
 from .member import *
 from .node import *
+from .permission import *
