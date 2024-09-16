@@ -3,7 +3,7 @@ name: Publish and Deploy
 
 on:
   push:
-    branches: [ main, james/pgadminfqdn  ]
+    branches: [ main ]
 
 permissions: read-all
 
@@ -43,8 +43,8 @@ jobs:
     with:
       environment: dev3
     secrets: inherit
-    #needs: push_to_registry
-    #if: github.ref == 'refs/heads/main'
+    needs: push_to_registry
+    if: github.ref == 'refs/heads/main'
 
   deploy_to_prod1:
     name: Deploy to prod 1
