@@ -11,6 +11,7 @@ from import_export.admin import ExportActionMixin, ImportExportModelAdmin
 
 from meshapi.models import Building
 from meshapi.widgets import AutoPopulateLocationWidget, PanoramaViewer
+from meshdb.utils.spreadsheet_import.building.constants import AddressTruthSource
 
 from ..inlines import BuildingLOSInline, InstallInline
 from ..ranked_search import RankedSearchMixin
@@ -142,3 +143,24 @@ class BuildingAdmin(RankedSearchMixin, ImportExportModelAdmin, ExportActionMixin
         return form
 
     filter_horizontal = ("nodes",)
+
+    def save_model(self, request: HttpRequest, obj: Building, form: ModelForm, change: bool) -> None:
+        address_fields_changed = any(
+            field in form.changed_data
+            for field in [
+                "street_address",
+                "city",
+                "state",
+                "zip_code",
+            ]
+        )
+
+        if address_fields_changed:
+            # If the admin UI edited (or added) the address fields, we attribute this edit to
+            # "Human Entry" to keep the truth sources up to date
+            if obj.address_truth_sources is None:
+                obj.address_truth_sources = []
+
+            obj.address_truth_sources += [AddressTruthSource.HumanEntry.value]
+
+        super().save_model(request, obj, form, change)
