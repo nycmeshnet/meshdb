@@ -19,12 +19,13 @@ def validate_network_number_unused_and_claim_install_if_needed(
     """
     Helper function to encapsulate the validation logic for the attachment of an NN
     to a new node. We need to validate that the NN is unused as either an install number
-    or network number on an existing node. However, there are some edge cases, like if
-    this node is being
+    or network number on an existing node. However, there are some edge cases. For example,
+    we allow an active install to have its number used as an NN for a node, if that node is
+    attached to this install
 
     This validation logic is used for auto-assignment in the get_next_available_network_number()
     function below, but also on many Node.save() calls since vanity NNs can come in via the
-    admin form and need to be validated prior to being comitted to the DB
+    admin form and need to be validated prior to being committed to the DB
 
     Accepts an optional existing node id to exempt from validation, this allows
     assigning old install numbers to new nodes, even if the old installs are active,
