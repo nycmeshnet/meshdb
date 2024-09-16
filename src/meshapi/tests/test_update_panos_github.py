@@ -176,6 +176,7 @@ class TestPanoUtils(TestCase):
             result = PanoramaTitle.from_filename(case)
             self.assertEqual(result, expected, f"Expected: {expected}. Result: {result}.")
             # TODO: Assert that all the URL functions and stuff work
+            #  https://github.com/nycmeshnet/meshdb/issues/520
 
     # The GitHub does not have a perfectly uniform set of files.
     def test_parse_pano_bad_title(self):

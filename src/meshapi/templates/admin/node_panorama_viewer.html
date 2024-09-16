@@ -1,7 +1,21 @@
 {{ inline_admin_formset.formset.management_form }}
 <fieldset class="module {{ inline_admin_formset.classes }}">
 <h2>Panoramas</h2>
-<div>
+<div style="margin-bottom: 20px">
   {% include 'widgets/panorama_viewer.html' with widget=inline_admin_formset.opts.all_panoramas %}
 </div>
 </fieldset>
+
+
+{% comment %}
+Everything below this point exists because there are nonsense hidden fields that Django breaks the
+ability to submit the form without, so we include the original template blow but make everything hidden
+{% endcomment %}
+
+<style>
+#{{ inline_admin_formset.formset.prefix }}-group {
+    display: none !important;
+}
+</style>
+
+{% include "admin/edit_inline/tabular.html" %}

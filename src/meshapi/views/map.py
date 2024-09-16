@@ -78,7 +78,7 @@ class MapDataNodeList(generics.ListAPIView):
                 )
             )
         ):
-            if node.network_number not in covered_nns:
+            if node.network_number and node.network_number not in covered_nns:
                 # Arbitrarily pick a representative install for the details of the "Fake" node,
                 # preferring active installs if possible
                 representative_install = (
@@ -122,7 +122,7 @@ class MapDataNodeList(generics.ListAPIView):
             ap_json = {
                 # Hacky, but we have no choice, we need this to present as a "node" object to the
                 # map frontend and not conflict with any existing installs
-                "id": 1_000_000 + ap.id,
+                "id": 1_000_000 + (ap.id.int % 1_000_000),
                 "name": ap.name,
                 "status": "Installed",
                 "coordinates": [ap.longitude, ap.latitude, None],
@@ -179,9 +179,11 @@ class MapDataLinkList(generics.ListAPIView):
             )
             .values_list("pk", flat=True)
         )
+        .order_by("from_device__node__network_number", "to_device__node__network_number")
         # TODO: Possibly re-enable the below filters? They make make the map arguably more accurate,
         #  but less consistent with the current one by removing links between devices that are
         #  inactive in UISP
+        #  https://github.com/nycmeshnet/meshdb/issues/521
         # .exclude(from_device__status=Device.DeviceStatus.INACTIVE)
         # .exclude(to_device__status=Device.DeviceStatus.INACTIVE)
     )
@@ -200,6 +202,7 @@ class MapDataLinkList(generics.ListAPIView):
         for node in (
             Node.objects.annotate(num_buildings=Count("buildings"))
             .filter(num_buildings__gt=1)
+            .filter(buildings__nodes__network_number__isnull=False)
             .filter(~Q(status=Node.NodeStatus.INACTIVE) & Q(installs__status__in=ALLOWED_INSTALL_STATUSES))
             .prefetch_related(
                 Prefetch(
@@ -208,6 +211,7 @@ class MapDataLinkList(generics.ListAPIView):
                     to_attr="active_installs",
                 )
             )
+            .order_by("network_number")
         ):
             for building in node.buildings.all():
                 active_installs = building.active_installs  # type: ignore[attr-defined]
@@ -279,11 +283,11 @@ class MapDataLinkList(generics.ListAPIView):
         los_based_potential_links = []
         for los in los_objects_with_installs:
             from_numbers = set(i.install_number for i in los.from_building.installs.all()).union(
-                set(n.network_number for n in los.from_building.nodes.all())
+                set(n.network_number for n in los.from_building.nodes.all() if n.network_number)
             )
 
             to_numbers = set(i.install_number for i in los.to_building.installs.all()).union(
-                set(n.network_number for n in los.to_building.nodes.all())
+                set(n.network_number for n in los.to_building.nodes.all() if n.network_number)
             )
 
             for from_number in from_numbers:

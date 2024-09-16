@@ -1,3 +1,6 @@
+import uuid
+from typing import Optional
+
 from django.apps import apps
 
 NETWORK_NUMBER_MIN = 101
@@ -8,6 +11,55 @@ def no_op() -> None:
     """Literally does nothing, exists to provide a hook to the testing
     harness for race condition analysis"""
     pass
+
+
+def validate_network_number_unused_and_claim_install_if_needed(
+    network_number_candidate: int, pre_existing_node_id: Optional[uuid.UUID]
+) -> None:
+    """
+    Helper function to encapsulate the validation logic for the attachment of an NN
+    to a new node. We need to validate that the NN is unused as either an install number
+    or network number on an existing node. However, there are some edge cases. For example,
+    we allow an active install to have its number used as an NN for a node, if that node is
+    attached to this install
+
+    This validation logic is used for auto-assignment in the get_next_available_network_number()
+    function below, but also on many Node.save() calls since vanity NNs can come in via the
+    admin form and need to be validated prior to being committed to the DB
+
+    Accepts an optional existing node id to exempt from validation, this allows
+    assigning old install numbers to new nodes, even if the old installs are active,
+    as long as you associate the node that is going to get the install number to that install before
+    you try to assign the number to that node
+
+    :param network_number_candidate: The candidate network number we would like to validate
+    :param pre_existing_node_id: An optional existing node id to exempt from validation
+    :return: None
+    :raises ValueError if the network_number_candidate is invalid for any reason
+    """
+    # inline imports prevent cycles
+    from meshapi.models import Install, Node
+
+    pre_existing_node_with_nn = Node.objects.filter(network_number=network_number_candidate).first()
+    if pre_existing_node_with_nn is not None and pre_existing_node_with_nn.id != pre_existing_node_id:
+        raise ValueError("Network number already in use by another node")
+
+    nn_donor_install = Install.objects.select_for_update().filter(install_number=network_number_candidate).first()
+    if nn_donor_install:
+        if pre_existing_node_id and nn_donor_install.node_id == pre_existing_node_id:
+            # If the install is already connected to the node that is going to receive the network number,
+            # then the node can have that number without any further state updates or validation needed
+            return
+
+        if nn_donor_install.status == Install.InstallStatus.ACTIVE:
+            raise ValueError(
+                f"Invalid NN: {network_number_candidate} has an install associated that "
+                f"looks active (#{nn_donor_install.install_number})"
+            )
+
+        if nn_donor_install.status != Install.InstallStatus.NN_REASSIGNED:
+            nn_donor_install.status = Install.InstallStatus.NN_REASSIGNED
+            nn_donor_install.save()
 
 
 def get_next_available_network_number() -> int:
@@ -43,31 +95,8 @@ def get_next_available_network_number() -> int:
 
     # The number we are about to assign should not be connected to any existing installs as
     # an NN. Again, the above logic should do this, but we REALLY care about this not happening
-    already_in_use_nn_qs = Install.objects.filter(node__network_number=free_nn)
-    if len(already_in_use_nn_qs):
-        raise ValueError(
-            f"Invalid NN: {free_nn} is already in use for "
-            f"install number {already_in_use_nn_qs.first().install_number}"
-        )
-
-    already_exists_node_qs = Node.objects.filter(network_number=free_nn)
-    if len(already_exists_node_qs):
-        raise ValueError(f"Invalid NN: {free_nn} is already the network_number for a pre-exisiting node")
-
-    # If we are re-assigning a number from another install, mark it with NN Assigned to indicate
+    # also, if we are re-assigning a number from another install, mark it with NN Assigned to indicate
     # that this has happened
-    nn_donor_install = Install.objects.select_for_update().filter(install_number=free_nn).first()
-    if nn_donor_install:
-        # Double check that if we are re-assigning something that has been used before that it is
-        # definitely unused. The logic above should do that, but this is so important that for
-        # safety that we should double-check
-        if nn_donor_install.status != Install.InstallStatus.REQUEST_RECEIVED or nn_donor_install.node is not None:
-            raise ValueError(
-                f"Invalid NN: {free_nn} has an install associated that "
-                f"looks active (#{nn_donor_install.install_number})"
-            )
-
-        nn_donor_install.status = Install.InstallStatus.NN_REASSIGNED
-        nn_donor_install.save()
+    validate_network_number_unused_and_claim_install_if_needed(free_nn, None)
 
     return free_nn

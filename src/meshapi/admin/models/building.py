@@ -88,6 +88,7 @@ class BuildingAdmin(RankedSearchMixin, ImportExportModelAdmin, ExportActionMixin
         BoroughFilter,
         ("primary_node", admin.EmptyFieldListFilter),
     ]
+    list_select_related = ["primary_node"]
     fieldsets = [
         (
             "Address Information",

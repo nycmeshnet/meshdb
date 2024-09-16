@@ -1,4 +1,5 @@
 import datetime
+import uuid
 from unittest.mock import call, patch
 
 import pytest
@@ -76,6 +77,7 @@ class TestUISPImportUtils(TestCase):
         self.assertEqual(
             # TODO: Once 6 GHz becomes a thing, this will probably need to be tweaked
             #  for now we consider anything < 7 GHz as 5 GHz
+            #  https://github.com/nycmeshnet/meshdb/issues/518
             get_link_type({"type": "wireless", "frequency": 6100}),
             Link.LinkType.FIVE_GHZ,
         )
@@ -1311,6 +1313,7 @@ class TestUISPImportHandlers(TransactionTestCase):
         ]
 
         dup_link_1 = Link(
+            id=uuid.UUID("6a86c400-550d-489b-86d5-106fd95ae1e6"),
             from_device=self.device1,
             to_device=self.device2,
             status=Link.LinkStatus.ACTIVE,
@@ -1320,6 +1323,7 @@ class TestUISPImportHandlers(TransactionTestCase):
         dup_link_1.save()
 
         dup_link_2 = Link(
+            id=uuid.UUID("ed6f24b6-8b1d-4650-9f1d-471c25828935"),
             from_device=self.device1,
             to_device=self.device2,
             status=Link.LinkStatus.ACTIVE,

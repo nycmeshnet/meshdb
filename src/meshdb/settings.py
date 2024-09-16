@@ -10,12 +10,19 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
+import logging
 import os
 from pathlib import Path
+from typing import Any, Dict
 
 from dotenv import load_dotenv
 
 load_dotenv()
+
+MESHDB_ENVIRONMENT = os.environ.get("MESHDB_ENVIRONMENT", "")
+
+if not MESHDB_ENVIRONMENT:
+    logging.warning("Please specify MESHDB_ENVIRONMENT environment variable. Things will not work properly without it.")
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -33,6 +40,9 @@ SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get("DEBUG", "False") == "True"
 PROFILING_ENABLED = DEBUG and not os.environ.get("DISABLE_PROFILING", "False") == "True"
+
+
+FLAGS: Dict[str, Any] = {"MAINTENANCE_MODE": []}
 
 USE_X_FORWARDED_HOST = True
 
@@ -55,15 +65,33 @@ ALLOWED_HOSTS = [
     "meshdb",
     "nginx",
     "devdb.mesh.nycmesh.net",
+    "devdb.nycmesh.net",
 ]
 
 CORS_ALLOWED_ORIGINS = [
     "https://forms.mesh.nycmesh.net",
     "https://devforms.mesh.nycmesh.net",
+    "https://forms.nycmesh.net",
+    "https://forms.devdb.nycmesh.net",
     "https://map.mesh.nycmesh.net",
     "https://devmap.mesh.nycmesh.net",
+    "https://map.db.nycmesh.net",
+    "https://map.devdb.nycmesh.net",
     "https://adminmap.mesh.nycmesh.net",
     "https://devadminmap.mesh.nycmesh.net",
+    "https://adminmap.db.nycmesh.net",
+    "https://adminmap.devdb.nycmesh.net",
+]
+
+CSRF_TRUSTED_ORIGINS = [
+    "http://meshdb:8081",
+    "http://nginx:8080",
+    "https://db.nycmesh.net",
+    "https://devdb.nycmesh.net",
+    "http://devdb.mesh.nycmesh.net",
+    "https://devdb.mesh.nycmesh.net",
+    "http://db.mesh.nycmesh.net",
+    "https://db.mesh.nycmesh.net",
 ]
 
 if DEBUG:
@@ -79,16 +107,10 @@ if DEBUG:
         "http://localhost:80",
     ]
 
-
-CSRF_TRUSTED_ORIGINS = [
-    "http://127.0.0.1:8080",
-    "http://meshdb:8081",
-    "http://nginx:8080",
-    "http://devdb.mesh.nycmesh.net",
-    "https://devdb.mesh.nycmesh.net",
-    "http://db.mesh.nycmesh.net",
-    "https://db.mesh.nycmesh.net",
-]
+    CSRF_TRUSTED_ORIGINS += [
+        "http://127.0.0.1:8080",
+        "http://127.0.0.1",
+    ]
 
 # Application definition
 
@@ -112,6 +134,7 @@ INSTALLED_APPS = [
     "django_jsonform",
     "dbbackup",
     "import_export",
+    "flags",
 ]
 
 MIDDLEWARE = [
@@ -123,6 +146,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "meshweb.middleware.MaintenanceModeMiddleware",
 ]
 
 
@@ -130,6 +154,8 @@ if PROFILING_ENABLED:
     INSTALLED_APPS.append("silk")
     MIDDLEWARE.append("silk.middleware.SilkyMiddleware")
     MIDDLEWARE.append("django_cprofile_middleware.middleware.ProfilerMiddleware")
+
+SILKY_IGNORE_PATHS = ["/admin/jsi18n/"]
 
 DJANGO_CPROFILE_MIDDLEWARE_REQUIRE_STAFF = False
 
@@ -146,6 +172,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                "django.template.context_processors.request",
             ],
         },
     },
@@ -172,9 +199,10 @@ DATABASES = {
 # https://django-dbbackup.readthedocs.io/en/master/installation.html
 
 DBBACKUP_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
+DBBACKUP_FILENAME_TEMPLATE = "{datetime}.{extension}"
 DBBACKUP_STORAGE_OPTIONS = {
-    "bucket_name": os.environ.get("BACKUP_S3_BUCKET_NAME"),
-    "location": os.environ.get("BACKUP_S3_BASE_FOLDER"),
+    "bucket_name": "meshdb-data-backups",
+    "location": "meshdb-backups/prod1/",
 }
 
 DBBACKUP_CONNECTORS = {
@@ -246,6 +274,11 @@ REST_FRAMEWORK = {
     ],
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
     "DEFAULT_FILTER_BACKENDS": ["django_filters.rest_framework.DjangoFilterBackend"],
+    "DEFAULT_RENDERER_CLASSES": [
+        "rest_framework.renderers.JSONRenderer",
+        # Removes HTML form (doesn't work with NestedKeyObjectRelatedField)
+        "meshapi.util.drf_renderer.OnlyRawBrowsableAPIRenderer",
+    ],
 }
 
 HOOK_EVENTS = {
@@ -303,12 +336,17 @@ SPECTACULAR_SETTINGS = {
         {
             "name": "Installs",
             "description": "Installs, one corresponding to each household that is either already on the mesh, "
-            "or wishes to join the mesh",
+            "or wishes to join the mesh. For convenience this category offers two different methods to access the same "
+            "database objects. Either database UUID or install_number can be used interchanably in any of the URLs for "
+            "this object",
         },
         {
             "name": "Nodes",
             "description": "Nodes, one corresponding to each collection of devices with the same network number, "
-            "the installs that use those devices, and the buildings that house them",
+            "the installs that use those devices, and the buildings that house them. For convenience this category "
+            "offers two different methods to access the same database objects. Either database UUID or network_number "
+            "can be used interchanably in any of the URLs for this object. Note that not all Nodes have a "
+            "network_number (that field is only required for active nodes)",
         },
         {"name": "Links", "description": "Network links between devices"},
         {
@@ -342,6 +380,10 @@ SPECTACULAR_SETTINGS = {
             "Uses a legacy data format, not recommended for new applications",
         },
         {"name": "User Forms", "description": "Forms exposed directly to humans"},
+        {
+            "name": "Panoramas",
+            "description": "Used to bulk ingest panoramas. Internal use only (use Building.panoramas instead)",
+        },
     ],
     "SWAGGER_UI_SETTINGS": {
         "defaultModelsExpandDepth": 10,
