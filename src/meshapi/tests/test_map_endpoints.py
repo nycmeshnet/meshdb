@@ -311,7 +311,7 @@ class TestViewsGetUnauthenticated(TestCase):
                     "id": 3,
                     "name": "Brian",
                     "status": "Installed",
-                    "coordinates": [-73.987881, 40.724868, 27.0],
+                    "coordinates": [-73.987881, 40.724868, None],
                     "requestDate": 1426392000000,
                     "installDate": 1413259200000,
                     "roofAccess": False,
@@ -328,7 +328,7 @@ class TestViewsGetUnauthenticated(TestCase):
                 {
                     "id": 567,
                     "name": "Fancy Node",
-                    "coordinates": [-73.9917741, 40.6962265, 66.0],
+                    "coordinates": [-73.987881, 40.724868, None],
                     "requestDate": 1706331600000,
                     "roofAccess": True,
                     "panoramas": [],
@@ -336,7 +336,7 @@ class TestViewsGetUnauthenticated(TestCase):
                 {
                     "id": 888,
                     "status": "NN assigned",
-                    "coordinates": [-73.9917741, 40.6962265, 66.0],
+                    "coordinates": [-73.987881, 40.724868, None],
                     "requestDate": 1706331600000,
                     "roofAccess": True,
                     "panoramas": [],

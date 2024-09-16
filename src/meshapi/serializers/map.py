@@ -56,16 +56,21 @@ class MapDataInstallSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(source="install_number")
     name = serializers.SerializerMethodField("get_node_name")
     status = serializers.SerializerMethodField("convert_status_to_spreadsheet_status")
-    coordinates = serializers.SerializerMethodField("get_building_coordinates")
+    coordinates = serializers.SerializerMethodField("get_coordinates")
     requestDate = JavascriptDateField(source="request_date")
     installDate = JavascriptDateField(source="install_date")
     roofAccess = serializers.BooleanField(source="roof_access")
     notes = serializers.SerializerMethodField("get_synthetic_notes")
     panoramas = serializers.SerializerMethodField("get_panorama_filename")
 
-    def get_building_coordinates(self, install: Install) -> Tuple[float, float, Optional[float]]:
-        building = install.building
-        return (building.longitude, building.latitude, building.altitude)
+    def get_coordinates(self, install: Install) -> Tuple[float, float, Optional[float]]:
+        if install.node and (
+            install.status == Install.InstallStatus.NN_REASSIGNED
+            or install.install_number == install.node.network_number
+        ):
+            return install.node.longitude, install.node.latitude, install.node.altitude
+        else:
+            return install.building.longitude, install.building.latitude, install.building.altitude
 
     def get_node_name(self, install: Install) -> Optional[str]:
         # Only include the node name if this is an old-school "node as install" situation
