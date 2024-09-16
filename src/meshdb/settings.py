@@ -65,20 +65,29 @@ ALLOWED_HOSTS = [
     "meshdb",
     "nginx",
     "devdb.mesh.nycmesh.net",
+    "devdb.nycmesh.net",
 ]
 
 CORS_ALLOWED_ORIGINS = [
     "https://forms.mesh.nycmesh.net",
     "https://devforms.mesh.nycmesh.net",
+    "https://forms.nycmesh.net",
+    "https://forms.devdb.nycmesh.net",
     "https://map.mesh.nycmesh.net",
     "https://devmap.mesh.nycmesh.net",
+    "https://map.db.nycmesh.net",
+    "https://map.devdb.nycmesh.net",
     "https://adminmap.mesh.nycmesh.net",
     "https://devadminmap.mesh.nycmesh.net",
+    "https://adminmap.db.nycmesh.net",
+    "https://adminmap.devdb.nycmesh.net",
 ]
 
 CSRF_TRUSTED_ORIGINS = [
     "http://meshdb:8081",
     "http://nginx:8080",
+    "https://db.nycmesh.net",
+    "https://devdb.nycmesh.net",
     "http://devdb.mesh.nycmesh.net",
     "https://devdb.mesh.nycmesh.net",
     "http://db.mesh.nycmesh.net",
