@@ -92,10 +92,6 @@ class NYCAddressInfo:
         # the closest matching street address it can find, so check that
         # the ZIP of what we entered matches what we got.
 
-        # FIXME (willnilges): Found an edge case where if you enter an address
-        # that's not in the Zip code, it will print the "not within city limits"
-        # error. Either the error message needs to be re-worked, or additional
-        # validation is required to figure out exactly what is wrong.
         found_zip = int(nyc_planning_resp["features"][0]["properties"]["postalcode"])
         if found_zip != zip_code:
             raise AddressError(
@@ -112,9 +108,10 @@ class NYCAddressInfo:
         self.state = addr_props["region_a"]
         self.zip = int(addr_props["postalcode"])
 
-        # TODO (willnilges): Bail if no BIN. Given that we're guaranteeing this is NYC, if
-        # there is no BIN, then we've really foweled something up
-        if int(addr_props["addendum"]["pad"]["bin"]) in INVALID_BIN_NUMBERS:
+        if (
+            not addr_props.get("addendum", {}).get("pad", {}).get("bin")
+            or int(addr_props["addendum"]["pad"]["bin"]) in INVALID_BIN_NUMBERS
+        ):
             raise AddressError(
                 f"(NYC) Could not find address '{street_address}, {city}, {state} {zip_code}'. "
                 f"DOB API returned invalid BIN: {addr_props['addendum']['pad']['bin']}"
