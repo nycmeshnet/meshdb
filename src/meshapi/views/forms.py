@@ -399,7 +399,7 @@ def network_number_assignment(request: Request) -> Response:
     if nn_install.node is not None:
         message = f"This Install Number ({r.install_number}) already has a "
         f"Network Number ({nn_install.node.network_number}) associated with it!"
-        logging.warn(message)
+        logging.warning(message)
         return Response(
             {
                 "detail": message,
