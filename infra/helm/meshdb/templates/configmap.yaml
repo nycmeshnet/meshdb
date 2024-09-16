@@ -35,7 +35,7 @@ data:
   ADMIN_MAP_BASE_URL: {{ .Values.adminmap.base_url | quote }}
   MAP_BASE_URL: {{ .Values.map.base_url | quote }}
   LOS_URL: {{ .Values.meshweb.los_url | quote }}
-  PG_ADMIN_URL: https://{{ .Values.pgadmin.fqdn }}
+  PG_ADMIN_URL: https://{{ .Values.global.pgadmin.fqdn }}
   FORMS_URL: {{ .Values.meshweb.forms_url | quote }}
 
   SITE_BASE_URL: {{ .Values.meshdb.site_base_url | quote }}
