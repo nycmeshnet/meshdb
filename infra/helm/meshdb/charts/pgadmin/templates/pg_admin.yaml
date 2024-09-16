@@ -1,15 +1,15 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "meshdb.fullname" . }}-pgadmin
-  namespace: {{ .Values.meshdb_app_namespace }}
+  name: {{ include "pgadmin.fullname" . }}-pgadmin
+  namespace: {{ .Values.pgadmin_app_namespace }}
   labels:
-    {{- include "meshdb.labels" . | nindent 4 }}
+    {{- include "pgadmin.labels" . | nindent 4 }}
 spec:
   replicas: 1
   selector:
     matchLabels:
-      {{- include "meshdb.selectorLabels" . | nindent 6 }}
+      {{- include "pgadmin.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       {{- with .Values.podAnnotations }}
@@ -18,7 +18,7 @@ spec:
       {{- end }}
       labels:
         app: meshdb-pgadmin-app
-        {{- include "meshdb.labels" . | nindent 8 }}
+        {{- include "pgadmin.labels" . | nindent 8 }}
         {{- with .Values.podLabels }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
@@ -39,12 +39,12 @@ spec:
             - name: PGADMIN_DEFAULT_EMAIL
               valueFrom:
                 secretKeyRef:
-                  name: meshdb-secrets
+                  name: pgadmin-secrets
                   key: pgadmin-default-email
             - name: PGADMIN_DEFAULT_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: meshdb-secrets
+                  name: pgadmin-secrets
                   key: pgadmin-default-password
             - name: PGADMIN_CONFIG_ENHANCED_COOKIE_PROTECTION
               value: "False"

@@ -1,5 +1,5 @@
 {{- if .Values.ingress.enabled -}}
-{{- $fullName := include "meshdb.fullname" . -}}
+{{- $fullName := include "pgadmin.fullname" . -}}
 {{- $svcPort := .Values.pgadmin.port -}}
 {{- if and .Values.ingress.className (not (semverCompare ">=1.18-0" .Capabilities.KubeVersion.GitVersion)) }}
   {{- if not (hasKey .Values.ingress.annotations "kubernetes.io/ingress.class") }}
@@ -17,7 +17,7 @@ kind: Ingress
 metadata:
   name: {{ $fullName }}-pgadmin
   labels:
-    {{- include "meshdb.labels" . | nindent 4 }}
+    {{- include "pgadmin.labels" . | nindent 4 }}
   {{- with .Values.ingress.annotations }}
   annotations:
     {{- toYaml . | nindent 4 }}
@@ -35,11 +35,11 @@ spec:
             backend:
               {{- if semverCompare ">=1.19-0" $.Capabilities.KubeVersion.GitVersion }}
               service:
-                name: {{ include "meshdb.fullname" . }}-pgadmin
+                name: {{ include "pgadmin.fullname" . }}-pgadmin
                 port:
                   number: {{ $svcPort }}
               {{- else }}
-              serviceName: {{ include "meshdb.fullname" . }}-pgadmin
+              serviceName: {{ include "pgadmin.fullname" . }}-pgadmin
               servicePort: {{ $svcPort }}
               {{- end }}
 {{- end }}
