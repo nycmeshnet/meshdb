@@ -59,6 +59,9 @@ readinessProbe:
     path: /
     port: http
 
+image:
+  pullPolicy: Always
+
 autoscaling:
   enabled: false
   minReplicas: 1
