@@ -61,8 +61,8 @@ def merge_member_objects(members_and_installs: List[Tuple[Member, List[int]]]) -
         notes="",
     )
 
-    # Sort by ID so that earlier spreadsheet rows take precedence over earlier ones
-    members_and_installs.sort(key=lambda m: m[0].id)
+    # Sort by Install number so that earlier spreadsheet rows take precedence over earlier ones
+    members_and_installs.sort(key=lambda m: min(m[1]) if m[1] else 999999999999999999)
 
     # Merge many members down into one
     for member, install_numbers in members_and_installs:
@@ -133,11 +133,6 @@ def merge_member_objects(members_and_installs: List[Tuple[Member, List[int]]]) -
 
             merged_member.notes = (name_change_note + " " + install_number_addendum + "\n") + merged_member.notes
 
-    # Change the pk of our new object before we save it, so that it becomes an UPDATE
-    # operation on the pre-existing object with the lowest ID (this is needed since a future
-    # merge may happen and if so we want to ensure that this merged object is used as the
-    # source of truth during that future merge)
-    merged_member.pk = members_and_installs[0][0].id
     merged_member.save()
 
     # Re-point all the installs for all the members down to our one merged member
@@ -148,8 +143,7 @@ def merge_member_objects(members_and_installs: List[Tuple[Member, List[int]]]) -
 
     # Now that we have consolidated down, clear out the objects we consolidated to avoid duplication
     for member, _ in members_and_installs:
-        if member.id != merged_member.id:
-            member.delete()
+        member.delete()
 
     return merged_member
 

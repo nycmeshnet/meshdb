@@ -2,7 +2,9 @@ from typing import Any, Optional
 
 from django.contrib import admin
 from django.contrib.admin import AdminSite
+from django.core.exceptions import ValidationError
 from django.db.models import Model, Q, QuerySet
+from django.forms import BaseInlineFormSet
 from django.http import HttpRequest
 from nonrelated_inlines.admin import NonrelatedTabularInline
 
@@ -70,7 +72,7 @@ class NonrelatedBuildingInline(BetterNonrelatedInline):
     fields = ["primary_node", "bin", "street_address", "city", "zip_code"]
     readonly_fields = fields
 
-    add_button = True
+    add_button = False
     reverse_relation = "primary_node"
 
     # Hack to get the NN
@@ -78,13 +80,22 @@ class NonrelatedBuildingInline(BetterNonrelatedInline):
 
     def get_form_queryset(self, obj: Node) -> QuerySet[Building]:
         self.network_number = obj.pk
-        return self.model.objects.filter(nodes=obj)
+        return self.model.objects.filter(nodes=obj).prefetch_related("primary_node")
+
+
+class BuildingMemberShipFormset(BaseInlineFormSet):
+    def clean(self) -> None:
+        super().clean()
+
+        if not sum(1 for form in self.forms if "DELETE" not in form.changed_data and form.cleaned_data.get("building")):
+            raise ValidationError("You must select at least one building for this node")
 
 
 class BuildingMembershipInline(admin.TabularInline):
     model = Building.nodes.through
+    formset = BuildingMemberShipFormset
     extra = 0
-    autocomplete_fields = ["building_id"]
+    autocomplete_fields = ["building"]
     classes = ["collapse"]
     verbose_name = "Building"
     verbose_name_plural = "Edit Related Buildings"
@@ -160,6 +171,9 @@ class InstallInline(BetterInline):
         elif model == Member:
             self.add_button = True
             self.reverse_relation = "member"
+
+    def get_queryset(self, request: HttpRequest) -> QuerySet[Install]:
+        return super().get_queryset(request).order_by("install_number")
 
 
 class BuildingLOSInline(BetterNonrelatedInline):

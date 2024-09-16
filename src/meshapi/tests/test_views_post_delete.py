@@ -27,23 +27,23 @@ class TestViewsPostDeleteUnauthenticated(TestCase):
     c = Client()
 
     def test_views_post_unauthenticated(self):
-        response = self.c.post("/api/v1/members/", sample_member)
+        response = self.c.post("/api/v1/members/", sample_member, content_type="application/json")
         assert_correct_response(self, response, 403)
 
-        response = self.c.post("/api/v1/buildings/", sample_building)
+        response = self.c.post("/api/v1/buildings/", sample_building, content_type="application/json")
         assert_correct_response(self, response, 403)
 
-        response = self.c.post("/api/v1/installs/", sample_install)
+        response = self.c.post("/api/v1/installs/", sample_install, content_type="application/json")
         assert_correct_response(self, response, 403)
 
     def test_views_delete_unauthenticated(self):
-        response = self.c.delete("/api/v1/installs/1/")
+        response = self.c.delete("/api/v1/installs/6b4bc663-f74e-41c9-9986-b9af50b1172f/")
         assert_correct_response(self, response, 403)
 
-        response = self.c.delete("/api/v1/members/1/")
+        response = self.c.delete("/api/v1/members/6b4bc663-f74e-41c9-9986-b9af50b1172f/")
         assert_correct_response(self, response, 403)
 
-        response = self.c.delete("/api/v1/buildings/1/")
+        response = self.c.delete("/api/v1/buildings/6b4bc663-f74e-41c9-9986-b9af50b1172f/")
         assert_correct_response(self, response, 403)
 
 
@@ -78,7 +78,11 @@ class TestViewsPostDeleteInstaller(TestCase):
 
         sample_member_changed = sample_member.copy()
         sample_member_changed["name"] = "Chom2"
-        response = self.c.post("/api/v1/members/", sample_member_changed)
+        response = self.c.post(
+            "/api/v1/members/",
+            sample_member_changed,
+            content_type="application/json",
+        )
         assert_correct_response(self, response, 403)
         response = self.c.put(
             f"/api/v1/members/{member.id}/",
@@ -105,13 +109,13 @@ class TestViewsPostDeleteInstaller(TestCase):
         sample_install_changed = sample_install.copy()
         sample_install_changed["install_number"] = install.install_number
         sample_install_changed["notes"] += "\n abcdef"  # Change something
-        sample_install_changed["member"] = member.id
-        sample_install_changed["building"] = building.id
+        sample_install_changed["member"] = {"id": member.id}
+        sample_install_changed["building"] = {"id": building.id}
 
         response = self.c.post("/api/v1/installs/", sample_install_changed)
         assert_correct_response(self, response, 403)
         response = self.c.put(
-            f"/api/v1/installs/{install.install_number}/",
+            f"/api/v1/installs/{install.id}/",
             sample_install_changed,
             content_type="application/json",
         )
@@ -122,13 +126,13 @@ class TestViewsPostDeleteInstaller(TestCase):
         assert install.notes.endswith("\n abcdef")
 
     def test_views_delete_installer(self):
-        response = self.c.delete("/api/v1/installs/1/")
+        response = self.c.delete("/api/v1/installs/6b4bc663-f74e-41c9-9986-b9af50b1172f/")
         assert_correct_response(self, response, 403)
 
-        response = self.c.delete("/api/v1/members/1/")
+        response = self.c.delete("/api/v1/members/6b4bc663-f74e-41c9-9986-b9af50b1172f/")
         assert_correct_response(self, response, 403)
 
-        response = self.c.delete("/api/v1/buildings/1/")
+        response = self.c.delete("/api/v1/buildings/6b4bc663-f74e-41c9-9986-b9af50b1172f/")
         assert_correct_response(self, response, 403)
 
 
@@ -142,21 +146,33 @@ class TestViewsPostDeleteAdmin(TestCase):
         self.c.login(username="admin", password="admin_password")
 
     def test_views_post_admin(self):
-        response = self.c.post("/api/v1/members/", sample_member)
+        response = self.c.post(
+            "/api/v1/members/",
+            sample_member,
+            content_type="application/json",
+        )
         assert_correct_response(self, response, 201)
 
         member_id = get_first_id(self.c, "/api/v1/members/")
-        response = self.c.post("/api/v1/buildings/", sample_building)
+        response = self.c.post(
+            "/api/v1/buildings/",
+            sample_building,
+            content_type="application/json",
+        )
         assert_correct_response(self, response, 201)
         building_id = get_first_id(self.c, "/api/v1/buildings/")
 
         sample_install_copy = sample_install.copy()
-        sample_install_copy["member"] = member_id
-        sample_install_copy["building"] = building_id
-        response = self.c.post("/api/v1/installs/", sample_install_copy)
+        sample_install_copy["member"] = {"id": member_id}
+        sample_install_copy["building"] = {"id": building_id}
+        response = self.c.post(
+            "/api/v1/installs/",
+            sample_install_copy,
+            content_type="application/json",
+        )
         assert_correct_response(self, response, 201)
         # XXX: This is how I know that getting the install number from the API is working
-        install_id = get_first_id(self.c, "/api/v1/installs/", "install_number")
+        install_id = get_first_id(self.c, "/api/v1/installs/", "id")
 
         # Now delete
         response = self.c.delete(f"/api/v1/installs/{install_id}/")

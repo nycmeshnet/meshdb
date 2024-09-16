@@ -1,3 +1,5 @@
+import uuid
+
 from django.db import models
 
 from meshapi.models import Building
@@ -11,18 +13,21 @@ class LOS(models.Model):
 
     This is needed because unlike the legacy spreadsheet, MeshDB's Link table stores connections
     between Device objects, not between install numbers. This means among other things that in order
-    to show a potential link on the map, we'd need to assign NNs to those buildings (very gross). Instead,
-    with this table, we can represent potential links between any pair of street addresses (MeshDB
-    Buildings), no need to create any other DB objects.
+    to show a potential link on the map, we'd need to create fake devices and node objects for each
+    of those buildings (very messy). Instead, with this table, we can represent potential links
+    between any pair of street addresses (MeshDB Buildings), no need to create any other DB objects.
     """
 
     class Meta:
         verbose_name = "LOS"
         verbose_name_plural = "LOSes"
+        ordering = ["id"]
 
     class LOSSource(models.TextChoices):
         HUMAN_ANNOTATED = "Human Annotated"
         EXISTING_LINK = "Existing Link"
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
     from_building = models.ForeignKey(
         Building,
@@ -58,7 +63,7 @@ class LOS(models.Model):
 
     def __str__(self) -> str:
         def building_to_number(building: Building) -> str:
-            if building.primary_node:
+            if building.primary_node and building.primary_node.network_number:
                 return f"NN{building.primary_node.network_number}"
 
             install = building.installs.first()

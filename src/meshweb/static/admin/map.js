@@ -14,9 +14,24 @@ async function getNewSelectedNodes(){
     const [type, id, action] = getCurrentTarget();
 
     let nodeId = null;
-    if (["node", "install"].indexOf(type) !== -1) nodeId = id;
 
-    if (type === "building") {
+    if (type === "install") {
+        if (!id) return null;
+        const installResponse = await fetch(`/api/v1/installs/${id}/`);
+        if (!installResponse.ok) return null;
+        const install = await installResponse.json();
+        nodeId = install.install_number;
+    } else if (type === "node") {
+        if (!id) return null;
+        const nodeResponse = await fetch(`/api/v1/nodes/${id}/`);
+        if (!nodeResponse.ok) return null;
+        const node = await nodeResponse.json();
+        if (node.network_number) {
+            nodeId = node.network_number;
+        } else {
+            nodeId = node.installs[0].install_number;
+        }
+    } else if (type === "building") {
         if (!id) return null;
         const buildingResponse = await fetch(`/api/v1/buildings/${id}/`);
         if (!buildingResponse.ok) return null;
@@ -24,7 +39,7 @@ async function getNewSelectedNodes(){
         if (building.primary_network_number) {
             nodeId = building.primary_network_number;
         } else if (building.installs) {
-            nodeId = building.installs[0];
+            nodeId = building.installs[0].install_number;
         }
     } else if (["device", "sector", "accesspoint"].indexOf(type) !== -1) {
         if (!id) return null;
@@ -37,7 +52,7 @@ async function getNewSelectedNodes(){
         const memberResponse = await fetch(`/api/v1/members/${id}/`);
         if (!memberResponse.ok) return null;
         const member = await memberResponse.json();
-        nodeId = member.installs.join("-");
+        nodeId = member.installs.map(install => install.install_number).join("-");
     } else if (type === "link") {
         if (!id) return null;
         const linkResponse = await fetch(`/api/v1/links/${id}/`);
@@ -66,7 +81,7 @@ async function getNewSelectedNodes(){
         if (building1.primary_network_number) {
             b1NodeId = building1.primary_network_number;
         } else if (building1.installs) {
-            b1NodeId = building1.installs[0];
+            b1NodeId = building1.installs[0].install_number;
         }
 
         let b2NodeId = null;
@@ -76,7 +91,7 @@ async function getNewSelectedNodes(){
         if (building2.primary_network_number) {
             b2NodeId = building2.primary_network_number;
         } else if (building2.installs) {
-            b2NodeId = building2.installs[0];
+            b2NodeId = building2.installs[0].install_number;
         }
 
         if (b1NodeId && b2NodeId)  nodeId = `${b1NodeId}-${b2NodeId}`;
@@ -259,9 +274,7 @@ async function nodeSelectedOnMap(selectedNodes) {
 
     let selectedNodeInt = parseInt(selectedNodes);
     if (selectedNodeInt >= 1000000) {
-        selectedNodeInt -= 1000000;
-        /* Hack for APs to show correctly */
-        updateAdminContent(new URL(`/admin/meshapi/device/${selectedNodeInt}/change`, document.location).href);
+        /* Hack for APs to not break things. We unfortantely can't do a lot better than this without much pain*/
         return;
     }
 
@@ -270,14 +283,15 @@ async function nodeSelectedOnMap(selectedNodes) {
     if (installResponse.ok){
         const installJson = await installResponse.json();
         if (installJson.network_number)  {
-            await updateAdminContent(new URL(`/admin/meshapi/node/${installJson.network_number}/change`, document.location).href);
+            await updateAdminContent(new URL(`/admin/meshapi/node/${installJson.node}/change`, document.location).href);
             updateMapForLocation(installJson.network_number.toString());
         } else {
-            updateAdminContent(new URL(`/admin/meshapi/install/${selectedNodes}/change`, document.location).href);
+            updateAdminContent(new URL(`/admin/meshapi/install/${installJson.id}/change`, document.location).href);
         }
     } else {
         if (nodeResponse.ok)  {
-            updateAdminContent(new URL(`/admin/meshapi/node/${selectedNodes}/change`, document.location).href);
+            const nodeJson = await nodeResponse.json();
+            updateAdminContent(new URL(`/admin/meshapi/node/${nodeJson.id}/change`, document.location).href);
         }
     }
 

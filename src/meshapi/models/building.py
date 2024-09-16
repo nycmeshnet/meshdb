@@ -1,14 +1,15 @@
+import uuid
 from typing import Any
 
 from django.contrib.postgres.fields import ArrayField
 from django.core.validators import MinValueValidator
 from django.db import models
+from django.db.models import ManyToManyField
 from django_jsonform.models.fields import ArrayField as JSONFormArrayField
 
 from meshdb.utils.spreadsheet_import.building.constants import AddressTruthSource
 
 from .node import Node
-from .util.custom_many_to_many import CustomColumnNameManyToManyField
 
 
 class Building(models.Model):
@@ -20,6 +21,11 @@ class Building(models.Model):
     necessarily unique. In the case of a structure with multiple street addresses, we create a
     "Building" object for each address, but these "Building" objects will all share a BIN.
     """
+
+    class Meta:
+        ordering = ["id"]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
     bin = models.IntegerField(
         blank=True,
@@ -82,21 +88,17 @@ class Building(models.Model):
         Node,
         on_delete=models.PROTECT,
         related_name="+",  # Don't allow reverse access, since this will be included via nodes below
-        db_column="primary_network_number",
         help_text="The primary node for this Building, for cases where it has more than one. This is the node "
         "bearing the network number that the building is collquially referred to by volunteers and is "
         "usually the first NN held by any equipment on the building. If present, this must also be included in nodes",
         blank=True,
         null=True,
     )
-    nodes = CustomColumnNameManyToManyField(
+    nodes = ManyToManyField(
         Node,
-        db_from_column_name="building_id",
-        db_to_column_name="network_number",
         help_text="All nodes located on the same structure (i.e. a discrete man-made place identified by the same BIN) "
         "that this Building is located within.",
         related_name="buildings",
-        blank=True,
     )
 
     def save(self, *args: Any, **kwargs: Any) -> None:
