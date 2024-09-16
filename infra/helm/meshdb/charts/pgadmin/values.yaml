@@ -1,16 +1,17 @@
 replicaCount: 1
 
-imagePullSecrets: []
-nameOverride: ""
-fullnameOverride: ""
-
-podAnnotations: {}
-podLabels: {}
-
-podSecurityContext: {}
-  # fsGroup: 2000
-
-securityContext: {}
+pgadmin:
+  port: 80
+  image:
+    repository: docker.io/dpage/pgadmin4
+    tag: 8.9
+  liveness_probe: "false"
+  podSecurityContext: {}
+  securityContext: {}
+  resources: {}
+  nodeSelector: {}
+  affinity: {}
+  tolerations: []
 
 ingress:
   enabled: true

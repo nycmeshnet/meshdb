@@ -51,6 +51,9 @@ meshweb:
   affinity: {}
   tolerations: []
 
+pgadmin:
+  port: 80
+
 nginx:
   port: 80
   podSecurityContext: {}
