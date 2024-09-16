@@ -35,8 +35,8 @@ class InstallAdminForm(forms.ModelForm):
         fields = "__all__"
         widgets = {
             "unit": forms.TextInput(),
-            "ticket_id": ExternalHyperlinkWidget(
-                lambda ticket_id: f"{OSTICKET_URL}/scp/tickets.php?id={ticket_id}",
+            "ticket_number": ExternalHyperlinkWidget(
+                lambda ticket_number: f"{OSTICKET_URL}/scp/tickets.php?number={ticket_number}",
                 title="View in OSTicket",
             ),
         }
@@ -92,7 +92,7 @@ class InstallAdmin(RankedSearchMixin, ImportExportModelAdmin, ExportActionMixin)
                 "fields": [
                     "install_number",
                     "status",
-                    "ticket_id",
+                    "ticket_number",
                     "member",
                 ]
             },
