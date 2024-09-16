@@ -1,4 +1,5 @@
 import logging
+import uuid
 from datetime import datetime
 from json import JSONDecodeError
 from typing import Any, Dict, List
@@ -27,6 +28,12 @@ LINKNYC_KIOSK_STATUS_TRANSLATION = {
     "Ready for Activation": "pending",
     "Installed": "installed",
 }
+
+
+def convert_access_point_id_to_fake_node_number(access_point_id: uuid.UUID) -> int:
+    # Hacky, but we have no choice, we need this to present as a "node" object to the
+    # map frontend and not conflict with any existing installs
+    return 1_000_000 + (access_point_id.int % 1_000_000)
 
 
 @extend_schema_view(
@@ -120,9 +127,7 @@ class MapDataNodeList(generics.ListAPIView):
                 else None
             )
             ap_json = {
-                # Hacky, but we have no choice, we need this to present as a "node" object to the
-                # map frontend and not conflict with any existing installs
-                "id": 1_000_000 + (ap.id.int % 1_000_000),
+                "id": convert_access_point_id_to_fake_node_number(ap.id),
                 "name": ap.name,
                 "status": "Installed",
                 "coordinates": [ap.longitude, ap.latitude, None],
@@ -301,6 +306,47 @@ class MapDataLinkList(generics.ListAPIView):
                     )
 
         response.data.extend(los_based_potential_links)
+
+        # Since all of the above logic is focused on node <-> node links (and install <-> node links)
+        # it excludes device <-> AP and node <-> AP links for campus access points. We add these back
+        # manually here
+        ap_links_queryset = (
+            Link.objects.filter(Q(from_device__accesspoint__isnull=False) | Q(to_device__accesspoint__isnull=False))
+            .prefetch_related("to_device")
+            .prefetch_related("from_device")
+            .prefetch_related("to_device__node")
+            .prefetch_related("from_device__node")
+            .annotate(
+                from_ap_id=Subquery(
+                    AccessPoint.objects.filter(device_ptr=OuterRef("from_device")).values("device_ptr_id")[:1]
+                )
+            )
+            .annotate(
+                to_ap_id=Subquery(
+                    AccessPoint.objects.filter(device_ptr=OuterRef("to_device")).values("device_ptr_id")[:1]
+                )
+            )
+            .order_by("id")
+        )
+        ap_links = []
+        for link in ap_links_queryset:
+            ap_links.append(
+                {
+                    "from": (
+                        convert_access_point_id_to_fake_node_number(link.from_ap_id)
+                        if link.from_ap_id
+                        else link.from_device.node.network_number
+                    ),
+                    "to": (
+                        convert_access_point_id_to_fake_node_number(link.to_ap_id)
+                        if link.to_ap_id
+                        else link.to_device.node.network_number
+                    ),
+                    "status": MapDataLinkSerializer().convert_status_to_spreadsheet_status(link),
+                }
+            )
+
+        response.data.extend(ap_links)
 
         return response
 

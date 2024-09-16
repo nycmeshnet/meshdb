@@ -77,6 +77,12 @@ class DeviceAdmin(RankedSearchMixin, ImportExportModelAdmin, ExportActionMixin):
     def get_queryset(self, request: HttpRequest) -> QuerySet[Device]:
         # Get the base queryset
         queryset = super().get_queryset(request)
-        # Filter out sectors
-        queryset = queryset.exclude(sector__isnull=False).exclude(accesspoint__isnull=False)
+
+        # If we are calling the search endpoint from the dropdown on the link model, don't exclude
+        # anything, keep all the sectors and APs as options
+        if not request.GET.get("model_name") == "link":
+            # However, if we are on the main search/list page, exclude these other models since
+            # they have their own pages for this
+            queryset = queryset.exclude(sector__isnull=False).exclude(accesspoint__isnull=False)
+
         return queryset
