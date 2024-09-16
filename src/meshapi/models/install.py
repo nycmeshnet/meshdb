@@ -52,11 +52,11 @@ class Install(models.Model):
         help_text="The current status of this install",
     )
 
-    # OSTicket ID
-    ticket_id = models.IntegerField(
+    # OSTicket Ticket Number
+    ticket_number = models.IntegerField(
         blank=True,
         null=True,
-        help_text="The ID of the OSTicket used to track communications with the member about this install",
+        help_text="The ticket number of the OSTicket used to track communications with the member about this install",
     )
 
     # Important dates

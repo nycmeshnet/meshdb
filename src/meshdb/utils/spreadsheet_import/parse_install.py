@@ -44,9 +44,7 @@ def create_install(row: SpreadsheetRow) -> Optional[models.Install]:
     install = models.Install(
         install_number=row.id,
         status=translate_spreadsheet_status_to_db_status(row.status),
-        ticket_id=None,
-        # TODO: Figure out if we can export data from OSTicket to back-fill this
-        #  https://github.com/nycmeshnet/meshdb/issues/510
+        ticket_number=None,
         request_date=row.request_date.date(),
         install_date=row.installDate,
         abandon_date=row.abandonDate,
