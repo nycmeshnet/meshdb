@@ -193,7 +193,15 @@ DATABASES = {
         "PASSWORD": os.environ.get("DB_PASSWORD"),
         "HOST": os.environ.get("DB_HOST"),
         "PORT": os.environ.get("DB_PORT", 5432),
-    }
+    },
+    "readonly": {
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": os.environ.get("DB_NAME"),
+        "USER": os.environ.get("DB_USER_RO"),
+        "PASSWORD": os.environ.get("DB_PASSWORD_RO"),
+        "HOST": os.environ.get("DB_HOST"),
+        "PORT": os.environ.get("DB_PORT", 5432),
+    },
 }
 
 # django-dbbackup
@@ -397,6 +405,6 @@ SPECTACULAR_SETTINGS = {
 IMPORT_EXPORT_IMPORT_PERMISSION_CODE = "add"
 IMPORT_EXPORT_EXPORT_PERMISSION_CODE = "view"
 
-EXPLORER_CONNECTIONS = { 'Default': 'default' }
-EXPLORER_DEFAULT_CONNECTION = 'default'
+EXPLORER_CONNECTIONS = { 'Default': 'readonly' }
+EXPLORER_DEFAULT_CONNECTION = 'readonly'
 EXPLORER_PERMISSION_VIEW = lambda r: r.user.has_perm("meshapi.explorer")
