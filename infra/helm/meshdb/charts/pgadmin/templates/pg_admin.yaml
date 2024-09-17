@@ -35,19 +35,14 @@ spec:
             - name: http
               containerPort: {{ .Values.pgadmin.port }}
               protocol: TCP
+          envFrom:
+            - secretRef:
+                name: pgadmin-secrets
           env:
-            - name: PGADMIN_DEFAULT_EMAIL
-              valueFrom:
-                secretKeyRef:
-                  name: pgadmin-secrets
-                  key: pgadmin-default-email
-            - name: PGADMIN_DEFAULT_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: pgadmin-secrets
-                  key: pgadmin-default-password
             - name: PGADMIN_CONFIG_ENHANCED_COOKIE_PROTECTION
               value: "False"
+            - name: PGADMIN_CONFIG_MAIL_USE_TLS
+              value: "True"
           {{ if eq .Values.pgadmin.liveness_probe "true" }}
           livenessProbe:
            exec:
