@@ -46,10 +46,10 @@ jobs:
         --set pg.password="${{ secrets.PG_PASSWORD}}" \
         --set aws.access_key_id="${{ secrets.ACCESS_KEY_ID }}" \
         --set aws.secret_access_key="${{ secrets.SECRET_ACCESS_KEY }}" \
-        --set global.email.smtp_host="${{ vars.SMTP_HOST }}" \
-        --set global.email.smtp_port="${{ vars.SMTP_PORT }}" \
-        --set global.email.smtp_user="${{ vars.SMTP_USER }}" \
-        --set global.email.smtp_password="${{ secrets.SMTP_PASSWORD }}" \
+        --set email.smtp_host="${{ vars.SMTP_HOST }}" \
+        --set email.smtp_port="${{ vars.SMTP_PORT }}" \
+        --set email.smtp_user="${{ vars.SMTP_USER }}" \
+        --set email.smtp_password="${{ secrets.SMTP_PASSWORD }}" \
         --set meshweb.backup_s3_base_folder="${{ vars.BACKUP_S3_BASE_FOLDER }}" \
         --set meshweb.backup_s3_bucket_name="${{ secrets.BACKUP_S3_BUCKET_NAME }}" \
         --set meshweb.django_secret_key="${{ secrets.DJANGO_SECRET_KEY }}" \
