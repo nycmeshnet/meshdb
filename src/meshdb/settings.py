@@ -135,6 +135,7 @@ INSTALLED_APPS = [
     "dbbackup",
     "import_export",
     "flags",
+    "explorer",
 ]
 
 MIDDLEWARE = [
@@ -395,3 +396,7 @@ SPECTACULAR_SETTINGS = {
 
 IMPORT_EXPORT_IMPORT_PERMISSION_CODE = "add"
 IMPORT_EXPORT_EXPORT_PERMISSION_CODE = "view"
+
+EXPLORER_CONNECTIONS = { 'Default': 'default' }
+EXPLORER_DEFAULT_CONNECTION = 'default'
+EXPLORER_PERMISSION_VIEW = lambda r: r.user.has_perm("meshapi.explorer")
