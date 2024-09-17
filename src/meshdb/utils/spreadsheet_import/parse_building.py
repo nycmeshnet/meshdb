@@ -203,13 +203,7 @@ def get_or_create_building(
 
     latitude = row.latitude
     longitude = row.longitude
-    altitude = (
-        # TODO: Change this to match new DOB ID if changed from spreadsheet?
-        #  Would require another API call
-        row.altitude
-        if row.altitude and row.altitude >= 0
-        else None
-    )
+    altitude = row.altitude if row.altitude and row.altitude >= 0 else None
 
     existing_building = get_existing_building(
         address_result.discovered_bin or dob_bin, address_result.address, (latitude, longitude)

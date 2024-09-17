@@ -1,9 +1,10 @@
-from typing import Any, Optional, Type
+from typing import Any, List, Optional, Tuple, Type
 
 import tablib
 from django import forms
 from django.contrib import admin
 from django.contrib.postgres.search import SearchVector
+from django.db.models import QuerySet
 from django.forms import ModelForm
 from django.http import HttpRequest
 from import_export import resources
@@ -70,6 +71,7 @@ class NodeAdmin(RankedSearchMixin, ImportExportModelAdmin, ExportActionMixin):
             "Details",
             {
                 "fields": [
+                    "network_number",
                     "status",
                     "type",
                     "name",
@@ -121,7 +123,31 @@ class NodeAdmin(RankedSearchMixin, ImportExportModelAdmin, ExportActionMixin):
     ) -> Type[ModelForm]:
         form = super().get_form(request, obj, **kwargs)
         form.base_fields["auto_populate_location_field"].label = ""
+        if "network_number" in form.base_fields:
+            form.base_fields["network_number"].widget.attrs["style"] = "width: 7em;"
+            form.base_fields["network_number"].help_text = (
+                "If left blank, this will be auto-populated based on the next available NN "
+                "(when status is set to Active)"
+            )
+            form.base_fields["network_number"].required = False
         return form
+
+    def get_readonly_fields(self, request: HttpRequest, obj: Optional[Node] = None) -> List[str] | Tuple[str, ...]:
+        if obj:  # obj is not None, so this is an edit
+            return [
+                "network_number",
+            ] + list(super().get_readonly_fields(request, obj))
+        else:
+            return super().get_readonly_fields(request, obj)
+
+    def get_queryset(self, request: HttpRequest) -> QuerySet:
+        return (
+            super()
+            .get_queryset(request)
+            .prefetch_related("buildings")
+            .prefetch_related("installs")
+            .prefetch_related("devices")
+        )
 
     def address(self, obj: Node) -> Optional[Building]:
         return obj.buildings.first()

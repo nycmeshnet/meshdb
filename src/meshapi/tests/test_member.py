@@ -17,7 +17,11 @@ class TestMember(TestCase):
         self.c.login(username="admin", password="admin_password")
 
     def test_member(self):
-        response = self.c.post("/api/v1/members/", sample_member)
+        response = self.c.post(
+            "/api/v1/members/",
+            sample_member,
+            content_type="application/json",
+        )
         code = 201
         self.assertEqual(
             code,
@@ -159,7 +163,11 @@ class TestMember(TestCase):
             "phone_numer": "",
             "slack_handle": "",
         }
-        response = self.c.post("/api/v1/members/", err_member)
+        response = self.c.post(
+            "/api/v1/members/",
+            err_member,
+            content_type="application/json",
+        )
         code = 400
         self.assertEqual(
             code,

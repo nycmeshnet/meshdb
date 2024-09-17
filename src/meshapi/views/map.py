@@ -1,4 +1,5 @@
 import logging
+import uuid
 from datetime import datetime
 from json import JSONDecodeError
 from typing import Any, Dict, List
@@ -27,6 +28,12 @@ LINKNYC_KIOSK_STATUS_TRANSLATION = {
     "Ready for Activation": "pending",
     "Installed": "installed",
 }
+
+
+def convert_access_point_id_to_fake_node_number(access_point_id: uuid.UUID) -> int:
+    # Hacky, but we have no choice, we need this to present as a "node" object to the
+    # map frontend and not conflict with any existing installs
+    return 1_000_000 + (access_point_id.int % 1_000_000)
 
 
 @extend_schema_view(
@@ -78,7 +85,7 @@ class MapDataNodeList(generics.ListAPIView):
                 )
             )
         ):
-            if node.network_number not in covered_nns:
+            if node.network_number and node.network_number not in covered_nns:
                 # Arbitrarily pick a representative install for the details of the "Fake" node,
                 # preferring active installs if possible
                 representative_install = (
@@ -120,9 +127,7 @@ class MapDataNodeList(generics.ListAPIView):
                 else None
             )
             ap_json = {
-                # Hacky, but we have no choice, we need this to present as a "node" object to the
-                # map frontend and not conflict with any existing installs
-                "id": 1_000_000 + ap.id,
+                "id": convert_access_point_id_to_fake_node_number(ap.id),
                 "name": ap.name,
                 "status": "Installed",
                 "coordinates": [ap.longitude, ap.latitude, None],
@@ -179,9 +184,11 @@ class MapDataLinkList(generics.ListAPIView):
             )
             .values_list("pk", flat=True)
         )
+        .order_by("from_device__node__network_number", "to_device__node__network_number")
         # TODO: Possibly re-enable the below filters? They make make the map arguably more accurate,
         #  but less consistent with the current one by removing links between devices that are
         #  inactive in UISP
+        #  https://github.com/nycmeshnet/meshdb/issues/521
         # .exclude(from_device__status=Device.DeviceStatus.INACTIVE)
         # .exclude(to_device__status=Device.DeviceStatus.INACTIVE)
     )
@@ -200,6 +207,7 @@ class MapDataLinkList(generics.ListAPIView):
         for node in (
             Node.objects.annotate(num_buildings=Count("buildings"))
             .filter(num_buildings__gt=1)
+            .filter(buildings__nodes__network_number__isnull=False)
             .filter(~Q(status=Node.NodeStatus.INACTIVE) & Q(installs__status__in=ALLOWED_INSTALL_STATUSES))
             .prefetch_related(
                 Prefetch(
@@ -208,6 +216,7 @@ class MapDataLinkList(generics.ListAPIView):
                     to_attr="active_installs",
                 )
             )
+            .order_by("network_number")
         ):
             for building in node.buildings.all():
                 active_installs = building.active_installs  # type: ignore[attr-defined]
@@ -279,11 +288,11 @@ class MapDataLinkList(generics.ListAPIView):
         los_based_potential_links = []
         for los in los_objects_with_installs:
             from_numbers = set(i.install_number for i in los.from_building.installs.all()).union(
-                set(n.network_number for n in los.from_building.nodes.all())
+                set(n.network_number for n in los.from_building.nodes.all() if n.network_number)
             )
 
             to_numbers = set(i.install_number for i in los.to_building.installs.all()).union(
-                set(n.network_number for n in los.to_building.nodes.all())
+                set(n.network_number for n in los.to_building.nodes.all() if n.network_number)
             )
 
             for from_number in from_numbers:
@@ -297,6 +306,47 @@ class MapDataLinkList(generics.ListAPIView):
                     )
 
         response.data.extend(los_based_potential_links)
+
+        # Since all of the above logic is focused on node <-> node links (and install <-> node links)
+        # it excludes device <-> AP and node <-> AP links for campus access points. We add these back
+        # manually here
+        ap_links_queryset = (
+            Link.objects.filter(Q(from_device__accesspoint__isnull=False) | Q(to_device__accesspoint__isnull=False))
+            .prefetch_related("to_device")
+            .prefetch_related("from_device")
+            .prefetch_related("to_device__node")
+            .prefetch_related("from_device__node")
+            .annotate(
+                from_ap_id=Subquery(
+                    AccessPoint.objects.filter(device_ptr=OuterRef("from_device")).values("device_ptr_id")[:1]
+                )
+            )
+            .annotate(
+                to_ap_id=Subquery(
+                    AccessPoint.objects.filter(device_ptr=OuterRef("to_device")).values("device_ptr_id")[:1]
+                )
+            )
+            .order_by("id")
+        )
+        ap_links = []
+        for link in ap_links_queryset:
+            ap_links.append(
+                {
+                    "from": (
+                        convert_access_point_id_to_fake_node_number(link.from_ap_id)
+                        if link.from_ap_id
+                        else link.from_device.node.network_number
+                    ),
+                    "to": (
+                        convert_access_point_id_to_fake_node_number(link.to_ap_id)
+                        if link.to_ap_id
+                        else link.to_device.node.network_number
+                    ),
+                    "status": MapDataLinkSerializer().convert_status_to_spreadsheet_status(link),
+                }
+            )
+
+        response.data.extend(ap_links)
 
         return response
 

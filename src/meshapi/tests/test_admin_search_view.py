@@ -145,15 +145,12 @@ class TestAdminSearchView(TestCase):
         # This install should be matched by the below query, because of the NN101 note.
         # (in addition to self.install)
         sample_install_copy = sample_install.copy()
-        del sample_install_copy["building"]
-        del sample_install_copy["member"]
         install2 = Install(**sample_install_copy)
         install2.building = self.building_2
         install2.member = self.member
         install2.notes = "NN101"
         install2.save()
 
-        # Instead only self.install should appear
         response = self._call("/admin/meshapi/install/?q=NN101", 200)
         self.assertEqual(2, get_admin_results_count(response.content.decode()))
 

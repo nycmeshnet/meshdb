@@ -1,5 +1,6 @@
 import datetime
 import json
+import uuid
 
 from django.contrib.auth.models import User
 from django.test import Client, TestCase
@@ -17,10 +18,14 @@ class TestMemberLookups(TestCase):
         )
         self.c.login(username="admin", password="admin_password")
 
-        m1 = Member(**sample_member)
+        m1 = Member(
+            id=uuid.UUID("22f1bfab-fd56-4283-b4cd-8ebd34de4541"),
+            **sample_member,
+        )
         m1.save()
 
         m2 = Member(
+            id=uuid.UUID("c5a5af9c-35c3-4d04-af87-d917ca4d0d1b"),
             name="Donald Smith",
             primary_email_address="donald.smith@example.com",
             stripe_email_address="donny.stripe@example.com",
@@ -160,27 +165,27 @@ class TestBuildingLookups(TestCase):
         )
         self.c.login(username="admin", password="admin_password")
 
-        n1 = Node(
+        self.n1 = Node(
             network_number=456,
             status=Node.NodeStatus.ACTIVE,
             latitude=2,
             longitude=-2,
             altitude=40,
         )
-        n1.save()
-        n2 = Node(
+        self.n1.save()
+        self.n2 = Node(
             network_number=789,
             status=Node.NodeStatus.ACTIVE,
             latitude=2,
             longitude=-2,
             altitude=40,
         )
-        n2.save()
+        self.n2.save()
 
         m1 = Member(**sample_member)
         m1.save()
 
-        b1 = Building(**sample_building, primary_node=n2)
+        b1 = Building(**sample_building, primary_node=self.n2)
         b1.save()
 
         b2 = Building(
@@ -192,11 +197,11 @@ class TestBuildingLookups(TestCase):
             latitude=2,
             longitude=-2,
             altitude=40,
-            primary_node=n1,
+            primary_node=self.n1,
             address_truth_sources=[],
         )
         b2.save()
-        b2.nodes.add(n2)
+        b2.nodes.add(self.n2)
 
         i1 = Install(
             install_number=123,
@@ -431,6 +436,41 @@ class TestBuildingLookups(TestCase):
         response_objs = json.loads(response.content)["results"]
         self.assertEqual(len(response_objs), 0)
 
+    def test_building_node_search(self):
+        response = self.c.get(f"/api/v1/buildings/lookup/?node={self.n1.id}")
+        code = 200
+        self.assertEqual(
+            code,
+            response.status_code,
+            f"status code incorrect. Should be {code}, but got {response.status_code}",
+        )
+
+        response_objs = json.loads(response.content)["results"]
+        self.assertEqual(len(response_objs), 1)
+        self.assertEqual(response_objs[0]["bin"], 123)
+
+        response = self.c.get(f"/api/v1/buildings/lookup/?node={self.n2.id}")
+        code = 200
+        self.assertEqual(
+            code,
+            response.status_code,
+            f"status code incorrect. Should be {code}, but got {response.status_code}",
+        )
+
+        response_objs = json.loads(response.content)["results"]
+        self.assertEqual(len(response_objs), 2)
+
+        response = self.c.get("/api/v1/buildings/lookup/?node=fbf35934-55c7-4e06-b1ec-c5b6e06aa643")
+        code = 200
+        self.assertEqual(
+            code,
+            response.status_code,
+            f"status code incorrect. Should be {code}, but got {response.status_code}",
+        )
+
+        response_objs = json.loads(response.content)["results"]
+        self.assertEqual(len(response_objs), 0)
+
     def test_building_primary_network_number_search(self):
         response = self.c.get("/api/v1/buildings/lookup/?primary_network_number=456")
         code = 200
@@ -457,6 +497,42 @@ class TestBuildingLookups(TestCase):
         self.assertEqual(response_objs[0]["bin"], 8888)
 
         response = self.c.get("/api/v1/buildings/lookup/?primary_network_number=901")
+        code = 200
+        self.assertEqual(
+            code,
+            response.status_code,
+            f"status code incorrect. Should be {code}, but got {response.status_code}",
+        )
+
+        response_objs = json.loads(response.content)["results"]
+        self.assertEqual(len(response_objs), 0)
+
+    def test_building_primary_node_search(self):
+        response = self.c.get(f"/api/v1/buildings/lookup/?primary_node={self.n1.id}")
+        code = 200
+        self.assertEqual(
+            code,
+            response.status_code,
+            f"status code incorrect. Should be {code}, but got {response.status_code}",
+        )
+
+        response_objs = json.loads(response.content)["results"]
+        self.assertEqual(len(response_objs), 1)
+        self.assertEqual(response_objs[0]["bin"], 123)
+
+        response = self.c.get(f"/api/v1/buildings/lookup/?primary_node={self.n2.id}")
+        code = 200
+        self.assertEqual(
+            code,
+            response.status_code,
+            f"status code incorrect. Should be {code}, but got {response.status_code}",
+        )
+
+        response_objs = json.loads(response.content)["results"]
+        self.assertEqual(len(response_objs), 1)
+        self.assertEqual(response_objs[0]["bin"], 8888)
+
+        response = self.c.get("/api/v1/buildings/lookup/?primary_node=fbf35934-55c7-4e06-b1ec-c5b6e06aa643")
         code = 200
         self.assertEqual(
             code,
@@ -508,31 +584,30 @@ class TestInstallLookups(TestCase):
         )
         self.c.login(username="admin", password="admin_password")
 
-        n1 = Node(
+        self.n1 = Node(
             network_number=456,
             status=Node.NodeStatus.ACTIVE,
             latitude=2,
             longitude=-2,
             altitude=40,
         )
-        n1.save()
-        n2 = Node(
+        self.n1.save()
+        self.n2 = Node(
             network_number=789,
             status=Node.NodeStatus.ACTIVE,
             latitude=2,
             longitude=-2,
             altitude=40,
         )
-        n2.save()
+        self.n2.save()
 
-        m1 = Member(id=1, **sample_member)
-        m1.save()
+        self.m1 = Member(**sample_member)
+        self.m1.save()
 
-        b1 = Building(id=1, **sample_building, primary_node=n2)
-        b1.save()
+        self.b1 = Building(**sample_building, primary_node=self.n2)
+        self.b1.save()
 
-        b2 = Building(
-            id=2,
+        self.b2 = Building(
             bin=123,
             street_address="123 Water Road",
             city="New York",
@@ -541,19 +616,19 @@ class TestInstallLookups(TestCase):
             latitude=2,
             longitude=-2,
             altitude=40,
-            primary_node=n1,
+            primary_node=self.n1,
             address_truth_sources=[],
         )
-        b2.save()
-        b2.nodes.add(n2)
+        self.b2.save()
+        self.b2.nodes.add(self.n2)
 
         i1 = Install(
             install_number=123,
             status=Install.InstallStatus.ACTIVE,
             request_date=datetime.date.today(),
-            building=b1,
-            member=m1,
-            node=n1,
+            building=self.b1,
+            member=self.m1,
+            node=self.n1,
         )
         i1.save()
 
@@ -561,9 +636,9 @@ class TestInstallLookups(TestCase):
             install_number=1234,
             status=Install.InstallStatus.ACTIVE,
             request_date=datetime.date.today(),
-            building=b2,
-            member=m1,
-            node=n2,
+            building=self.b2,
+            member=self.m1,
+            node=self.n2,
         )
         i2.save()
 
@@ -571,14 +646,26 @@ class TestInstallLookups(TestCase):
             install_number=12345,
             status=Install.InstallStatus.INACTIVE,
             request_date=datetime.date.today(),
-            building=b1,
-            member=m1,
-            node=n1,
+            building=self.b1,
+            member=self.m1,
+            node=self.n1,
         )
         i3.save()
 
     def test_install_network_number_search(self):
         response = self.c.get("/api/v1/installs/lookup/?network_number=456")
+        code = 200
+        self.assertEqual(
+            code,
+            response.status_code,
+            f"status code incorrect. Should be {code}, but got {response.status_code}",
+        )
+
+        response_objs = json.loads(response.content)["results"]
+        self.assertEqual(len(response_objs), 2)
+
+    def test_install_node_search(self):
+        response = self.c.get(f"/api/v1/installs/lookup/?node={self.n1.id}")
         code = 200
         self.assertEqual(
             code,
@@ -633,7 +720,7 @@ class TestInstallLookups(TestCase):
         )
 
     def test_install_building_foreign_key_search(self):
-        response = self.c.get("/api/v1/installs/lookup/?building=1")
+        response = self.c.get(f"/api/v1/installs/lookup/?building={self.b1.id}")
         code = 200
         self.assertEqual(
             code,
@@ -644,7 +731,7 @@ class TestInstallLookups(TestCase):
         response_objs = json.loads(response.content)["results"]
         self.assertEqual(len(response_objs), 2)
 
-        response = self.c.get("/api/v1/installs/lookup/?building=2")
+        response = self.c.get(f"/api/v1/installs/lookup/?building={self.b2.id}")
         code = 200
         self.assertEqual(
             code,
@@ -656,7 +743,7 @@ class TestInstallLookups(TestCase):
         self.assertEqual(len(response_objs), 1)
         self.assertEqual(response_objs[0]["install_number"], 1234)
 
-        response = self.c.get("/api/v1/installs/lookup/?building=3")
+        response = self.c.get("/api/v1/installs/lookup/?building=abcdef")
         code = 400
         self.assertEqual(
             code,
@@ -665,7 +752,7 @@ class TestInstallLookups(TestCase):
         )
 
     def test_install_member_foreign_key_search(self):
-        response = self.c.get("/api/v1/installs/lookup/?member=1")
+        response = self.c.get(f"/api/v1/installs/lookup/?member={self.m1.id}")
         code = 200
         self.assertEqual(
             code,
@@ -676,7 +763,7 @@ class TestInstallLookups(TestCase):
         response_objs = json.loads(response.content)["results"]
         self.assertEqual(len(response_objs), 3)
 
-        response = self.c.get("/api/v1/installs/lookup/?member=2")
+        response = self.c.get("/api/v1/installs/lookup/?member=abcdef")
         code = 400
         self.assertEqual(
             code,
@@ -685,7 +772,7 @@ class TestInstallLookups(TestCase):
         )
 
     def test_install_combined_search(self):
-        response = self.c.get("/api/v1/installs/lookup/?status=Active&building=2")
+        response = self.c.get(f"/api/v1/installs/lookup/?status=Active&building={self.b2.id}")
         code = 200
         self.assertEqual(
             code,
@@ -744,14 +831,13 @@ class TestNodeLookups(TestCase):
         )
         n2.save()
 
-        m1 = Member(id=1, **sample_member)
-        m1.save()
+        self.m1 = Member(**sample_member)
+        self.m1.save()
 
-        b1 = Building(id=1, **sample_building, primary_node=n2)
-        b1.save()
+        self.b1 = Building(**sample_building, primary_node=n2)
+        self.b1.save()
 
-        b2 = Building(
-            id=2,
+        self.b2 = Building(
             bin=123,
             street_address="123 Water Road",
             city="New York",
@@ -763,15 +849,15 @@ class TestNodeLookups(TestCase):
             primary_node=n1,
             address_truth_sources=[],
         )
-        b2.save()
-        b2.nodes.add(n2)
+        self.b2.save()
+        self.b2.nodes.add(n2)
 
         i1 = Install(
             install_number=123,
             status=Install.InstallStatus.ACTIVE,
             request_date=datetime.date.today(),
-            building=b1,
-            member=m1,
+            building=self.b1,
+            member=self.m1,
             node=n1,
         )
         i1.save()
@@ -780,8 +866,8 @@ class TestNodeLookups(TestCase):
             install_number=1234,
             status=Install.InstallStatus.ACTIVE,
             request_date=datetime.date.today(),
-            building=b2,
-            member=m1,
+            building=self.b2,
+            member=self.m1,
             node=n2,
         )
         i2.save()
@@ -790,8 +876,8 @@ class TestNodeLookups(TestCase):
             install_number=12345,
             status=Install.InstallStatus.INACTIVE,
             request_date=datetime.date.today(),
-            building=b1,
-            member=m1,
+            building=self.b1,
+            member=self.m1,
         )
         i3.save()
 
@@ -868,7 +954,7 @@ class TestNodeLookups(TestCase):
         self.assertEqual(len(response_objs), 0)
 
     def test_node_building_foreign_key_search(self):
-        response = self.c.get("/api/v1/nodes/lookup/?building=1")
+        response = self.c.get(f"/api/v1/nodes/lookup/?building={self.b1.id}")
         code = 200
         self.assertEqual(
             code,
@@ -880,7 +966,7 @@ class TestNodeLookups(TestCase):
         self.assertEqual(len(response_objs), 1)
         self.assertEqual(response_objs[0]["network_number"], 789)
 
-        response = self.c.get("/api/v1/nodes/lookup/?building=2")
+        response = self.c.get(f"/api/v1/nodes/lookup/?building={self.b2.id}")
         code = 200
         self.assertEqual(
             code,
@@ -891,7 +977,7 @@ class TestNodeLookups(TestCase):
         response_objs = json.loads(response.content)["results"]
         self.assertEqual(len(response_objs), 2)
 
-        response = self.c.get("/api/v1/nodes/lookup/?building=3")
+        response = self.c.get("/api/v1/nodes/lookup/?building=fbf35934-55c7-4e06-b1ec-c5b6e06aa643")
         code = 200
         self.assertEqual(
             code,
@@ -938,7 +1024,7 @@ class TestNodeLookups(TestCase):
         self.assertEqual(len(response_objs), 0)
 
     def test_node_combined_search(self):
-        response = self.c.get("/api/v1/nodes/lookup/?status=Active&building=2")
+        response = self.c.get(f"/api/v1/nodes/lookup/?status=Active&building={self.b2.id}")
         code = 200
         self.assertEqual(
             code,
@@ -1006,50 +1092,45 @@ class TestLinkLookups(TestCase):
         )
         n3.save()
 
-        d1 = Device(
-            id=1,
+        self.d1 = Device(
             node=n1,
             status=Device.DeviceStatus.INACTIVE,
             uisp_id="abc",
             name="nycmesh-456-omni",
         )
-        d1.save()
+        self.d1.save()
 
-        d2 = Device(
-            id=2,
+        self.d2 = Device(
             node=n2,
             status=Device.DeviceStatus.ACTIVE,
             uisp_id="123",
             name="nycmesh-789-omni",
         )
-        d2.save()
+        self.d2.save()
 
-        d3 = Device(
-            id=3,
+        self.d3 = Device(
             node=n3,
             status=Device.DeviceStatus.ACTIVE,
             uisp_id="def",
             name="nycmesh-lbe-789",
         )
-        d3.save()
+        self.d3.save()
 
-        l1 = Link(
-            id=1,
-            from_device=d1,
-            to_device=d2,
+        self.l1 = Link(
+            from_device=self.d1,
+            to_device=self.d2,
             status=Link.LinkStatus.ACTIVE,
             type=Link.LinkType.FIVE_GHZ,
             uisp_id="1231",
         )
-        l1.save()
+        self.l1.save()
 
-        l2 = Link(
-            id=2,
-            from_device=d2,
-            to_device=d3,
+        self.l2 = Link(
+            from_device=self.d2,
+            to_device=self.d3,
             status=Link.LinkStatus.INACTIVE,
         )
-        l2.save()
+        self.l2.save()
 
     def test_link_nn_search(self):
         response = self.c.get("/api/v1/links/lookup/?network_number=123")
@@ -1062,7 +1143,7 @@ class TestLinkLookups(TestCase):
 
         response_objs = json.loads(response.content)["results"]
         self.assertEqual(len(response_objs), 1)
-        self.assertEqual(response_objs[0]["id"], 2)
+        self.assertEqual(response_objs[0]["id"], str(self.l2.id))
 
         response = self.c.get("/api/v1/links/lookup/?network_number=789")
         code = 200
@@ -1086,6 +1167,41 @@ class TestLinkLookups(TestCase):
         response_objs = json.loads(response.content)["results"]
         self.assertEqual(len(response_objs), 0)
 
+    def test_link_node_search(self):
+        response = self.c.get(f"/api/v1/links/lookup/?node={self.d3.node.id}")
+        code = 200
+        self.assertEqual(
+            code,
+            response.status_code,
+            f"status code incorrect. Should be {code}, but got {response.status_code}",
+        )
+
+        response_objs = json.loads(response.content)["results"]
+        self.assertEqual(len(response_objs), 1)
+        self.assertEqual(response_objs[0]["id"], str(self.l2.id))
+
+        response = self.c.get(f"/api/v1/links/lookup/?node={self.d2.node.id}")
+        code = 200
+        self.assertEqual(
+            code,
+            response.status_code,
+            f"status code incorrect. Should be {code}, but got {response.status_code}",
+        )
+
+        response_objs = json.loads(response.content)["results"]
+        self.assertEqual(len(response_objs), 2)
+
+        response = self.c.get("/api/v1/links/lookup/?node=fbf35934-55c7-4e06-b1ec-c5b6e06aa643")
+        code = 200
+        self.assertEqual(
+            code,
+            response.status_code,
+            f"status code incorrect. Should be {code}, but got {response.status_code}",
+        )
+
+        response_objs = json.loads(response.content)["results"]
+        self.assertEqual(len(response_objs), 0)
+
     def test_link_status_search(self):
         response = self.c.get("/api/v1/links/lookup/?status=Inactive")
         code = 200
@@ -1097,7 +1213,7 @@ class TestLinkLookups(TestCase):
 
         response_objs = json.loads(response.content)["results"]
         self.assertEqual(len(response_objs), 1)
-        self.assertEqual(response_objs[0]["id"], 2)
+        self.assertEqual(response_objs[0]["id"], str(self.l2.id))
 
         response = self.c.get("/api/v1/links/lookup/?status=Active")
         code = 200
@@ -1109,7 +1225,7 @@ class TestLinkLookups(TestCase):
 
         response_objs = json.loads(response.content)["results"]
         self.assertEqual(len(response_objs), 1)
-        self.assertEqual(response_objs[0]["id"], 1)
+        self.assertEqual(response_objs[0]["id"], str(self.l1.id))
 
         response = self.c.get("/api/v1/links/lookup/?status=Planned")
         code = 200
@@ -1133,7 +1249,7 @@ class TestLinkLookups(TestCase):
 
         response_objs = json.loads(response.content)["results"]
         self.assertEqual(len(response_objs), 1)
-        self.assertEqual(response_objs[0]["id"], 1)
+        self.assertEqual(response_objs[0]["id"], str(self.l1.id))
 
         response = self.c.get("/api/v1/links/lookup/?type=VPN")
         code = 200
@@ -1157,7 +1273,7 @@ class TestLinkLookups(TestCase):
 
         response_objs = json.loads(response.content)["results"]
         self.assertEqual(len(response_objs), 1)
-        self.assertEqual(response_objs[0]["id"], 1)
+        self.assertEqual(response_objs[0]["id"], str(self.l1.id))
 
         response = self.c.get("/api/v1/links/lookup/?uisp_id=123")
         code = 200
@@ -1170,7 +1286,7 @@ class TestLinkLookups(TestCase):
         response_objs = json.loads(response.content)["results"]
         self.assertEqual(len(response_objs), 0)
 
-    def test_node_combined_search(self):
+    def test_nn_combined_search(self):
         response = self.c.get("/api/v1/links/lookup/?status=Active&network_number=456")
         code = 200
         self.assertEqual(
@@ -1181,7 +1297,7 @@ class TestLinkLookups(TestCase):
 
         response_objs = json.loads(response.content)["results"]
         self.assertEqual(len(response_objs), 1)
-        self.assertEqual(response_objs[0]["id"], 1)
+        self.assertEqual(response_objs[0]["id"], str(self.l1.id))
 
     def test_empty_search(self):
         response = self.c.get("/api/v1/links/lookup/")
@@ -1231,11 +1347,10 @@ class TestLOSLookups(TestCase):
         m1 = Member(**sample_member)
         m1.save()
 
-        b1 = Building(**sample_building, primary_node=n1, id=1)
-        b1.save()
+        self.b1 = Building(**sample_building, primary_node=n1)
+        self.b1.save()
 
-        b2 = Building(
-            id=2,
+        self.b2 = Building(
             bin=123,
             street_address="123 Water Road",
             city="New York",
@@ -1247,11 +1362,10 @@ class TestLOSLookups(TestCase):
             primary_node=n2,
             address_truth_sources=[],
         )
-        b2.save()
-        b2.nodes.add(n2)
+        self.b2.save()
+        self.b2.nodes.add(n2)
 
-        b3 = Building(
-            id=3,
+        self.b3 = Building(
             bin=123,
             street_address="123 Water Road",
             city="New York",
@@ -1262,36 +1376,34 @@ class TestLOSLookups(TestCase):
             altitude=40,
             address_truth_sources=[],
         )
-        b3.save()
+        self.b3.save()
 
         i1 = Install(
             install_number=123456,
             status=Install.InstallStatus.ACTIVE,
             request_date=datetime.date.today(),
-            building=b1,
+            building=self.b1,
             member=m1,
             node=n1,
         )
         i1.save()
 
         self.today = datetime.date.today()
-        l1 = LOS(
-            id=1,
-            from_building=b1,
-            to_building=b2,
+        self.l1 = LOS(
+            from_building=self.b1,
+            to_building=self.b2,
             source=LOS.LOSSource.HUMAN_ANNOTATED,
             analysis_date=self.today,
         )
-        l1.save()
+        self.l1.save()
 
-        l2 = LOS(
-            id=2,
-            from_building=b2,
-            to_building=b3,
+        self.l2 = LOS(
+            from_building=self.b2,
+            to_building=self.b3,
             source=LOS.LOSSource.EXISTING_LINK,
             analysis_date=self.today,
         )
-        l2.save()
+        self.l2.save()
 
     def test_los_nn_search(self):
         response = self.c.get("/api/v1/loses/lookup/?network_number=456")
@@ -1304,7 +1416,7 @@ class TestLOSLookups(TestCase):
 
         response_objs = json.loads(response.content)["results"]
         self.assertEqual(len(response_objs), 1)
-        self.assertEqual(response_objs[0]["id"], 1)
+        self.assertEqual(response_objs[0]["id"], str(self.l1.id))
 
         response = self.c.get("/api/v1/loses/lookup/?network_number=789")
         code = 200
@@ -1328,6 +1440,41 @@ class TestLOSLookups(TestCase):
         response_objs = json.loads(response.content)["results"]
         self.assertEqual(len(response_objs), 0)
 
+    def test_los_node_search(self):
+        response = self.c.get(f"/api/v1/loses/lookup/?node={self.b1.primary_node.id}")
+        code = 200
+        self.assertEqual(
+            code,
+            response.status_code,
+            f"status code incorrect. Should be {code}, but got {response.status_code}",
+        )
+
+        response_objs = json.loads(response.content)["results"]
+        self.assertEqual(len(response_objs), 1)
+        self.assertEqual(response_objs[0]["id"], str(self.l1.id))
+
+        response = self.c.get(f"/api/v1/loses/lookup/?node={self.b2.primary_node.id}")
+        code = 200
+        self.assertEqual(
+            code,
+            response.status_code,
+            f"status code incorrect. Should be {code}, but got {response.status_code}",
+        )
+
+        response_objs = json.loads(response.content)["results"]
+        self.assertEqual(len(response_objs), 1)
+
+        response = self.c.get("/api/v1/loses/lookup/?node=fbf35934-55c7-4e06-b1ec-c5b6e06aa643")
+        code = 200
+        self.assertEqual(
+            code,
+            response.status_code,
+            f"status code incorrect. Should be {code}, but got {response.status_code}",
+        )
+
+        response_objs = json.loads(response.content)["results"]
+        self.assertEqual(len(response_objs), 0)
+
     def test_los_install_num_search(self):
         response = self.c.get("/api/v1/loses/lookup/?install_number=123456")
         code = 200
@@ -1339,7 +1486,7 @@ class TestLOSLookups(TestCase):
 
         response_objs = json.loads(response.content)["results"]
         self.assertEqual(len(response_objs), 1)
-        self.assertEqual(response_objs[0]["id"], 1)
+        self.assertEqual(response_objs[0]["id"], str(self.l1.id))
 
         response = self.c.get("/api/v1/loses/lookup/?install_number=321")
         code = 200
@@ -1353,7 +1500,7 @@ class TestLOSLookups(TestCase):
         self.assertEqual(len(response_objs), 0)
 
     def test_los_building_id_search(self):
-        response = self.c.get("/api/v1/loses/lookup/?building=3")
+        response = self.c.get(f"/api/v1/loses/lookup/?building={self.b3.id}")
         code = 200
         self.assertEqual(
             code,
@@ -1364,7 +1511,7 @@ class TestLOSLookups(TestCase):
         response_objs = json.loads(response.content)["results"]
         self.assertEqual(len(response_objs), 1)
 
-        response = self.c.get("/api/v1/loses/lookup/?building=321")
+        response = self.c.get("/api/v1/loses/lookup/?building=fbf35934-55c7-4e06-b1ec-c5b6e06aa643")
         code = 200
         self.assertEqual(
             code,
@@ -1386,7 +1533,7 @@ class TestLOSLookups(TestCase):
 
         response_objs = json.loads(response.content)["results"]
         self.assertEqual(len(response_objs), 1)
-        self.assertEqual(response_objs[0]["id"], 2)
+        self.assertEqual(response_objs[0]["id"], str(self.l2.id))
 
         response = self.c.get("/api/v1/loses/lookup/?source=Human%20Annotated")
         code = 200
@@ -1398,7 +1545,7 @@ class TestLOSLookups(TestCase):
 
         response_objs = json.loads(response.content)["results"]
         self.assertEqual(len(response_objs), 1)
-        self.assertEqual(response_objs[0]["id"], 1)
+        self.assertEqual(response_objs[0]["id"], str(self.l1.id))
 
         response = self.c.get("/api/v1/loses/lookup/?source=InvalidABCDEF")
         code = 400
@@ -1442,7 +1589,7 @@ class TestLOSLookups(TestCase):
 
         response_objs = json.loads(response.content)["results"]
         self.assertEqual(len(response_objs), 1)
-        self.assertEqual(response_objs[0]["id"], 1)
+        self.assertEqual(response_objs[0]["id"], str(self.l1.id))
 
     def test_empty_search(self):
         response = self.c.get("/api/v1/loses/lookup/")
@@ -1491,31 +1638,28 @@ class TestDeviceLookups(TestCase):
         )
         n2.save()
 
-        d1 = Device(
-            id=1,
+        self.d1 = Device(
             node=n1,
             status=Device.DeviceStatus.INACTIVE,
             uisp_id="abc",
         )
-        d1.save()
+        self.d1.save()
 
-        d2 = Device(
-            id=2,
+        self.d2 = Device(
             node=n2,
             status=Device.DeviceStatus.ACTIVE,
             uisp_id="123",
             name="nycmesh-789-omni",
         )
-        d2.save()
+        self.d2.save()
 
-        d3 = Device(
-            id=3,
+        self.d3 = Device(
             node=n2,
             status=Device.DeviceStatus.ACTIVE,
             uisp_id="def",
             name="nycmesh-lbe-789",
         )
-        d3.save()
+        self.d3.save()
 
     def test_device_nn_search(self):
         response = self.c.get("/api/v1/devices/lookup/?network_number=456")
@@ -1528,7 +1672,7 @@ class TestDeviceLookups(TestCase):
 
         response_objs = json.loads(response.content)["results"]
         self.assertEqual(len(response_objs), 1)
-        self.assertEqual(response_objs[0]["id"], 1)
+        self.assertEqual(response_objs[0]["id"], str(self.d1.id))
 
         response = self.c.get("/api/v1/devices/lookup/?network_number=789")
         code = 200
@@ -1552,6 +1696,41 @@ class TestDeviceLookups(TestCase):
         response_objs = json.loads(response.content)["results"]
         self.assertEqual(len(response_objs), 0)
 
+    def test_device_node_search(self):
+        response = self.c.get(f"/api/v1/devices/lookup/?node={self.d1.node.id}")
+        code = 200
+        self.assertEqual(
+            code,
+            response.status_code,
+            f"status code incorrect. Should be {code}, but got {response.status_code}",
+        )
+
+        response_objs = json.loads(response.content)["results"]
+        self.assertEqual(len(response_objs), 1)
+        self.assertEqual(response_objs[0]["id"], str(self.d1.id))
+
+        response = self.c.get(f"/api/v1/devices/lookup/?node={self.d2.node.id}")
+        code = 200
+        self.assertEqual(
+            code,
+            response.status_code,
+            f"status code incorrect. Should be {code}, but got {response.status_code}",
+        )
+
+        response_objs = json.loads(response.content)["results"]
+        self.assertEqual(len(response_objs), 2)
+
+        response = self.c.get("/api/v1/devices/lookup/?node=fbf35934-55c7-4e06-b1ec-c5b6e06aa643")
+        code = 200
+        self.assertEqual(
+            code,
+            response.status_code,
+            f"status code incorrect. Should be {code}, but got {response.status_code}",
+        )
+
+        response_objs = json.loads(response.content)["results"]
+        self.assertEqual(len(response_objs), 0)
+
     def test_device_status_search(self):
         response = self.c.get("/api/v1/devices/lookup/?status=Inactive")
         code = 200
@@ -1563,7 +1742,7 @@ class TestDeviceLookups(TestCase):
 
         response_objs = json.loads(response.content)["results"]
         self.assertEqual(len(response_objs), 1)
-        self.assertEqual(response_objs[0]["id"], 1)
+        self.assertEqual(response_objs[0]["id"], str(self.d1.id))
 
         response = self.c.get("/api/v1/devices/lookup/?status=Active")
         code = 200
@@ -1618,7 +1797,7 @@ class TestDeviceLookups(TestCase):
 
         response_objs = json.loads(response.content)["results"]
         self.assertEqual(len(response_objs), 1)
-        self.assertEqual(response_objs[0]["id"], 1)
+        self.assertEqual(response_objs[0]["id"], str(self.d1.id))
 
     def test_empty_search(self):
         response = self.c.get("/api/v1/devices/lookup/")
@@ -1667,8 +1846,7 @@ class TestSectorLookups(TestCase):
         )
         n2.save()
 
-        s1 = Sector(
-            id=1,
+        self.s1 = Sector(
             node=n1,
             status=Device.DeviceStatus.INACTIVE,
             uisp_id="abc",
@@ -1677,10 +1855,9 @@ class TestSectorLookups(TestCase):
             radius=3,
             azimuth=45,
         )
-        s1.save()
+        self.s1.save()
 
-        s2 = Sector(
-            id=2,
+        self.s2 = Sector(
             node=n2,
             status=Device.DeviceStatus.ACTIVE,
             uisp_id="123",
@@ -1689,10 +1866,9 @@ class TestSectorLookups(TestCase):
             radius=3,
             azimuth=45,
         )
-        s2.save()
+        self.s2.save()
 
-        s3 = Sector(
-            id=3,
+        self.s3 = Sector(
             node=n2,
             status=Device.DeviceStatus.ACTIVE,
             uisp_id="def",
@@ -1701,7 +1877,7 @@ class TestSectorLookups(TestCase):
             radius=3,
             azimuth=45,
         )
-        s3.save()
+        self.s3.save()
 
     def test_sector_nn_search(self):
         response = self.c.get("/api/v1/sectors/lookup/?network_number=456")
@@ -1714,7 +1890,7 @@ class TestSectorLookups(TestCase):
 
         response_objs = json.loads(response.content)["results"]
         self.assertEqual(len(response_objs), 1)
-        self.assertEqual(response_objs[0]["id"], 1)
+        self.assertEqual(response_objs[0]["id"], str(self.s1.id))
 
         response = self.c.get("/api/v1/sectors/lookup/?network_number=789")
         code = 200
@@ -1738,6 +1914,41 @@ class TestSectorLookups(TestCase):
         response_objs = json.loads(response.content)["results"]
         self.assertEqual(len(response_objs), 0)
 
+    def test_sector_node_search(self):
+        response = self.c.get(f"/api/v1/sectors/lookup/?node={self.s1.node.id}")
+        code = 200
+        self.assertEqual(
+            code,
+            response.status_code,
+            f"status code incorrect. Should be {code}, but got {response.status_code}",
+        )
+
+        response_objs = json.loads(response.content)["results"]
+        self.assertEqual(len(response_objs), 1)
+        self.assertEqual(response_objs[0]["id"], str(self.s1.id))
+
+        response = self.c.get(f"/api/v1/sectors/lookup/?node={self.s2.node.id}")
+        code = 200
+        self.assertEqual(
+            code,
+            response.status_code,
+            f"status code incorrect. Should be {code}, but got {response.status_code}",
+        )
+
+        response_objs = json.loads(response.content)["results"]
+        self.assertEqual(len(response_objs), 2)
+
+        response = self.c.get("/api/v1/sectors/lookup/?node=fbf35934-55c7-4e06-b1ec-c5b6e06aa643")
+        code = 200
+        self.assertEqual(
+            code,
+            response.status_code,
+            f"status code incorrect. Should be {code}, but got {response.status_code}",
+        )
+
+        response_objs = json.loads(response.content)["results"]
+        self.assertEqual(len(response_objs), 0)
+
     def test_sector_status_search(self):
         response = self.c.get("/api/v1/sectors/lookup/?status=Inactive")
         code = 200
@@ -1749,7 +1960,7 @@ class TestSectorLookups(TestCase):
 
         response_objs = json.loads(response.content)["results"]
         self.assertEqual(len(response_objs), 1)
-        self.assertEqual(response_objs[0]["id"], 1)
+        self.assertEqual(response_objs[0]["id"], str(self.s1.id))
 
         response = self.c.get("/api/v1/sectors/lookup/?status=Active")
         code = 200
@@ -1804,7 +2015,7 @@ class TestSectorLookups(TestCase):
 
         response_objs = json.loads(response.content)["results"]
         self.assertEqual(len(response_objs), 1)
-        self.assertEqual(response_objs[0]["id"], 1)
+        self.assertEqual(response_objs[0]["id"], str(self.s1.id))
 
     def test_empty_search(self):
         response = self.c.get("/api/v1/sectors/lookup/")
@@ -1853,8 +2064,7 @@ class TestAccessPointLookups(TestCase):
         )
         n2.save()
 
-        ap1 = AccessPoint(
-            id=1,
+        self.ap1 = AccessPoint(
             node=n1,
             status=Device.DeviceStatus.INACTIVE,
             uisp_id="abc",
@@ -1863,10 +2073,9 @@ class TestAccessPointLookups(TestCase):
             longitude=-2,
             altitude=40,
         )
-        ap1.save()
+        self.ap1.save()
 
-        ap2 = AccessPoint(
-            id=2,
+        self.ap2 = AccessPoint(
             node=n2,
             status=Device.DeviceStatus.ACTIVE,
             uisp_id="123",
@@ -1875,9 +2084,9 @@ class TestAccessPointLookups(TestCase):
             longitude=-2,
             altitude=40,
         )
-        ap2.save()
+        self.ap2.save()
 
-        ap3 = AccessPoint(
+        self.ap3 = AccessPoint(
             id=3,
             node=n2,
             status=Device.DeviceStatus.ACTIVE,
@@ -1887,7 +2096,7 @@ class TestAccessPointLookups(TestCase):
             longitude=-2,
             altitude=40,
         )
-        ap3.save()
+        self.ap3.save()
 
     def test_access_point_nn_search(self):
         response = self.c.get("/api/v1/accesspoints/lookup/?network_number=456")
@@ -1900,7 +2109,7 @@ class TestAccessPointLookups(TestCase):
 
         response_objs = json.loads(response.content)["results"]
         self.assertEqual(len(response_objs), 1)
-        self.assertEqual(response_objs[0]["id"], 1)
+        self.assertEqual(response_objs[0]["id"], str(self.ap1.id))
 
         response = self.c.get("/api/v1/accesspoints/lookup/?network_number=789")
         code = 200
@@ -1924,6 +2133,41 @@ class TestAccessPointLookups(TestCase):
         response_objs = json.loads(response.content)["results"]
         self.assertEqual(len(response_objs), 0)
 
+    def test_access_point_node_search(self):
+        response = self.c.get(f"/api/v1/accesspoints/lookup/?node={self.ap1.node.id}")
+        code = 200
+        self.assertEqual(
+            code,
+            response.status_code,
+            f"status code incorrect. Should be {code}, but got {response.status_code}",
+        )
+
+        response_objs = json.loads(response.content)["results"]
+        self.assertEqual(len(response_objs), 1)
+        self.assertEqual(response_objs[0]["id"], str(self.ap1.id))
+
+        response = self.c.get(f"/api/v1/accesspoints/lookup/?node={self.ap2.node.id}")
+        code = 200
+        self.assertEqual(
+            code,
+            response.status_code,
+            f"status code incorrect. Should be {code}, but got {response.status_code}",
+        )
+
+        response_objs = json.loads(response.content)["results"]
+        self.assertEqual(len(response_objs), 2)
+
+        response = self.c.get("/api/v1/accesspoints/lookup/?node=fbf35934-55c7-4e06-b1ec-c5b6e06aa643")
+        code = 200
+        self.assertEqual(
+            code,
+            response.status_code,
+            f"status code incorrect. Should be {code}, but got {response.status_code}",
+        )
+
+        response_objs = json.loads(response.content)["results"]
+        self.assertEqual(len(response_objs), 0)
+
     def test_accesspoint_status_search(self):
         response = self.c.get("/api/v1/accesspoints/lookup/?status=Inactive")
         code = 200
@@ -1935,7 +2179,7 @@ class TestAccessPointLookups(TestCase):
 
         response_objs = json.loads(response.content)["results"]
         self.assertEqual(len(response_objs), 1)
-        self.assertEqual(response_objs[0]["id"], 1)
+        self.assertEqual(response_objs[0]["id"], str(self.ap1.id))
 
         response = self.c.get("/api/v1/accesspoints/lookup/?status=Active")
         code = 200
@@ -1970,7 +2214,7 @@ class TestAccessPointLookups(TestCase):
 
         response_objs = json.loads(response.content)["results"]
         self.assertEqual(len(response_objs), 1)
-        self.assertEqual(response_objs[0]["id"], 1)
+        self.assertEqual(response_objs[0]["id"], str(self.ap1.id))
 
     def test_empty_search(self):
         response = self.c.get("/api/v1/accesspoints/lookup/")

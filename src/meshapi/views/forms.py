@@ -69,8 +69,9 @@ form_err_response_schema = inline_serializer("ErrorResponse", fields={"detail": 
                     "JoinFormSuccessResponse",
                     fields={
                         "detail": serializers.CharField(),
-                        "building_id": serializers.IntegerField(),
-                        "member_id": serializers.IntegerField(),
+                        "building_id": serializers.UUIDField(),
+                        "member_id": serializers.UUIDField(),
+                        "install_id": serializers.UUIDField(),
                         "install_number": serializers.IntegerField(),
                         "member_exists": serializers.BooleanField(),
                     },
@@ -222,7 +223,7 @@ def join_form(request: Request) -> Response:
 
     join_form_install = Install(
         status=Install.InstallStatus.REQUEST_RECEIVED,
-        ticket_id=None,
+        ticket_number=None,
         request_date=date.today(),
         install_date=None,
         abandon_date=None,
@@ -308,6 +309,7 @@ def join_form(request: Request) -> Response:
             "detail": "Thanks! A volunteer will email you shortly",
             "building_id": join_form_building.id,
             "member_id": join_form_member.id,
+            "install_id": join_form_install.id,
             "install_number": join_form_install.install_number,
             # If this is an existing member, then set a flag to let them know we have
             # their information in case they need to update anything.
@@ -333,7 +335,8 @@ nn_form_success_schema = inline_serializer(
     "NNFormSuccessResponse",
     fields={
         "detail": serializers.CharField(),
-        "building_id": serializers.IntegerField(),
+        "building_id": serializers.UUIDField(),
+        "install_id": serializers.UUIDField(),
         "install_number": serializers.IntegerField(),
         "network_number": serializers.IntegerField(),
         "created": serializers.BooleanField(),
@@ -395,29 +398,40 @@ def network_number_assignment(request: Request) -> Response:
         logging.exception(f'NN Request failed. Could not get Install w/ Install Number "{r.install_number}"')
         return Response({"detail": "Install Number not found"}, status=status.HTTP_404_NOT_FOUND)
 
-    # Check if the install already has a network number
-    if nn_install.node is not None:
-        message = f"This Install Number ({r.install_number}) already has a "
-        f"Network Number ({nn_install.node.network_number}) associated with it!"
-        logging.warning(message)
-        return Response(
-            {
-                "detail": message,
-                "building_id": nn_install.building.id,
-                "install_number": nn_install.install_number,
-                "network_number": nn_install.node.network_number,
-                "created": False,
-            },
-            status=status.HTTP_200_OK,
-        )
+    # Track if we have made any changes, so we know what status code to return
+    dirty = False
 
     nn_building = nn_install.building
 
-    # If the building already has a primary NN, then use that.
-    if nn_building.primary_node is not None:
-        nn_install.node = nn_building.primary_node
+    # First, we try to identify a Node object for this install if it doesn't already have one
+    if not nn_install.node:
+        # If the building on this install has a primary_node, then use that one
+        if nn_building.primary_node is not None:
+            logging.info(f"Reusing existing node ({nn_building.primary_node.id}) from building ({nn_building.id})")
+            nn_install.node = nn_building.primary_node
+            dirty = True
+        else:
+            # Otherwise we need to build a new node from scratch
+            nn_install.node = Node(
+                status=Node.NodeStatus.PLANNED,
+                latitude=nn_building.latitude,
+                longitude=nn_building.longitude,
+                altitude=nn_building.altitude,
+                install_date=date.today(),
+                notes="Created by NN Assignment form",
+            )
+            dirty = True
     else:
-        # Otherwise, try to use the install number if it is a valid number and unused
+        logging.info(f"Reusing existing node ({nn_install.node.id}) already attached to install ({nn_install.id})")
+
+    # Set the node on the Building (if needed)
+    if not nn_building.primary_node:
+        nn_building.primary_node = nn_install.node
+        dirty = True
+
+    # If the node we have attached does not have a network number, it's time to assign one
+    if nn_install.node.network_number is None:
+        # Try to use the install number if it is a valid number and unused
         #
         # We also don't use the install number if the install status indicates the number has been
         # re-used (even if it hasn't been according to the Node table). This shouldn't be common,
@@ -443,20 +457,34 @@ def network_number_assignment(request: Request) -> Response:
                     {"detail": f"NN Request failed. {exception.args[0]}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
                 )
 
-        nn_install.node = Node(
-            network_number=candidate_nn,
-            status=Node.NodeStatus.ACTIVE,
-            latitude=nn_building.latitude,
-            longitude=nn_building.longitude,
-            altitude=nn_building.altitude,
-            install_date=date.today(),
-            notes="Created by NN Assignment form",
+        nn_install.node.network_number = candidate_nn
+        dirty = True
+
+    # Mark the Install & node as planned (if needed)
+    if nn_install.node.status == Node.NodeStatus.INACTIVE:
+        nn_install.node.status = Node.NodeStatus.PLANNED
+        dirty = True
+
+    if nn_install.status == Install.InstallStatus.REQUEST_RECEIVED:
+        nn_install.status = Install.InstallStatus.PENDING
+        dirty = True
+
+    # If nothing was changed by this request, return a 200 instead of a 201
+    if not dirty:
+        message = f"This Install Number ({r.install_number}) already has a "
+        f"Network Number ({nn_install.node.network_number}) associated with it!"
+        logging.warning(message)
+        return Response(
+            {
+                "detail": message,
+                "building_id": nn_install.building.id,
+                "install_id": nn_install.id,
+                "install_number": nn_install.install_number,
+                "network_number": nn_install.node.network_number,
+                "created": False,
+            },
+            status=status.HTTP_200_OK,
         )
-
-        # Set the node on the Building
-        nn_building.primary_node = nn_install.node
-
-    nn_install.status = Install.InstallStatus.ACTIVE
 
     try:
         nn_install.node.save()
@@ -472,6 +500,7 @@ def network_number_assignment(request: Request) -> Response:
         {
             "detail": "Network Number has been assigned!",
             "building_id": nn_building.id,
+            "install_id": nn_install.id,
             "install_number": nn_install.install_number,
             "network_number": nn_install.node.network_number,
             "created": True,

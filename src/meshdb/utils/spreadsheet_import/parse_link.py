@@ -7,15 +7,14 @@ import django
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Q
 
-from meshapi.util.uisp_import.fetch_uisp import get_uisp_device_detail, get_uisp_links, get_uisp_session
-from meshapi.util.uisp_import.utils import get_building_from_network_number, get_link_type
-
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "meshdb.settings")
 django.setup()
 
 
 from meshapi import models
-from meshapi.models import LOS, Building, Device, Install, Link, Node
+from meshapi.models import LOS, AccessPoint, Building, Device, Install, Link, Node
+from meshapi.util.uisp_import.fetch_uisp import get_uisp_device_detail, get_uisp_links, get_uisp_session
+from meshapi.util.uisp_import.utils import get_building_from_network_number, get_link_type
 from meshdb.utils.spreadsheet_import.csv_load import SpreadsheetLink, SpreadsheetLinkStatus, get_spreadsheet_links
 
 
@@ -117,10 +116,15 @@ def get_representative_device_for_node(node: Node, link_status: SpreadsheetLinkS
     return device
 
 
-def create_link(spreadsheet_link: SpreadsheetLink, from_node: Node, to_node: Node) -> Optional[models.Link]:
-    from_device = get_representative_device_for_node(from_node, spreadsheet_link.status)
-    to_device = get_representative_device_for_node(to_node, spreadsheet_link.status)
+def find_access_point_from_install_number(install_number: int) -> Optional[AccessPoint]:
+    return AccessPoint.objects.filter(
+        notes__contains=f"Automatically imported from Install #{install_number} in the spreadsheet"
+    ).first()
 
+
+def create_link_for_device_pair(
+    spreadsheet_link: SpreadsheetLink, from_device: Device, to_device: Device
+) -> Optional[models.Link]:
     link_notes = "\n".join([spreadsheet_link.notes, spreadsheet_link.comments]).strip()
     link_type = convert_spreadsheet_link_type(spreadsheet_link.status, link_notes)
 
@@ -136,6 +140,13 @@ def create_link(spreadsheet_link: SpreadsheetLink, from_node: Node, to_node: Nod
         uisp_id=None,
     )
     return link
+
+
+def create_link(spreadsheet_link: SpreadsheetLink, from_node: Node, to_node: Node) -> Optional[models.Link]:
+    from_device = get_representative_device_for_node(from_node, spreadsheet_link.status)
+    to_device = get_representative_device_for_node(to_node, spreadsheet_link.status)
+
+    return create_link_for_device_pair(spreadsheet_link, from_device, to_device)
 
 
 def load_links_supplement_with_uisp(spreadsheet_links: List[SpreadsheetLink]):
@@ -257,9 +268,28 @@ def load_links_supplement_with_uisp(spreadsheet_links: List[SpreadsheetLink]):
 
     for spreadsheet_link in spreadsheet_links:
         try:
-            # TODO: this method of node lookup doesn't work for campus links like the vernon APs
             from_node = get_node_from_spreadsheet_id(spreadsheet_link.from_node_id)
             to_node = get_node_from_spreadsheet_id(spreadsheet_link.to_node_id)
+
+            # If this link is between campus AP devices, try to avoid the get_representative_device_for_node
+            # call, and instead look for the AP that we auto-created for the installs at each end of the link
+            if "local ap" in spreadsheet_link.notes.lower():
+                from_device = (
+                    find_access_point_from_install_number(spreadsheet_link.from_node_id)
+                    if not Node.objects.filter(network_number=spreadsheet_link.from_node_id)
+                    else get_representative_device_for_node(from_node, spreadsheet_link.status)
+                )
+                to_device = (
+                    find_access_point_from_install_number(spreadsheet_link.to_node_id)
+                    if not Node.objects.filter(network_number=spreadsheet_link.to_node_id)
+                    else get_representative_device_for_node(to_node, spreadsheet_link.status)
+                )
+                # If we found devices, make the link between them, otherwise fallback
+                # to the default process below, so we don't drop the link
+                if from_device and to_device:
+                    link = create_link_for_device_pair(spreadsheet_link, from_device, to_device)
+                    link.save()
+                    continue
 
             for node in [from_node, to_node]:
                 if not node:

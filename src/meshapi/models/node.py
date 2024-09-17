@@ -1,19 +1,30 @@
+import uuid
 from typing import TYPE_CHECKING, Any
 
+from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator
 from django.db import models, transaction
+from django.db.models.manager import Manager
 
 from meshapi.util.django_pglocks import advisory_lock
-from meshapi.util.network_number import NETWORK_NUMBER_MAX, get_next_available_network_number
+from meshapi.util.network_number import (
+    NETWORK_NUMBER_MAX,
+    get_next_available_network_number,
+    validate_network_number_unused_and_claim_install_if_needed,
+)
 
 if TYPE_CHECKING:
     # Gate the import to avoid cycles
     from meshapi.models.building import Building
+    from meshapi.models.install import Install  # noqa: F401
 
 
 class Node(models.Model):
     # This should be added automatically by django-stubs, but for some reason it's not :(
-    buildings: models.QuerySet["Building"]
+    buildings: Manager["Building"]
+
+    class Meta:
+        ordering = ["network_number"]
 
     class NodeStatus(models.TextChoices):
         INACTIVE = "Inactive"
@@ -28,9 +39,12 @@ class Node(models.Model):
         AP = "AP"
         REMOTE = "Remote"
 
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4)
+
     network_number = models.IntegerField(
-        primary_key=True,
-        db_column="network_number",
+        unique=True,
+        blank=True,
+        null=True,
         validators=[MaxValueValidator(NETWORK_NUMBER_MAX)],
     )
 
@@ -91,19 +105,57 @@ class Node(models.Model):
     )
 
     def save(self, *args: Any, **kwargs: Any) -> None:
-        if not self.network_number:
+        if not self.network_number and self.status == self.NodeStatus.ACTIVE:
+            # If the Node has been set to active (or newly created as active) but
+            # no network number has been set, we use our nn assignment logic to pick one automatically,
+            # because we don't want active nodes that don't have network numbers
+            # (this makes no sense and volunteers would be very confused)
             with transaction.atomic():
                 with advisory_lock("nn_assignment_lock"):
                     self.network_number = get_next_available_network_number()
-                    super().save(*args, **kwargs)
-        else:
-            super().save(*args, **kwargs)
+                    return super().save(*args, **kwargs)
+
+        if not self._state.adding:
+            # Network numbers are immutable. Double check that nobody is trying to change the NN of this existing node
+            # while technically we might be able to allow this, we would need to be very careful about edge caases with
+            # devices, install number matching, etc. It's much safer and simplier to force admins that want to change
+            # a network number to do so by creating a new node object
+            original = Node.objects.get(pk=self.pk)
+            if original.network_number is not None and self.network_number != original.network_number:
+                raise ValidationError("Network number is immutable once set")
+
+        if not self.network_number:
+            # If we don't have a network number, short circuit the below logic as it is focused on validating them
+            # we are almost certainly a pending or inactive node, and not ready for that validation yet
+            return super().save(*args, **kwargs)
+
+        # In all other cases, we have a new network number (either new to this object, or the object is entirely
+        # new to the database), since this could be a "vanity" NN assignment and the user could have typed
+        # anything they want into the admin form we need to validate that  it is valid before we save, so we call
+        # into a helper function in the NN assignment logic to check that this is a good network number, and update
+        # the corresponding install object if needed
+        with transaction.atomic():
+            validate_network_number_unused_and_claim_install_if_needed(self.network_number, self.id)
+            return super().save(*args, **kwargs)
 
     def __str__(self) -> str:
-        if self.name:
-            return f"NN{str(self.network_number)} ({str(self.name)})"
+        output = []
+        if self.network_number:
+            output.append(f"NN{self.network_number}")
 
-        return f"NN{str(self.network_number)}"
+        if self.name:
+            if output:
+                output.append(f"({self.name})")
+            else:
+                output.append(self.name)
+
+        if output:
+            return " ".join(output)
+        else:
+            return f"Node ID {self.id}"
 
     def __network_number__(self) -> str:
-        return f"NN{str(self.network_number)}"
+        if self.network_number:
+            return f"NN{str(self.network_number)}"
+        else:
+            return "-"

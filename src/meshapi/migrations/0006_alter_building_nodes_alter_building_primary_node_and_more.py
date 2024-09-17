@@ -3,7 +3,7 @@
 import django.db.models.deletion
 from django.db import migrations, models
 
-import meshapi.models.util.custom_many_to_many
+import meshapi.migrations.util.custom_many_to_many
 
 
 class Migration(migrations.Migration):
@@ -15,7 +15,7 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name="building",
             name="nodes",
-            field=meshapi.models.util.custom_many_to_many.CustomColumnNameManyToManyField(
+            field=meshapi.migrations.util.custom_many_to_many.CustomColumnNameManyToManyField(
                 db_from_column_name="building_id",
                 db_to_column_name="network_number",
                 help_text="All nodes located on the same structure (i.e. a discrete man-made place identified by the same BIN) that this Building is located within.",

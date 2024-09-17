@@ -8,6 +8,7 @@ from typing import Dict, List
 import django
 
 from meshdb.utils.spreadsheet_import import logger
+from meshdb.utils.spreadsheet_import.fetch_osticket_data import import_ticket_numbers_from_osticket
 
 logger.configure()
 
@@ -75,7 +76,7 @@ def main():
             )
             node.save()
             dob_bin = row.bin if row.bin and row.bin > 0 and row.bin not in INVALID_BIN_NUMBERS else None
-            if dob_bin:
+            if dob_bin and node.network_number:
                 nn_bin_map[node.network_number] = dob_bin
 
         member_duplicate_counts = defaultdict(lambda: 1)
@@ -108,6 +109,25 @@ def main():
 
             if not node and building.primary_node:
                 node = building.primary_node
+
+            node_type_from_row = get_node_type(row.notes, row.nodeName)
+            if not node and node_type_from_row in [
+                models.Node.NodeType.HUB,
+                models.Node.NodeType.SUPERNODE,
+                models.Node.NodeType.POP,
+            ]:
+                node = models.Node(
+                    name=row.nodeName if row.nodeName else None,
+                    latitude=row.latitude,
+                    longitude=row.longitude,
+                    altitude=row.altitude,
+                    status=models.Node.NodeStatus.PLANNED,
+                    type=node_type_from_row,
+                    notes=f"Spreadsheet Notes:\n"
+                    f"{row.notes if row.notes else None}\n\n"
+                    f"Spreadsheet Notes2:\n"
+                    f"{row.notes2 if row.notes2 else None}\n\n",
+                )
 
             install = create_install(row)
 
@@ -209,6 +229,9 @@ def main():
 
         logging.info(f"Importing links from UISP & '{links_path}'")
         load_links_supplement_with_uisp(get_spreadsheet_links((links_path)))
+
+        logging.info(f"Importing ticket numbers from OSTicket")
+        import_ticket_numbers_from_osticket()
     except BaseException as e:
         if isinstance(e, KeyboardInterrupt):
             logging.error("Received keyboard interrupt, exiting early...")

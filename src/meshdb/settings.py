@@ -155,6 +155,8 @@ if PROFILING_ENABLED:
     MIDDLEWARE.append("silk.middleware.SilkyMiddleware")
     MIDDLEWARE.append("django_cprofile_middleware.middleware.ProfilerMiddleware")
 
+SILKY_IGNORE_PATHS = ["/admin/jsi18n/"]
+
 DJANGO_CPROFILE_MIDDLEWARE_REQUIRE_STAFF = False
 
 ROOT_URLCONF = "meshdb.urls"
@@ -272,6 +274,11 @@ REST_FRAMEWORK = {
     ],
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
     "DEFAULT_FILTER_BACKENDS": ["django_filters.rest_framework.DjangoFilterBackend"],
+    "DEFAULT_RENDERER_CLASSES": [
+        "rest_framework.renderers.JSONRenderer",
+        # Removes HTML form (doesn't work with NestedKeyObjectRelatedField)
+        "meshapi.util.drf_renderer.OnlyRawBrowsableAPIRenderer",
+    ],
 }
 
 HOOK_EVENTS = {
@@ -329,12 +336,17 @@ SPECTACULAR_SETTINGS = {
         {
             "name": "Installs",
             "description": "Installs, one corresponding to each household that is either already on the mesh, "
-            "or wishes to join the mesh",
+            "or wishes to join the mesh. For convenience this category offers two different methods to access the same "
+            "database objects. Either database UUID or install_number can be used interchanably in any of the URLs for "
+            "this object",
         },
         {
             "name": "Nodes",
             "description": "Nodes, one corresponding to each collection of devices with the same network number, "
-            "the installs that use those devices, and the buildings that house them",
+            "the installs that use those devices, and the buildings that house them. For convenience this category "
+            "offers two different methods to access the same database objects. Either database UUID or network_number "
+            "can be used interchanably in any of the URLs for this object. Note that not all Nodes have a "
+            "network_number (that field is only required for active nodes)",
         },
         {"name": "Links", "description": "Network links between devices"},
         {
@@ -368,6 +380,10 @@ SPECTACULAR_SETTINGS = {
             "Uses a legacy data format, not recommended for new applications",
         },
         {"name": "User Forms", "description": "Forms exposed directly to humans"},
+        {
+            "name": "Panoramas",
+            "description": "Used to bulk ingest panoramas. Internal use only (use Building.panoramas instead)",
+        },
     ],
     "SWAGGER_UI_SETTINGS": {
         "defaultModelsExpandDepth": 10,

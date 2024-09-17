@@ -19,8 +19,6 @@ logging.basicConfig(level=logging.DEBUG, stream=sys.stdout)
 
 
 # Uses faker to get fake names, emails, and phone numbers
-# TODO: Instead of modifying real data, generate a completely fake database from
-# scratch :)
 class Command(BaseCommand):
     help = "Updates all members with fake name, email, and phone number. Clears notes."
 

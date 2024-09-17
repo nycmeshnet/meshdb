@@ -16,6 +16,7 @@ from meshapi.serializers import (
     LinkSerializer,
     LOSSerializer,
     MemberSerializer,
+    NodeEditSerializer,
     NodeSerializer,
     SectorSerializer,
 )
@@ -105,6 +106,16 @@ class InstallDetail(generics.RetrieveUpdateDestroyAPIView):
 
 
 @extend_schema_view(
+    get=extend_schema(tags=["Installs"]),
+    put=extend_schema(tags=["Installs"]),
+    patch=extend_schema(tags=["Installs"]),
+    delete=extend_schema(tags=["Installs"]),
+)
+class InstallDetailByInstallNumber(InstallDetail):
+    lookup_field = "install_number"
+
+
+@extend_schema_view(
     get=extend_schema(tags=["Nodes"]),
     post=extend_schema(tags=["Nodes"]),
 )
@@ -121,7 +132,17 @@ class NodeList(generics.ListCreateAPIView):
 )
 class NodeDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = Node.objects.all()
-    serializer_class = NodeSerializer
+    serializer_class = NodeEditSerializer
+
+
+@extend_schema_view(
+    get=extend_schema(tags=["Nodes"]),
+    put=extend_schema(tags=["Nodes"]),
+    patch=extend_schema(tags=["Nodes"]),
+    delete=extend_schema(tags=["Nodes"]),
+)
+class NodeDetailByNetworkNumber(NodeDetail):
+    lookup_field = "network_number"
 
 
 @extend_schema_view(

@@ -1,3 +1,4 @@
+import uuid
 from typing import Any, List
 
 from django.db import models
@@ -8,8 +9,14 @@ from meshapi.validation import normalize_phone_number, validate_multi_phone_numb
 
 
 class Member(models.Model):
+    class Meta:
+        ordering = ["id"]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(help_text='Member full name in the format: "First Last"')
-    primary_email_address = models.EmailField(null=True, help_text="Primary email address used to contact the member")
+    primary_email_address = models.EmailField(
+        blank=True, null=True, help_text="Primary email address used to contact the member"
+    )
     stripe_email_address = models.EmailField(
         null=True,
         blank=True,
