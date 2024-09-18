@@ -1,6 +1,7 @@
 import logging
 import operator
 import re
+import uuid
 from functools import reduce
 from typing import Callable, List, Optional, Tuple
 
@@ -51,6 +52,7 @@ def merge_member_objects(members_and_installs: List[Tuple[Member, List[int]]]) -
         return members_and_installs[0][0]
 
     merged_member = Member(
+        id=uuid.uuid4(),
         name=None,
         primary_email_address=None,
         stripe_email_address=None,
@@ -76,14 +78,14 @@ def merge_member_objects(members_and_installs: List[Tuple[Member, List[int]]]) -
                 # their whole name in the successive submission, let's take that as truth instead
                 logging.info(
                     f"Dropping shorter name {repr(merged_member.name)} in favor of {repr(member.name)} "
-                    f"for member id {members_and_installs[0][0].id} (install number(s) {', '.join(f'#{i}' for i in install_numbers)}"
+                    f"for member id {str(merged_member.id)} (install number(s) {', '.join(f'#{i}' for i in install_numbers)}"
                 )
                 name_change_note = f"Dropped shortened name: {merged_member.name}"
                 merged_member.name = member.name
             elif member.name and merged_member.name.lower() != member.name.lower():
                 logging.info(
                     f"Dropping name change {repr(merged_member.name)} -> {repr(member.name)} "
-                    f"for member id {members_and_installs[0][0].id} (install number(s) {', '.join(f'#{i}' for i in install_numbers)}"
+                    f"for member id {str(merged_member.id)} (install number(s) {', '.join(f'#{i}' for i in install_numbers)}"
                 )
                 name_change_note = f"Dropped name change: {member.name}"
 
