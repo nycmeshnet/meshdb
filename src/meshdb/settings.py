@@ -408,3 +408,4 @@ IMPORT_EXPORT_EXPORT_PERMISSION_CODE = "view"
 EXPLORER_CONNECTIONS = { 'Default': 'readonly' }
 EXPLORER_DEFAULT_CONNECTION = 'readonly'
 EXPLORER_PERMISSION_VIEW = lambda r: r.user.has_perm("meshapi.explorer")
+EXPLORER_ENABLE_ANONYMOUS_STATS = False
