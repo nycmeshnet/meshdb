@@ -17,6 +17,22 @@ class Migration(migrations.Migration):
             if not db_password_ro:
                 raise ValueError("Could not create meshdb_ro postgres role! Please set the DB_PASSWORD_RO environment variable.")
 
+            # Role for meshdb_explorer_ro
+
+            ## Create the read-only user with a password
+            #cursor.execute(f"CREATE USER meshdb_explorer_ro WITH PASSWORD '{db_password_ro}';")
+            #
+            ## Grant SELECT on all tables
+            #cursor.execute("""
+            #GRANT SELECT ON ALL TABLES IN SCHEMA public TO meshdb_explorer_ro
+            #""")
+
+            ## Ensure the user gets SELECT permission on future tables
+            #cursor.execute("""
+            #ALTER DEFAULT PRIVILEGES IN SCHEMA public
+            #GRANT SELECT ON TABLES TO meshdb_explorer_ro;
+            #""")
+
             # Role for meshdb_ro
 
             # Create the read-only user with a password
@@ -24,7 +40,20 @@ class Migration(migrations.Migration):
 
             # Grant SELECT on tables we want the readonly to access 
             cursor.execute("""
-            GRANT SELECT ON ALL TABLES IN SCHEMA public TO meshdb_ro
+            DO
+            $$
+            BEGIN
+            EXECUTE (
+               SELECT 'GRANT SELECT ON TABLE '
+                   || string_agg (format('%I.%I', table_schema, table_name), ',')
+                   || ' TO meshdb_ro'
+               FROM   information_schema.tables
+               WHERE  table_schema = 'public'
+               AND    table_name LIKE 'meshapi\\_%' -- Redundant for safety
+               AND    table_name NOT LIKE '(%\\_seq|%celeryserializerhook%|explorer%|auth%|django%|explorer_%)'
+               );
+            END
+            $$;
             """)
             
             # Ensure the user gets SELECT permission on future tables

@@ -409,3 +409,30 @@ EXPLORER_CONNECTIONS = { 'Default': 'default', 'Readonly': 'readonly' }
 EXPLORER_DEFAULT_CONNECTION = 'readonly'
 EXPLORER_PERMISSION_VIEW = lambda r: r.user.has_perm("meshapi.explorer")
 EXPLORER_ENABLE_ANONYMOUS_STATS = False
+EXPLORER_SQL_BLACKLIST = (
+     # DML
+     'COMMIT',
+     'DELETE',
+     'INSERT',
+     'MERGE',
+     'REPLACE',
+     'ROLLBACK',
+     'SET',
+     'START',
+     'UPDATE',
+     'UPSERT',
+
+     # DDL
+     'ALTER',
+     'CREATE',
+     'DROP',
+     'RENAME',
+     'TRUNCATE',
+
+     # DCL
+     'GRANT',
+     'REVOKE',
+
+    # Creds
+    'auth_user',
+ )
