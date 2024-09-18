@@ -70,7 +70,17 @@ def merge_member_objects(members_and_installs: List[Tuple[Member, List[int]]]) -
         if merged_member.name is None:
             merged_member.name = member.name
         else:
-            if merged_member.name != member.name and member.name:
+            if merged_member.name.lower() in member.name.lower() and len(merged_member.name) < len(member.name):
+                # If they gave us a longer name on a successive submission, and the earlier submission
+                # they gave us is entirely contained within the later, they probably spelled out
+                # their whole name in the successive submission, let's take that as truth instead
+                logging.info(
+                    f"Dropping shorter name {repr(merged_member.name)} in favor of {repr(member.name)} "
+                    f"for member id {members_and_installs[0][0].id} (install number(s) {', '.join(f'#{i}' for i in install_numbers)}"
+                )
+                name_change_note = f"Dropped shortened name: {merged_member.name}"
+                merged_member.name = member.name
+            elif member.name and merged_member.name.lower() != member.name.lower():
                 logging.info(
                     f"Dropping name change {repr(merged_member.name)} -> {repr(member.name)} "
                     f"for member id {members_and_installs[0][0].id} (install number(s) {', '.join(f'#{i}' for i in install_numbers)}"
