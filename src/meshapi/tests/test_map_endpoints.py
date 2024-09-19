@@ -116,6 +116,37 @@ class TestViewsGetUnauthenticated(TestCase):
             )
         )
 
+        nodes.append(
+            Node(
+                name="Potential Hub ABC",
+                status=Node.NodeStatus.PLANNED,
+                latitude=40.724868,
+                longitude=-73.987881,
+                type=Node.NodeType.HUB,
+            )
+        )
+        buildings.append(
+            Building(
+                address_truth_sources=[],
+                latitude=40.724868,
+                longitude=-73.987881,
+                altitude=27,
+                primary_node=nodes[-1],
+                panoramas=[],
+            )
+        )
+        installs.append(
+            Install(
+                install_number=19452,
+                node=nodes[-1],
+                status=Install.InstallStatus.REQUEST_RECEIVED,
+                request_date=datetime.date(2024, 1, 27),
+                roof_access=True,
+                building=buildings[-1],
+                member=member,
+            )
+        )
+
         ap = AccessPoint(
             id=123456,
             node=nodes[-1],
@@ -378,6 +409,15 @@ class TestViewsGetUnauthenticated(TestCase):
                     "requestDate": 1706331600000,
                     "status": "Installed",
                     "panoramas": ["3.jpg", "3a.jpg", "3b.jpg"],
+                    "roofAccess": True,
+                },
+                {
+                    "id": 19452,
+                    "coordinates": [-73.987881, 40.724868, None],
+                    "requestDate": 1706331600000,
+                    "name": "Potential Hub ABC",
+                    "notes": "Hub",
+                    "panoramas": [],
                     "roofAccess": True,
                 },
                 {

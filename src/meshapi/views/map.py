@@ -56,6 +56,7 @@ class MapDataNodeList(generics.ListAPIView):
         queryset = (
             Install.objects.select_related("building")
             .select_related("node")
+            .prefetch_related("node__installs")
             .prefetch_related("node__devices")
             .filter(~Q(status__in=EXCLUDED_INSTALL_STATUSES))
         )
@@ -70,6 +71,7 @@ class MapDataNodeList(generics.ListAPIView):
         for node in (
             Node.objects.filter(~Q(status=Node.NodeStatus.INACTIVE) & Q(installs__status__in=ALLOWED_INSTALL_STATUSES))
             .prefetch_related("devices")
+            .prefetch_related("installs")
             .prefetch_related(
                 Prefetch(
                     "installs",
@@ -363,7 +365,12 @@ class MapDataSectorList(generics.ListAPIView):
     permission_classes = [permissions.AllowAny]
     serializer_class = MapDataSectorSerializer
     pagination_class = None
-    queryset = Sector.objects.filter(~Q(status__in=[Device.DeviceStatus.INACTIVE])).prefetch_related("node")
+    queryset = (
+        Sector.objects.filter(~Q(status__in=[Device.DeviceStatus.INACTIVE]))
+        .exclude(node__network_number__isnull=True)
+        .prefetch_related("node")
+        .prefetch_related("node__installs")
+    )
 
 
 @extend_schema_view(
