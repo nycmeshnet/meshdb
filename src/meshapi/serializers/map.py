@@ -94,7 +94,7 @@ class MapDataInstallSerializer(serializers.ModelSerializer):
         return False
 
     def get_node_name(self, install: Install) -> Optional[str]:
-        if not self._is_node_dot(install):
+        if not install.node or not self._is_node_dot(install):
             return None
 
         return install.node.name
@@ -195,7 +195,7 @@ class MapDataLinkSerializer(serializers.ModelSerializer):
         if node.network_number:
             return node.network_number
 
-        if len(node.installs):
+        if node.installs.count():
             return min(install.install_number for install in node.installs.all())
 
         return None
