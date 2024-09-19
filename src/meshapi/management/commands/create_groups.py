@@ -48,4 +48,14 @@ class Command(BaseCommand):
                 or code == "assign_nn"
                 or code == "update_panoramas"
             ):
-                admin.permissions.add(p)
+                admin.permissions.add()
+
+
+        # Loop again to make groups for specific actions
+        explorer, _ = Group.objects.get_or_create(name="Explorer")
+
+        for p in all_permissions:
+            code = p.codename
+            act, obj = code.split("_")
+            if code == "explorer":
+                explorer.permissions.add()

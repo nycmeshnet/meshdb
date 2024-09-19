@@ -11,5 +11,5 @@ class Permission(models.Model):
 
         permissions = (
             ("maintenance_mode", "Can toggle maintenance mode"),
-            ("explorer", "Can access SQL Explorer"),
+            ("explorer_access", "Can access SQL Explorer"),
         )
