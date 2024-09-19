@@ -19,6 +19,7 @@ class Command(BaseCommand):
             "node",
             "device",
             "link",
+            "los",
             "sector",
             "accesspoint",
         ]
