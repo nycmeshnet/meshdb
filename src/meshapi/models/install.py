@@ -53,10 +53,12 @@ class Install(models.Model):
     )
 
     # OSTicket Ticket Number
-    ticket_number = models.IntegerField(
+    ticket_number = models.CharField(
         blank=True,
         null=True,
-        help_text="The ticket number of the OSTicket used to track communications with the member about this install",
+        help_text="The ticket number of the OSTicket used to track communications with the member about "
+        "this install. Note that although this appears to be an integer, it is not. Leading zeros"
+        "are important, so this should be stored as a string at all times",
     )
 
     # Important dates
