@@ -81,6 +81,7 @@ CORS_ALLOWED_ORIGINS = [
     "https://devadminmap.mesh.nycmesh.net",
     "https://adminmap.db.nycmesh.net",
     "https://adminmap.devdb.nycmesh.net",
+    "https://devdb.nycmesh.net",
 ]
 
 CSRF_TRUSTED_ORIGINS = [
