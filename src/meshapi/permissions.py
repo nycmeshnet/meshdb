@@ -49,6 +49,7 @@ class HasPanoramaUpdatePermission(HasDjangoPermission):
 class HasMaintenanceModePermission(HasDjangoPermission):
     django_permission = "meshapi.maintenance_mode"
 
+
 class HasExplorerAccessPermission(HasDjangoPermission):
     django_permission = "meshapi.explorer"
 

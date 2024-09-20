@@ -7,5 +7,5 @@ urlpatterns = [
     path("maintenance/", views.maintenance, name="maintenance"),
     path("maintenance/enable/", views.enable_maintenance, name="maintenance-enable"),
     path("maintenance/disable/", views.disable_maintenance, name="maintenance-disable"),
-    path('explorer/', include('explorer.urls')),
+    path("explorer/", include("explorer.urls")),
 ]
