@@ -15,6 +15,7 @@ from meshapi.permissions import HasMaintenanceModePermission
 @api_view(["GET"])
 @permission_classes([permissions.AllowAny])
 def index(request: HttpRequest) -> HttpResponse:
+    pass
     template = loader.get_template("meshweb/index.html")
     links = {
         "Member Tools": [
