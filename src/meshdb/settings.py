@@ -407,8 +407,10 @@ IMPORT_EXPORT_EXPORT_PERMISSION_CODE = "view"
 
 EXPLORER_CONNECTIONS = {"Default": "readonly"}
 EXPLORER_DEFAULT_CONNECTION = "readonly"
-EXPLORER_PERMISSION_VIEW = lambda r: r.user.has_perm("meshapi.explorer_access") 
-EXPLORER_PERMISSION_CHANGE = lambda r: r.user.has_perm("meshapi.explorer_access")
+def EXPLORER_PERMISSION_VIEW(r):
+    return r.user.has_perm("meshapi.explorer_access") 
+def EXPLORER_PERMISSION_CHANGE(r):
+    return r.user.has_perm("meshapi.explorer_access")
 EXPLORER_ENABLE_ANONYMOUS_STATS = False
 EXPLORER_SQL_BLACKLIST = (
     # DML
