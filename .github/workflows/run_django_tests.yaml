@@ -56,6 +56,8 @@ jobs:
           QUERY_PSK: localdev
           NN_ASSIGN_PSK: localdev
           PANO_GITHUB_TOKEN: ${{ secrets.PANO_GITHUB_TOKEN }}
+          DB_USER_RO: meshdb_ro
+          DB_PASSWORD_RO: readonly
         run: coverage run src/manage.py test meshapi meshapi_hooks
       - name: Write coverage report to disk
         run: coverage html
