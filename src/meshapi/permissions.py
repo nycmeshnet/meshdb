@@ -51,7 +51,7 @@ class HasMaintenanceModePermission(HasDjangoPermission):
 
 
 class HasExplorerAccessPermission(HasDjangoPermission):
-    django_permission = "meshapi.explorer"
+    django_permission = "meshapi.explorer_access"
 
 
 # Janky
