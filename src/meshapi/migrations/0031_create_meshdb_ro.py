@@ -20,11 +20,9 @@ class Migration(migrations.Migration):
                 )
 
             # Role for meshdb_ro
-
-            # Create the read-only user with a password
             cursor.execute(f"CREATE USER meshdb_ro WITH PASSWORD '{db_password_ro}';")
 
-            # Grant SELECT on tables we want the readonly to access
+            # Grant SELECT on meshdb tables and other relevant tables
             cursor.execute(
                 """
             DO
@@ -43,7 +41,7 @@ class Migration(migrations.Migration):
             """
             )
 
-            # Ensure the user gets SELECT permission on future tables
+            # Ensure he gets SELECT permission on future tables
             cursor.execute(
                 """
             ALTER DEFAULT PRIVILEGES IN SCHEMA public
