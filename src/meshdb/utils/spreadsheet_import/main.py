@@ -207,7 +207,11 @@ def main():
                     )
                     continue
                 for building in building_candidates:
-                    node.buildings.add(building)
+                    if not building.primary_node:
+                        building.primary_node = node
+                        building.save()
+                    else:
+                        node.buildings.add(building)
 
         for node in models.Node.objects.all():
             if not node.installs.all():
