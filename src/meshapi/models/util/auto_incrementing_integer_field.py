@@ -11,6 +11,9 @@ class Default(Expression):
     def as_sql(self, compiler: SQLCompiler, connection: BaseDatabaseWrapper) -> Tuple[str, List[str | int]]:
         return "DEFAULT", []
 
+    def __str__(self):
+        return "-"
+
 
 class AutoIncrementingIntegerField(IntegerField):
     @property

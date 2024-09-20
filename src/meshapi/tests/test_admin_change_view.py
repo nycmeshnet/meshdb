@@ -582,3 +582,31 @@ class TestAdminChangeView(TestCase):
         )
         self.assertEqual(building.primary_node, self.node1)
         self.assertEqual(list(building.nodes.all()), [self.node1])
+
+
+class TestAdminChangeView(TestCase):
+    def setUp(self):
+        self.admin_user = User.objects.create_superuser(
+            username="admin", password="admin_password", email="admin@example.com"
+        )
+        self.client.login(username="admin", password="admin_password")
+
+    def _call(self, route, code):
+        response = self.client.get(route)
+        self.assertEqual(code, response.status_code, f"Could not view {route} in the admin panel.")
+        return response
+
+    def test_add_views_http_200(self):
+        self._call("/admin/auth/group/add/", 200)
+        self._call("/admin/auth/user/add/", 200)
+        self._call("/admin/authtoken/tokenproxy/add/", 200)
+        self._call("/admin/meshapi_hooks/celeryserializerhook/add/", 200)
+        self._call("/admin/meshapi/building/add/", 200)
+        self._call("/admin/meshapi/member/add/", 200)
+        self._call("/admin/meshapi/install/add/", 200)
+        self._call("/admin/meshapi/link/add/", 200)
+        self._call("/admin/meshapi/los/add/", 200)
+        self._call("/admin/meshapi/sector/add/", 200)
+        self._call("/admin/meshapi/device/add/", 200)
+        self._call("/admin/meshapi/accesspoint/add/", 200)
+        self._call("/admin/meshapi/node/add/", 200)
