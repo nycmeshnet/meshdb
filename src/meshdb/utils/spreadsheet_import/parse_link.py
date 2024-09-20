@@ -83,6 +83,9 @@ def get_representative_device_for_node(node: Node, link_status: SpreadsheetLinkS
     if node is None:
         raise ValueError("Node must exist!")
 
+    if not node.network_number:
+        raise ValueError("Node must have a network_number!")
+
     search_terms = ["core", "omni"]
 
     # Look for a core router, and use that if available, if not, look for an omni
@@ -369,9 +372,12 @@ def load_links_supplement_with_uisp(spreadsheet_links: List[SpreadsheetLink]):
                 link.save()
         else:
             # If we don't have any possible existing links to annotate, make a brand new one
-            link = create_link(spreadsheet_link, from_node, to_node)
-            if link:
-                link.save()
+            if from_node.network_number and to_node.network_number:
+                # If we don't have a network number for one of the sides, just rely on the LOS
+                # we created above instead, so we don't end up with bogus "NNNone" placeholder devices
+                link = create_link(spreadsheet_link, from_node, to_node)
+                if link:
+                    link.save()
 
 
 if __name__ == "__main__":
