@@ -584,7 +584,7 @@ class TestAdminChangeView(TestCase):
         self.assertEqual(list(building.nodes.all()), [self.node1])
 
 
-class TestAdminChangeView(TestCase):
+class TestAdminAddView(TestCase):
     def setUp(self):
         self.admin_user = User.objects.create_superuser(
             username="admin", password="admin_password", email="admin@example.com"
