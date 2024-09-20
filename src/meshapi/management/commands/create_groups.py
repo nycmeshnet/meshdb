@@ -35,11 +35,7 @@ class Command(BaseCommand):
 
         for p in all_permissions:
             code = p.codename
-            try:
-                act, obj = code.split("_")
-            except ValueError:
-                logging.warning(f"Could not split permission code: {code}. Skipping")
-                continue
+            act, obj = code.split("_")
 
             # read_only
             if act == "view" and obj in models:
