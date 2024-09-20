@@ -15,7 +15,6 @@ import os
 from pathlib import Path
 from typing import Any, Dict
 
-from django.http.request import HttpRequest
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -406,20 +405,20 @@ SPECTACULAR_SETTINGS = {
 IMPORT_EXPORT_IMPORT_PERMISSION_CODE = "add"
 IMPORT_EXPORT_EXPORT_PERMISSION_CODE = "view"
 
-#EXPLORER_CONNECTIONS = {"Default": "readonly"}
-#EXPLORER_DEFAULT_CONNECTION = "readonly"
+# EXPLORER_CONNECTIONS = {"Default": "readonly"}
+# EXPLORER_DEFAULT_CONNECTION = "readonly"
 #
 #
-#def EXPLORER_PERMISSION_VIEW(r: HttpRequest) -> bool:
+# def EXPLORER_PERMISSION_VIEW(r: HttpRequest) -> bool:
 #    return r.user.has_perm("meshapi.explorer_access")
 #
 #
-#def EXPLORER_PERMISSION_CHANGE(r: HttpRequest) -> bool:
+# def EXPLORER_PERMISSION_CHANGE(r: HttpRequest) -> bool:
 #    return r.user.has_perm("meshapi.explorer_access")
 #
 #
-#EXPLORER_ENABLE_ANONYMOUS_STATS = False
-#EXPLORER_SQL_BLACKLIST = (
+# EXPLORER_ENABLE_ANONYMOUS_STATS = False
+# EXPLORER_SQL_BLACKLIST = (
 #    # DML
 #    "COMMIT",
 #    "DELETE",
@@ -440,10 +439,10 @@ IMPORT_EXPORT_EXPORT_PERMISSION_CODE = "view"
 #    # DCL
 #    "GRANT",
 #    "REVOKE",
-#)
+# )
 #
 #
-#EXPLORER_SCHEMA_EXCLUDE_TABLE_PREFIXES = [
+# EXPLORER_SCHEMA_EXCLUDE_TABLE_PREFIXES = [
 #    "authtoken_",
 #    "django_",
 #    "auth_",
@@ -453,4 +452,4 @@ IMPORT_EXPORT_EXPORT_PERMISSION_CODE = "view"
 #    "flags_",
 #    "explorer_",
 #    "meshapi_hooks_",
-#]
+# ]
