@@ -168,23 +168,26 @@ class MapDataLinkList(generics.ListAPIView):
         .prefetch_related("to_device__node")
         .prefetch_related("from_device__node")
         .filter(
-            # This horrible monster query exists to de-duplicate links between the same node pairs
-            # so that the map doesn't freak out. These often exist because different devices on
-            # the same nodes can be linked. This deduplication happens somewhat arbitrarily
-            # and is borrowed from https://stackoverflow.com/a/69938289
-            pk__in=Link.objects.values("from_device__node__network_number", "to_device__node__network_number")
-            .distinct()
-            .annotate(
-                pk=Subquery(
-                    Link.objects.filter(
-                        from_device__node__network_number=OuterRef("from_device__node__network_number"),
-                        to_device__node__network_number=OuterRef("to_device__node__network_number"),
+            Q(  # This horrible monster query exists to de-duplicate links between the same node pairs
+                # so that the map doesn't freak out. These often exist because different devices on
+                # the same nodes can be linked. This deduplication happens somewhat arbitrarily
+                # and is borrowed from https://stackoverflow.com/a/69938289
+                pk__in=Link.objects.values("from_device__node__network_number", "to_device__node__network_number")
+                .distinct()
+                .annotate(
+                    pk=Subquery(
+                        Link.objects.filter(
+                            from_device__node__network_number=OuterRef("from_device__node__network_number"),
+                            to_device__node__network_number=OuterRef("to_device__node__network_number"),
+                        )
+                        .order_by("pk")
+                        .values("pk")[:1]
                     )
-                    .order_by("pk")
-                    .values("pk")[:1]
                 )
+                .values_list("pk", flat=True)
             )
-            .values_list("pk", flat=True)
+            | Q(from_device__node__network_number__isnull=True)
+            | Q(to_device__node__network_number__isnull=True)
         )
         .order_by("from_device__node__network_number", "to_device__node__network_number")
         # TODO: Possibly re-enable the below filters? They make make the map arguably more accurate,
