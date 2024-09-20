@@ -228,6 +228,14 @@ def get_or_create_member(
 
     primary_emails = parse_emails(row.email)
     stripe_emails = parse_emails(row.stripeEmail)
+
+    notes = ""
+
+    if row.stripeEmail and not stripe_emails:
+        # If there's something in the stripe email column that's not an email,
+        # it's probably a payment related note. Let's put it in the notes
+        notes += f"Stripe Details: {row.stripeEmail}"
+
     secondary_emails = parse_emails(row.secondEmail)
 
     stripe_email = stripe_emails[0] if stripe_emails else None
@@ -239,8 +247,6 @@ def get_or_create_member(
         other_emails = [stripe_email]
 
     parsed_phone = parse_phone(row.phone)
-
-    notes = ""
 
     # Keep track of garbage phone numbers just in case we're wrong about
     # their garbage-ness
