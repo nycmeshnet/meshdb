@@ -1463,7 +1463,6 @@ class TestViewsGetUnauthenticated(TestCase):
         )
 
     def test_install_number_used_for_links_with_no_nn(self):
-
         # Use the same member & building for everything since it doesn't matter
         member = Member(name="Fake Name")
         member.save()
