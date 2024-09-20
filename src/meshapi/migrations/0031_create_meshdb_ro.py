@@ -13,6 +13,11 @@ class Migration(migrations.Migration):
     @staticmethod
     def create_meshdb_ro(apps, schema_editor):
         with schema_editor.connection.cursor() as cursor:
+            db_user_ro = os.environ.get("DB_USER_RO")
+            if not db_user_ro:
+                raise ValueError(
+                    "Could not create meshdb_ro postgres role! Please set the DB_USER_RO environment variable."
+                )
             db_password_ro = os.environ.get("DB_PASSWORD_RO")
             if not db_password_ro:
                 raise ValueError(
@@ -20,7 +25,30 @@ class Migration(migrations.Migration):
                 )
 
             # Role for meshdb_ro
-            cursor.execute(f"CREATE USER meshdb_ro WITH PASSWORD '{db_password_ro}';")
+            # Super extra solution to create if doesn't exist on SO.
+            # https://stackoverflow.com/a/8099557/6095682
+            cursor.execute(
+                f"""
+            DO
+            $do$
+            BEGIN
+               IF EXISTS (
+                  SELECT FROM pg_catalog.pg_roles
+                  WHERE  rolname = '{db_user_ro}') THEN
+
+                  RAISE NOTICE 'Role "{db_user_ro}" already exists. Skipping.';
+               ELSE
+                  BEGIN   -- nested block
+                     CREATE USER {db_user_ro} WITH PASSWORD '{db_password_ro}';
+                  EXCEPTION
+                     WHEN duplicate_object THEN
+                        RAISE NOTICE 'Role "{db_user_ro}" was just created by a concurrent transaction. Skipping.';
+                  END;
+               END IF;
+            END
+            $do$;
+            """
+            )
 
             # Grant SELECT on meshdb tables and other relevant tables
             cursor.execute(
