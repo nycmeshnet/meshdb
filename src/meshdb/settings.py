@@ -136,7 +136,6 @@ INSTALLED_APPS = [
     "dbbackup",
     "import_export",
     "flags",
-    "explorer",
 ]
 
 MIDDLEWARE = [
