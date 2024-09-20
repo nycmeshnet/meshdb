@@ -406,51 +406,51 @@ SPECTACULAR_SETTINGS = {
 IMPORT_EXPORT_IMPORT_PERMISSION_CODE = "add"
 IMPORT_EXPORT_EXPORT_PERMISSION_CODE = "view"
 
-EXPLORER_CONNECTIONS = {"Default": "readonly"}
-EXPLORER_DEFAULT_CONNECTION = "readonly"
-
-
-def EXPLORER_PERMISSION_VIEW(r: HttpRequest) -> bool:
-    return r.user.has_perm("meshapi.explorer_access")
-
-
-def EXPLORER_PERMISSION_CHANGE(r: HttpRequest) -> bool:
-    return r.user.has_perm("meshapi.explorer_access")
-
-
-EXPLORER_ENABLE_ANONYMOUS_STATS = False
-EXPLORER_SQL_BLACKLIST = (
-    # DML
-    "COMMIT",
-    "DELETE",
-    "INSERT",
-    "MERGE",
-    "REPLACE",
-    "ROLLBACK",
-    "SET",
-    "START",
-    "UPDATE",
-    "UPSERT",
-    # DDL
-    "ALTER",
-    "CREATE",
-    "DROP",
-    "RENAME",
-    "TRUNCATE",
-    # DCL
-    "GRANT",
-    "REVOKE",
-)
-
-
-EXPLORER_SCHEMA_EXCLUDE_TABLE_PREFIXES = [
-    "authtoken_",
-    "django_",
-    "auth_",
-    "contenttypes_",
-    "sessions_",
-    "admin_",
-    "flags_",
-    "explorer_",
-    "meshapi_hooks_",
-]
+#EXPLORER_CONNECTIONS = {"Default": "readonly"}
+#EXPLORER_DEFAULT_CONNECTION = "readonly"
+#
+#
+#def EXPLORER_PERMISSION_VIEW(r: HttpRequest) -> bool:
+#    return r.user.has_perm("meshapi.explorer_access")
+#
+#
+#def EXPLORER_PERMISSION_CHANGE(r: HttpRequest) -> bool:
+#    return r.user.has_perm("meshapi.explorer_access")
+#
+#
+#EXPLORER_ENABLE_ANONYMOUS_STATS = False
+#EXPLORER_SQL_BLACKLIST = (
+#    # DML
+#    "COMMIT",
+#    "DELETE",
+#    "INSERT",
+#    "MERGE",
+#    "REPLACE",
+#    "ROLLBACK",
+#    "SET",
+#    "START",
+#    "UPDATE",
+#    "UPSERT",
+#    # DDL
+#    "ALTER",
+#    "CREATE",
+#    "DROP",
+#    "RENAME",
+#    "TRUNCATE",
+#    # DCL
+#    "GRANT",
+#    "REVOKE",
+#)
+#
+#
+#EXPLORER_SCHEMA_EXCLUDE_TABLE_PREFIXES = [
+#    "authtoken_",
+#    "django_",
+#    "auth_",
+#    "contenttypes_",
+#    "sessions_",
+#    "admin_",
+#    "flags_",
+#    "explorer_",
+#    "meshapi_hooks_",
+#]
