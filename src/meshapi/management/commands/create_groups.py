@@ -1,3 +1,4 @@
+import logging
 from argparse import ArgumentParser
 from typing import Any
 
@@ -12,10 +13,8 @@ class Command(BaseCommand):
         pass
 
     def handle(self, *args: Any, **options: Any) -> None:
-         
         self.create_base_groups()
         self.create_extra_groups()
-
 
     def create_base_groups(self):
         models = [
@@ -70,5 +69,3 @@ class Command(BaseCommand):
             code = p.codename
             if "explorer_access" in code:
                 explorer.permissions.add(p)
-
-

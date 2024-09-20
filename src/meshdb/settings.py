@@ -405,34 +405,33 @@ SPECTACULAR_SETTINGS = {
 IMPORT_EXPORT_IMPORT_PERMISSION_CODE = "add"
 IMPORT_EXPORT_EXPORT_PERMISSION_CODE = "view"
 
-EXPLORER_CONNECTIONS = { 'Default': 'readonly' }
-EXPLORER_DEFAULT_CONNECTION = 'readonly'
-EXPLORER_PERMISSION_VIEW = lambda r: r.user.has_perm("meshapi.explorer")
+EXPLORER_CONNECTIONS = {"Default": "readonly"}
+EXPLORER_DEFAULT_CONNECTION = "readonly"
+EXPLORER_PERMISSION_VIEW = lambda r: r.user.has_perm("meshapi.explorer_access") 
+EXPLORER_PERMISSION_CHANGE = lambda r: r.user.has_perm("meshapi.explorer_access")
 EXPLORER_ENABLE_ANONYMOUS_STATS = False
 EXPLORER_SQL_BLACKLIST = (
-     # DML
-     'COMMIT',
-     'DELETE',
-     'INSERT',
-     'MERGE',
-     'REPLACE',
-     'ROLLBACK',
-     'SET',
-     'START',
-     'UPDATE',
-     'UPSERT',
-
-     # DDL
-     'ALTER',
-     'CREATE',
-     'DROP',
-     'RENAME',
-     'TRUNCATE',
-
-     # DCL
-     'GRANT',
-     'REVOKE',
- )
+    # DML
+    "COMMIT",
+    "DELETE",
+    "INSERT",
+    "MERGE",
+    "REPLACE",
+    "ROLLBACK",
+    "SET",
+    "START",
+    "UPDATE",
+    "UPSERT",
+    # DDL
+    "ALTER",
+    "CREATE",
+    "DROP",
+    "RENAME",
+    "TRUNCATE",
+    # DCL
+    "GRANT",
+    "REVOKE",
+)
 
 
 EXPLORER_SCHEMA_EXCLUDE_TABLE_PREFIXES = [
