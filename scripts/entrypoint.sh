@@ -18,3 +18,5 @@ python manage.py migrate
 echo 'Collecting Static Files...'
 python manage.py collectstatic --no-input
 
+echo 'Creating Groups...'
+python maange.py create_groups
