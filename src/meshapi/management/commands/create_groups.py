@@ -30,7 +30,11 @@ class Command(BaseCommand):
 
         for p in all_permissions:
             code = p.codename
-            act, obj = code.split("_")
+            try:
+                act, obj = code.split("_")
+            except ValueError:
+                logging.warning(f"Could not split permission code: {code}. Skipping")
+                continue
 
             # read_only
             if act == "view" and obj in models:
@@ -52,10 +56,9 @@ class Command(BaseCommand):
 
 
         # Loop again to make groups for specific actions
-        explorer, _ = Group.objects.get_or_create(name="Explorer")
+        explorer, _ = Group.objects.get_or_create(name="Explorer Access")
 
         for p in all_permissions:
             code = p.codename
-            act, obj = code.split("_")
-            if code == "explorer":
+            if "explorer_access" in code:
                 explorer.permissions.add()
