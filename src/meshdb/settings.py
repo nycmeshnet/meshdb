@@ -15,6 +15,7 @@ import os
 from pathlib import Path
 from typing import Any, Dict
 
+from django.http.request import HttpRequest
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -407,10 +408,16 @@ IMPORT_EXPORT_EXPORT_PERMISSION_CODE = "view"
 
 EXPLORER_CONNECTIONS = {"Default": "readonly"}
 EXPLORER_DEFAULT_CONNECTION = "readonly"
-def EXPLORER_PERMISSION_VIEW(r):
-    return r.user.has_perm("meshapi.explorer_access") 
-def EXPLORER_PERMISSION_CHANGE(r):
+
+
+def EXPLORER_PERMISSION_VIEW(r: HttpRequest) -> bool:
     return r.user.has_perm("meshapi.explorer_access")
+
+
+def EXPLORER_PERMISSION_CHANGE(r: HttpRequest) -> bool:
+    return r.user.has_perm("meshapi.explorer_access")
+
+
 EXPLORER_ENABLE_ANONYMOUS_STATS = False
 EXPLORER_SQL_BLACKLIST = (
     # DML

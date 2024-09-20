@@ -16,7 +16,7 @@ class Command(BaseCommand):
         self.create_base_groups()
         self.create_extra_groups()
 
-    def create_base_groups(self):
+    def create_base_groups(self) -> None:
         models = [
             "building",
             "member",
@@ -59,7 +59,7 @@ class Command(BaseCommand):
             ):
                 admin.permissions.add(p)
 
-    def create_extra_groups(self):
+    def create_extra_groups(self) -> None:
         all_permissions = Permission.objects.all()
 
         # Loop again to make groups for specific actions
