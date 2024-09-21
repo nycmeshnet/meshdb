@@ -408,7 +408,8 @@ IMPORT_EXPORT_EXPORT_PERMISSION_CODE = "view"
 
 EXPLORER_CONNECTIONS = {"Default": "readonly"}
 EXPLORER_DEFAULT_CONNECTION = "readonly"
-EXPLORER_NO_PERMISSION_VIEW = 'meshweb.views.explorer_auth_redirect'
+EXPLORER_NO_PERMISSION_VIEW = "meshweb.views.explorer_auth_redirect"
+
 
 def EXPLORER_PERMISSION_VIEW(r: HttpRequest) -> bool:
     return r.user.has_perm("meshapi.explorer_access")
