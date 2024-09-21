@@ -25,7 +25,7 @@ def index(request: HttpRequest) -> HttpResponse:
         "Volunteer Tools": [
             ("/admin", "Admin Panel"),
             ("/api/v1/geography/whole-mesh.kml", "KML Download"),
-            (settings.PG_ADMIN_URL, "PG Admin"),
+            ("/explorer/play", "SQL Explorer"),
             (settings.FORMS_URL, "Other Forms"),
         ],
         "Developer Tools": [
