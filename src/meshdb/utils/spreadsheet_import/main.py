@@ -235,6 +235,14 @@ def main():
 
         logging.info(f"Importing ticket numbers from OSTicket")
         import_ticket_numbers_from_osticket()
+
+        logging.info(f"Doing one last scan pass to to check device / node activity consistency")
+        for node in models.Node.objects.filter(status=models.Node.NodeStatus.INACTIVE).prefetch_related("devices"):
+            if any(device.status == models.Device.DeviceStatus.ACTIVE for device in node.devices):
+                logging.info(f"Found active devices on inactive node {node}, marking active")
+                node.status = models.Node.NodeStatus.ACTIVE
+                node.save()
+
     except BaseException as e:
         if isinstance(e, KeyboardInterrupt):
             logging.error("Received keyboard interrupt, exiting early...")
