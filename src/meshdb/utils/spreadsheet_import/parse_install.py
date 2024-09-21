@@ -40,6 +40,26 @@ def translate_spreadsheet_status_to_db_status(
     raise ValueError(f"Invalid spreadsheet status: {status} do you need to add another case to this function?")
 
 
+def get_spreadsheet_install_notes(row: SpreadsheetRow) -> str:
+    notes = ""
+    if row.notes:
+        notes = f"Spreadsheet Notes:\n{row.notes}"
+
+    if row.notes2:
+        notes = f"Spreadsheet Notes2:\n{row.notes}"
+
+    if row.installNotes:
+        notes = f"Spreadsheet Install Notes:\n{row.installNotes}"
+
+    if row.contactNotes:
+        notes = f"Spreadsheet Contact Notes:\n{row.contactNotes}"
+
+    if notes:
+        notes += f"-------\n\n"
+
+    return notes
+
+
 def create_install(row: SpreadsheetRow) -> Optional[models.Install]:
     install = models.Install(
         install_number=row.id,
@@ -51,15 +71,7 @@ def create_install(row: SpreadsheetRow) -> Optional[models.Install]:
         unit=row.apartment,
         roof_access=row.roofAccess,
         referral=row.referral if row.referral else None,
-        notes=f"Spreadsheet Notes:\n"
-        f"{row.notes if row.notes else None}\n\n"
-        f"Spreadsheet Notes2:\n"
-        f"{row.notes2 if row.notes2 else None}\n\n"
-        f"Spreadsheet Install Notes:\n"
-        f"{row.installNotes if row.installNotes else None}\n\n"
-        f"Spreadsheet Contact Notes:\n"
-        f"{row.contactNotes if row.contactNotes else None}\n\n"
-        f"-------\n",
+        notes=get_spreadsheet_install_notes(row),
     )
     if install.status in [
         models.Install.InstallStatus.ACTIVE,

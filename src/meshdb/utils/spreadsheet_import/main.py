@@ -31,7 +31,12 @@ from meshdb.utils.spreadsheet_import.parse_devices import load_access_points, lo
 from meshdb.utils.spreadsheet_import.parse_install import create_install, normalize_install_to_primary_building_node
 from meshdb.utils.spreadsheet_import.parse_link import load_links_supplement_with_uisp
 from meshdb.utils.spreadsheet_import.parse_member import get_or_create_member
-from meshdb.utils.spreadsheet_import.parse_node import get_node_type, get_or_create_node, normalize_building_node_links
+from meshdb.utils.spreadsheet_import.parse_node import (
+    get_node_type,
+    get_or_create_node,
+    get_spreadsheet_node_notes,
+    normalize_building_node_links,
+)
 
 
 def main():
@@ -69,10 +74,7 @@ def main():
                 altitude=row.altitude,
                 status=models.Node.NodeStatus.PLANNED,  # This will get overridden later
                 type=get_node_type(row.notes, row.nodeName),
-                notes=f"Spreadsheet Notes:\n"
-                f"{row.notes if row.notes else None}\n\n"
-                f"Spreadsheet Notes2:\n"
-                f"{row.notes2 if row.notes2 else None}\n\n",
+                notes=get_spreadsheet_node_notes(row),
             )
             node.save()
             dob_bin = row.bin if row.bin and row.bin > 0 and row.bin not in INVALID_BIN_NUMBERS else None
@@ -123,10 +125,7 @@ def main():
                     altitude=row.altitude,
                     status=models.Node.NodeStatus.PLANNED,
                     type=node_type_from_row,
-                    notes=f"Spreadsheet Notes:\n"
-                    f"{row.notes if row.notes else None}\n\n"
-                    f"Spreadsheet Notes2:\n"
-                    f"{row.notes2 if row.notes2 else None}\n\n",
+                    notes=get_spreadsheet_node_notes(row),
                 )
 
             install = create_install(row)
