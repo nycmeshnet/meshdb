@@ -8,7 +8,7 @@ from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
-from meshapi.models import Install, Link, Node, Sector
+from meshapi.models import Device, Install, Link, Node, Sector
 
 EXCLUDED_INSTALL_STATUSES = {
     Install.InstallStatus.CLOSED,
@@ -64,21 +64,40 @@ class MapDataInstallSerializer(serializers.ModelSerializer):
     panoramas = serializers.SerializerMethodField("get_panorama_filename")
 
     def get_coordinates(self, install: Install) -> Tuple[float, float, Optional[float]]:
-        if install.node and (
-            install.status == Install.InstallStatus.NN_REASSIGNED
-            or install.install_number == install.node.network_number
-        ):
+        if install.node and (install.status == Install.InstallStatus.NN_REASSIGNED or self._is_node_dot(install)):
             return install.node.longitude, install.node.latitude, install.node.altitude
         else:
             return install.building.longitude, install.building.latitude, install.building.altitude
 
-    def get_node_name(self, install: Install) -> Optional[str]:
-        # Only include the node name if this is an old-school "node as install" situation
-        # to prevent showing the same name on multiple map dots. For the NN != install number
+    def _is_node_dot(self, install: Install) -> bool:
+        # Check if this is an old-school "node as install" situation to prevent showing multiple
+        # "node" map dots. For the NN != install number
         # case we add extra fake install objects with install_number = NN so that we can still
         # see the node name
+        #
+        # We also include the minimum install number associated with a Node without a network number
+        # here so that we can show these as nodes
         node = install.node
-        return node.name if node and node.network_number == install.install_number else None
+
+        if not node:
+            return False
+
+        if not node.network_number:
+            if install.install_number == min(inst.install_number for inst in node.installs.all()):
+                return True
+            else:
+                return False
+
+        if node.network_number == install.install_number:
+            return True
+
+        return False
+
+    def get_node_name(self, install: Install) -> Optional[str]:
+        if not install.node or not self._is_node_dot(install):
+            return None
+
+        return install.node.name
 
     def get_synthetic_notes(self, install: Install) -> Optional[str]:
         if not install.node:
@@ -90,8 +109,7 @@ class MapDataInstallSerializer(serializers.ModelSerializer):
         # In the case of multiple dots per node, we only want to
         # make the one that actually corresponds to the NN the big dot (the "fake" install)
         # for the real install numbers that don't match the network number, leave them as red dots
-        is_fake_install_for_node = install.install_number == install.node.network_number
-        if install.node.type != Node.NodeType.STANDARD and is_fake_install_for_node:
+        if install.node.type != Node.NodeType.STANDARD and self._is_node_dot(install):
             synthetic_notes.append(install.node.type)
 
         # Supplement with "Omni" if this node has an omni attached
@@ -171,11 +189,22 @@ class MapDataLinkSerializer(serializers.ModelSerializer):
 
         return "active"
 
+    def _get_node_number_from_device(self, device: Device) -> Optional[int]:
+        node = device.node
+
+        if node.network_number:
+            return node.network_number
+
+        if node.installs.count():
+            return min(install.install_number for install in node.installs.all())
+
+        return None
+
     def get_to_node_number(self, link: Link) -> Optional[int]:
-        return link.to_device.node.network_number
+        return self._get_node_number_from_device(link.to_device)
 
     def get_from_node_number(self, link: Link) -> Optional[int]:
-        return link.from_device.node.network_number
+        return self._get_node_number_from_device(link.from_device)
 
     def get_fields(self) -> dict:
         result = super().get_fields()
