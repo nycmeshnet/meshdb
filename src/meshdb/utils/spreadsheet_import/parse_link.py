@@ -83,6 +83,9 @@ def get_representative_device_for_node(node: Node, link_status: SpreadsheetLinkS
     if node is None:
         raise ValueError("Node must exist!")
 
+    if not node.network_number:
+        raise ValueError("Node must have a network_number!")
+
     search_terms = ["core", "omni"]
 
     # Look for a core router, and use that if available, if not, look for an omni
@@ -122,6 +125,26 @@ def find_access_point_from_install_number(install_number: int) -> Optional[Acces
     ).first()
 
 
+def create_spreadsheet_link_notes(spreadsheet_link: SpreadsheetLink):
+    notes = (
+        f"Imported from spreadsheet link row "
+        + f"{spreadsheet_link.from_node_id}->{spreadsheet_link.to_node_id} ({spreadsheet_link.status})\n"
+        + "\n".join(
+            s.strip()
+            for s in [spreadsheet_link.where_to_where, spreadsheet_link.notes, spreadsheet_link.comments]
+            if s.strip()
+        )
+    )
+
+    if spreadsheet_link.install_date:
+        notes += f"\nInstalled: {spreadsheet_link.install_date.isoformat()}"
+
+    if spreadsheet_link.abandon_date:
+        notes += f"\nAbandoned: {spreadsheet_link.abandon_date.isoformat()}"
+
+    return notes
+
+
 def create_link_for_device_pair(
     spreadsheet_link: SpreadsheetLink, from_device: Device, to_device: Device
 ) -> Optional[models.Link]:
@@ -136,7 +159,7 @@ def create_link_for_device_pair(
         install_date=spreadsheet_link.install_date,
         abandon_date=spreadsheet_link.abandon_date,
         description=spreadsheet_link.where_to_where if spreadsheet_link.where_to_where else None,
-        notes=link_notes if link_notes else None,
+        notes=create_spreadsheet_link_notes(spreadsheet_link),
         uisp_id=None,
     )
     return link
@@ -154,6 +177,9 @@ def load_links_supplement_with_uisp(spreadsheet_links: List[SpreadsheetLink]):
     # first go through all the links in the spreadsheet and create the appropriate entries for them
     # then during UISP import we supplement this with any links not captured here
     for spreadsheet_link in spreadsheet_links:
+        if spreadsheet_link.status in [SpreadsheetLinkStatus.vpn, SpreadsheetLinkStatus.fiber]:
+            continue
+
         from_building = get_building_from_spreadsheet_id(spreadsheet_link.from_node_id)
         to_buidling = get_building_from_spreadsheet_id(spreadsheet_link.to_node_id)
 
@@ -164,16 +190,33 @@ def load_links_supplement_with_uisp(spreadsheet_links: List[SpreadsheetLink]):
             )
             continue
 
+        if to_buidling == from_building:
+            continue
+
         source = LOS.LOSSource.EXISTING_LINK
         if spreadsheet_link.status == SpreadsheetLinkStatus.planned:
             source = LOS.LOSSource.HUMAN_ANNOTATED
+
+        analysis_date = spreadsheet_link.abandon_date
+        if analysis_date is None and spreadsheet_link.status == SpreadsheetLinkStatus.dead:
+            analysis_date = spreadsheet_link.install_date
+
+        if analysis_date is None:
+            analysis_date = datetime.date.today()
+
+        existing_los = LOS.objects.filter(
+            Q(from_building=from_building, to_building=to_buidling)
+            | Q(from_building=to_buidling, to_building=from_building)
+        ).first()
+        if existing_los:
+            continue
 
         los = LOS(
             from_building=from_building,
             to_building=to_buidling,
             source=source,
-            analysis_date=spreadsheet_link.abandon_date or datetime.date.today(),
-            notes=f"Imported from spreadsheet link row",
+            analysis_date=analysis_date,
+            notes=create_spreadsheet_link_notes(spreadsheet_link),
         )
         los.save()
 
@@ -213,7 +256,7 @@ def load_links_supplement_with_uisp(spreadsheet_links: List[SpreadsheetLink]):
         to_buidling = get_building_from_network_number(to_device.node.network_number)
         if from_building and to_buidling and from_building != to_buidling:
             # First check to make sure we aren't duplicating a link from the spreadsheet
-            if not len(
+            if uisp_link["type"] not in ["ethernet", "pon"] and not len(
                 LOS.objects.filter(
                     Q(from_building=from_building, to_building=to_buidling)
                     | Q(from_building=to_buidling, to_building=from_building)
@@ -329,9 +372,12 @@ def load_links_supplement_with_uisp(spreadsheet_links: List[SpreadsheetLink]):
                 link.save()
         else:
             # If we don't have any possible existing links to annotate, make a brand new one
-            link = create_link(spreadsheet_link, from_node, to_node)
-            if link:
-                link.save()
+            if from_node.network_number and to_node.network_number:
+                # If we don't have a network number for one of the sides, just rely on the LOS
+                # we created above instead, so we don't end up with bogus "NNNone" placeholder devices
+                link = create_link(spreadsheet_link, from_node, to_node)
+                if link:
+                    link.save()
 
 
 if __name__ == "__main__":
