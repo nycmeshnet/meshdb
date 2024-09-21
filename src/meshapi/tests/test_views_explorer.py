@@ -26,3 +26,20 @@ class TestViewsGetExplorer(TestCase):
                 response.status_code,
                 f"status code incorrect for {route}. Should be {code}, but got {response.status_code}",
             )
+
+    def test_views_get_explorer_unauthenticated(self):
+        self.client.logout() # log out just in case
+ 
+        routes = [
+            ("/explorer/", 302),
+        ]
+
+        for route, code in routes:
+            response = self.client.get(route)
+            self.assertEqual(
+                code,
+                response.status_code,
+                f"status code incorrect for {route}. Should be {code}, but got {response.status_code}",
+            )
+
+       

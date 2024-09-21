@@ -7,7 +7,7 @@ from flags.state import disable_flag, enable_flag, flag_enabled
 from rest_framework import permissions
 from rest_framework.decorators import api_view, permission_classes
 
-from meshapi.permissions import HasMaintenanceModePermission
+from meshapi.permissions import HasExplorerAccessPermission, HasMaintenanceModePermission
 
 
 # Home view
@@ -39,6 +39,14 @@ def index(request: HttpRequest) -> HttpResponse:
     return HttpResponse(template.render(context, request))
 
 
+@api_view(["GET"])
+@permission_classes([permissions.AllowAny])
+def explorer_auth_redirect(request: HttpRequest) -> HttpResponse:
+    # Auth Redirect to ensure that behavior is consistent with admin panel
+    return HttpResponseRedirect("/admin/login/?next=/explorer/")
+
+
+@permission_classes([permissions.AllowAny])
 def maintenance(request: HttpRequest) -> HttpResponse:
     if not flag_enabled("MAINTENANCE_MODE"):
         return HttpResponseRedirect(reverse("main"))
