@@ -5,6 +5,7 @@
 pg:
   dbname: meshdb
   user: meshdb
+  user_ro: meshdb_ro
   port: "5432"
   pvc_name: "meshdb-postgres-pvc"
   pvc_size: "20Gi"

@@ -44,6 +44,7 @@ jobs:
         --set meshdb_app_namespace="${{ vars.APP_NAMESPACE }}" \
         --set nginx.server_name="${{ vars.SERVER_NAME }}" \
         --set pg.password="${{ secrets.PG_PASSWORD}}" \
+        --set pg.password_ro="${{ secrets.PG_PASSWORD_RO}}" \
         --set aws.access_key_id="${{ secrets.ACCESS_KEY_ID }}" \
         --set aws.secret_access_key="${{ secrets.SECRET_ACCESS_KEY }}" \
         --set email.smtp_host="${{ vars.SMTP_HOST }}" \
