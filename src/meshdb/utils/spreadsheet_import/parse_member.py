@@ -173,24 +173,7 @@ def parse_emails(input_emails: str) -> List[str]:
     if "none@example.com" in email_matches:
         email_matches.remove("none@example.com")
 
-    return [
-        email
-        for email in email_matches
-        # The below check doesn't do a lot for us, because we are able to do a
-        # bit of repair using the regexes, and because we have disabled all the
-        # non-formatting checks.
-        #
-        # You might say, let's leave it enabled just in case. However, it seems
-        # to filter out valid emails (for example one that contains á)
-        #
-        # if validate_email(
-        #     primary_email_address=email,
-        #     check_format=True,
-        #     check_blacklist=False,  # "Evil" emails are still "valid" historical data
-        #     check_dns=False,  # This is too slow
-        #     check_smtp=False,  # This is too slow
-        # )
-    ]
+    return [email for email in email_matches if not (email.startswith("noreply") and email.endswith("@nycmesh.net"))]
 
 
 def parse_phone(input_phone: str) -> Optional[phonenumbers.PhoneNumber]:
@@ -228,6 +211,18 @@ def get_or_create_member(
 
     primary_emails = parse_emails(row.email)
     stripe_emails = parse_emails(row.stripeEmail)
+
+    notes = ""
+
+    name = row.name
+    if not name and (row.email.startswith("noreply") and row.email.endswith("@nycmesh.net")):
+        name = f"{row.apartment} Resident Placeholder"
+
+    if row.stripeEmail and not stripe_emails:
+        # If there's something in the stripe email column that's not an email,
+        # it's probably a payment related note. Let's put it in the notes
+        notes += f"Stripe Details: {row.stripeEmail}"
+
     secondary_emails = parse_emails(row.secondEmail)
 
     stripe_email = stripe_emails[0] if stripe_emails else None
@@ -239,8 +234,6 @@ def get_or_create_member(
         other_emails = [stripe_email]
 
     parsed_phone = parse_phone(row.phone)
-
-    notes = ""
 
     # Keep track of garbage phone numbers just in case we're wrong about
     # their garbage-ness
@@ -276,7 +269,7 @@ def get_or_create_member(
                 VOLUNTEER_PHONE_NUMBERS.add(formatted_phone_number)
 
     candidate_member = models.Member(
-        name=row.name,
+        name=name,
         primary_email_address=other_emails[0] if len(other_emails) > 0 else None,
         stripe_email_address=stripe_email,
         additional_email_addresses=other_emails[1:],
