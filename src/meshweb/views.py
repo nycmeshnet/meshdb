@@ -58,6 +58,7 @@ def maintenance(request: HttpRequest) -> HttpResponse:
     return HttpResponse(template.render(context, request))
 
 
+@extend_schema(exclude=True)  # Don't show on docs page
 @api_view(["POST"])
 @permission_classes([HasMaintenanceModePermission])
 def enable_maintenance(request: HttpRequest) -> HttpResponse:
@@ -70,6 +71,7 @@ def enable_maintenance(request: HttpRequest) -> HttpResponse:
     return HttpResponse(template.render(context, request))
 
 
+@extend_schema(exclude=True)  # Don't show on docs page
 @api_view(["POST"])
 @permission_classes([HasMaintenanceModePermission])
 def disable_maintenance(request: HttpRequest) -> HttpResponse:
