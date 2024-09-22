@@ -5,8 +5,8 @@ from pathlib import Path
 from typing import Union
 
 import requests
-from drf_spectacular.utils import OpenApiResponse, extend_schema, extend_schema_view, inline_serializer
-from rest_framework import serializers, status
+from drf_spectacular.utils import extend_schema
+from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -17,7 +17,6 @@ from meshapi.models.node import Node
 from meshapi.permissions import HasPanoramaUpdatePermission
 from meshapi.util.constants import DEFAULT_EXTERNAL_API_TIMEOUT_SECONDS
 from meshapi.util.django_pglocks import advisory_lock
-from meshapi.views import form_err_response_schema
 
 # Config for gathering/generating panorama links
 PANO_REPO_OWNER = "nycmeshnet"
