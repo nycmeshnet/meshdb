@@ -27,9 +27,6 @@ data:
   DEBUG: {{ .Values.meshweb.enable_debug | quote }}
   DISABLE_PROFILING: {{ .Values.meshweb.disable_profiling | quote }}
 
-  # Comment this out to allow edits to the panoramas in the admin panel
-  DISABLE_PANO_EDITS: {{ .Values.meshweb.disable_pano_edits | quote }}
-
   UISP_URL: {{ .Values.uisp.url | quote }}
   UISP_USER: {{ .Values.uisp.user | quote }}
 
