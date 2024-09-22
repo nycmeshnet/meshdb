@@ -118,27 +118,7 @@ class GitHubError(Exception):
 
 
 # View called to make MeshDB refresh the panoramas.
-@extend_schema_view(
-    post=extend_schema(
-        tags=["Panoramas"],
-        responses={
-            "200": OpenApiResponse(
-                inline_serializer(
-                    "UpdatePanoramasSuccessResponse",
-                    fields={
-                        "detail": serializers.CharField(),
-                        "saved": serializers.IntegerField(),
-                        "warnings": serializers.IntegerField(),
-                        "warn_install_nums": serializers.ListField(child=serializers.CharField()),
-                    },
-                ),
-                description="Request received, an install has been created (along with member and "
-                "building objects if necessary).",
-            ),
-            "500": OpenApiResponse(form_err_response_schema, description="Unexpected internal error"),
-        },
-    )
-)
+@extend_schema(exclude=True)  # Don't show on docs page
 @api_view(["POST"])
 @permission_classes([HasPanoramaUpdatePermission])
 def update_panoramas(request: Request) -> Response:
