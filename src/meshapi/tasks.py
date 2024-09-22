@@ -46,7 +46,7 @@ def reset_dev_database() -> None:
 
     try:
         enable_flag("MAINTENANCE_MODE")
-        management.call_command("dbrestore", "--noinput")
+        management.call_command("dbrestore", "--noinput", "--database", "default")
         management.call_command("scramble_members", "--noinput")
         disable_flag("MAINTENANCE_MODE")
     except Exception as e:
