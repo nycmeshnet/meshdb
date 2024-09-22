@@ -5,6 +5,7 @@ from typing import Dict, Optional
 import bs4
 from django.contrib.auth.models import Group, User
 from django.test import Client, TestCase
+from flags.state import enable_flag
 from rest_framework.authtoken.models import TokenProxy
 
 from meshapi.models import LOS, AccessPoint, Building, Device, Install, Link, Member, Node, Sector
@@ -464,9 +465,11 @@ class TestAdminChangeView(TestCase):
         self.assertEqual(node.notes, "Test notes")
 
     def test_add_building(self):
+        enable_flag("EDIT_PANORAMAS")
         change_url = "/admin/meshapi/building/add/"
         response = self._call(change_url, 200)
         form_soup = bs4.BeautifulSoup(response.content.decode()).find(id="building_form")
+
         fill_in_admin_form(
             form_soup,
             {
