@@ -9,4 +9,7 @@ class Permission(models.Model):
         default_permissions = ()  # disable "add", "change", "delete"
         # and "view" default permissions
 
-        permissions = (("maintenance_mode", "Can toggle maintenance mode"),)
+        permissions = (
+            ("maintenance_mode", "Can toggle maintenance mode"),
+            ("explorer_access", "Can access SQL Explorer"),
+        )

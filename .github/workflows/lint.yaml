@@ -21,3 +21,5 @@ jobs:
         run: pip install ".[dev]"
       - name: "Run lint checks"
         run: invoke lint
+    env:
+      DJANGO_SECRET_KEY: SECRET_KEY

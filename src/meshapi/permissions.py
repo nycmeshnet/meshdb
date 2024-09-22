@@ -50,6 +50,10 @@ class HasMaintenanceModePermission(HasDjangoPermission):
     django_permission = "meshapi.maintenance_mode"
 
 
+class HasExplorerAccessPermission(HasDjangoPermission):
+    django_permission = "meshapi.explorer_access"
+
+
 # Janky
 class LegacyMeshQueryPassword(permissions.BasePermission):
     def has_permission(self, request: Request, view: View) -> bool:

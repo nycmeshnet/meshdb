@@ -42,7 +42,7 @@ class TestResetDevDatabaseTask(TestCase):
         os.environ["AWS_SECRET_ACCESS_KEY"] = "alsofake"
         reset_dev_database()
         mock_call_command_func.assert_has_calls(
-            [mock.call("dbrestore", "--noinput"), mock.call("scramble_members", "--noinput")]
+            [mock.call("dbrestore", "--noinput", "--database", "default"), mock.call("scramble_members", "--noinput")]
         )
 
     @mock.patch("django.core.management.call_command")
