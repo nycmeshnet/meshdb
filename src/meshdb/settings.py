@@ -15,6 +15,7 @@ import os
 from pathlib import Path
 from typing import Any, Dict
 
+from django.http.request import HttpRequest
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -81,6 +82,7 @@ CORS_ALLOWED_ORIGINS = [
     "https://devadminmap.mesh.nycmesh.net",
     "https://adminmap.db.nycmesh.net",
     "https://adminmap.devdb.nycmesh.net",
+    "https://devdb.nycmesh.net",
 ]
 
 CSRF_TRUSTED_ORIGINS = [
@@ -135,6 +137,7 @@ INSTALLED_APPS = [
     "dbbackup",
     "import_export",
     "flags",
+    "explorer",
 ]
 
 MIDDLEWARE = [
@@ -192,7 +195,15 @@ DATABASES = {
         "PASSWORD": os.environ.get("DB_PASSWORD"),
         "HOST": os.environ.get("DB_HOST"),
         "PORT": os.environ.get("DB_PORT", 5432),
-    }
+    },
+    "readonly": {
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": os.environ.get("DB_NAME"),
+        "USER": os.environ.get("DB_USER_RO"),
+        "PASSWORD": os.environ.get("DB_PASSWORD_RO"),
+        "HOST": os.environ.get("DB_HOST"),
+        "PORT": os.environ.get("DB_PORT", 5432),
+    },
 }
 
 # django-dbbackup
@@ -395,3 +406,53 @@ SPECTACULAR_SETTINGS = {
 
 IMPORT_EXPORT_IMPORT_PERMISSION_CODE = "add"
 IMPORT_EXPORT_EXPORT_PERMISSION_CODE = "view"
+
+EXPLORER_CONNECTIONS = {"Default": "readonly"}
+EXPLORER_DEFAULT_CONNECTION = "readonly"
+EXPLORER_NO_PERMISSION_VIEW = "meshweb.views.explorer_auth_redirect"
+
+
+def EXPLORER_PERMISSION_VIEW(r: HttpRequest) -> bool:
+    return r.user.has_perm("meshapi.explorer_access")
+
+
+def EXPLORER_PERMISSION_CHANGE(r: HttpRequest) -> bool:
+    return r.user.has_perm("meshapi.explorer_access")
+
+
+EXPLORER_ENABLE_ANONYMOUS_STATS = False
+EXPLORER_SQL_BLACKLIST = (
+    # DML
+    "COMMIT",
+    "DELETE",
+    "INSERT",
+    "MERGE",
+    "REPLACE",
+    "ROLLBACK",
+    "SET",
+    "START",
+    "UPDATE",
+    "UPSERT",
+    # DDL
+    "ALTER",
+    "CREATE",
+    "DROP",
+    "RENAME",
+    "TRUNCATE",
+    # DCL
+    "GRANT",
+    "REVOKE",
+)
+
+
+EXPLORER_SCHEMA_EXCLUDE_TABLE_PREFIXES = [
+    "authtoken_",
+    "django_",
+    "auth_",
+    "contenttypes_",
+    "sessions_",
+    "admin_",
+    "flags_",
+    "explorer_",
+    "meshapi_hooks_",
+]

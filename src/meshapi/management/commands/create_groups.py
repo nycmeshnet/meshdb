@@ -12,6 +12,10 @@ class Command(BaseCommand):
         pass
 
     def handle(self, *args: Any, **options: Any) -> None:
+        self.create_base_groups()
+        self.create_extra_groups()
+
+    def create_base_groups(self) -> None:
         models = [
             "building",
             "member",
@@ -50,3 +54,14 @@ class Command(BaseCommand):
                 or code == "update_panoramas"
             ):
                 admin.permissions.add(p)
+
+    def create_extra_groups(self) -> None:
+        all_permissions = Permission.objects.all()
+
+        # Loop again to make groups for specific actions
+        explorer, _ = Group.objects.get_or_create(name="Explorer Access")
+
+        for p in all_permissions:
+            code = p.codename
+            if "explorer_access" in code:
+                explorer.permissions.add(p)

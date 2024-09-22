@@ -116,6 +116,48 @@ class TestViewsGetUnauthenticated(TestCase):
             )
         )
 
+        nodes.append(
+            Node(
+                name="Potential Hub ABC",
+                status=Node.NodeStatus.PLANNED,
+                latitude=40.724868,
+                longitude=-73.987881,
+                type=Node.NodeType.HUB,
+            )
+        )
+        buildings.append(
+            Building(
+                address_truth_sources=[],
+                latitude=40.724868,
+                longitude=-73.987881,
+                altitude=27,
+                primary_node=nodes[-1],
+                panoramas=[],
+            )
+        )
+        installs.append(
+            Install(
+                install_number=19452,
+                node=nodes[-1],
+                status=Install.InstallStatus.REQUEST_RECEIVED,
+                request_date=datetime.date(2024, 1, 27),
+                roof_access=True,
+                building=buildings[-1],
+                member=member,
+            )
+        )
+        installs.append(
+            Install(
+                install_number=19453,
+                node=nodes[-1],
+                status=Install.InstallStatus.REQUEST_RECEIVED,
+                request_date=datetime.date(2024, 1, 27),
+                roof_access=True,
+                building=buildings[-1],
+                member=member,
+            )
+        )
+
         ap = AccessPoint(
             id=123456,
             node=nodes[-1],
@@ -378,6 +420,22 @@ class TestViewsGetUnauthenticated(TestCase):
                     "requestDate": 1706331600000,
                     "status": "Installed",
                     "panoramas": ["3.jpg", "3a.jpg", "3b.jpg"],
+                    "roofAccess": True,
+                },
+                {
+                    "id": 19452,
+                    "coordinates": [-73.987881, 40.724868, None],
+                    "requestDate": 1706331600000,
+                    "name": "Potential Hub ABC",
+                    "notes": "Hub",
+                    "panoramas": [],
+                    "roofAccess": True,
+                },
+                {
+                    "id": 19453,
+                    "coordinates": [-73.987881, 40.724868, 27.0],
+                    "requestDate": 1706331600000,
+                    "panoramas": [],
                     "roofAccess": True,
                 },
                 {
@@ -1400,6 +1458,129 @@ class TestViewsGetUnauthenticated(TestCase):
                     "from": 731,
                     "to": 555,
                     "status": "active",
+                },
+            ],
+        )
+
+    def test_install_number_used_for_links_with_no_nn(self):
+        # Use the same member & building for everything since it doesn't matter
+        member = Member(name="Fake Name")
+        member.save()
+
+        node1 = Node(
+            name="Potential Hub ABC",
+            status=Node.NodeStatus.PLANNED,
+            latitude=40.724868,
+            longitude=-73.987881,
+            type=Node.NodeType.HUB,
+        )
+        node1.save()
+        building1 = Building(
+            address_truth_sources=[],
+            latitude=40.724868,
+            longitude=-73.987881,
+            altitude=27,
+            primary_node=node1,
+            panoramas=[],
+        )
+        building1.save()
+        install1 = Install(
+            install_number=19452,
+            node=node1,
+            status=Install.InstallStatus.REQUEST_RECEIVED,
+            request_date=datetime.date(2024, 1, 27),
+            roof_access=True,
+            building=building1,
+            member=member,
+        )
+        install1.save()
+        device1 = Device(
+            node=node1,
+            status=Device.DeviceStatus.ACTIVE,
+        )
+        device1.save()
+
+        node2 = Node(
+            network_number=123,
+            status=Node.NodeStatus.PLANNED,
+            latitude=40.724868,
+            longitude=-73.987881,
+            type=Node.NodeType.HUB,
+        )
+        node2.save()
+
+        building2 = Building(
+            address_truth_sources=[],
+            latitude=40.724868,
+            longitude=-73.987881,
+            altitude=27,
+            primary_node=node2,
+            panoramas=[],
+        )
+        building2.save()
+        install2 = Install(
+            install_number=19459,
+            node=node2,
+            status=Install.InstallStatus.REQUEST_RECEIVED,
+            request_date=datetime.date(2024, 1, 27),
+            roof_access=True,
+            building=building2,
+            member=member,
+        )
+        install2.save()
+        device2 = Device(
+            node=node2,
+            status=Device.DeviceStatus.ACTIVE,
+        )
+        device2.save()
+
+        building3 = Building(
+            address_truth_sources=[],
+            latitude=40.724868,
+            longitude=-73.987881,
+            altitude=27,
+            panoramas=[],
+        )
+        building3.save()
+        install3 = Install(
+            install_number=19460,
+            status=Install.InstallStatus.REQUEST_RECEIVED,
+            request_date=datetime.date(2024, 1, 27),
+            roof_access=True,
+            building=building3,
+            member=member,
+        )
+        install3.save()
+
+        link = Link(
+            from_device=device1,
+            to_device=device2,
+            status=Link.LinkStatus.PLANNED,
+            type=Link.LinkType.FIVE_GHZ,
+        )
+        link.save()
+        los = LOS(
+            from_building=building1,
+            to_building=building3,
+            source=LOS.LOSSource.HUMAN_ANNOTATED,
+        )
+        los.save()
+
+        self.maxDiff = None
+        response = self.c.get("/api/v1/mapdata/links/")
+
+        self.assertEqual(
+            json.loads(response.content.decode("UTF8")),
+            [
+                {
+                    "from": 19452,
+                    "to": 123,
+                    "status": "planned",
+                },
+                {
+                    "from": 19452,
+                    "to": 19460,
+                    "status": "planned",
                 },
             ],
         )
