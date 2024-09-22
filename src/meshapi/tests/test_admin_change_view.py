@@ -506,6 +506,7 @@ class TestAdminChangeView(TestCase):
         self.assertEqual(list(building.nodes.all()), [self.node1])
 
     def test_change_building_but_not_address(self):
+        enable_flag("EDIT_PANORAMAS")
         change_url = f"/admin/meshapi/building/{self.building_1.id}/change/"
         response = self._call(change_url, 200)
         form_soup = bs4.BeautifulSoup(response.content.decode()).find(id="building_form")
@@ -545,6 +546,7 @@ class TestAdminChangeView(TestCase):
         self.assertEqual(list(building.nodes.all()), [self.node1])
 
     def test_change_building_address(self):
+        enable_flag("EDIT_PANORAMAS")
         change_url = f"/admin/meshapi/building/{self.building_1.id}/change/"
         response = self._call(change_url, 200)
         form_soup = bs4.BeautifulSoup(response.content.decode()).find(id="building_form")
