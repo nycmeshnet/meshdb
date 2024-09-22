@@ -23,6 +23,7 @@ class Command(BaseCommand):
             "node",
             "device",
             "link",
+            "los",
             "sector",
             "accesspoint",
         ]
@@ -48,7 +49,7 @@ class Command(BaseCommand):
             if (
                 obj in models
                 or act == "view"
-                or obj in ["user", "token", "tokenproxy", "celeryserialzerhook"]
+                or obj in ["user", "token", "tokenproxy", "celeryserializerhook"]
                 or code == "assign_nn"
                 or code == "update_panoramas"
             ):
