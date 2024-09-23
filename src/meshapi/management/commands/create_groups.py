@@ -34,7 +34,7 @@ class Command(BaseCommand):
         read_only, _ = Group.objects.get_or_create(name="Read Only")
 
         for p in all_permissions:
-            code = p.codenames
+            code = p.codename
 
             act, obj = code.split("_", maxsplit=1)
 
