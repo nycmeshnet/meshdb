@@ -43,7 +43,10 @@ DEBUG = os.environ.get("DEBUG", "False") == "True"
 PROFILING_ENABLED = DEBUG and not os.environ.get("DISABLE_PROFILING", "False") == "True"
 
 
-FLAGS: Dict[str, Any] = {"MAINTENANCE_MODE": []}
+FLAGS: Dict[str, Any] = {
+    "MAINTENANCE_MODE": [],
+    "EDIT_PANORAMAS": [],
+}
 
 USE_X_FORWARDED_HOST = True
 
@@ -193,7 +196,7 @@ DATABASES = {
         "NAME": os.environ.get("DB_NAME"),
         "USER": os.environ.get("DB_USER"),
         "PASSWORD": os.environ.get("DB_PASSWORD"),
-        "HOST": os.environ.get("DB_HOST"),
+        "HOST": os.environ.get("DB_HOST", "localhost"),
         "PORT": os.environ.get("DB_PORT", 5432),
     },
     "readonly": {
@@ -201,7 +204,7 @@ DATABASES = {
         "NAME": os.environ.get("DB_NAME"),
         "USER": os.environ.get("DB_USER_RO"),
         "PASSWORD": os.environ.get("DB_PASSWORD_RO"),
-        "HOST": os.environ.get("DB_HOST"),
+        "HOST": os.environ.get("DB_HOST", "localhost"),
         "PORT": os.environ.get("DB_PORT", 5432),
     },
 }
