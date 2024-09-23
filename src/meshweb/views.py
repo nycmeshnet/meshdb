@@ -25,7 +25,7 @@ def index(request: HttpRequest) -> HttpResponse:
         "Volunteer Tools": [
             ("/admin", "Admin Panel"),
             ("/api/v1/geography/whole-mesh.kml", "KML Download"),
-            (settings.PG_ADMIN_URL, "PG Admin"),
+            ("/explorer/play", "SQL Explorer"),
             (settings.FORMS_URL, "Other Forms"),
         ],
         "Developer Tools": [
@@ -39,6 +39,14 @@ def index(request: HttpRequest) -> HttpResponse:
     return HttpResponse(template.render(context, request))
 
 
+@api_view(["GET"])
+@permission_classes([permissions.AllowAny])
+def explorer_auth_redirect(request: HttpRequest) -> HttpResponse:
+    # Auth Redirect to ensure that behavior is consistent with admin panel
+    return HttpResponseRedirect("/admin/login/?next=/explorer/")
+
+
+@permission_classes([permissions.AllowAny])
 def maintenance(request: HttpRequest) -> HttpResponse:
     if not flag_enabled("MAINTENANCE_MODE"):
         return HttpResponseRedirect(reverse("main"))
@@ -50,6 +58,7 @@ def maintenance(request: HttpRequest) -> HttpResponse:
     return HttpResponse(template.render(context, request))
 
 
+@extend_schema(exclude=True)  # Don't show on docs page
 @api_view(["POST"])
 @permission_classes([HasMaintenanceModePermission])
 def enable_maintenance(request: HttpRequest) -> HttpResponse:
@@ -62,6 +71,7 @@ def enable_maintenance(request: HttpRequest) -> HttpResponse:
     return HttpResponse(template.render(context, request))
 
 
+@extend_schema(exclude=True)  # Don't show on docs page
 @api_view(["POST"])
 @permission_classes([HasMaintenanceModePermission])
 def disable_maintenance(request: HttpRequest) -> HttpResponse:

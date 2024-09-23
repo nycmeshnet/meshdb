@@ -7,6 +7,7 @@ data:
   MESHDB_ENVIRONMENT: {{ .Values.meshweb.environment }}
   DB_NAME: {{ .Values.pg.dbname }}
   DB_USER: {{ .Values.pg.user | quote }}
+  DB_USER_RO: {{ .Values.pg.user_ro | quote }}
   DB_HOST: {{ include "meshdb.fullname" . }}-postgres.{{ .Values.meshdb_app_namespace }}.svc.cluster.local
   DB_PORT: {{ .Values.pg.port | quote }}
   # Backups
@@ -25,9 +26,6 @@ data:
   # Comment this out to enter prod mode
   DEBUG: {{ .Values.meshweb.enable_debug | quote }}
   DISABLE_PROFILING: {{ .Values.meshweb.disable_profiling | quote }}
-
-  # Comment this out to allow edits to the panoramas in the admin panel
-  DISABLE_PANO_EDITS: {{ .Values.meshweb.disable_pano_edits | quote }}
 
   UISP_URL: {{ .Values.uisp.url | quote }}
   UISP_USER: {{ .Values.uisp.user | quote }}
