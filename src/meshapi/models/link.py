@@ -3,11 +3,14 @@ import uuid
 from typing import Optional
 
 from django.db import models
+from simple_history.models import HistoricalRecords
 
 from meshapi.models.devices.device import Device
 
 
 class Link(models.Model):
+    history = HistoricalRecords()
+
     class LinkStatus(models.TextChoices):
         INACTIVE = "Inactive"
         PLANNED = "Planned"

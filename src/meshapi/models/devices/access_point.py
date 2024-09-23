@@ -1,9 +1,12 @@
 from django.db import models
+from simple_history.models import HistoricalRecords
 
 from .device import Device
 
 
 class AccessPoint(Device):
+    history = HistoricalRecords()
+
     latitude = models.FloatField(
         help_text="Approximate AP latitude in decimal degrees (this will match the attached "
         "Node object in most cases, but has been manually moved around in some cases to "

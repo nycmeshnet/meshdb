@@ -3,11 +3,14 @@ from typing import Optional
 
 from django.db import models
 from django.db.models import F, FloatField, IntegerField
+from simple_history.models import HistoricalRecords
 
 from meshapi.models.node import Node
 
 
 class Device(models.Model):
+    history = HistoricalRecords()
+
     class Meta:
         ordering = [F("install_date").desc(nulls_last=True)]
 
