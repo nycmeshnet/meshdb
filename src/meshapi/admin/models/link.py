@@ -1,7 +1,8 @@
 from django import forms
 from django.contrib import admin
 from django.contrib.postgres.search import SearchVector
-from import_export.admin import ExportActionMixin, ImportExportModelAdmin
+from import_export.admin import ExportActionMixin, ImportExportMixin
+from simple_history.admin import SimpleHistoryAdmin
 
 from meshapi.models import Link
 
@@ -18,7 +19,7 @@ class LinkAdminForm(forms.ModelForm):
 
 
 @admin.register(Link)
-class LinkAdmin(RankedSearchMixin, ImportExportModelAdmin, ExportActionMixin):
+class LinkAdmin(RankedSearchMixin, ImportExportMixin, ExportActionMixin, SimpleHistoryAdmin):
     form = LinkAdminForm
     search_fields = [
         "from_device__node__name__icontains",

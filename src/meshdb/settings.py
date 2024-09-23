@@ -141,6 +141,7 @@ INSTALLED_APPS = [
     "import_export",
     "flags",
     "explorer",
+    "simple_history",
 ]
 
 MIDDLEWARE = [
@@ -153,6 +154,7 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "meshweb.middleware.MaintenanceModeMiddleware",
+    "simple_history.middleware.HistoryRequestMiddleware",
 ]
 
 
@@ -409,6 +411,8 @@ SPECTACULAR_SETTINGS = {
 
 IMPORT_EXPORT_IMPORT_PERMISSION_CODE = "add"
 IMPORT_EXPORT_EXPORT_PERMISSION_CODE = "view"
+
+SIMPLE_HISTORY_HISTORY_ID_USE_UUID = True
 
 EXPLORER_CONNECTIONS = {"Default": "readonly"}
 EXPLORER_DEFAULT_CONNECTION = "readonly"
