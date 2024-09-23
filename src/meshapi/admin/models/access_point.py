@@ -4,7 +4,8 @@ from django.contrib import admin
 from django.contrib.postgres.search import SearchVector
 from django.forms import Field, ModelForm
 from django.http import HttpRequest
-from import_export.admin import ExportActionMixin, ImportExportModelAdmin
+from import_export.admin import ExportActionMixin, ImportExportMixin
+from simple_history.admin import SimpleHistoryAdmin
 
 from meshapi.models import AccessPoint
 from meshapi.widgets import AutoPopulateLocationWidget, DeviceIPAddressWidget, ExternalHyperlinkWidget
@@ -32,7 +33,7 @@ class AccessPointAdminForm(DeviceAdminForm):
 
 
 @admin.register(AccessPoint)
-class AccessPointAdmin(RankedSearchMixin, ImportExportModelAdmin, ExportActionMixin):
+class AccessPointAdmin(RankedSearchMixin, ImportExportMixin, ExportActionMixin, SimpleHistoryAdmin):
     form = AccessPointAdminForm
     search_fields = ["name__icontains", "@notes"]
     search_vector = SearchVector("name", weight="A") + SearchVector("notes", weight="D")

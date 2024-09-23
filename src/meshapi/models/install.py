@@ -4,6 +4,7 @@ from typing import Any, Optional
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import IntegerField
+from simple_history.models import HistoricalRecords
 
 from .building import Building
 from .member import Member
@@ -12,6 +13,8 @@ from .util.auto_incrementing_integer_field import AutoIncrementingIntegerField
 
 
 class Install(models.Model):
+    history = HistoricalRecords()
+
     class Meta:
         permissions = [
             ("assign_nn", "Can assign an NN to install"),

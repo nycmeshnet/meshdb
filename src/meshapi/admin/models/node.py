@@ -9,6 +9,7 @@ from django.forms import ModelForm
 from django.http import HttpRequest
 from import_export import resources
 from import_export.admin import ExportActionMixin, ImportExportModelAdmin
+from simple_history.admin import SimpleHistoryAdmin
 
 from meshapi.models import Building, Node
 from meshapi.widgets import AutoPopulateLocationWidget
@@ -49,7 +50,7 @@ class NodeAdminForm(forms.ModelForm):
 
 
 @admin.register(Node)
-class NodeAdmin(RankedSearchMixin, ImportExportModelAdmin, ExportActionMixin):
+class NodeAdmin(RankedSearchMixin, ExportActionMixin, ImportExportModelAdmin, SimpleHistoryAdmin):
     form = NodeAdminForm
     resource_classes = [NodeImportExportResource]
     search_fields = [

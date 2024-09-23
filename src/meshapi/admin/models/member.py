@@ -1,7 +1,8 @@
 from django import forms
 from django.contrib import admin
 from django.contrib.postgres.search import SearchVector
-from import_export.admin import ExportActionMixin, ImportExportModelAdmin
+from import_export.admin import ExportActionMixin, ImportExportMixin
+from simple_history.admin import SimpleHistoryAdmin
 
 from meshapi.models import Member
 
@@ -22,7 +23,7 @@ class MemberAdminForm(forms.ModelForm):
 
 
 @admin.register(Member)
-class MemberAdmin(RankedSearchMixin, ImportExportModelAdmin, ExportActionMixin):
+class MemberAdmin(RankedSearchMixin, ImportExportMixin, ExportActionMixin, SimpleHistoryAdmin):
     form = MemberAdminForm
     search_fields = [
         # Search by name
