@@ -1,6 +1,7 @@
 from django.contrib import admin
 from django.contrib.postgres.search import SearchVector
-from import_export.admin import ExportActionMixin, ImportExportModelAdmin
+from import_export.admin import ExportActionMixin, ImportExportMixin
+from simple_history.admin import SimpleHistoryAdmin
 
 from meshapi.models import Sector
 from meshapi.widgets import ExternalHyperlinkWidget
@@ -22,7 +23,7 @@ class SectorAdminForm(DeviceAdminForm):
 
 
 @admin.register(Sector)
-class SectorAdmin(RankedSearchMixin, ImportExportModelAdmin, ExportActionMixin):
+class SectorAdmin(RankedSearchMixin, ImportExportMixin, ExportActionMixin, SimpleHistoryAdmin):
     form = SectorAdminForm
     search_fields = ["name__icontains", "@notes"]
     search_vector = SearchVector("name", weight="A") + SearchVector("notes", weight="D")

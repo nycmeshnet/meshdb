@@ -1,10 +1,13 @@
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
+from simple_history.models import HistoricalRecords
 
 from .device import Device
 
 
 class Sector(Device):
+    history = HistoricalRecords()
+
     radius = models.FloatField(
         help_text="The radius to display this sector on the map (in km)",
         validators=[MinValueValidator(0)],

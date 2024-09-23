@@ -5,7 +5,8 @@ from django.contrib import admin
 from django.contrib.postgres.search import SearchVector
 from django.db.models import QuerySet
 from django.http import HttpRequest
-from import_export.admin import ExportActionMixin, ImportExportModelAdmin
+from import_export.admin import ExportActionMixin, ImportExportMixin
+from simple_history.admin import SimpleHistoryAdmin
 
 from meshapi.models import Device
 from meshapi.widgets import ExternalHyperlinkWidget
@@ -30,7 +31,7 @@ class DeviceAdminForm(forms.ModelForm):
 
 
 @admin.register(Device)
-class DeviceAdmin(RankedSearchMixin, ImportExportModelAdmin, ExportActionMixin):
+class DeviceAdmin(RankedSearchMixin, ImportExportMixin, ExportActionMixin, SimpleHistoryAdmin):
     form = DeviceAdminForm
     search_fields = ["name__icontains", "@notes"]
     search_vector = SearchVector("name", weight="A") + SearchVector("notes", weight="D")
