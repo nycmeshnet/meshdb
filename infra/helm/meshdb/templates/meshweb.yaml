@@ -45,6 +45,11 @@ spec:
                 secretKeyRef:
                   name: meshdb-secrets
                   key: postgres-password
+            - name: DB_PASSWORD_RO
+              valueFrom:
+                secretKeyRef:
+                  name: meshdb-secrets
+                  key: postgres-password-ro
             - name: AWS_ACCESS_KEY_ID
               valueFrom:
                 secretKeyRef:

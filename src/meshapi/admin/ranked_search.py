@@ -5,7 +5,7 @@ from django.contrib.admin import ModelAdmin
 from django.contrib.admin.views.main import ORDER_VAR, ChangeList
 from django.contrib.postgres.search import SearchQuery, SearchRank, SearchVector
 from django.db.models import QuerySet
-from django.db.models.expressions import CombinedExpression, Expression
+from django.db.models.expressions import CombinedExpression, Expression, F, OuterRef, Subquery
 from django.http import HttpRequest
 
 # Trick stolen from https://stackoverflow.com/a/56991089 to make mypy happy about mixin types
@@ -46,11 +46,23 @@ class RankedSearchMixin(_Base):
 
     def rank_queryset(self, queryset: QuerySet, search_term: str) -> QuerySet:
         if search_term and self.search_vector:
-            return (
-                queryset.annotate(rank=SearchRank(self.search_vector, SearchQuery(search_term)))
-                .order_by("-rank", "pk")
-                .distinct("rank", "pk")
-            )
+            # Somehow we end up with duplicate objects in the search queryset,
+            # with different values for the rank, as well as with the same rank.
+            # This means we need to do an extra step rather than just DISTINCT rank, pk
+            # Here we find the row(s) with the highest rank and filter them to move on,
+            # the distinct call below will consolidate this to a single row per pk
+            rank_annotated_queryset = queryset.annotate(rank=SearchRank(self.search_vector, SearchQuery(search_term)))
+            one_rank_per_pk_queryset = rank_annotated_queryset.annotate(
+                highest_rank=Subquery(
+                    rank_annotated_queryset.filter(
+                        pk=OuterRef("pk"),
+                    )
+                    .order_by("-rank")
+                    .values("rank")[:1]
+                )
+            ).filter(rank=F("highest_rank"))
+
+            return one_rank_per_pk_queryset.order_by("-rank", "pk").distinct("rank", "pk")
         return queryset
 
     def get_changelist(self, request: HttpRequest, **kwargs: Dict) -> Type[ChangeList]:

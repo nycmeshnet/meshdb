@@ -40,6 +40,20 @@ def get_node_type(notes: str, node_name: str = "") -> Node.NodeType.choices:
     return Node.NodeType.STANDARD
 
 
+def get_spreadsheet_node_notes(row: SpreadsheetRow) -> str:
+    notes = ""
+    if row.notes:
+        notes = f"Spreadsheet Notes (#{row.id}):\n{row.notes}"
+
+    if row.notes2:
+        notes = f"Spreadsheet Notes2 (#{row.id}):\n{row.notes}"
+
+    if notes:
+        notes += f"-------\n\n"
+
+    return notes
+
+
 def get_or_create_node(
     row: SpreadsheetRow,
 ) -> Optional[models.Node]:
@@ -96,10 +110,7 @@ def get_or_create_node(
         # (if there's another install connected to this node that is active)
         abandon_date=row.abandonDate,
         type=get_node_type(row.notes, row.nodeName),
-        notes=f"Spreadsheet Notes:\n"
-        f"{row.notes if row.notes else None}\n\n"
-        f"Spreadsheet Notes2:\n"
-        f"{row.notes2 if row.notes2 else None}\n\n",
+        notes=get_spreadsheet_node_notes(row),
     )
 
 

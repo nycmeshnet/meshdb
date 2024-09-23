@@ -1,5 +1,4 @@
 import json
-import os
 from typing import Any, Callable, Dict, Optional
 
 from django import forms
@@ -7,6 +6,7 @@ from django.forms import widgets
 from django.template import loader
 from django.utils.safestring import SafeString, mark_safe
 from django_jsonform.widgets import JSONFormWidget
+from flags.state import flag_enabled
 
 
 class PanoramaViewer(JSONFormWidget):
@@ -27,11 +27,11 @@ class PanoramaViewer(JSONFormWidget):
     def render(
         self, name: str, value: str, attrs: Optional[Dict[str, Any]] = None, renderer: Optional[Any] = None
     ) -> SafeString:
-        if "DISALLOW_PANO_EDITS" in os.environ:
-            super_template = ""
-        else:
+        if flag_enabled("EDIT_PANORAMAS"):
             # Render the JSONFormWidget to allow editing of the panoramas
             super_template = super().render(name, value, attrs, renderer)
+        else:
+            super_template = ""
 
         # Then, render the panoramas for viewing
         context = self.pano_get_context(name, value)
