@@ -109,7 +109,7 @@ def join_form(request: Request) -> Response:
     if not r.email and not r.phone:
         return Response({"detail": "Must provide an email or phone number"}, status=status.HTTP_400_BAD_REQUEST)
 
-    if not r.email:# and not validate_email_address(r.email): FIXME (wdn): put this back
+    if r.email and not validate_email_address(r.email):
         return Response({"detail": f"{r.email} is not a valid email"}, status=status.HTTP_400_BAD_REQUEST)
 
     # Expects country code!!!!
@@ -136,39 +136,29 @@ def join_form(request: Request) -> Response:
             {"detail": "Your address could not be validated."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
 
-    # TODO: Notify member if we changed any of their information
-    # Name (won't touch), email (won't touch), phone, st addr, unit (won't touch), city, State, Zip
-    if formatted_phone_number and r.phone != formatted_phone_number:
-        logging.warning(f"Changed phone_number: {formatted_phone_number} != {r.phone}")
-
-    if r.street_address != nyc_addr_info.street_address:
-        logging.warning(f"Changed street_address: {r.street_address} != {nyc_addr_info.street_address}")
-
-    if r.city != nyc_addr_info.city:
-        logging.warning(f"Changed city: {r.city} != {nyc_addr_info.city}")
-
-    if r.state != nyc_addr_info.state:
-        logging.warning(f"Changed state: {r.state} != {nyc_addr_info.state}")
-
-    if r.zip != nyc_addr_info.zip:
-        logging.warning(f"Changed zip: {r.zip} != {nyc_addr_info.zip}")
-
     # Keep a blank JoinFormRequest to mutate with the info we've joined. We'll send it back
     # for their review if anything was changed by our validation.
+    info_changed = False
     changed_info = JoinFormRequest(
-        first_name = "",
-        last_name = "",
-        email = "",
-        phone = formatted_phone_number if formatted_phone_number != None and r.phone != formatted_phone_number else "",
-        street_address = nyc_addr_info.street_address if r.street_address != nyc_addr_info.street_address else "",
-        city = nyc_addr_info.city if r.city != nyc_addr_info.city else "",
-        state = nyc_addr_info.state if r.state != nyc_addr_info.state else "",
-        zip = nyc_addr_info.zip if r.zip != nyc_addr_info.zip else 0,
-        apartment = "",
-        roof_access = False,
-        referral = "",
-        ncl = False,
+        first_name="",
+        last_name="",
+        email="",
+        phone=formatted_phone_number if formatted_phone_number != None and r.phone != formatted_phone_number else "",
+        street_address=nyc_addr_info.street_address if r.street_address != nyc_addr_info.street_address else "",
+        city=nyc_addr_info.city if r.city != nyc_addr_info.city else "",
+        state=nyc_addr_info.state if r.state != nyc_addr_info.state else "",
+        zip=nyc_addr_info.zip if r.zip != nyc_addr_info.zip else 0,
+        apartment="",
+        roof_access=False,
+        referral="",
+        ncl=False,
     )
+
+    for field in changed_info.__dataclass_fields__:
+        value = getattr(changed_info, field)
+        if value != "" and value != 0 and value:
+            info_changed = True
+            print(f"Changed {field} ({value})")
 
     # Check if there's an existing member. Group members by matching on both email and phone
     # A member can have multiple install requests, if they move apartments for example
