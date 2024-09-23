@@ -238,7 +238,7 @@ def main():
 
         logging.info(f"Doing one last scan pass to to check device / node activity consistency")
         for node in models.Node.objects.filter(status=models.Node.NodeStatus.INACTIVE).prefetch_related("devices"):
-            if any(device.status == models.Device.DeviceStatus.ACTIVE for device in node.devices):
+            if any(device.status == models.Device.DeviceStatus.ACTIVE for device in node.devices.all()):
                 logging.info(f"Found active devices on inactive node {node}, marking active")
                 node.status = models.Node.NodeStatus.ACTIVE
                 node.save()
