@@ -34,8 +34,9 @@ class Command(BaseCommand):
         read_only, _ = Group.objects.get_or_create(name="Read Only")
 
         for p in all_permissions:
-            code = p.codename
-            act, obj = code.split("_")
+            code = p.codenames
+
+            act, obj = code.split("_", maxsplit=1)
 
             # read_only
             if act == "view" and obj in models:
