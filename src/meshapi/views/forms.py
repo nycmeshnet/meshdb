@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from datetime import date
 from functools import reduce
 from json.decoder import JSONDecodeError
+from typing import Optional
 
 from django.db import IntegrityError, transaction
 from django.db.models import Q
@@ -23,6 +24,7 @@ from meshapi.util.admin_notifications import notify_administrators_of_data_issue
 from meshapi.util.django_pglocks import advisory_lock
 from meshapi.util.network_number import NETWORK_NUMBER_MAX, NETWORK_NUMBER_MIN, get_next_available_network_number
 from meshapi.validation import (
+    NYCAddressInfo,
     geocode_nyc_address,
     normalize_phone_number,
     validate_email_address,
@@ -107,7 +109,7 @@ def join_form(request: Request) -> Response:
     if not r.email and not r.phone:
         return Response({"detail": "Must provide an email or phone number"}, status=status.HTTP_400_BAD_REQUEST)
 
-    if r.email and not validate_email_address(r.email):
+    if not r.email:# and not validate_email_address(r.email): FIXME (wdn): put this back
         return Response({"detail": f"{r.email} is not a valid email"}, status=status.HTTP_400_BAD_REQUEST)
 
     # Expects country code!!!!
@@ -117,7 +119,7 @@ def join_form(request: Request) -> Response:
     formatted_phone_number = normalize_phone_number(r.phone) if r.phone else None
 
     try:
-        nyc_addr_info = geocode_nyc_address(r.street_address, r.city, r.state, r.zip)
+        nyc_addr_info: Optional[NYCAddressInfo] = geocode_nyc_address(r.street_address, r.city, r.state, r.zip)
     except ValueError:
         return Response(
             {
@@ -133,6 +135,40 @@ def join_form(request: Request) -> Response:
         return Response(
             {"detail": "Your address could not be validated."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
+
+    # TODO: Notify member if we changed any of their information
+    # Name (won't touch), email (won't touch), phone, st addr, unit (won't touch), city, State, Zip
+    if formatted_phone_number and r.phone != formatted_phone_number:
+        logging.warning(f"Changed phone_number: {formatted_phone_number} != {r.phone}")
+
+    if r.street_address != nyc_addr_info.street_address:
+        logging.warning(f"Changed street_address: {r.street_address} != {nyc_addr_info.street_address}")
+
+    if r.city != nyc_addr_info.city:
+        logging.warning(f"Changed city: {r.city} != {nyc_addr_info.city}")
+
+    if r.state != nyc_addr_info.state:
+        logging.warning(f"Changed state: {r.state} != {nyc_addr_info.state}")
+
+    if r.zip != nyc_addr_info.zip:
+        logging.warning(f"Changed zip: {r.zip} != {nyc_addr_info.zip}")
+
+    # Keep a blank JoinFormRequest to mutate with the info we've joined. We'll send it back
+    # for their review if anything was changed by our validation.
+    changed_info = JoinFormRequest(
+        first_name = "",
+        last_name = "",
+        email = "",
+        phone = formatted_phone_number if formatted_phone_number != None and r.phone != formatted_phone_number else "",
+        street_address = nyc_addr_info.street_address if r.street_address != nyc_addr_info.street_address else "",
+        city = nyc_addr_info.city if r.city != nyc_addr_info.city else "",
+        state = nyc_addr_info.state if r.state != nyc_addr_info.state else "",
+        zip = nyc_addr_info.zip if r.zip != nyc_addr_info.zip else 0,
+        apartment = "",
+        roof_access = False,
+        referral = "",
+        ncl = False,
+    )
 
     # Check if there's an existing member. Group members by matching on both email and phone
     # A member can have multiple install requests, if they move apartments for example
