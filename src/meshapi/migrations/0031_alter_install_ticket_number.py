@@ -14,7 +14,7 @@ class Migration(migrations.Migration):
             name="ticket_number",
             field=models.CharField(
                 blank=True,
-                help_text="The ticket number of the OSTicket used to track communications with the member about this install. Note that although this appears to be an integer, it is not. Leading zerosare important, so this should be stored as a string at all times",
+                help_text="The ticket number of the OSTicket used to track communications with the member about this install. Note that although this appears to be an integer, it is not. Leading zeros are important, so this should be stored as a string at all times",
                 null=True,
             ),
         ),
