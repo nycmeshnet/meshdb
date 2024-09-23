@@ -206,12 +206,19 @@ async function updateAdminContent(newUrl, options, updateHistory = true) {
 
 
 function shouldNotIntercept(target) {
-    const url = new URL(target.href);
+    const isForm = target.tagName === "FORM";
+    let url = ""
+    if (isForm){
+        url = new URL(target.action);
+    } else {
+        url = new URL(target.href);
+    }
 
     if (target.className === "capture-exclude") return true;
     if (!url.pathname.startsWith("/admin/")) return true;
     if (url.pathname.startsWith("/admin/login")) return true;
     if (url.pathname.startsWith("/admin/logout")) return true;
+    if (url.pathname.endsWith("/export/") && isForm) return true;
     if (url.host !== location.host) return true;
 
     return false;
@@ -245,8 +252,11 @@ function interceptLinks() {
 
     // Form submissions
     window.addEventListener("submit", function (event) {
+        const form = event.target;
+        // Exit early if this navigation shouldn't be intercepted
+        if (shouldNotIntercept(form)) return;
+
         async function handler() {
-            const form = event.target;
             const formData = new FormData(form);
             const method = form.method;
 
