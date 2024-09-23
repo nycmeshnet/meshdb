@@ -1,6 +1,7 @@
 import uuid
 
 from django.db import models
+from simple_history.models import HistoricalRecords
 
 from meshapi.models import Building
 
@@ -17,6 +18,8 @@ class LOS(models.Model):
     of those buildings (very messy). Instead, with this table, we can represent potential links
     between any pair of street addresses (MeshDB Buildings), no need to create any other DB objects.
     """
+
+    history = HistoricalRecords()
 
     class Meta:
         verbose_name = "LOS"

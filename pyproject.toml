@@ -41,6 +41,7 @@ dependencies = [
     "six==1.16.0",
     "django-flags==5.0.*",
     "django-sql-explorer==5.2.*",
+    "django-simple-history==3.7.*",
 ]
 
 [project.optional-dependencies]
