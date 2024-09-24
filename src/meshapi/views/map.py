@@ -69,7 +69,7 @@ class MapDataNodeList(generics.ListAPIView):
         # include the nns we haven't already covered via install num
         covered_nns = {install.install_number for install in all_installs}
         for node in (
-            Node.objects.filter(~Q(status=Node.NodeStatus.INACTIVE) & Q(installs__status__in=ALLOWED_INSTALL_STATUSES))
+            Node.objects.filter(~Q(status=Node.NodeStatus.INACTIVE))
             .prefetch_related("devices")
             .prefetch_related("installs")
             .prefetch_related(
