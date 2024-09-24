@@ -33,7 +33,7 @@ sample_device = {
 
 sample_install = {
     "status": Install.InstallStatus.ACTIVE,
-    "ticket_number": 69,
+    "ticket_number": "69",
     "request_date": "2022-02-27",
     "install_date": "2022-03-01",
     "abandon_date": "9999-01-01",
