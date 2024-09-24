@@ -103,6 +103,14 @@ class TestInstallModel(TestCase):
         self.assertEqual(install.id, uuid.UUID("23ef170c-f37d-44e3-aaac-93dae636c86e"))
         self.assertEqual(install.install_number, 45)
 
+    def test_osticket_number_leading_zeros(self):
+        install = Install(**self.sample_install_copy)
+        install.ticket_number = "00123"
+        install.save()
+
+        install_copy = Install.objects.get(id=install.id)
+        self.assertEqual(install_copy.ticket_number, "00123")
+
 
 class TestInstallAPI(TestCase):
     def setUp(self):
