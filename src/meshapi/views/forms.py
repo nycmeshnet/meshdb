@@ -76,6 +76,8 @@ form_err_response_schema = inline_serializer("ErrorResponse", fields={"detail": 
                         "install_id": serializers.UUIDField(),
                         "install_number": serializers.IntegerField(),
                         "member_exists": serializers.BooleanField(),
+                        "info_changed": serializers.CharField(),
+                        "changed_info": JoinFormRequestSerializer(),
                     },
                 ),
                 description="Request received, an install has been created (along with member and "
@@ -159,6 +161,26 @@ def join_form(request: Request) -> Response:
         if value != "" and value != 0 and value:
             info_changed = True
             print(f"Changed {field} ({value})")
+
+    # Let the member know we need to confirm some info with them. This is not
+    # a rejection. We expect another join form submission with all this info in 
+    # place for us
+    if info_changed:
+        return Response(
+            {
+                "detail": "Please confirm a few details.",
+                "building_id": None,
+                "member_id": None,
+                "install_id": None,
+                "install_number": None,
+                # If this is an existing member, then set a flag to let them know we have
+                # their information in case they need to update anything.
+                "member_exists": None,
+                "info_changed": info_changed,
+                "changed_info": JoinFormRequestSerializer(changed_info).data,
+            },
+            status=status.HTTP_202_ACCEPTED,
+        )
 
     # Check if there's an existing member. Group members by matching on both email and phone
     # A member can have multiple install requests, if they move apartments for example
@@ -340,6 +362,8 @@ def join_form(request: Request) -> Response:
             # If this is an existing member, then set a flag to let them know we have
             # their information in case they need to update anything.
             "member_exists": True if len(existing_members) > 0 else False,
+            "info_changed": info_changed,
+            "changed_info": JoinFormRequestSerializer(changed_info).data,
         },
         status=status.HTTP_201_CREATED,
     )
