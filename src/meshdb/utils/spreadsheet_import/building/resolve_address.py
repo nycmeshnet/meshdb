@@ -121,6 +121,7 @@ def fixup_bad_address(bad_address: str) -> str:
 
     simple_typo_substitutions = {
         "steet": "Street",
+        "sreet": "Street",
         "avue": "Avenue",
         "concoourse": "Concourse",
         ";": ",",
