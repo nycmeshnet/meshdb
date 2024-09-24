@@ -1,6 +1,5 @@
 import logging
 import os
-from gettext import install
 
 import requests
 from django.db.models.base import ModelBase

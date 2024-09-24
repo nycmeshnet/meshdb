@@ -1,7 +1,6 @@
 import logging
 import os
 import time
-from typing import Optional
 
 import requests
 from django.db.models.base import ModelBase
@@ -76,8 +75,7 @@ def create_os_ticket_for_install(sender: ModelBase, instance: Install, created: 
     }
 
     attempts = 0
-    response: Optional[requests.Response] = None
-    while (not response or response.status_code != 200) and attempts < 4:
+    while attempts < 4:
         attempts += 1
         response = requests.post(
             OSTICKET_NEW_TICKET_ENDPOINT,
@@ -90,7 +88,7 @@ def create_os_ticket_for_install(sender: ModelBase, instance: Install, created: 
 
         time.sleep(1)
 
-    if response and response.status_code != 201:
+    if response.status_code != 201:
         logging.error(
             f"Unable to create ticket for install {str(install)}. OSTicket returned "
             f"HTTP {response.status_code}: {response.text}"
