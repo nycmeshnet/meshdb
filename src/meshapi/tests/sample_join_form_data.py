@@ -2,6 +2,39 @@ valid_join_form_submission = {
     "first_name": "John",
     "last_name": "Smith",
     "email": "jsmith@gmail.com",
+    "phone": "+1 585-758-3425",  # CSH's phone number :P
+    "street_address": "151 Broome Street",  # Also covers New York County Test Case
+    "parsed_street_address": "151 Broome Street",
+    "city": "New York",
+    "state": "NY",
+    "zip": 10002,
+    "apartment": "",
+    "roof_access": True,
+    "referral": "Googled it or something IDK",
+    "ncl": True,
+    "dob_addr_response": {
+        "features": [
+            {
+                "properties": {
+                    "housenumber": "151",
+                    "street": "Broome Street",
+                    "borough": "New York",
+                    "region_a": "NY",
+                    "postalcode": "10002",
+                    "addendum": {"pad": {"bin": 1077609}},
+                },
+                "geometry": {"coordinates": [0, 0]},
+            }
+        ]
+    },
+}
+
+# Join form submission, but the phone and the address are going to be corrected
+# by us and the member needs to confirm that
+valid_join_form_submission_needs_expansion = {
+    "first_name": "John",
+    "last_name": "Smith",
+    "email": "jsmith@gmail.com",
     "phone": "+1585-758-3425",  # CSH's phone number :P
     "street_address": "151 Broome St",  # Also covers New York County Test Case
     "parsed_street_address": "151 Broome Street",

@@ -23,6 +23,7 @@ from .sample_join_form_data import (
     queens_join_form_submission,
     richmond_join_form_submission,
     valid_join_form_submission,
+    valid_join_form_submission_needs_expansion,
     valid_join_form_submission_no_email,
     valid_join_form_submission_with_apartment_in_address,
 )
@@ -134,6 +135,43 @@ class TestJoinForm(TestCase):
         )
 
         request, s = pull_apart_join_form_submission(submission)
+
+        response = self.c.post("/api/v1/join/", request, content_type="application/json")
+        code = 201
+        self.assertEqual(
+            code,
+            response.status_code,
+            f"status code incorrect for Valid Join Form. Should be {code}, but got {response.status_code}.\n Response is: {response.content.decode('utf-8')}",
+        )
+        validate_successful_join_form_submission(self, "Valid Join Form", s, response)
+
+    @parameterized.expand(
+        [
+            [valid_join_form_submission_needs_expansion],
+        ]
+    )
+    def test_valid_join_form_with_member_confirmation(self, submission):
+        self.requests_mocker.get(
+            NYC_PLANNING_LABS_GEOCODE_URL,
+            json=submission["dob_addr_response"],
+        )
+
+        request, s = pull_apart_join_form_submission(submission)
+
+        response = self.c.post("/api/v1/join/", request, content_type="application/json")
+        code = 202
+        self.assertEqual(
+            code,
+            response.status_code,
+            f"status code incorrect for Valid Join Form. Should be {code}, but got {response.status_code}.\n Response is: {response.content.decode('utf-8')}",
+        )
+
+        # TODO: Loop thru and chom
+        if response.data["info_changed"]:
+            changed_info = response.data["changed_info"]
+            for k, v in changed_info.items():
+                if JoinFormRequest.not_default(v):
+                    request[k] = v
 
         response = self.c.post("/api/v1/join/", request, content_type="application/json")
         code = 201

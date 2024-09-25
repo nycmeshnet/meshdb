@@ -49,6 +49,10 @@ class JoinFormRequest:
     referral: str
     ncl: bool
 
+    @staticmethod
+    def not_default(value):
+        return value != "" and value != 0 and value
+
 
 class JoinFormRequestSerializer(DataclassSerializer):
     class Meta:
@@ -158,13 +162,13 @@ def join_form(request: Request) -> Response:
 
     for field in changed_info.__dataclass_fields__:
         value = getattr(changed_info, field)
-        if value != "" and value != 0 and value:
+        if changed_info.not_default(value):
             info_changed = True
             print(f"Changed {field} ({value})")
 
     # Let the member know we need to confirm some info with them. This is not
-    # a rejection. We expect another join form submission with all this info in 
-    # place for us
+    # a rejection. We expect another join form submission with all this info in
+    # place for us.
     if info_changed:
         return Response(
             {
@@ -176,6 +180,7 @@ def join_form(request: Request) -> Response:
                 # If this is an existing member, then set a flag to let them know we have
                 # their information in case they need to update anything.
                 "member_exists": None,
+                # TODO: Add a "trust me bro" parameter. Maybe log if it breaks
                 "info_changed": info_changed,
                 "changed_info": JoinFormRequestSerializer(changed_info).data,
             },
