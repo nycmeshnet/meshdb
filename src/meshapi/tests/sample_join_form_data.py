@@ -3,7 +3,7 @@ valid_join_form_submission = {
     "last_name": "Smith",
     "email": "jsmith@gmail.com",
     "phone": "+1 585-758-3425",  # CSH's phone number :P
-    "street_address": "151 Broome Street",  # Also covers New York County Test Case
+    "street_address": "151 Broome St",  # Also covers New York County Test Case
     "parsed_street_address": "151 Broome Street",
     "city": "New York",
     "state": "NY",

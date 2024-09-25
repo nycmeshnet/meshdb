@@ -136,7 +136,7 @@ class TestJoinForm(TestCase):
 
         request, s = pull_apart_join_form_submission(submission)
 
-        response = self.c.post("/api/v1/join/", request, content_type="application/json")
+        response = self.c.post("/api/v1/join/", s, content_type="application/json")
         code = 201
         self.assertEqual(
             code,
@@ -148,6 +148,13 @@ class TestJoinForm(TestCase):
     @parameterized.expand(
         [
             [valid_join_form_submission_needs_expansion],
+            [valid_join_form_submission],
+            [valid_join_form_submission_no_email],
+            [richmond_join_form_submission],
+            [kings_join_form_submission],
+            [queens_join_form_submission],
+            [bronx_join_form_submission],
+            [valid_join_form_submission_with_apartment_in_address],
         ]
     )
     def test_valid_join_form_with_member_confirmation(self, submission):
@@ -172,7 +179,6 @@ class TestJoinForm(TestCase):
             for k, v in request.items():
                 if k in changed_info.keys():
                     request[k] = changed_info[k]
-
 
         response = self.c.post("/api/v1/join/", request, content_type="application/json")
         code = 201

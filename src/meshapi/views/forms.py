@@ -76,8 +76,7 @@ form_err_response_schema = inline_serializer("ErrorResponse", fields={"detail": 
                         "install_id": serializers.UUIDField(),
                         "install_number": serializers.IntegerField(),
                         "member_exists": serializers.BooleanField(),
-                        "info_changed": serializers.CharField(),
-                        "changed_info": JoinFormRequestSerializer(),
+                        "changed_info": serializers.DictField(),
                     },
                 ),
                 description="Request received, an install has been created (along with member and "
@@ -138,7 +137,7 @@ def join_form(request: Request) -> Response:
             {"detail": "Your address could not be validated."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
 
-    changed_info = {}
+    changed_info: dict[str, str | int] = {}
 
     # TODO: Notify member if we changed any of their information
     # Name (won't touch), email (won't touch), phone, st addr, unit (won't touch), city, State, Zip
