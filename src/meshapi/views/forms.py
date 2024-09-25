@@ -48,6 +48,7 @@ class JoinFormRequest:
     roof_access: bool
     referral: str
     ncl: bool
+    trust_me_bro: bool # Used to override member data correction
 
 
 class JoinFormRequestSerializer(DataclassSerializer):
@@ -166,21 +167,24 @@ def join_form(request: Request) -> Response:
     # This is not a rejection. We expect another join form submission with all
     # of this info in place for us.
     if changed_info:
-        return Response(
-            {
-                "detail": "Please confirm a few details.",
-                "building_id": None,
-                "member_id": None,
-                "install_id": None,
-                "install_number": None,
-                # If this is an existing member, then set a flag to let them know we have
-                # their information in case they need to update anything.
-                "member_exists": None,
-                # TODO: Add a "trust me bro" parameter. Maybe log if it breaks
-                "changed_info": changed_info,
-            },
-            status=status.HTTP_202_ACCEPTED,
-        )
+        if r.trust_me_bro:
+            logging.warning(f"Got trust_me_bro, even though info was still updated (email: {r.email}, changed_info: {changed_info}). Proceeding with install request submission.")
+        else:
+            return Response(
+                {
+                    "detail": "Please confirm a few details.",
+                    "building_id": None,
+                    "member_id": None,
+                    "install_id": None,
+                    "install_number": None,
+                    # If this is an existing member, then set a flag to let them know we have
+                    # their information in case they need to update anything.
+                    "member_exists": None,
+                    # TODO: Add a "trust me bro" parameter. Maybe log if it breaks
+                    "changed_info": changed_info,
+                },
+                status=status.HTTP_202_ACCEPTED,
+            )
 
     # Check if there's an existing member. Group members by matching on both email and phone
     # A member can have multiple install requests, if they move apartments for example
@@ -347,10 +351,13 @@ def join_form(request: Request) -> Response:
                 request,
             )
 
-    logging.info(
-        f"JoinForm submission success. building_id: {join_form_building.id}, "
-        f"member_id: {join_form_member.id}, install_number: {join_form_install.install_number}"
-    )
+    bro_string = "(trust_me_bro)" if r.trust_me_bro else ""
+    success_message = f"JoinForm submission success {bro_string}. building_id: {join_form_building.id}, member_id: {join_form_member.id}, install_number: {join_form_install.install_number}"
+
+    if r.trust_me_bro:
+        logging.warning(success_message)
+    else:
+        logging.info(success_message)
 
     return Response(
         {
