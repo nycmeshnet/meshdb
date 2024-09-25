@@ -167,11 +167,12 @@ class TestJoinForm(TestCase):
         )
 
         # TODO: Loop thru and chom
-        if response.data["info_changed"]:
-            changed_info = response.data["changed_info"]
-            for k, v in changed_info.items():
-                if JoinFormRequest.not_default(v):
-                    request[k] = v
+        changed_info = response.data["changed_info"]
+        if changed_info:
+            for k, v in request.items():
+                if k in changed_info.keys():
+                    request[k] = changed_info[k]
+
 
         response = self.c.post("/api/v1/join/", request, content_type="application/json")
         code = 201

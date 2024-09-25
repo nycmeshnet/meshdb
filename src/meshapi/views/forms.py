@@ -49,10 +49,6 @@ class JoinFormRequest:
     referral: str
     ncl: bool
 
-    @staticmethod
-    def not_default(value):
-        return value != "" and value != 0 and value
-
 
 class JoinFormRequestSerializer(DataclassSerializer):
     class Meta:
@@ -142,34 +138,35 @@ def join_form(request: Request) -> Response:
             {"detail": "Your address could not be validated."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
 
-    # Keep a blank JoinFormRequest to mutate with the info we've joined. We'll send it back
-    # for their review if anything was changed by our validation.
-    info_changed = False
-    changed_info = JoinFormRequest(
-        first_name="",
-        last_name="",
-        email="",
-        phone=formatted_phone_number if formatted_phone_number != None and r.phone != formatted_phone_number else "",
-        street_address=nyc_addr_info.street_address if r.street_address != nyc_addr_info.street_address else "",
-        city=nyc_addr_info.city if r.city != nyc_addr_info.city else "",
-        state=nyc_addr_info.state if r.state != nyc_addr_info.state else "",
-        zip=nyc_addr_info.zip if r.zip != nyc_addr_info.zip else 0,
-        apartment="",
-        roof_access=False,
-        referral="",
-        ncl=False,
-    )
+    changed_info = {}
 
-    for field in changed_info.__dataclass_fields__:
-        value = getattr(changed_info, field)
-        if changed_info.not_default(value):
-            info_changed = True
-            print(f"Changed {field} ({value})")
+    # TODO: Notify member if we changed any of their information
+    # Name (won't touch), email (won't touch), phone, st addr, unit (won't touch), city, State, Zip
+    if formatted_phone_number and r.phone != formatted_phone_number:
+        logging.warning(f"Changed phone_number: {formatted_phone_number} != {r.phone}")
+        changed_info["phone"] = formatted_phone_number
 
-    # Let the member know we need to confirm some info with them. This is not
-    # a rejection. We expect another join form submission with all this info in
-    # place for us.
-    if info_changed:
+    if r.street_address != nyc_addr_info.street_address:
+        logging.warning(f"Changed street_address: {r.street_address} != {nyc_addr_info.street_address}")
+        changed_info["street_address"] = nyc_addr_info.street_address
+
+    if r.city != nyc_addr_info.city:
+        logging.warning(f"Changed city: {r.city} != {nyc_addr_info.city}")
+        changed_info["city"] = nyc_addr_info.city
+
+    if r.state != nyc_addr_info.state:
+        logging.warning(f"Changed state: {r.state} != {nyc_addr_info.state}")
+        changed_info["state"] = nyc_addr_info.state
+
+    if r.zip != nyc_addr_info.zip:
+        logging.warning(f"Changed zip: {r.zip} != {nyc_addr_info.zip}")
+        changed_info["zip"] = nyc_addr_info.zip
+
+    # Let the member know we need to confirm some info with them. We'll send
+    # back a dictionary with the info that needs confirming.
+    # This is not a rejection. We expect another join form submission with all
+    # of this info in place for us.
+    if changed_info:
         return Response(
             {
                 "detail": "Please confirm a few details.",
@@ -181,8 +178,7 @@ def join_form(request: Request) -> Response:
                 # their information in case they need to update anything.
                 "member_exists": None,
                 # TODO: Add a "trust me bro" parameter. Maybe log if it breaks
-                "info_changed": info_changed,
-                "changed_info": JoinFormRequestSerializer(changed_info).data,
+                "changed_info": changed_info,
             },
             status=status.HTTP_202_ACCEPTED,
         )
@@ -367,8 +363,7 @@ def join_form(request: Request) -> Response:
             # If this is an existing member, then set a flag to let them know we have
             # their information in case they need to update anything.
             "member_exists": True if len(existing_members) > 0 else False,
-            "info_changed": info_changed,
-            "changed_info": JoinFormRequestSerializer(changed_info).data,
+            "changed_info": {},
         },
         status=status.HTTP_201_CREATED,
     )
