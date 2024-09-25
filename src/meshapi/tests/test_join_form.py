@@ -86,6 +86,7 @@ def pull_apart_join_form_submission(submission):
     request = submission.copy()
     del request["parsed_street_address"]
     del request["dob_addr_response"]
+    del request["parsed_phone"]
 
     # Make sure that we get the right stuff out of the database afterwards
     s = JoinFormRequest(**request)
@@ -95,6 +96,7 @@ def pull_apart_join_form_submission(submission):
     s.street_address = submission["parsed_street_address"]
     s.city = submission["city"]
     s.state = submission["state"]
+    s.phone = submission["parsed_phone"]
 
     return request, s
 
@@ -148,7 +150,6 @@ class TestJoinForm(TestCase):
     @parameterized.expand(
         [
             [valid_join_form_submission_needs_expansion],
-            [valid_join_form_submission],
             [valid_join_form_submission_no_email],
             [richmond_join_form_submission],
             [kings_join_form_submission],
