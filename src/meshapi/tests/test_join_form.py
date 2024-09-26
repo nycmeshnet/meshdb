@@ -166,6 +166,8 @@ class TestJoinForm(TestCase):
 
         request, s = pull_apart_join_form_submission(submission)
 
+        request["trust_me_bro"] = False
+
         response = self.c.post("/api/v1/join/", request, content_type="application/json")
         code = 202
         self.assertEqual(
