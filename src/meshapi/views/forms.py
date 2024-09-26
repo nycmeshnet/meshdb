@@ -48,7 +48,7 @@ class JoinFormRequest:
     roof_access: bool
     referral: str
     ncl: bool
-    trust_me_bro: bool # Used to override member data correction
+    trust_me_bro: bool  # Used to override member data correction
 
 
 class JoinFormRequestSerializer(DataclassSerializer):
@@ -168,7 +168,11 @@ def join_form(request: Request) -> Response:
     # of this info in place for us.
     if changed_info:
         if r.trust_me_bro:
-            logging.warning(f"Got trust_me_bro, even though info was still updated (email: {r.email}, changed_info: {changed_info}). Proceeding with install request submission.")
+            logging.warning(
+                f"Got trust_me_bro, even though info was still updated",
+                f"(email: {r.email}, changed_info: {changed_info}).",
+                f"Proceeding with install request submission.",
+            )
         else:
             return Response(
                 {
@@ -351,8 +355,9 @@ def join_form(request: Request) -> Response:
                 request,
             )
 
-    bro_string = "(trust_me_bro)" if r.trust_me_bro else ""
-    success_message = f"JoinForm submission success {bro_string}. building_id: {join_form_building.id}, member_id: {join_form_member.id}, install_number: {join_form_install.install_number}"
+    success_message = f"""JoinForm submission success {"(trust_me_bro)" if r.trust_me_bro else ""}.
+    building_id: {join_form_building.id}, member_id: {join_form_member.id},
+    install_number: {join_form_install.install_number}"""
 
     if r.trust_me_bro:
         logging.warning(success_message)
