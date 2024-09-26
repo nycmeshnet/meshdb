@@ -13,6 +13,7 @@ valid_join_form_submission = {
     "roof_access": True,
     "referral": "Googled it or something IDK",
     "ncl": True,
+    "trust_me_bro": True,
     "dob_addr_response": {
         "features": [
             {
@@ -47,6 +48,7 @@ valid_join_form_submission_needs_expansion = {
     "roof_access": True,
     "referral": "Googled it or something IDK",
     "ncl": True,
+    "trust_me_bro": False,
     "dob_addr_response": {
         "features": [
             {
@@ -79,6 +81,7 @@ valid_join_form_submission_with_apartment_in_address = {
     "roof_access": True,
     "referral": "Googled it or something IDK",
     "ncl": True,
+    "trust_me_bro": True,
     "dob_addr_response": {
         "features": [
             {
@@ -111,6 +114,7 @@ valid_join_form_submission_no_email = {
     "roof_access": True,
     "referral": "Googled it or something IDK",
     "ncl": True,
+    "trust_me_bro": True,
     "dob_addr_response": {
         "features": [
             {
@@ -143,6 +147,7 @@ richmond_join_form_submission = {
     "roof_access": True,
     "referral": "Googled it or something IDK",
     "ncl": True,
+    "trust_me_bro": True,
     "dob_addr_response": {
         "features": [
             {
@@ -175,6 +180,7 @@ kings_join_form_submission = {
     "roof_access": True,
     "referral": "Googled it or something IDK",
     "ncl": True,
+    "trust_me_bro": True,
     "dob_addr_response": {
         "features": [
             {
@@ -207,6 +213,7 @@ queens_join_form_submission = {
     "roof_access": True,
     "referral": "Googled it or something IDK",
     "ncl": True,
+    "trust_me_bro": True,
     "dob_addr_response": {
         "features": [
             {
@@ -239,6 +246,7 @@ bronx_join_form_submission = {
     "roof_access": True,
     "referral": "Googled it or something IDK",
     "ncl": True,
+    "trust_me_bro": True,
     "dob_addr_response": {
         "features": [
             {
@@ -271,6 +279,7 @@ non_nyc_join_form_submission = {
     "roof_access": True,
     "referral": "Googled it or something IDK",
     "ncl": True,
+    "trust_me_bro": True,
     "dob_addr_response": {"features": []},
 }
 
@@ -287,6 +296,7 @@ invalid_join_form_submission = {
     "apartment": 3,
     "roof_access": True,
     "ncl": "a duck",
+    "trust_me_bro": True,
     "dob_addr_response": {"features": []},
 }
 
@@ -306,6 +316,7 @@ jefferson_join_form_submission = {
     "roof_access": True,
     "referral": "Googled it or something IDK",
     "ncl": True,
+    "trust_me_bro": True,
     "dob_addr_response": {
         "features": [
             {
