@@ -169,9 +169,9 @@ def join_form(request: Request) -> Response:
     if changed_info:
         if r.trust_me_bro:
             logging.warning(
-                "Got trust_me_bro, even though info was still updated",
-                f"(email: {r.email}, changed_info: {changed_info}).",
-                "Proceeding with install request submission.",
+                "Got trust_me_bro, even though info was still updated"
+                f"(email: {r.email}, changed_info: {changed_info})."
+                "Proceeding with install request submission."
             )
         else:
             return Response(
