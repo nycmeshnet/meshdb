@@ -72,7 +72,7 @@ spec:
       volumes:
         - name: pg-data-vol
           persistentVolumeClaim:
-            claimName: {{ .Values.pg.pvc_name_legacy }}
+            claimName: {{ .Values.pg.pvc_name }}
       {{- with .Values.pg.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
