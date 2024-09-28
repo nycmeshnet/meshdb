@@ -69,6 +69,8 @@ jobs:
         --set meshweb.forms_url="${{ vars.FORMS_URL }}" \
         --set meshdb.site_base_url="${{ vars.SITE_BASE_URL }}" \
         --set meshweb.slack_webhook="${{ secrets.SLACK_ADMIN_NOTIFICATIONS_WEBHOOK_URL }}" \
+        --set meshweb.slack_join_webhook="${{ secrets.SLACK_JOIN_REQUESTS_CHANNEL_WEBHOOK_URL }}" \
+        --set meshweb.osticket_api_token="${{ secrets.OSTICKET_API_TOKEN }}" \
         --set meshweb.environment="${{ inputs.environment }}" \
         --set ingress.hosts[0].host="${{ vars.INGRESS_HOST }}",ingress.hosts[0].paths[0].path=/,ingress.hosts[0].paths[0].pathType=Prefix \
         --set ingress.hosts[1].host="${{ vars.INGRESS_HOST_LEGACY }}",ingress.hosts[1].paths[0].path=/,ingress.hosts[1].paths[0].pathType=Prefix
