@@ -8,14 +8,14 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 
 from meshapi.models import Install
-from meshapi.util.django_flag_decorator import only_run_if_flag_enabled
+from meshapi.util.django_flag_decorator import skip_if_flag_disabled
 
 OSTICKET_API_TOKEN = os.environ.get("OSTICKET_API_TOKEN")
 OSTICKET_NEW_TICKET_ENDPOINT = os.environ.get("OSTICKET_NEW_TICKET_ENDPOINT")
 
 
 @receiver(post_save, sender=Install, dispatch_uid="create_os_ticket_for_install")
-@only_run_if_flag_enabled("INTEGRATION_ENABLED_CREATE_OSTICKET_TICKETS")
+@skip_if_flag_disabled("INTEGRATION_ENABLED_CREATE_OSTICKET_TICKETS")
 def create_os_ticket_for_install(sender: ModelBase, instance: Install, created: bool, **kwargs: dict) -> None:
     if not created:
         return
