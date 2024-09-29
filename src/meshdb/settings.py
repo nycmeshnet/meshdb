@@ -218,7 +218,7 @@ DBBACKUP_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
 DBBACKUP_FILENAME_TEMPLATE = "{datetime}.{extension}"
 DBBACKUP_STORAGE_OPTIONS = {
     "bucket_name": "meshdb-data-backups",
-    "location": "meshdb-backups/prod1/",
+    "location": "meshdb-backups/prod/",
 }
 
 DBBACKUP_CONNECTORS = {
