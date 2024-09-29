@@ -91,10 +91,27 @@ services:
       - ./nginx:/etc/nginx/conf.d
       - static_files:/var/www/html/static
 
+  minio:
+    image: quay.io/minio/minio
+    ports:
+      - '9000:9000'
+      - '9001:9001'
+    #networks:
+    #  - api 
+    volumes:
+      - 'minio_data:/data'
+    command: |
+      server /data --console-address ":9001"
+    environment:
+      - MINIO_ROOT_USER=admin
+      - MINIO_ROOT_PASSWORD=admin1234
+      - MINIO_DEFAULT_BUCKETS=nycmesh
+
 volumes:
   postgres_data:
   static_files:
   meshdb_logs:
+  minio_data:
 
 networks:
   api:
