@@ -131,25 +131,6 @@ class Install(models.Model):
     def network_number(self) -> IntegerField | Optional[int]:
         return self.node.network_number if self.node else None
 
-    @property
-    def one_line_complete_address(self) -> str:
-        addr_components = []
-        if self.building.street_address:
-            addr_components.append(self.building.street_address)
-        if self.unit:
-            addr_components.append(self.unit)
-        if self.building.city or self.building.city:
-            city_state = []
-            if self.building.city:
-                city_state.append(self.building.city)
-            if self.building.state:
-                city_state.append(self.building.state)
-            addr_components.append(" ".join(city_state))
-        if self.building.zip_code:
-            addr_components.append(self.building.zip_code)
-
-        return ", ".join(addr_components)
-
     def __str__(self) -> str:
         return f"#{str(self.install_number)}"
 

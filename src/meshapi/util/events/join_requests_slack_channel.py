@@ -31,7 +31,7 @@ def send_join_request_slack_message(sender: ModelBase, instance: Install, create
         SLACK_JOIN_REQUESTS_CHANNEL_WEBHOOK_URL,
         json={
             "text": f"*<https://www.nycmesh.net/map/nodes/{install.install_number}"
-            f"|{install.one_line_complete_address}>*\n"
+            f"|{install.building.one_line_complete_address}>*\n"
             f"{building_height} · {roof_access} · No LoS Data Available"
         },
     )
