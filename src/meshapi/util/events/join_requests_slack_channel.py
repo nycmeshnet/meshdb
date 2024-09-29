@@ -7,11 +7,13 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 
 from meshapi.models import Install
+from meshapi.util.django_flag_decorator import only_run_if_flag_enabled
 
 SLACK_JOIN_REQUESTS_CHANNEL_WEBHOOK_URL = os.environ.get("SLACK_JOIN_REQUESTS_CHANNEL_WEBHOOK_URL")
 
 
 @receiver(post_save, sender=Install, dispatch_uid="join_requests_slack_channel")
+@only_run_if_flag_enabled("INTEGRATION_ENABLED_SEND_JOIN_REQUEST_SLACK_MESSAGES")
 def send_join_request_slack_message(sender: ModelBase, instance: Install, created: bool, **kwargs: dict) -> None:
     if not created:
         return
