@@ -356,8 +356,8 @@ def join_form(request: Request) -> Response:
             )
 
     success_message = f"""JoinForm submission success {"(trust_me_bro)" if r.trust_me_bro else ""}. \
-        building_id: {join_form_building.id}, member_id: {join_form_member.id}, \
-        install_number: {join_form_install.install_number}"""
+building_id: {join_form_building.id}, member_id: {join_form_member.id}, \
+install_number: {join_form_install.install_number}"""
 
     if r.trust_me_bro:
         logging.warning(success_message)

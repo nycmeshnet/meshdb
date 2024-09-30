@@ -66,6 +66,40 @@ valid_join_form_submission_needs_expansion = {
     },
 }
 
+valid_join_form_submission_city_needs_expansion = {
+    "first_name": "John",
+    "last_name": "Smith",
+    "email": "jsmith@gmail.com",
+    "phone": "+1 585-758-3425",  # CSH's phone number :P
+    "parsed_phone": "+1 585-758-3425",  # CSH's phone number :P
+    "street_address": "151 Broome Street",  # Also covers New York County Test Case
+    "parsed_street_address": "151 Broome Street",
+    "city": "Manhattan",
+    "parsed_city": "New York",
+    "state": "NY",
+    "zip": 10002,
+    "apartment": "",
+    "roof_access": True,
+    "referral": "Googled it or something IDK",
+    "ncl": True,
+    "trust_me_bro": True,
+    "dob_addr_response": {
+        "features": [
+            {
+                "properties": {
+                    "housenumber": "151",
+                    "street": "Broome Street",
+                    "borough": "New York",
+                    "region_a": "NY",
+                    "postalcode": "10002",
+                    "addendum": {"pad": {"bin": 1077609}},
+                },
+                "geometry": {"coordinates": [0, 0]},
+            }
+        ]
+    },
+}
+
 valid_join_form_submission_with_apartment_in_address = {
     "first_name": "John",
     "last_name": "Smith",
