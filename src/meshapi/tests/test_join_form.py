@@ -176,10 +176,9 @@ class TestJoinForm(TestCase):
             f"status code incorrect for Valid Join Form. Should be {code}, but got {response.status_code}.\n Response is: {response.content.decode('utf-8')}",
         )
 
-        # TODO: Loop thru and chom
         changed_info = response.data["changed_info"]
         if changed_info:
-            for k, v in request.items():
+            for k, _ in request.items():
                 if k in changed_info.keys():
                     request[k] = changed_info[k]
 
