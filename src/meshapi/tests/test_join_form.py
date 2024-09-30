@@ -23,6 +23,8 @@ from .sample_join_form_data import (
     queens_join_form_submission,
     richmond_join_form_submission,
     valid_join_form_submission,
+    valid_join_form_submission_city_needs_expansion,
+    valid_join_form_submission_needs_expansion,
     valid_join_form_submission_no_email,
     valid_join_form_submission_with_apartment_in_address,
 )
@@ -85,6 +87,9 @@ def pull_apart_join_form_submission(submission):
     request = submission.copy()
     del request["parsed_street_address"]
     del request["dob_addr_response"]
+    del request["parsed_phone"]
+    if "parsed_city" in request:
+        del request["parsed_city"]
 
     # Make sure that we get the right stuff out of the database afterwards
     s = JoinFormRequest(**request)
@@ -92,8 +97,9 @@ def pull_apart_join_form_submission(submission):
     # Match the format from OSM. I did this to see how OSM would mutate the
     # raw request we get.
     s.street_address = submission["parsed_street_address"]
-    s.city = submission["city"]
+    s.city = submission["parsed_city"] if "parsed_city" in submission else submission["city"]
     s.state = submission["state"]
+    s.phone = submission["parsed_phone"]
 
     return request, s
 
@@ -134,6 +140,51 @@ class TestJoinForm(TestCase):
         )
 
         request, s = pull_apart_join_form_submission(submission)
+
+        response = self.c.post("/api/v1/join/", request, content_type="application/json")
+        code = 201
+        self.assertEqual(
+            code,
+            response.status_code,
+            f"status code incorrect for Valid Join Form. Should be {code}, but got {response.status_code}.\n Response is: {response.content.decode('utf-8')}",
+        )
+        validate_successful_join_form_submission(self, "Valid Join Form", s, response)
+
+    @parameterized.expand(
+        [
+            [valid_join_form_submission_needs_expansion],
+            [valid_join_form_submission_city_needs_expansion],
+            [valid_join_form_submission_no_email],
+            [richmond_join_form_submission],
+            [kings_join_form_submission],
+            [queens_join_form_submission],
+            [bronx_join_form_submission],
+            [valid_join_form_submission_with_apartment_in_address],
+        ]
+    )
+    def test_valid_join_form_with_member_confirmation(self, submission):
+        self.requests_mocker.get(
+            NYC_PLANNING_LABS_GEOCODE_URL,
+            json=submission["dob_addr_response"],
+        )
+
+        request, s = pull_apart_join_form_submission(submission)
+
+        request["trust_me_bro"] = False
+
+        response = self.c.post("/api/v1/join/", request, content_type="application/json")
+        code = 202
+        self.assertEqual(
+            code,
+            response.status_code,
+            f"status code incorrect for Valid Join Form. Should be {code}, but got {response.status_code}.\n Response is: {response.content.decode('utf-8')}",
+        )
+
+        changed_info = response.data["changed_info"]
+        if changed_info:
+            for k, _ in request.items():
+                if k in changed_info.keys():
+                    request[k] = changed_info[k]
 
         response = self.c.post("/api/v1/join/", request, content_type="application/json")
         code = 201

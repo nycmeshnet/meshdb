@@ -2,7 +2,43 @@ valid_join_form_submission = {
     "first_name": "John",
     "last_name": "Smith",
     "email": "jsmith@gmail.com",
+    "phone": "+1 585-758-3425",  # CSH's phone number :P
+    "parsed_phone": "+1 585-758-3425",  # CSH's phone number :P
+    "street_address": "151 Broome Street",  # Also covers New York County Test Case
+    "parsed_street_address": "151 Broome Street",
+    "city": "New York",
+    "state": "NY",
+    "zip": 10002,
+    "apartment": "",
+    "roof_access": True,
+    "referral": "Googled it or something IDK",
+    "ncl": True,
+    "trust_me_bro": True,
+    "dob_addr_response": {
+        "features": [
+            {
+                "properties": {
+                    "housenumber": "151",
+                    "street": "Broome Street",
+                    "borough": "New York",
+                    "region_a": "NY",
+                    "postalcode": "10002",
+                    "addendum": {"pad": {"bin": 1077609}},
+                },
+                "geometry": {"coordinates": [0, 0]},
+            }
+        ]
+    },
+}
+
+# Join form submission, but the phone and the address are going to be corrected
+# by us and the member needs to confirm that
+valid_join_form_submission_needs_expansion = {
+    "first_name": "John",
+    "last_name": "Smith",
+    "email": "jsmith@gmail.com",
     "phone": "+1585-758-3425",  # CSH's phone number :P
+    "parsed_phone": "+1 585-758-3425",  # CSH's phone number :P
     "street_address": "151 Broome St",  # Also covers New York County Test Case
     "parsed_street_address": "151 Broome Street",
     "city": "New York",
@@ -12,6 +48,41 @@ valid_join_form_submission = {
     "roof_access": True,
     "referral": "Googled it or something IDK",
     "ncl": True,
+    "trust_me_bro": False,
+    "dob_addr_response": {
+        "features": [
+            {
+                "properties": {
+                    "housenumber": "151",
+                    "street": "Broome Street",
+                    "borough": "New York",
+                    "region_a": "NY",
+                    "postalcode": "10002",
+                    "addendum": {"pad": {"bin": 1077609}},
+                },
+                "geometry": {"coordinates": [0, 0]},
+            }
+        ]
+    },
+}
+
+valid_join_form_submission_city_needs_expansion = {
+    "first_name": "John",
+    "last_name": "Smith",
+    "email": "jsmith@gmail.com",
+    "phone": "+1 585-758-3425",  # CSH's phone number :P
+    "parsed_phone": "+1 585-758-3425",  # CSH's phone number :P
+    "street_address": "151 Broome Street",  # Also covers New York County Test Case
+    "parsed_street_address": "151 Broome Street",
+    "city": "Manhattan",
+    "parsed_city": "New York",
+    "state": "NY",
+    "zip": 10002,
+    "apartment": "",
+    "roof_access": True,
+    "referral": "Googled it or something IDK",
+    "ncl": True,
+    "trust_me_bro": True,
     "dob_addr_response": {
         "features": [
             {
@@ -34,6 +105,7 @@ valid_join_form_submission_with_apartment_in_address = {
     "last_name": "Smith",
     "email": "jsmith@gmail.com",
     "phone": "+1585-758-3425",
+    "parsed_phone": "+1 585-758-3425",  # CSH's phone number :P
     "street_address": "151 Broome St, Apt 1B",  # Apt shouldn't be here, but this example tests robustness
     "parsed_street_address": "151 Broome Street",
     "city": "New York",
@@ -43,6 +115,7 @@ valid_join_form_submission_with_apartment_in_address = {
     "roof_access": True,
     "referral": "Googled it or something IDK",
     "ncl": True,
+    "trust_me_bro": True,
     "dob_addr_response": {
         "features": [
             {
@@ -65,6 +138,7 @@ valid_join_form_submission_no_email = {
     "last_name": "Smith",
     "email": None,
     "phone": "+1585-758-3425",  # CSH's phone number :P
+    "parsed_phone": "+1 585-758-3425",  # CSH's phone number :P
     "street_address": "151 Broome St",  # Also covers New York County Test Case
     "parsed_street_address": "151 Broome Street",
     "city": "New York",
@@ -74,6 +148,7 @@ valid_join_form_submission_no_email = {
     "roof_access": True,
     "referral": "Googled it or something IDK",
     "ncl": True,
+    "trust_me_bro": True,
     "dob_addr_response": {
         "features": [
             {
@@ -96,6 +171,7 @@ richmond_join_form_submission = {
     "last_name": "Viernes",
     "email": "maya.viernes@gmail.com",
     "phone": "+1585-758-3425",  # CSH's phone number :P
+    "parsed_phone": "+1 585-758-3425",  # CSH's phone number :P
     "street_address": "475 Seaview Ave",
     "parsed_street_address": "475 Seaview Avenue",
     "city": "Staten Island",
@@ -105,6 +181,7 @@ richmond_join_form_submission = {
     "roof_access": True,
     "referral": "Googled it or something IDK",
     "ncl": True,
+    "trust_me_bro": True,
     "dob_addr_response": {
         "features": [
             {
@@ -127,6 +204,7 @@ kings_join_form_submission = {
     "last_name": "Edwards",
     "email": "aedwards@gmail.com",
     "phone": "+1585-758-3425",  # CSH's phone number :P
+    "parsed_phone": "+1 585-758-3425",  # CSH's phone number :P
     "street_address": "188 Prospect Park W",
     "parsed_street_address": "188 Prospect Park West",
     "city": "Brooklyn",
@@ -136,6 +214,7 @@ kings_join_form_submission = {
     "roof_access": True,
     "referral": "Googled it or something IDK",
     "ncl": True,
+    "trust_me_bro": True,
     "dob_addr_response": {
         "features": [
             {
@@ -158,6 +237,7 @@ queens_join_form_submission = {
     "last_name": "Cho",
     "email": "lcho@gmail.com",
     "phone": "+1585-758-3425",  # CSH's phone number :P
+    "parsed_phone": "+1 585-758-3425",  # CSH's phone number :P
     "street_address": "36-01 35th Ave",
     "parsed_street_address": "36-01 35th Avenue",
     "city": "Queens",
@@ -167,6 +247,7 @@ queens_join_form_submission = {
     "roof_access": True,
     "referral": "Googled it or something IDK",
     "ncl": True,
+    "trust_me_bro": True,
     "dob_addr_response": {
         "features": [
             {
@@ -189,6 +270,7 @@ bronx_join_form_submission = {
     "last_name": "Smith",
     "email": "rsmith@gmail.com",
     "phone": "+1585-758-3425",  # CSH's phone number :P
+    "parsed_phone": "+1 585-758-3425",  # CSH's phone number :P
     "street_address": "250 Bedford Park Blvd W",
     "parsed_street_address": "250 Bedford Park Blvd West",
     "city": "Bronx",
@@ -198,6 +280,7 @@ bronx_join_form_submission = {
     "roof_access": True,
     "referral": "Googled it or something IDK",
     "ncl": True,
+    "trust_me_bro": True,
     "dob_addr_response": {
         "features": [
             {
@@ -220,6 +303,7 @@ non_nyc_join_form_submission = {
     "last_name": "Doe",
     "email": "jdoe@gmail.com",
     "phone": "+1585-758-3425",
+    "parsed_phone": "+1 585-758-3425",  # CSH's phone number :P
     "street_address": "480 E Broad St",
     "parsed_street_address": "480 East Broad Street",
     "city": "Columbus",
@@ -229,6 +313,7 @@ non_nyc_join_form_submission = {
     "roof_access": True,
     "referral": "Googled it or something IDK",
     "ncl": True,
+    "trust_me_bro": True,
     "dob_addr_response": {"features": []},
 }
 
@@ -245,6 +330,7 @@ invalid_join_form_submission = {
     "apartment": 3,
     "roof_access": True,
     "ncl": "a duck",
+    "trust_me_bro": True,
     "dob_addr_response": {"features": []},
 }
 
@@ -254,6 +340,7 @@ jefferson_join_form_submission = {
     "last_name": "Smith",
     "email": "jsmith@gmail.com",
     "phone": "+1585-758-3425",
+    "parsed_phone": "+1 585-758-3425",  # CSH's phone number :P
     "street_address": "476 Jefferson Street",
     "parsed_street_address": "476 Jefferson Street",
     "city": "Brooklyn",
@@ -263,6 +350,7 @@ jefferson_join_form_submission = {
     "roof_access": True,
     "referral": "Googled it or something IDK",
     "ncl": True,
+    "trust_me_bro": True,
     "dob_addr_response": {
         "features": [
             {
