@@ -1,4 +1,5 @@
 import json
+import logging
 from typing import Any, Callable, Dict, Optional
 
 from django import forms
@@ -15,8 +16,13 @@ class PanoramaViewer(JSONFormWidget):
     def __init__(self, schema: dict):
         super().__init__(schema)
 
-    def pano_get_context(self, name: str, value: str = "[]") -> dict:
-        value_as_array = json.loads(value)
+    def pano_get_context(self, name: str, value: str) -> dict:
+        try:
+            value_as_array = json.loads(value) if value else ""
+        except TypeError:
+            logging.exception("Got bad value when trying to make panorama array.")
+            value_as_array = ""
+
         return {
             "widget": {
                 "name": name,
