@@ -154,14 +154,6 @@ def join_form(request: Request) -> Response:
         logging.warning(f"Changed city: {r.city} != {nyc_addr_info.city}")
         changed_info["city"] = nyc_addr_info.city
 
-    if r.state != nyc_addr_info.state:
-        logging.warning(f"Changed state: {r.state} != {nyc_addr_info.state}")
-        changed_info["state"] = nyc_addr_info.state
-
-    if r.zip != nyc_addr_info.zip:
-        logging.warning(f"Changed zip: {r.zip} != {nyc_addr_info.zip}")
-        changed_info["zip"] = nyc_addr_info.zip
-
     # Let the member know we need to confirm some info with them. We'll send
     # back a dictionary with the info that needs confirming.
     # This is not a rejection. We expect another join form submission with all

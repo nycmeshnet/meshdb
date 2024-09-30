@@ -23,8 +23,8 @@ from .sample_join_form_data import (
     queens_join_form_submission,
     richmond_join_form_submission,
     valid_join_form_submission,
-    valid_join_form_submission_needs_expansion,
     valid_join_form_submission_city_needs_expansion,
+    valid_join_form_submission_needs_expansion,
     valid_join_form_submission_no_email,
     valid_join_form_submission_with_apartment_in_address,
 )
