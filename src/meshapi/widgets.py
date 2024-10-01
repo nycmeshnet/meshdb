@@ -16,7 +16,8 @@ class PanoramaViewer(JSONFormWidget):
     def __init__(self, schema: dict):
         super().__init__(schema)
 
-    def pano_get_context(self, name: str, value: str) -> dict:
+    @staticmethod
+    def pano_get_context(name: str, value: str) -> dict:
         try:
             value_as_array = json.loads(value) if value else ""
         except TypeError:
