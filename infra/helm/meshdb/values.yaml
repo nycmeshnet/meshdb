@@ -7,6 +7,7 @@ pg:
   user: meshdb
   user_ro: meshdb_ro
   port: "5432"
+  pvc_name_legacy: "meshdb-postgres-pvc"
   pvc_name: "meshdb-postgres-encyrpted-pvc"
   pvc_size: "20Gi"
   liveness_probe: "true"
