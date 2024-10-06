@@ -1,5 +1,6 @@
 import logging
 import os
+import time
 
 import requests
 from django.db.models.base import ModelBase
@@ -29,14 +30,22 @@ def send_join_request_slack_message(sender: ModelBase, instance: Install, create
     building_height = str(int(install.building.altitude)) + "m" if install.building.altitude else "Altitude not found"
     roof_access = "Roof access" if install.roof_access else "No roof access"
 
-    response = requests.post(
-        SLACK_JOIN_REQUESTS_CHANNEL_WEBHOOK_URL,
-        json={
-            "text": f"*<https://www.nycmesh.net/map/nodes/{install.install_number}"
-            f"|{install.building.one_line_complete_address}>*\n"
-            f"{building_height} · {roof_access} · No LoS Data Available"
-        },
-    )
+    attempts = 0
+    while attempts < 4:
+        attempts += 1
+        response = requests.post(
+            SLACK_JOIN_REQUESTS_CHANNEL_WEBHOOK_URL,
+            json={
+                "text": f"*<https://www.nycmesh.net/map/nodes/{install.install_number}"
+                f"|{install.building.one_line_complete_address}>*\n"
+                f"{building_height} · {roof_access} · No LoS Data Available"
+            },
+        )
+
+        if response.status_code == 200:
+            break
+
+        time.sleep(1)
 
     if response.status_code != 200:
         logging.error(

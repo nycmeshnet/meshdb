@@ -159,3 +159,47 @@ class TestInstallCreateSignals(TestCase):
         install.save()
 
         self.assertEqual(len(request_mocker.request_history), 0)
+
+    @patch(
+        "meshapi.util.events.join_requests_slack_channel.SLACK_JOIN_REQUESTS_CHANNEL_WEBHOOK_URL",
+        "http://example.com/test-url-slack",
+    )
+    @patch(
+        "meshapi.util.events.osticket_creation.OSTICKET_NEW_TICKET_ENDPOINT",
+        "http://example.com/test-url-os-ticket",
+    )
+    @patch(
+        "meshapi.util.events.osticket_creation.OSTICKET_API_TOKEN",
+        "mock-token",
+    )
+    @requests_mock.Mocker()
+    def test_many_retry_no_crash_on_integration_404(self, request_mocker):
+        request_mocker.post("http://example.com/test-url-slack", text="Not found", status_code=404)
+        request_mocker.post("http://example.com/test-url-os-ticket", text="Not found", status_code=404)
+
+        enable_flag("INTEGRATION_ENABLED_SEND_JOIN_REQUEST_SLACK_MESSAGES")
+        enable_flag("INTEGRATION_ENABLED_CREATE_OSTICKET_TICKETS")
+
+        install = Install(**self.sample_install_copy)
+        install.save()
+
+        self.assertEqual(
+            len(
+                [
+                    request
+                    for request in request_mocker.request_history
+                    if request.url == "http://example.com/test-url-os-ticket"
+                ]
+            ),
+            4,
+        )
+        self.assertEqual(
+            len(
+                [
+                    request
+                    for request in request_mocker.request_history
+                    if request.url == "http://example.com/test-url-slack"
+                ]
+            ),
+            4,
+        )
