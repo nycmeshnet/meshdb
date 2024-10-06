@@ -48,9 +48,6 @@ def get_spreadsheet_node_notes(row: SpreadsheetRow) -> str:
     if row.notes2:
         notes = f"Spreadsheet Notes2 (#{row.id}):\n{row.notes}"
 
-    if notes:
-        notes += f"-------\n\n"
-
     return notes
 
 
@@ -88,12 +85,10 @@ def get_or_create_node(
             node.type = new_type
 
         if row.notes or row.notes2:
-            node.notes += (
-                f"Spreadsheet Notes (#{row.id}):\n"
-                f"{row.notes if row.notes else None}\n\n"
-                f"Spreadsheet Notes2 (#{row.id}):\n"
-                f"{row.notes2 if row.notes2 else None}\n\n"
-            )
+            if row.notes:
+                node.notes += f"Spreadsheet Notes (#{row.id}):\n{row.notes}\n\n"
+            if row.notes2:
+                node.notes += f"Spreadsheet Notes2 (#{row.id}):\n{row.notes2}\n\n"
 
         return node
 
