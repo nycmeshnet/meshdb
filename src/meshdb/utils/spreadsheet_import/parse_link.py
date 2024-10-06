@@ -128,7 +128,7 @@ def find_access_point_from_install_number(install_number: int) -> Optional[Acces
 def create_spreadsheet_link_notes(spreadsheet_link: SpreadsheetLink):
     notes = (
         f"Imported from spreadsheet link row "
-        + f"{spreadsheet_link.from_node_id}->{spreadsheet_link.to_node_id} ({spreadsheet_link.status})\n"
+        + f"{spreadsheet_link.from_node_id}->{spreadsheet_link.to_node_id} ({spreadsheet_link.status.value})\n"
         + "\n".join(
             s.strip()
             for s in [spreadsheet_link.where_to_where, spreadsheet_link.notes, spreadsheet_link.comments]
