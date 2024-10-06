@@ -49,8 +49,8 @@ jobs:
     needs: push_to_registry
     if: github.ref == 'refs/heads/main'
 
-  deploy_to_prod1:
-    name: Deploy to prod 1
+  deploy_to_prod:
+    name: Deploy to prod
     uses: ./.github/workflows/deploy-to-k8s.yaml
     with:
       environment: prod
