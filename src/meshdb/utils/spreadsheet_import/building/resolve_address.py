@@ -404,9 +404,6 @@ class AddressParser:
                 if not any(prop in r_addr for prop in ["city", "town", "village"]):
                     raise AddressError(f"Invalid address '{input_address}' - city/town/village not found in OSM data")
 
-                if pelias_zip_code_str and r_addr["postcode"].split("-")[0] != pelias_zip_code_str:
-                    raise AddressError(f"Mismatch between entered postal code and OSM result")
-
                 city, state = convert_osm_city_village_suburb_nonsense(r_addr)
 
                 result = AddressParsingResult(
@@ -423,6 +420,9 @@ class AddressParser:
                     ),
                     truth_sources=[AddressTruthSource.OSMNominatim],
                 )
+
+            if pelias_zip_code_str and result.address.zip_code.split("-")[0] != pelias_zip_code_str:
+                raise AddressError(f"Mismatch between entered postal code and validated address result")
         except AddressError:
             logging.debug(
                 f"Error locating '{input_address}'. Falling back to string parsing. "
