@@ -2,6 +2,7 @@ import copy
 import json
 import time
 from unittest import mock
+from unittest.mock import ANY
 
 import requests_mock
 from django.contrib.auth.models import User
@@ -524,18 +525,27 @@ class TestJoinForm(TestCase):
             expected_member_count=2,
         )
 
-        mock_admin_notif_func.called_once_with(
-            [
+        mock_admin_notif_func.assert_called_once()
+
+        self.assertEqual(
+            set(mock_admin_notif_func.call_args.args[0]),
+            {
+                pre_existing_member,
+                Member.objects.get(
+                    id=json.loads(
+                        response1.content.decode("utf-8"),
+                    )["member_id"]
+                ),
                 Member.objects.get(
                     id=json.loads(
                         response2.content.decode("utf-8"),
                     )["member_id"]
                 ),
-                pre_existing_member,
-            ],
-            MemberSerializer,
-            "Possible duplicate member objects detected",
+            },
         )
+        self.assertEqual(mock_admin_notif_func.call_args.args[1], MemberSerializer)
+        self.assertEqual(mock_admin_notif_func.call_args.args[2], "Possible duplicate member objects detected")
+        self.assertIsNotNone(mock_admin_notif_func.call_args.args[3])
 
     @mock.patch("meshapi.views.forms.notify_administrators_of_data_issue")
     def test_member_moved_and_changed_names_join_form(self, mock_admin_notif_func):
@@ -593,8 +603,12 @@ class TestJoinForm(TestCase):
         self.assertEqual(member.name, "John Smith")
         self.assertIn("Dropped name change: Jane Smith", member.notes)
 
-        mock_admin_notif_func.called_once_with(
-            [member], MemberSerializer, "Dropped name change: Jane Smith (install #2)"
+        second_install_number = json.loads(response2.content.decode("utf-8"))["install_number"]
+        mock_admin_notif_func.assert_called_once_with(
+            [member],
+            MemberSerializer,
+            f"Dropped name change: Jane Smith (install request #{second_install_number})",
+            ANY,
         )
 
     def test_member_moved_and_used_a_new_email_join_form(self):
