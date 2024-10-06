@@ -1,7 +1,8 @@
 import inspect
+from functools import wraps
 from typing import Callable
 
-from flags import decorators
+from flags.state import flag_state
 
 
 def create_noop(func):
@@ -28,12 +29,18 @@ def create_noop(func):
 
 
 def skip_if_flag_disabled(flag_name: str) -> Callable:
-    def inner_decorator(func):
-        # Create a noop function that matches the signature of the decorated function.
-        # We could do this with `lambda *args, **kwargs: None` instead and it would be just fine,
-        # but there's a hard coded equality check inside the django-flags code that wants the
-        # function signatures to match exactly
-        noop_func_matching_signature = create_noop(func)
-        return decorators.flag_check(flag_name, True, fallback=noop_func_matching_signature)(func)
+    """
+    Decorator that transforms the annotated function into a noop if the given flag name is disabled
+    :param flag_name: the flag to check
+    """
 
-    return inner_decorator
+    def decorator(func):
+        def inner(*args, **kwargs):
+            enabled = flag_state(flag_name)
+
+            if enabled:
+                return func(*args, **kwargs)
+
+        return wraps(func)(inner)
+
+    return decorator

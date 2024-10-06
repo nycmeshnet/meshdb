@@ -29,10 +29,9 @@ def create_os_ticket_for_install(sender: ModelBase, instance: Install, created: 
         return
 
     name = install.member.name
-    # email = install.member.primary_email_address
-    email = "andrew@nycmesh.net"  # TODO: for testing. Disable to send emails for real
+    email = install.member.primary_email_address
     phone = install.member.phone_number
-    location = install.one_line_complete_address
+    location = install.building.one_line_complete_address
     rooftop_access = install.roof_access
     ncl = True
     timestamp = install.request_date
