@@ -1,4 +1,5 @@
 import json
+import uuid
 from unittest.mock import patch
 
 import pytest
@@ -6,12 +7,26 @@ import requests_mock
 from django.test import RequestFactory, TestCase
 from requests import RequestException
 
-from meshapi.models import Member
+from meshapi.models import Building, Install, Member
 from meshapi.serializers import MemberSerializer
+from meshapi.tests.sample_data import sample_building, sample_install, sample_member
 from meshapi.util.admin_notifications import notify_administrators_of_data_issue
 
 
 class TestSlackNotification(TestCase):
+    def setUp(self):
+        self.sample_install_copy = sample_install.copy()
+        self.building_1 = Building(**sample_building)
+        self.building_1.save()
+        self.sample_install_copy["building"] = self.building_1
+
+        self.sample_member = Member(**sample_member)
+        self.sample_member.save()
+        self.sample_install_copy["member"] = self.sample_member
+
+        self.install = Install(**self.sample_install_copy)
+        self.install.save()
+
     @requests_mock.Mocker()
     @patch("meshapi.util.admin_notifications.SLACK_ADMIN_NOTIFICATIONS_WEBHOOK_URL", "https://mock-slack-url")
     def test_slack_notification_for_name_change(self, requests_mocker):
@@ -22,6 +37,9 @@ class TestSlackNotification(TestCase):
             notes="Dropped name change: Stacy Marriedname (install request #98232)",
         )
         member.save()
+
+        self.install.member = member
+        self.install.save()
 
         rf = RequestFactory()
         mock_join_form_request = rf.post("https://mock-meshdb-url.example/join-form/")
@@ -56,7 +74,12 @@ class TestSlackNotification(TestCase):
             '    "all_phone_numbers": [\n'
             '      "+1 212-555-5555"\n'
             "    ],\n"
-            '    "installs": [],\n'
+            '    "installs": [\n'
+            "      {\n"
+            f'        "id": "{self.install.id}",\n'
+            f'        "install_number": {self.install.install_number}\n'
+            "      }\n"
+            "    ],\n"
             '    "name": "Stacy Maidenname",\n'
             '    "primary_email_address": "stacy@example.com",\n'
             '    "stripe_email_address": null,\n'
