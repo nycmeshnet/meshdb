@@ -14,7 +14,6 @@ from rest_framework.views import APIView
 
 from meshapi.models import LOS, AccessPoint, Device, Install, Link, Node, Sector
 from meshapi.serializers import (
-    ALLOWED_INSTALL_STATUSES,
     EXCLUDED_INSTALL_STATUSES,
     MapDataInstallSerializer,
     MapDataLinkSerializer,
@@ -213,7 +212,7 @@ class MapDataLinkList(generics.ListAPIView):
             Node.objects.annotate(num_buildings=Count("buildings"))
             .filter(num_buildings__gt=1)
             .filter(buildings__nodes__network_number__isnull=False)
-            .filter(~Q(status=Node.NodeStatus.INACTIVE) & Q(installs__status__in=ALLOWED_INSTALL_STATUSES))
+            .exclude(status=Node.NodeStatus.INACTIVE)
             .prefetch_related(
                 Prefetch(
                     "buildings__installs",
