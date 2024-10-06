@@ -18,8 +18,8 @@ from meshdb.settings import MESHDB_ENVIRONMENT
 
 @celery_app.task
 def run_database_backup() -> None:
-    # Don't run a backup unless it's prod1
-    if MESHDB_ENVIRONMENT != "prod1":
+    # Don't run a backup unless it's prod
+    if MESHDB_ENVIRONMENT != "prod":
         raise EnvironmentError(f'Not running database backup. This environment is: "{MESHDB_ENVIRONMENT}"')
 
     logging.info(f'Running database backup task. This environment is "{MESHDB_ENVIRONMENT}"')
@@ -89,7 +89,7 @@ celery_app.conf.beat_schedule = {
     },
 }
 
-if MESHDB_ENVIRONMENT == "prod1":
+if MESHDB_ENVIRONMENT == "prod":
     celery_app.conf.beat_schedule["run-database-backup-hourly"] = {
         "task": "meshapi.tasks.run_database_backup",
         "schedule": crontab(minute="20", hour="*/1"),

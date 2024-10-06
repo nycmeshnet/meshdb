@@ -5,6 +5,7 @@ from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator
 from django.db import models, transaction
 from django.db.models.manager import Manager
+from simple_history.models import HistoricalRecords
 
 from meshapi.util.django_pglocks import advisory_lock
 from meshapi.util.network_number import (
@@ -20,6 +21,8 @@ if TYPE_CHECKING:
 
 
 class Node(models.Model):
+    history = HistoricalRecords()
+
     # This should be added automatically by django-stubs, but for some reason it's not :(
     buildings: Manager["Building"]
 

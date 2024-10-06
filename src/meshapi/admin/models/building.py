@@ -7,7 +7,8 @@ from django.contrib.postgres.search import SearchVector
 from django.db.models import QuerySet
 from django.forms import ModelForm
 from django.http import HttpRequest
-from import_export.admin import ExportActionMixin, ImportExportModelAdmin
+from import_export.admin import ExportActionMixin, ImportExportMixin
+from simple_history.admin import SimpleHistoryAdmin
 
 from meshapi.models import Building
 from meshapi.widgets import AutoPopulateLocationWidget, PanoramaViewer
@@ -60,7 +61,7 @@ class BuildingAdminForm(forms.ModelForm):
 
 
 @admin.register(Building)
-class BuildingAdmin(RankedSearchMixin, ImportExportModelAdmin, ExportActionMixin):
+class BuildingAdmin(RankedSearchMixin, ImportExportMixin, ExportActionMixin, SimpleHistoryAdmin):
     form = BuildingAdminForm
     list_display = ["__str__", "street_address", "primary_node"]
     search_fields = [

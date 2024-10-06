@@ -2,8 +2,28 @@
 
 DOCKER_PG_COMMAND="docker exec -i meshdb-postgres-1 psql -U meshdb"
 DATA_DIR="./spreadsheet_data/"
-tables=("meshapi_link" "meshapi_accesspoint" "meshapi_sector" "meshapi_device" "meshapi_building_nodes" "meshapi_node" "meshapi_install" "meshapi_building" "meshapi_member")
-#tables=("meshapi_link" "meshapi_building_nodes"  "meshapi_sector" "meshapi_device" "meshapi_install" "meshapi_member"  "meshapi_building" "meshapi_node")
+tables=(
+"meshapi_los"
+"meshapi_link"
+"meshapi_accesspoint"
+"meshapi_sector"
+"meshapi_device"
+"meshapi_building_nodes"
+"meshapi_node"
+"meshapi_install"
+"meshapi_building"
+"meshapi_member"
+"meshapi_historicallos"
+"meshapi_historicallink"
+"meshapi_historicalaccesspoint"
+"meshapi_historicalsector"
+"meshapi_historicaldevice"
+"meshapi_historicalbuilding_nodes"
+"meshapi_historicalnode"
+"meshapi_historicalinstall"
+"meshapi_historicalbuilding"
+"meshapi_historicalmember"
+)
 set -ex
 
 # Make sure our files exist.

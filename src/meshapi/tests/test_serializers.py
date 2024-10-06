@@ -176,7 +176,7 @@ class TestViewsGetAdmin(TestCaseWithFullData):
             "request_date": "2022-02-27",
             "roof_access": True,
             "status": "Active",
-            "ticket_number": 69,
+            "ticket_number": "69",
             "unit": "3",
         }
         response = self._call(f"/api/v1/installs/{self.install.id}/", 200)

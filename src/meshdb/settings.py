@@ -141,6 +141,7 @@ INSTALLED_APPS = [
     "import_export",
     "flags",
     "explorer",
+    "simple_history",
 ]
 
 MIDDLEWARE = [
@@ -153,6 +154,7 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "meshweb.middleware.MaintenanceModeMiddleware",
+    "simple_history.middleware.HistoryRequestMiddleware",
 ]
 
 
@@ -216,7 +218,7 @@ DBBACKUP_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
 DBBACKUP_FILENAME_TEMPLATE = "{datetime}.{extension}"
 DBBACKUP_STORAGE_OPTIONS = {
     "bucket_name": "meshdb-data-backups",
-    "location": "meshdb-backups/prod1/",
+    "location": "meshdb-backups/prod/",
 }
 
 DBBACKUP_CONNECTORS = {
@@ -225,6 +227,7 @@ DBBACKUP_CONNECTORS = {
         "IF_EXISTS": True
     }
 }
+DBBACKUP_DATABASES = ["default"]
 
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
@@ -409,6 +412,8 @@ SPECTACULAR_SETTINGS = {
 
 IMPORT_EXPORT_IMPORT_PERMISSION_CODE = "add"
 IMPORT_EXPORT_EXPORT_PERMISSION_CODE = "view"
+
+SIMPLE_HISTORY_HISTORY_ID_USE_UUID = True
 
 EXPLORER_CONNECTIONS = {"Default": "readonly"}
 EXPLORER_DEFAULT_CONNECTION = "readonly"

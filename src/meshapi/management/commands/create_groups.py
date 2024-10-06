@@ -35,7 +35,8 @@ class Command(BaseCommand):
 
         for p in all_permissions:
             code = p.codename
-            act, obj = code.split("_")
+
+            act, obj = code.split("_", maxsplit=1)
 
             # read_only
             if act == "view" and obj in models:
