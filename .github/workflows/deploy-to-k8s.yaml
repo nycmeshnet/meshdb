@@ -78,3 +78,4 @@ jobs:
 
         # Rolling restart
         kubectl --kubeconfig ./config --server https://${{ secrets.SSH_TARGET_IP }}:6443 -n ${{ vars.APP_NAMESPACE }} rollout restart deploy
+        kubectl --kubeconfig ./config --server https://${{ secrets.SSH_TARGET_IP }}:6443 -n ${{ vars.APP_NAMESPACE }} rollout restart statefulset
