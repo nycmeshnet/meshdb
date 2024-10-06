@@ -775,6 +775,14 @@ class TestUISPImportHandlers(TransactionTestCase):
         )
         self.device4.save()
 
+        self.device5 = Device(
+            node=self.node3,
+            status=Device.DeviceStatus.ACTIVE,
+            name="nycmesh-7890-dev5",
+            uisp_id="uisp-uuid-not-real-dont-match-me",
+        )
+        self.device5.save()
+
         self.link1 = Link(
             from_device=self.device1,
             to_device=self.device2,
@@ -792,6 +800,15 @@ class TestUISPImportHandlers(TransactionTestCase):
             uisp_id="uisp-uuid2",
         )
         self.link2.save()
+
+        self.link3 = Link(
+            from_device=self.device2,
+            to_device=self.device3,
+            status=Link.LinkStatus.ACTIVE,
+            type=Link.LinkType.FIVE_GHZ,
+            uisp_id="uisp-uuid-not-real-dont-match-me",
+        )
+        self.link3.save()
 
     @patch("meshapi.util.uisp_import.sync_handlers.notify_admins_of_changes")
     @patch("meshapi.util.uisp_import.sync_handlers.update_device_from_uisp_data")
@@ -934,6 +951,9 @@ class TestUISPImportHandlers(TransactionTestCase):
 
         import_and_sync_uisp_devices(uisp_devices)
 
+        self.device5.refresh_from_db()
+        self.assertEqual(self.device5.status, Device.DeviceStatus.INACTIVE)
+
         created_sector1 = Sector.objects.get(uisp_id="uisp-uuid99")
         created_sector2 = Sector.objects.get(uisp_id="uisp-uuid999")
 
@@ -966,6 +986,20 @@ class TestUISPImportHandlers(TransactionTestCase):
                         "Set default radius of 1 km. Please correct if this is not accurate",
                     ],
                     created=True,
+                ),
+                call(
+                    self.device4,
+                    [
+                        "Marked as inactive because there is no corresponding device in UISP, "
+                        "it was probably deleted there",
+                    ],
+                ),
+                call(
+                    self.device5,
+                    [
+                        "Marked as inactive because there is no corresponding device in UISP, "
+                        "it was probably deleted there",
+                    ],
                 ),
             ]
         )
@@ -1235,6 +1269,9 @@ class TestUISPImportHandlers(TransactionTestCase):
             ]
         )
 
+        self.link3.refresh_from_db()
+        self.assertEqual(self.link3.status, Link.LinkStatus.INACTIVE)
+
         created_link3 = Link.objects.get(uisp_id="uisp-uuid3")
         created_link5 = Link.objects.get(uisp_id="uisp-uuid5")
 
@@ -1248,6 +1285,13 @@ class TestUISPImportHandlers(TransactionTestCase):
                         "case of VPN or Fiber links. Please provide a more accurate value if available"
                     ],
                     created=True,
+                ),
+                call(
+                    self.link3,
+                    [
+                        "Marked as inactive because there is no corresponding link in UISP, "
+                        "it was probably deleted there",
+                    ],
                 ),
             ]
         )
@@ -1475,6 +1519,7 @@ class TestUISPImportHandlers(TransactionTestCase):
         # Clear out the existing links so the only LOS is a building self-loop
         self.link1.delete()
         self.link2.delete()
+        self.link3.delete()
 
         link = Link(
             from_device=self.device3,
@@ -1502,8 +1547,9 @@ class TestUISPImportHandlers(TransactionTestCase):
         self.link1.type = Link.LinkType.FIBER
         self.link1.save()
         self.link2.type = Link.LinkType.ETHERNET
-
         self.link2.save()
+        self.link3.type = Link.LinkType.ETHERNET
+        self.link3.save()
 
         link3 = Link(
             from_device=self.device2,
