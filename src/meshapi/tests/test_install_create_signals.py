@@ -1,11 +1,7 @@
 import json
-import uuid
 from unittest.mock import patch
 
-import pytest
 import requests_mock
-from django.contrib.auth.models import User
-from django.core.exceptions import ValidationError
 from django.test import TestCase
 from flags.state import disable_flag, enable_flag
 
@@ -64,6 +60,10 @@ class TestInstallCreateSignals(TestCase):
         "meshapi.util.events.osticket_creation.OSTICKET_NEW_TICKET_ENDPOINT",
         "http://example.com/test-url",
     )
+    @patch(
+        "meshapi.util.events.osticket_creation.OSTICKET_API_TOKEN",
+        "mock-token",
+    )
     @requests_mock.Mocker()
     def test_constructing_install_triggers_osticket(self, request_mocker):
         request_mocker.post("http://example.com/test-url", text="00123456", status_code=201)
@@ -100,8 +100,62 @@ class TestInstallCreateSignals(TestCase):
         install.refresh_from_db()
         self.assertEqual(install.ticket_number, "00123456")
 
-    #
-    # def test_constructing_install_triggers_osticket_call(self):
-    #     enable_flag("INTEGRATION_ENABLED_SEND_JOIN_REQUEST_SLACK_MESSAGES")
-    #     install = Install(**self.sample_install_copy)
-    #     install.save()
+    @patch(
+        "meshapi.util.events.join_requests_slack_channel.SLACK_JOIN_REQUESTS_CHANNEL_WEBHOOK_URL",
+        "",
+    )
+    @patch(
+        "meshapi.util.events.osticket_creation.OSTICKET_NEW_TICKET_ENDPOINT",
+        "",
+    )
+    @requests_mock.Mocker()
+    def test_no_events_when_env_variables_unset(self, request_mocker):
+        enable_flag("INTEGRATION_ENABLED_SEND_JOIN_REQUEST_SLACK_MESSAGES")
+        enable_flag("INTEGRATION_ENABLED_CREATE_OSTICKET_TICKETS")
+
+        install = Install(**self.sample_install_copy)
+        install.save()
+
+        self.assertEqual(len(request_mocker.request_history), 0)
+
+    @patch(
+        "meshapi.util.events.osticket_creation.OSTICKET_NEW_TICKET_ENDPOINT",
+        "http://example.com/test-url",
+    )
+    @patch(
+        "meshapi.util.events.osticket_creation.OSTICKET_API_TOKEN",
+        "",
+    )
+    @requests_mock.Mocker()
+    def test_no_osticket_event_when_no_api_token(self, request_mocker):
+        enable_flag("INTEGRATION_ENABLED_CREATE_OSTICKET_TICKETS")
+
+        install = Install(**self.sample_install_copy)
+        install.save()
+
+        self.assertEqual(len(request_mocker.request_history), 0)
+
+    @patch(
+        "meshapi.util.events.join_requests_slack_channel.SLACK_JOIN_REQUESTS_CHANNEL_WEBHOOK_URL",
+        "http://example.com/test-url",
+    )
+    @patch(
+        "meshapi.util.events.osticket_creation.OSTICKET_NEW_TICKET_ENDPOINT",
+        "http://example.com/test-url",
+    )
+    @patch(
+        "meshapi.util.events.osticket_creation.OSTICKET_API_TOKEN",
+        "mock-token",
+    )
+    @requests_mock.Mocker()
+    def test_no_events_for_install_edit(self, request_mocker):
+        install = Install(**self.sample_install_copy)
+        install.save()
+
+        enable_flag("INTEGRATION_ENABLED_SEND_JOIN_REQUEST_SLACK_MESSAGES")
+        enable_flag("INTEGRATION_ENABLED_CREATE_OSTICKET_TICKETS")
+
+        install.notes = "foo"
+        install.save()
+
+        self.assertEqual(len(request_mocker.request_history), 0)
