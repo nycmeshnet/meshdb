@@ -6,7 +6,8 @@ from django.contrib import admin
 from django.contrib.postgres.search import SearchVector
 from django.forms import ModelForm
 from django.http import HttpRequest
-from import_export.admin import ExportActionMixin, ImportExportModelAdmin
+from import_export.admin import ExportActionMixin, ImportExportMixin
+from simple_history.admin import SimpleHistoryAdmin
 
 from meshapi.models import LOS
 
@@ -20,7 +21,7 @@ class LOSAdminForm(forms.ModelForm):
 
 
 @admin.register(LOS)
-class LOSAdmin(RankedSearchMixin, ImportExportModelAdmin, ExportActionMixin):
+class LOSAdmin(RankedSearchMixin, ImportExportMixin, ExportActionMixin, SimpleHistoryAdmin):
     form = LOSAdminForm
     search_fields = [
         "from_building__nodes__network_number__iexact",
