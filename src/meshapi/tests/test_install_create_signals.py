@@ -87,7 +87,7 @@ class TestInstallCreateSignals(TestCase):
                 "email": "john.smith@example.com",
                 "name": "John Smith",
                 "subject": f"NYC Mesh {install.install_number} Rooftop Install",
-                "message": "date: 2022-02-27\r\nnode: 1\r\nname: John Smith\r\nemail: john.smith@example.com\r\nphone: +1 555-555-5555\r\nlocation: 3333 Chom St, Brooklyn NY, 11111\r\nrooftop: Rooftop install\r\nagree to ncl: True",
+                "message": f"date: 2022-02-27\r\nnode: {install.install_number}\r\nname: John Smith\r\nemail: john.smith@example.com\r\nphone: +1 555-555-5555\r\nlocation: 3333 Chom St, Brooklyn NY, 11111\r\nrooftop: Rooftop install\r\nagree to ncl: True",
                 "phone": "+1 555-555-5555",
                 "location": "3333 Chom St, Brooklyn NY, 11111",
                 "rooftop": "Rooftop install",
