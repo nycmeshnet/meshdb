@@ -4,11 +4,14 @@ from typing import Any, List
 from django.db import models
 from django.db.models.fields import EmailField
 from django_jsonform.models.fields import ArrayField as JSONFormArrayField
+from simple_history.models import HistoricalRecords
 
 from meshapi.validation import normalize_phone_number, validate_multi_phone_number_field, validate_phone_number_field
 
 
 class Member(models.Model):
+    history = HistoricalRecords()
+
     class Meta:
         ordering = ["id"]
 

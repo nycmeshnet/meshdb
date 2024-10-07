@@ -5,6 +5,7 @@ from typing import Dict, Optional
 import bs4
 from django.contrib.auth.models import Group, User
 from django.test import Client, TestCase
+from flags.state import disable_flag, enable_flag
 from rest_framework.authtoken.models import TokenProxy
 
 from meshapi.models import LOS, AccessPoint, Building, Device, Install, Link, Member, Node, Sector
@@ -464,9 +465,11 @@ class TestAdminChangeView(TestCase):
         self.assertEqual(node.notes, "Test notes")
 
     def test_add_building(self):
+        enable_flag("EDIT_PANORAMAS")
         change_url = "/admin/meshapi/building/add/"
         response = self._call(change_url, 200)
         form_soup = bs4.BeautifulSoup(response.content.decode()).find(id="building_form")
+
         fill_in_admin_form(
             form_soup,
             {
@@ -502,7 +505,48 @@ class TestAdminChangeView(TestCase):
         self.assertEqual(building.primary_node, self.node1)
         self.assertEqual(list(building.nodes.all()), [self.node1])
 
+    def test_add_building_no_pano(self):
+        disable_flag("EDIT_PANORAMAS")
+        change_url = "/admin/meshapi/building/add/"
+        response = self._call(change_url, 200)
+        form_soup = bs4.BeautifulSoup(response.content.decode()).find(id="building_form")
+
+        fill_in_admin_form(
+            form_soup,
+            {
+                "id_street_address": "123 Test Street",
+                "id_city": "New York",
+                "id_state": "NY",
+                "id_zip_code": "10001",
+                "id_bin": "12345678",
+                "id_latitude": "0",
+                "id_longitude": "0",
+                "id_altitude": "0",
+                "id_notes": "Test notes",
+                "id_primary_node": str(self.node1.id),
+                # "id_nodes": "Test notes",
+            },
+        )
+        response = self._submit_form(change_url, form_soup, 302)
+        building_id = response.url.split("/")[-3]
+        building = Building.objects.get(id=building_id)
+
+        self.assertEqual(building.street_address, "123 Test Street")
+        self.assertEqual(building.city, "New York")
+        self.assertEqual(building.state, "NY")
+        self.assertEqual(building.zip_code, "10001")
+        self.assertEqual(building.bin, 12345678)
+        self.assertEqual(building.latitude, 0)
+        self.assertEqual(building.longitude, 0)
+        self.assertEqual(building.altitude, 0)
+        self.assertEqual(building.notes, "Test notes")
+        self.assertEqual(building.panoramas, [])
+        self.assertEqual(building.address_truth_sources, [AddressTruthSource.HumanEntry.value])
+        self.assertEqual(building.primary_node, self.node1)
+        self.assertEqual(list(building.nodes.all()), [self.node1])
+
     def test_change_building_but_not_address(self):
+        enable_flag("EDIT_PANORAMAS")
         change_url = f"/admin/meshapi/building/{self.building_1.id}/change/"
         response = self._call(change_url, 200)
         form_soup = bs4.BeautifulSoup(response.content.decode()).find(id="building_form")
@@ -542,6 +586,7 @@ class TestAdminChangeView(TestCase):
         self.assertEqual(list(building.nodes.all()), [self.node1])
 
     def test_change_building_address(self):
+        enable_flag("EDIT_PANORAMAS")
         change_url = f"/admin/meshapi/building/{self.building_1.id}/change/"
         response = self._call(change_url, 200)
         form_soup = bs4.BeautifulSoup(response.content.decode()).find(id="building_form")

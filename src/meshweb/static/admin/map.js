@@ -36,8 +36,8 @@ async function getNewSelectedNodes(){
         const buildingResponse = await fetch(`/api/v1/buildings/${id}/`);
         if (!buildingResponse.ok) return null;
         const building = await buildingResponse.json();
-        if (building.primary_network_number) {
-            nodeId = building.primary_network_number;
+        if (building.primary_node && building.primary_node.network_number) {
+            nodeId = building.primary_node.network_number;
         } else if (building.installs) {
             nodeId = building.installs[0].install_number;
         }
@@ -46,7 +46,7 @@ async function getNewSelectedNodes(){
         const deviceResponse = await fetch(`/api/v1/devices/${id}/`);
         if (!deviceResponse.ok) return null;
         const device = await deviceResponse.json();
-        nodeId = device.network_number;
+        nodeId = device.node.network_number;
     } else if (type === "member") {
         if (!id) return null;
         const memberResponse = await fetch(`/api/v1/members/${id}/`);
@@ -59,15 +59,17 @@ async function getNewSelectedNodes(){
         if (!linkResponse.ok) return null;
         const link = await linkResponse.json();
 
-        const device1Response = await fetch(`/api/v1/devices/${link.from_device}/`);
+        const device1Response = await fetch(`/api/v1/devices/${link.from_device.id}/`);
         if (!device1Response.ok) return null;
         const device1 = await device1Response.json();
 
-        const device2Response = await fetch(`/api/v1/devices/${link.to_device}/`);
+        const device2Response = await fetch(`/api/v1/devices/${link.to_device.id}/`);
         if (!device2Response.ok) return null;
         const device2 = await device2Response.json();
 
-        nodeId = `${device1.network_number}-${device2.network_number}`;
+        if (device1.node.network_number && device2.node.network_number) {
+            nodeId = `${device1.node.network_number}-${device2.node.network_number}`;
+        }
     } else if (type === "los") {
         if (!id) return null;
         const losResponse = await fetch(`/api/v1/loses/${id}/`);
@@ -75,21 +77,21 @@ async function getNewSelectedNodes(){
         const los = await losResponse.json();
 
         let b1NodeId = null;
-        const buildingResponse1 = await fetch(`/api/v1/buildings/${los.from_building}/`);
+        const buildingResponse1 = await fetch(`/api/v1/buildings/${los.from_building.id}/`);
         if (!buildingResponse1.ok) return null;
         const building1 = await buildingResponse1.json();
-        if (building1.primary_network_number) {
-            b1NodeId = building1.primary_network_number;
+        if (building1.primary_node && building1.primary_node.network_number) {
+            b1NodeId = building1.primary_node.network_number;
         } else if (building1.installs) {
             b1NodeId = building1.installs[0].install_number;
         }
 
         let b2NodeId = null;
-        const buildingResponse2 = await fetch(`/api/v1/buildings/${los.to_building}/`);
+        const buildingResponse2 = await fetch(`/api/v1/buildings/${los.to_building.id}/`);
         if (!buildingResponse2.ok) return null;
         const building2 = await buildingResponse2.json();
-        if (building2.primary_network_number) {
-            b2NodeId = building2.primary_network_number;
+        if (building2.primary_node && building2.primary_node.network_number) {
+            b2NodeId = building2.primary_node.network_number;
         } else if (building2.installs) {
             b2NodeId = building2.installs[0].install_number;
         }
@@ -204,12 +206,19 @@ async function updateAdminContent(newUrl, options, updateHistory = true) {
 
 
 function shouldNotIntercept(target) {
-    const url = new URL(target.href);
+    const isForm = target.tagName === "FORM";
+    let url = ""
+    if (isForm){
+        url = new URL(target.action);
+    } else {
+        url = new URL(target.href);
+    }
 
     if (target.className === "capture-exclude") return true;
     if (!url.pathname.startsWith("/admin/")) return true;
     if (url.pathname.startsWith("/admin/login")) return true;
     if (url.pathname.startsWith("/admin/logout")) return true;
+    if (url.pathname.endsWith("/export/") && isForm) return true;
     if (url.host !== location.host) return true;
 
     return false;
@@ -243,8 +252,11 @@ function interceptLinks() {
 
     // Form submissions
     window.addEventListener("submit", function (event) {
+        const form = event.target;
+        // Exit early if this navigation shouldn't be intercepted
+        if (shouldNotIntercept(form)) return;
+
         async function handler() {
-            const form = event.target;
             const formData = new FormData(form);
             const method = form.method;
 
@@ -282,9 +294,9 @@ async function nodeSelectedOnMap(selectedNodes) {
     const nodeResponse = await fetch(`/api/v1/nodes/${selectedNodes}/`);
     if (installResponse.ok){
         const installJson = await installResponse.json();
-        if (installJson.network_number)  {
-            await updateAdminContent(new URL(`/admin/meshapi/node/${installJson.node}/change`, document.location).href);
-            updateMapForLocation(installJson.network_number.toString());
+        if (installJson.node && installJson.node.network_number)  {
+            await updateAdminContent(new URL(`/admin/meshapi/node/${installJson.node.id}/change`, document.location).href);
+            updateMapForLocation(installJson.node.network_number.toString());
         } else {
             updateAdminContent(new URL(`/admin/meshapi/install/${installJson.id}/change`, document.location).href);
         }

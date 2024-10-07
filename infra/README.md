@@ -30,10 +30,10 @@ These instructions will set up a 4 node k3s cluster on proxmox.
 | `WIREGUARD_PEER_PUBLIC_KEY`  | Public key of the wireguard server for deployment   |
 | `WIREGUARD_PRIVATE_KEY`  |  Private key for connecting to wireguard for deployment  |
 
-3. Create a new environment specific deployment workflow similar to `.github/workflows/deploy_prod1.yaml`
+3. Create a new environment in `.github/workflows/publish-and-deploy.yaml`
 
 4. Run the deployment.
 
-5. If you need a superuser, ssh into the mgr node and: `kubectl exec -it -n meshdbdev3 service/meshdb-meshweb bash` and then `python manage.py createsuperuser`
+5. If you need a superuser, ssh into the mgr node and: `kubectl exec -it -n meshdb service/meshdb-meshweb python manage.py createsuperuser`
 
-6. If you need to import data: `cat meshdb_export.sql | kubectl exec -it --tty -n meshdbprod1 pod/meshdb-postgres-.... -- psql -U meshdb -d meshdb`
+6. If you need to import data: `cat meshdb_export.sql | kubectl exec -it --tty -n meshdb pod/meshdb-postgres-.... -- psql -U meshdb -d meshdb`

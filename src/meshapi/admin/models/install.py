@@ -8,7 +8,8 @@ from django.contrib.postgres.search import SearchVector
 from django.db.models import QuerySet
 from django.http import HttpRequest
 from import_export import resources
-from import_export.admin import ExportActionMixin, ImportExportModelAdmin
+from import_export.admin import ExportActionMixin, ImportExportMixin
+from simple_history.admin import SimpleHistoryAdmin
 
 from meshapi.models import Install
 from meshapi.widgets import ExternalHyperlinkWidget
@@ -43,7 +44,7 @@ class InstallAdminForm(forms.ModelForm):
 
 
 @admin.register(Install)
-class InstallAdmin(RankedSearchMixin, ImportExportModelAdmin, ExportActionMixin):
+class InstallAdmin(RankedSearchMixin, ImportExportMixin, ExportActionMixin, SimpleHistoryAdmin):
     form = InstallAdminForm
     resource_classes = [InstallImportExportResource]
     list_filter = [

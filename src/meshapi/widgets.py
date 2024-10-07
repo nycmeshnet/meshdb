@@ -1,5 +1,5 @@
 import json
-import os
+import logging
 from typing import Any, Callable, Dict, Optional
 
 from django import forms
@@ -7,6 +7,7 @@ from django.forms import widgets
 from django.template import loader
 from django.utils.safestring import SafeString, mark_safe
 from django_jsonform.widgets import JSONFormWidget
+from flags.state import flag_enabled
 
 
 class PanoramaViewer(JSONFormWidget):
@@ -15,8 +16,14 @@ class PanoramaViewer(JSONFormWidget):
     def __init__(self, schema: dict):
         super().__init__(schema)
 
-    def pano_get_context(self, name: str, value: str) -> dict:
-        value_as_array = json.loads(value)
+    @staticmethod
+    def pano_get_context(name: str, value: str) -> dict:
+        try:
+            value_as_array = json.loads(value) if value else ""
+        except TypeError:
+            logging.exception("Got bad value when trying to make panorama array.")
+            value_as_array = ""
+
         return {
             "widget": {
                 "name": name,
@@ -27,11 +34,11 @@ class PanoramaViewer(JSONFormWidget):
     def render(
         self, name: str, value: str, attrs: Optional[Dict[str, Any]] = None, renderer: Optional[Any] = None
     ) -> SafeString:
-        if "DISALLOW_PANO_EDITS" in os.environ:
-            super_template = ""
-        else:
+        if flag_enabled("EDIT_PANORAMAS"):
             # Render the JSONFormWidget to allow editing of the panoramas
             super_template = super().render(name, value, attrs, renderer)
+        else:
+            super_template = ""
 
         # Then, render the panoramas for viewing
         context = self.pano_get_context(name, value)

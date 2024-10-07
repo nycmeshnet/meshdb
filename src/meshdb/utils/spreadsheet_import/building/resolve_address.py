@@ -9,6 +9,7 @@ from geopy.exc import GeocoderUnavailable
 
 from meshapi.exceptions import AddressError
 from meshapi.util.constants import DEFAULT_EXTERNAL_API_TIMEOUT_SECONDS
+from meshapi.zips import NYCZipCodes
 from meshdb.utils.spreadsheet_import.building.constants import (
     INVALID_BIN_NUMBERS,
     LOCAL_MESH_NOMINATIM_ADDR,
@@ -120,6 +121,7 @@ def fixup_bad_address(bad_address: str) -> str:
 
     simple_typo_substitutions = {
         "steet": "Street",
+        "sreet": "Street",
         "avue": "Avenue",
         "concoourse": "Concourse",
         ";": ",",
@@ -374,7 +376,19 @@ class AddressParser:
                     f"Address '{input_address}' is not substantial enough to resolve to a specific place"
                 )
 
-            if osm_location_is_in_nyc(closest_osm_location.raw["address"]):
+            pelias_zip_code_str = pelias_response[0][1].get("postcode")
+            pelias_zip_code_int = None
+            if pelias_zip_code_str:
+                pelias_zip_code_str = pelias_zip_code_str.split("-")[0]
+
+                if len(pelias_zip_code_str) != 5:
+                    pelias_zip_code_str = None
+                else:
+                    pelias_zip_code_int = int(pelias_zip_code_str)
+
+            if osm_location_is_in_nyc(closest_osm_location.raw["address"]) or NYCZipCodes.match_zip(
+                pelias_zip_code_int
+            ):
                 # We are in NYC, call the city planning API
                 result = self._find_nyc_building(
                     input_address, pelias_response[0], (row.latitude, row.longitude), row.bin
@@ -406,6 +420,9 @@ class AddressParser:
                     ),
                     truth_sources=[AddressTruthSource.OSMNominatim],
                 )
+
+            if pelias_zip_code_str and result.address.zip_code.split("-")[0] != pelias_zip_code_str:
+                raise AddressError(f"Mismatch between entered postal code and validated address result")
         except AddressError:
             logging.debug(
                 f"Error locating '{input_address}'. Falling back to string parsing. "

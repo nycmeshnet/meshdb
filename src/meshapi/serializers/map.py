@@ -14,7 +14,6 @@ EXCLUDED_INSTALL_STATUSES = {
     Install.InstallStatus.CLOSED,
     Install.InstallStatus.NN_REASSIGNED,
 }
-ALLOWED_INSTALL_STATUSES = set(Install.InstallStatus.values) - EXCLUDED_INSTALL_STATUSES
 
 
 @extend_schema_field(OpenApiTypes.INT)

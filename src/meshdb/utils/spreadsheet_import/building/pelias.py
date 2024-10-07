@@ -10,7 +10,7 @@ from meshapi.util.constants import DEFAULT_EXTERNAL_API_TIMEOUT_SECONDS
 from meshdb.utils.spreadsheet_import.building.constants import DatabaseAddress, NormalizedAddressVariant
 from meshdb.utils.spreadsheet_import.building.us_state_codes import convert_state_name_to_code
 
-PELIAS_ADDRESS_PARSER_URL = os.environ.get("PELIAS_ADDRESS_PARSER_URL")
+PELIAS_ADDRESS_PARSER_URL = os.environ.get("PELIAS_ADDRESS_PARSER_URL", "http://localhost:6800/parser/parse")
 
 
 def adjust_index_down(index_val: int, start_val: int, shift_amount: int):

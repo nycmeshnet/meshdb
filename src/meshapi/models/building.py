@@ -6,6 +6,7 @@ from django.core.validators import MinValueValidator
 from django.db import models
 from django.db.models import ManyToManyField
 from django_jsonform.models.fields import ArrayField as JSONFormArrayField
+from simple_history.models import HistoricalRecords
 
 from meshdb.utils.spreadsheet_import.building.constants import AddressTruthSource
 
@@ -21,6 +22,8 @@ class Building(models.Model):
     necessarily unique. In the case of a structure with multiple street addresses, we create a
     "Building" object for each address, but these "Building" objects will all share a BIN.
     """
+
+    history = HistoricalRecords(m2m_fields=["nodes"])
 
     class Meta:
         ordering = ["id"]
@@ -96,6 +99,7 @@ class Building(models.Model):
     )
     nodes = ManyToManyField(
         Node,
+        blank=True,
         help_text="All nodes located on the same structure (i.e. a discrete man-made place identified by the same BIN) "
         "that this Building is located within.",
         related_name="buildings",
