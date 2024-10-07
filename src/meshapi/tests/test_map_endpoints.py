@@ -364,6 +364,15 @@ class TestViewsGetUnauthenticated(TestCase):
             )
         )
 
+        nodes.append(
+            Node(
+                network_number=9820,
+                status=Node.NodeStatus.ACTIVE,
+                latitude=40.724868,
+                longitude=-73.987881,
+            )
+        )
+
         for node in nodes:
             node.save()
 
@@ -429,6 +438,14 @@ class TestViewsGetUnauthenticated(TestCase):
                     "requestDate": 1706331600000,
                     "roofAccess": True,
                     "panoramas": [],
+                },
+                {
+                    "coordinates": [-73.987881, 40.724868, None],
+                    "id": 9820,
+                    "panoramas": [],
+                    "requestDate": None,
+                    "roofAccess": True,
+                    "status": "NN assigned",
                 },
                 {
                     "coordinates": [-73.987881, 40.724868, None],

@@ -12,7 +12,7 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from meshapi.models import LOS, AccessPoint, Device, Install, Link, Node, Sector
+from meshapi.models import LOS, AccessPoint, Building, Device, Install, Link, Node, Sector
 from meshapi.serializers import (
     EXCLUDED_INSTALL_STATUSES,
     MapDataInstallSerializer,
@@ -98,6 +98,20 @@ class MapDataNodeList(generics.ListAPIView):
                 except IndexError:
                     representative_install = None
 
+                if representative_install:
+                    building = representative_install.building
+                else:
+                    building = node.buildings.first()
+
+                if not building:
+                    # If we couldn't get a building from the install or node,
+                    # make a faux one instead, to carry the lat/lon info into the serializer
+                    building = Building(
+                        latitude=node.latitude,
+                        longitude=node.longitude,
+                        altitude=node.altitude,
+                    )
+
                 all_installs.append(
                     Install(
                         install_number=node.network_number,
@@ -105,7 +119,7 @@ class MapDataNodeList(generics.ListAPIView):
                         status=Install.InstallStatus.NN_REASSIGNED
                         if node.status == node.NodeStatus.ACTIVE
                         else Install.InstallStatus.REQUEST_RECEIVED,
-                        building=representative_install.building if representative_install else node.buildings.first(),
+                        building=building,
                         request_date=representative_install.request_date
                         if representative_install
                         else node.install_date,
