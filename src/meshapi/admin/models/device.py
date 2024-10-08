@@ -1,11 +1,12 @@
 import os
+from typing import Optional
 
 from django import forms
 from django.contrib import admin
 from django.contrib.admin.utils import unquote
 from django.contrib.postgres.search import SearchVector
 from django.db.models import QuerySet
-from django.http import HttpRequest
+from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
 from django.shortcuts import redirect
 from import_export.admin import ExportActionMixin, ImportExportMixin
 from simple_history.admin import SimpleHistoryAdmin
@@ -91,7 +92,7 @@ class DeviceAdmin(RankedSearchMixin, ImportExportMixin, ExportActionMixin, Simpl
 
         return queryset
 
-    def _get_subtype_redirect(self, request, object_id):
+    def _get_subtype_redirect(self, request: HttpRequest, object_id: str) -> Optional[HttpResponseRedirect]:
         """Create a redirect for an AP or sector device by its object ID (if such a subtype exists)"""
         device = Device.objects.filter(pk=object_id).first()
         if not device:
@@ -101,7 +102,9 @@ class DeviceAdmin(RankedSearchMixin, ImportExportMixin, ExportActionMixin, Simpl
         target_url = get_admin_url(downclassed_model_obj, site_base_url=f"{request.scheme}://{request.get_host()}")
         return redirect(target_url)
 
-    def _changeform_view(self, request, object_id, form_url, extra_context):
+    def _changeform_view(
+        self, request: HttpRequest, object_id: str, form_url: str, extra_context: dict
+    ) -> HttpResponse:
         if object_id and not self.get_object(request, unquote(object_id), None):
             # If the built-in object lookup logic doesn't find this device,
             # it's probably because it's excluded in get_queryset() above
