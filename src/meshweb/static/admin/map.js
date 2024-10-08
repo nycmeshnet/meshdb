@@ -163,13 +163,7 @@ async function updateAdminContent(newUrl, options, updateHistory = true) {
         return;
     }
 
-    if (updateHistory) {
-        if (response.redirected) {
-            window.history.pushState(null, '', response.url)
-        } else {
-            window.history.pushState(null, '', newUrl);
-        }
-    }
+    if (updateHistory) window.history.pushState(null, '', newUrl);
 
     const current_map = document.getElementById("map");
 
