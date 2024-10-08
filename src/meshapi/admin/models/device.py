@@ -2,9 +2,11 @@ import os
 
 from django import forms
 from django.contrib import admin
+from django.contrib.admin.utils import unquote
 from django.contrib.postgres.search import SearchVector
 from django.db.models import QuerySet
 from django.http import HttpRequest
+from django.shortcuts import redirect
 from import_export.admin import ExportActionMixin, ImportExportMixin
 from simple_history.admin import SimpleHistoryAdmin
 
@@ -13,6 +15,7 @@ from meshapi.widgets import ExternalHyperlinkWidget
 
 from ..inlines import DeviceLinkInline
 from ..ranked_search import RankedSearchMixin
+from ..utils import downclass_device, get_admin_url
 
 UISP_URL = os.environ.get("UISP_URL", "https://uisp.mesh.nycmesh.net/nms")
 
@@ -87,3 +90,26 @@ class DeviceAdmin(RankedSearchMixin, ImportExportMixin, ExportActionMixin, Simpl
             queryset = queryset.exclude(sector__isnull=False).exclude(accesspoint__isnull=False)
 
         return queryset
+
+    def _get_subtype_redirect(self, request, object_id):
+        """Create a redirect for an AP or sector device by its object ID (if such a subtype exists)"""
+        device = Device.objects.filter(pk=object_id).first()
+        if not device:
+            return None
+
+        downclassed_model_obj = downclass_device(device)
+        target_url = get_admin_url(downclassed_model_obj, site_base_url=f"{request.scheme}://{request.get_host()}")
+        return redirect(target_url)
+
+    def _changeform_view(self, request, object_id, form_url, extra_context):
+        if object_id and not self.get_object(request, unquote(object_id), None):
+            # If the built-in object lookup logic doesn't find this device,
+            # it's probably because it's excluded in get_queryset() above
+            # (as a Sector or AP). However, there are some direct links to device objects,
+            # and if the user has hit one of those, we try to redirect them to the more
+            # specific page so they don't get 404ed
+            redirect = self._get_subtype_redirect(request, object_id)
+            if redirect:
+                return redirect
+
+        return super()._changeform_view(request, object_id, form_url, extra_context)
