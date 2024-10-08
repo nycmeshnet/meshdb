@@ -295,6 +295,11 @@ class TestAdminChangeView(TestCase):
         response = self._call(change_url, 302)
         self.assertEqual(response.url, f"http://testserver/admin/meshapi/accesspoint/{self.access_point.id}/change/")
 
+    def test_change_device_bad_id(self):
+        change_url = "/admin/meshapi/device/00000000-0000-0000-0000-000000000000/change/"
+        response = self._call(change_url, 302)
+        self.assertEqual(response.url, "/admin/")
+
     def test_change_sector(self):
         change_url = f"/admin/meshapi/sector/{self.sector.id}/change/"
         response = self._call(change_url, 200)
