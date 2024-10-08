@@ -287,10 +287,17 @@ def get_spreadsheet_links(links_path: str) -> List[SpreadsheetLink]:
             except ValueError:
                 abandon_date = None
 
+            try:
+                from_node_id = int(row["from"])
+                to_node_id = int(row["to"])
+            except ValueError:
+                # If the row does not contain two numbers, we should skip it
+                continue
+
             links.append(
                 SpreadsheetLink(
-                    from_node_id=int(row["from"]),
-                    to_node_id=int(row["to"]),
+                    from_node_id=from_node_id,
+                    to_node_id=to_node_id,
                     status=SpreadsheetLinkStatus(row["status"]),
                     install_date=install_date,
                     abandon_date=abandon_date,
