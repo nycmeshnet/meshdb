@@ -95,6 +95,16 @@ spec:
                 secretKeyRef:
                   name: meshdb-secrets
                   key: slack-webhook
+            - name: SLACK_JOIN_REQUESTS_CHANNEL_WEBHOOK_URL
+              valueFrom:
+                secretKeyRef:
+                  name: meshdb-secrets
+                  key: slack-join-webhook
+            - name: OSTICKET_API_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: meshdb-secrets
+                  key: osticket-api-token
           volumeMounts:
             - name: static-content-vol
               mountPath: /opt/meshdb/static

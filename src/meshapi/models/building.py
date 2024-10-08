@@ -112,6 +112,23 @@ class Building(models.Model):
         if self.primary_node and self.primary_node not in self.nodes.all():
             self.nodes.add(self.primary_node)
 
+    @property
+    def one_line_complete_address(self) -> str:
+        addr_components = []
+        if self.street_address:
+            addr_components.append(self.street_address)
+        if self.city or self.city:
+            city_state = []
+            if self.city:
+                city_state.append(self.city)
+            if self.state:
+                city_state.append(self.state)
+            addr_components.append(" ".join(city_state))
+        if self.zip_code:
+            addr_components.append(self.zip_code)
+
+        return ", ".join(addr_components)
+
     def __str__(self) -> str:
         if self.street_address:
             addr_str = str(self.street_address)
