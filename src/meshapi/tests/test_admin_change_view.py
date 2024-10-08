@@ -285,6 +285,21 @@ class TestAdminChangeView(TestCase):
         response = self._call(change_url, 200)
         self._submit_form(change_url, bs4.BeautifulSoup(response.content.decode()).find(id="device_form"), 302)
 
+    def test_change_sector_accessed_via_device_redirect(self):
+        change_url = f"/admin/meshapi/device/{self.sector.id}/change/"
+        response = self._call(change_url, 302)
+        self.assertEqual(response.url, f"http://testserver/admin/meshapi/sector/{self.sector.id}/change/")
+
+    def test_change_ap_accessed_via_device_redirect(self):
+        change_url = f"/admin/meshapi/device/{self.access_point.id}/change/"
+        response = self._call(change_url, 302)
+        self.assertEqual(response.url, f"http://testserver/admin/meshapi/accesspoint/{self.access_point.id}/change/")
+
+    def test_change_device_bad_id(self):
+        change_url = "/admin/meshapi/device/00000000-0000-0000-0000-000000000000/change/"
+        response = self._call(change_url, 302)
+        self.assertEqual(response.url, "/admin/")
+
     def test_change_sector(self):
         change_url = f"/admin/meshapi/sector/{self.sector.id}/change/"
         response = self._call(change_url, 200)
