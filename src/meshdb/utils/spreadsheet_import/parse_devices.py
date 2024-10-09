@@ -7,10 +7,11 @@ from typing import List, Optional
 
 import django
 
+from meshapi.util.uisp_import.constants import UISP_OFFLINE_DURATION_BEFORE_MARKING_INACTIVE
+
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "meshdb.settings")
 django.setup()
 
-import dateutil.parser
 
 from meshapi.models import AccessPoint, Device, Install, Node, Sector
 from meshapi.util.uisp_import.fetch_uisp import get_uisp_devices
@@ -99,13 +100,25 @@ def create_device(nn: int, uisp_device: dict, spreadsheet_sector: Optional[Sprea
             notes=sector_notes if sector_notes else None,
         )
     else:
+        uisp_last_seen = (
+            parse_uisp_datetime(uisp_device["overview"]["lastSeen"]) if uisp_device["overview"]["lastSeen"] else None
+        )
+
         if not uisp_device["overview"]["status"]:
             # If UISP doesn't have a status value, assume active
             status = Device.DeviceStatus.ACTIVE
         elif uisp_device["overview"]["status"] == "active":
             status = Device.DeviceStatus.ACTIVE
         else:
-            status = Device.DeviceStatus.INACTIVE
+            if (
+                not uisp_last_seen
+                or (datetime.datetime.now(datetime.timezone.utc) - uisp_last_seen)
+                > UISP_OFFLINE_DURATION_BEFORE_MARKING_INACTIVE
+            ):
+                # Only use an offline status if the device has been offline long enough
+                status = Device.DeviceStatus.INACTIVE
+            else:
+                status = Device.DeviceStatus.ACTIVE
 
         device = Device(
             node=node,
@@ -113,11 +126,7 @@ def create_device(nn: int, uisp_device: dict, spreadsheet_sector: Optional[Sprea
             uisp_id=uisp_device["identification"]["id"],
             status=status,
             install_date=parse_uisp_datetime(uisp_device["overview"]["createdAt"]).date(),
-            abandon_date=(
-                parse_uisp_datetime(uisp_device["overview"]["lastSeen"]).date()
-                if status == Device.DeviceStatus.INACTIVE
-                else None
-            ),
+            abandon_date=(uisp_last_seen.date() if status == Device.DeviceStatus.INACTIVE and uisp_last_seen else None),
             notes=f"Automatically imported from UISP on {datetime.date.today().isoformat()}\n\n",
         )
 
