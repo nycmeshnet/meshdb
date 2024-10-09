@@ -164,6 +164,23 @@ def import_and_sync_uisp_devices(uisp_devices: List[UISPDevice]) -> None:
             device = Device(**device_fields)
             device.save()
 
+    with transaction.atomic():
+        for device in Device.objects.filter(uisp_id__isnull=False):
+            uisp_uuid_set = {uisp_device["identification"]["id"] for uisp_device in uisp_devices}
+
+            if device.uisp_id and device.uisp_id not in uisp_uuid_set and device.status != Device.DeviceStatus.INACTIVE:
+                # If this device has been removed from UISP, mark it as inactive
+                device.status = Device.DeviceStatus.INACTIVE
+                device.save()
+
+                notify_admins_of_changes(
+                    device,
+                    [
+                        "Marked as inactive because there is no corresponding device in UISP, "
+                        "it was probably deleted there",
+                    ],
+                )
+
 
 def import_and_sync_uisp_links(uisp_links: List[UISPDataLink]) -> None:
     uisp_session = get_uisp_session()
@@ -257,6 +274,23 @@ def import_and_sync_uisp_links(uisp_links: List[UISPDataLink]) -> None:
                 ],
                 created=True,
             )
+
+    with transaction.atomic():
+        for link in Link.objects.filter(uisp_id__isnull=False):
+            uisp_uuid_set = {uisp_link["id"] for uisp_link in uisp_links}
+
+            if link.uisp_id and link.uisp_id not in uisp_uuid_set and link.status != Link.LinkStatus.INACTIVE:
+                # If this link has been removed from UISP, mark it as inactive
+                link.status = Link.LinkStatus.INACTIVE
+                link.save()
+
+                notify_admins_of_changes(
+                    link,
+                    [
+                        "Marked as inactive because there is no corresponding link in UISP, "
+                        "it was probably deleted there",
+                    ],
+                )
 
 
 def sync_link_table_into_los_objects() -> None:
