@@ -57,9 +57,6 @@ jobs:
         --set meshweb.nn_assign_psk="${{ secrets.NN_ASSIGN_PSK }}" \
         --set meshweb.query_psk="${{ secrets.QUERY_PSK }}" \
         --set meshweb.pano_github_token="${{ secrets.GH_TOKEN }}" \
-        --set pgadmin.default_email="${{ secrets.PGADMIN_EMAIL }}" \
-        --set pgadmin.default_password="${{ secrets.PGADMIN_PASSWORD }}" \
-        --set global.pgadmin.fqdn="${{ vars.PGADMIN_FQDN }}" \
         --set uisp.url="${{ secrets.UISP_URL }}" \
         --set uisp.user="${{ secrets.UISP_USER }}" \
         --set uisp.psk="${{ secrets.UISP_PSK }}" \

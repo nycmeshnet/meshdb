@@ -33,16 +33,6 @@ services:
     ports:
       - 6379:6379
 
-  pgadmin:
-    networks:
-      - api
-    expose:
-      - 443
-    image: dpage/pgadmin4:8.9
-    environment:
-      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL}
-      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD}
-
   pelias:
     networks:
       - api
