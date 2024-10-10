@@ -15,6 +15,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework_dataclasses.serializers import DataclassSerializer
+from validate_email import email_address
 
 from meshapi.exceptions import AddressError
 from meshapi.models import Building, Install, Member, Node
@@ -38,12 +39,12 @@ from meshdb.utils.spreadsheet_import.building.constants import AddressTruthSourc
 class JoinFormRequest:
     first_name: str
     last_name: str
-    email: str
-    phone: str
+    email_address: str
+    phone_number: str
     street_address: str
     city: str
     state: str
-    zip: int
+    zip_code: int
     apartment: str
     roof_access: bool
     referral: str
@@ -108,25 +109,26 @@ def join_form(request: Request) -> Response:
 
     join_form_full_name = f"{r.first_name} {r.last_name}"
 
-    if not r.email and not r.phone:
+    if not r.email_address and not r.phone_number:
         return Response({"detail": "Must provide an email or phone number"}, status=status.HTTP_400_BAD_REQUEST)
 
-    if r.email and not validate_email_address(r.email):
-        return Response({"detail": f"{r.email} is not a valid email"}, status=status.HTTP_400_BAD_REQUEST)
+    if r.email_address and not validate_email_address(r.email_address):
+        return Response({"detail": f"{r.email_address} is not a valid email"}, status=status.HTTP_400_BAD_REQUEST)
 
     # Expects country code!!!!
-    if r.phone and not validate_phone_number(r.phone):
-        return Response({"detail": f"{r.phone} is not a valid phone number"}, status=status.HTTP_400_BAD_REQUEST)
+    if r.phone_number and not validate_phone_number(r.phone_number):
+        return Response({"detail": f"{r.phone_number} is not a valid phone number"}, status=status.HTTP_400_BAD_REQUEST)
 
-    formatted_phone_number = normalize_phone_number(r.phone) if r.phone else None
+    formatted_phone_number = normalize_phone_number(r.phone_number) if r.phone_number else None
 
     try:
-        nyc_addr_info: Optional[NYCAddressInfo] = geocode_nyc_address(r.street_address, r.city, r.state, r.zip)
+        nyc_addr_info: Optional[NYCAddressInfo] = geocode_nyc_address(r.street_address, r.city, r.state, r.zip_code)
     except ValueError:
+        logging.debug(r.street_address, r.city, r.state, r.zip_code)
         return Response(
             {
                 "detail": "Non-NYC registrations are not supported at this time. Check back later, "
-                "or email support@nycmesh.net"
+                "or.email_address support@nycmesh.net"
             },
             status=status.HTTP_400_BAD_REQUEST,
         )
@@ -142,8 +144,8 @@ def join_form(request: Request) -> Response:
 
     # TODO: Notify member if we changed any of their information
     # Name (won't touch), email (won't touch), phone, st addr, unit (won't touch), city, State, Zip
-    if formatted_phone_number and r.phone != formatted_phone_number:
-        logging.warning(f"Changed phone_number: {formatted_phone_number} != {r.phone}")
+    if formatted_phone_number and r.phone_number != formatted_phone_number:
+        logging.warning(f"Changed phone_number: {formatted_phone_number} != {r.phone_number}")
         changed_info["phone"] = formatted_phone_number
 
     if r.street_address != nyc_addr_info.street_address:
@@ -162,7 +164,7 @@ def join_form(request: Request) -> Response:
         if r.trust_me_bro:
             logging.warning(
                 "Got trust_me_bro, even though info was still updated "
-                f"(email: {r.email}, changed_info: {changed_info}). "
+                f"(email: {r.email_address}, changed_info: {changed_info}). "
                 "Proceeding with install request submission."
             )
         else:
@@ -185,11 +187,11 @@ def join_form(request: Request) -> Response:
     # Check if there's an existing member. Group members by matching on both email and phone
     # A member can have multiple install requests, if they move apartments for example
     existing_member_filter_criteria = []
-    if r.email:
+    if r.email_address:
         existing_member_filter_criteria.append(
-            Q(primary_email_address=r.email)
-            | Q(stripe_email_address=r.email)
-            | Q(additional_email_addresses__contains=[r.email])
+            Q(primary_email_address=r.email_address)
+            | Q(stripe_email_address=r.email_address)
+            | Q(additional_email_addresses__contains=[r.email_address])
         )
 
     if formatted_phone_number:
@@ -211,14 +213,14 @@ def join_form(request: Request) -> Response:
         if len(existing_members) > 0
         else Member(
             name=join_form_full_name,
-            primary_email_address=r.email,
+            primary_email_address=r.email_address,
             phone_number=formatted_phone_number,
             slack_handle=None,
         )
     )
 
-    if r.email not in join_form_member.all_email_addresses:
-        join_form_member.additional_email_addresses.append(r.email)
+    if r.email_address not in join_form_member.all_email_addresses:
+        join_form_member.additional_email_addresses.append(r.email_address)
 
     if formatted_phone_number not in join_form_member.all_phone_numbers:
         join_form_member.additional_phone_numbers.append(formatted_phone_number)
