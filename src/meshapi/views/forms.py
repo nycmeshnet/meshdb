@@ -121,6 +121,8 @@ def join_form(request: Request) -> Response:
 
     formatted_phone_number = normalize_phone_number(r.phone_number) if r.phone_number else None
 
+    print(f"Formatted Phone Number: {formatted_phone_number}")
+
     try:
         nyc_addr_info: Optional[NYCAddressInfo] = geocode_nyc_address(r.street_address, r.city, r.state, r.zip_code)
     except ValueError:
@@ -128,7 +130,7 @@ def join_form(request: Request) -> Response:
         return Response(
             {
                 "detail": "Non-NYC registrations are not supported at this time. Check back later, "
-                "or.email_address support@nycmesh.net"
+                "or send an email to support@nycmesh.net"
             },
             status=status.HTTP_400_BAD_REQUEST,
         )
