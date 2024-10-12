@@ -59,7 +59,8 @@ SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"
 
-CSP_STYLE_SRC = [
+CSP_REPORT_ONLY = True  # TODO: Set me to false https://github.com/nycmeshnet/meshdb/issues/644
+CSP_DEFAULT_SRC = [
     "'self'",
     "*.nycmesh.net",
     "maps.googleapis.com",
