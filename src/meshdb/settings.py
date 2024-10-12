@@ -67,6 +67,13 @@ CSP_DEFAULT_SRC = [
     "maps.gstatic.com",
     "fonts.googleapis.com",
     "fonts.gstatic.com",
+    "'unsafe-inline'",  # TODO: Remove me https://github.com/nycmeshnet/meshdb/issues/645
+    "*.browser-intake-datadoghq.com",
+]
+CSP_REPORT_URI = [
+    "https://csp-report.browser-intake-datadoghq.com/api/v2/logs"
+    "?dd-api-key=pubca00a94e49167539d2e291bea2b0f20f&dd-evp-origin=content-security-policy"
+    + f"&ddsource=csp-report&ddtags=service%3Ameshdb%2Cenv%3A{MESHDB_ENVIRONMENT}"
 ]
 
 # We don't use any of these advanced features, so be safe and disallow any scripts from
