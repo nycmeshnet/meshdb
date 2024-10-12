@@ -28,25 +28,28 @@ def update_device_from_uisp_data(
         existing_device.node = uisp_node
 
     if existing_device.status != uisp_status:
-        if uisp_status == Device.DeviceStatus.INACTIVE and uisp_last_seen is not None:
+        if uisp_status == Device.DeviceStatus.INACTIVE:
             # We wait 30 days to make sure this device is actually inactive,
             # and not just temporarily offline
-            if (
-                datetime.datetime.now(datetime.timezone.utc) - uisp_last_seen
-            ) > UISP_OFFLINE_DURATION_BEFORE_MARKING_INACTIVE:
-                existing_device.abandon_date = uisp_last_seen.date()
-                existing_device.status = Device.DeviceStatus.INACTIVE
+            if uisp_last_seen is None or (
+                (datetime.datetime.now(datetime.timezone.utc) - uisp_last_seen)
+                > UISP_OFFLINE_DURATION_BEFORE_MARKING_INACTIVE
+            ):
+                change_message = f"Marked as {Device.DeviceStatus.INACTIVE} due to it being offline in UISP"
+                if uisp_last_seen:
+                    existing_device.abandon_date = uisp_last_seen.date()
+                    change_message += (
+                        " for more than "
+                        f"{int(UISP_OFFLINE_DURATION_BEFORE_MARKING_INACTIVE.total_seconds() / 60 / 60 / 24)} days"
+                    )
 
-                change_messages.append(
-                    f"Marked as {Device.DeviceStatus.INACTIVE} due to being offline "
-                    f"for more than "
-                    f"{int(UISP_OFFLINE_DURATION_BEFORE_MARKING_INACTIVE.total_seconds() / 60 / 60 / 24)} days"
-                )
+                existing_device.status = Device.DeviceStatus.INACTIVE
+                change_messages.append(change_message)
 
         if uisp_status == Device.DeviceStatus.ACTIVE:
             existing_device.status = Device.DeviceStatus.ACTIVE
 
-            change_message = f"Marked as {Device.DeviceStatus.ACTIVE} due to coming back online in UISP"
+            change_message = f"Marked as {Device.DeviceStatus.ACTIVE} due to it coming back online in UISP"
             if existing_device.abandon_date:
                 change_message += (
                     ". Warning: this device was previously abandoned on "
@@ -99,24 +102,29 @@ def update_link_from_uisp_data(
     )
 
     if existing_link.status != uisp_status:
-        if uisp_status == Link.LinkStatus.INACTIVE and uisp_last_seen is not None:
+        if uisp_status == Link.LinkStatus.INACTIVE:
             # We wait 30 days to make sure this link is actually inactive,
             # and not just temporarily offline
-            if (
-                datetime.datetime.now(datetime.timezone.utc) - uisp_last_seen
-            ) > UISP_OFFLINE_DURATION_BEFORE_MARKING_INACTIVE:
-                existing_link.abandon_date = uisp_last_seen.date()
-                existing_link.status = Link.LinkStatus.INACTIVE
+            if uisp_last_seen is None or (
+                (datetime.datetime.now(datetime.timezone.utc) - uisp_last_seen)
+                > UISP_OFFLINE_DURATION_BEFORE_MARKING_INACTIVE
+            ):
+                change_message = f"Marked as {Link.LinkStatus.INACTIVE} due to it being offline in UISP"
 
-                change_messages.append(
-                    f"Marked as {Link.LinkStatus.INACTIVE} due to being offline for more than "
-                    f"{int(UISP_OFFLINE_DURATION_BEFORE_MARKING_INACTIVE.total_seconds() / 60 / 60 / 24)} days"
-                )
+                if uisp_last_seen:
+                    existing_link.abandon_date = uisp_last_seen.date()
+                    change_message += (
+                        " for more than "
+                        f"{int(UISP_OFFLINE_DURATION_BEFORE_MARKING_INACTIVE.total_seconds() / 60 / 60 / 24)} days"
+                    )
+
+                existing_link.status = Link.LinkStatus.INACTIVE
+                change_messages.append(change_message)
 
         if uisp_status == Link.LinkStatus.ACTIVE:
             existing_link.status = Link.LinkStatus.ACTIVE
 
-            change_message = f"Marked as {Link.LinkStatus.ACTIVE} due to coming back online in UISP"
+            change_message = f"Marked as {Link.LinkStatus.ACTIVE} due to it coming back online in UISP"
             if existing_link.abandon_date:
                 change_message += (
                     ". Warning: this link was previously abandoned on "
