@@ -56,13 +56,13 @@ class NYCAddressInfo:
     street_address: str
     city: str
     state: str
-    zip: int
+    zip: str
     longitude: float
     latitude: float
     altitude: float | None
     bin: int | None
 
-    def __init__(self, street_address: str, city: str, state: str, zip_code: int):
+    def __init__(self, street_address: str, city: str, state: str, zip_code: str):
         if state != "New York" and state != "NY":
             raise ValueError(f"(NYC) State '{state}' is not New York.")
 
@@ -92,7 +92,7 @@ class NYCAddressInfo:
         # the closest matching street address it can find, so check that
         # the ZIP of what we entered matches what we got.
 
-        found_zip = int(nyc_planning_resp["features"][0]["properties"]["postalcode"])
+        found_zip = nyc_planning_resp["features"][0]["properties"]["postalcode"]
         if found_zip != zip_code:
             raise AddressError(
                 f"(NYC) Could not find address '{street_address}, {city}, {state} {zip_code}'. "
@@ -106,7 +106,7 @@ class NYCAddressInfo:
 
         self.city = addr_props["borough"].replace("Manhattan", "New York")
         self.state = addr_props["region_a"]
-        self.zip = int(addr_props["postalcode"])
+        self.zip = addr_props["postalcode"]
 
         if (
             not addr_props.get("addendum", {}).get("pad", {}).get("bin")
@@ -166,7 +166,7 @@ def validate_phone_number_field(phone_number: str) -> None:
         raise ValidationError(f"Invalid phone number: {phone_number}")
 
 
-def geocode_nyc_address(street_address: str, city: str, state: str, zip_code: int) -> Optional[NYCAddressInfo]:
+def geocode_nyc_address(street_address: str, city: str, state: str, zip_code: str) -> Optional[NYCAddressInfo]:
     # We only support the five boroughs of NYC at this time
     if not NYCZipCodes.match_zip(zip_code):
         raise ValueError(f"Non-NYC zip code detected: {zip_code}")

@@ -32,6 +32,7 @@ from meshapi.validation import (
 )
 from meshdb.utils.spreadsheet_import.building.constants import AddressTruthSource
 
+logging.basicConfig()
 
 # Join Form
 @dataclass
@@ -43,7 +44,7 @@ class JoinFormRequest:
     street_address: str
     city: str
     state: str
-    zip_code: int
+    zip_code: str
     apartment: str
     roof_access: bool
     referral: str
@@ -120,10 +121,13 @@ def join_form(request: Request) -> Response:
 
     formatted_phone_number = normalize_phone_number(r.phone_number) if r.phone_number else None
 
-    print(f"Formatted Phone Number: {formatted_phone_number}")
-
     try:
-        nyc_addr_info: Optional[NYCAddressInfo] = geocode_nyc_address(r.street_address, r.city, r.state, r.zip_code)
+        try:
+            nyc_addr_info: Optional[NYCAddressInfo] = geocode_nyc_address(r.street_address, r.city, r.state, r.zip_code)
+        except Exception as e:
+            # Ensure this gets logged
+            logging.exception(e)
+            raise e
     except ValueError:
         logging.debug(r.street_address, r.city, r.state, r.zip_code)
         return Response(
@@ -169,6 +173,7 @@ def join_form(request: Request) -> Response:
                 "Proceeding with install request submission."
             )
         else:
+            logging.warning("Please confirm a few details")
             return Response(
                 {
                     "detail": "Please confirm a few details.",
@@ -182,7 +187,7 @@ def join_form(request: Request) -> Response:
                     # TODO: Add a "trust me bro" parameter. Maybe log if it breaks
                     "changed_info": changed_info,
                 },
-                status=status.HTTP_202_ACCEPTED,
+                status=status.HTTP_409_CONFLICT,
             )
 
     # Check if there's an existing member. Group members by matching on both email and phone
