@@ -34,6 +34,7 @@ from meshdb.utils.spreadsheet_import.building.constants import AddressTruthSourc
 
 logging.basicConfig()
 
+
 # Join Form
 @dataclass
 class JoinFormRequest:
