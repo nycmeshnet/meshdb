@@ -105,6 +105,17 @@ def main():
             building = get_or_create_building(row, addr_parser, dropped_modifications.append)
             if not building:
                 skipped[row.id] = "Unable to parse address"
+                if (
+                    new
+                    and not member.all_email_addresses
+                    and not member.all_phone_numbers
+                    and not member.name
+                    and not member.notes
+                ):
+                    # If this member object stores no contact information, and is not going to be
+                    # used for an install because of an invalid address, remove the member object
+                    # to avoid cluttering the DB with "husk" members that are entirely blank
+                    member.delete()
                 continue
 
             node = get_or_create_node(row)

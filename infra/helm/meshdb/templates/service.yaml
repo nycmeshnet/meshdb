@@ -77,19 +77,3 @@ spec:
       name: meshweb-service
   selector:
     app: meshdb-meshweb-app
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: {{ include "meshdb.fullname" . }}-pgadmin
-  namespace: {{ .Values.meshdb_app_namespace }}
-  labels:
-    {{- include "meshdb.labels" . | nindent 4 }}
-spec:
-  ports:
-    - port: {{ .Values.pgadmin.port }}
-      targetPort: {{ .Values.pgadmin.port }}
-      protocol: TCP
-      name: pgadmin-service
-  selector:
-    app: meshdb-pgadmin-app
