@@ -156,7 +156,7 @@ if DEBUG:
         "http://127.0.0.1",
     ]
 
-    CSP_STYLE_SRC += [
+    CSP_DEFAULT_SRC += [
         "*",
     ]
 
