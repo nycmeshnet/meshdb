@@ -42,7 +42,7 @@ def validate_successful_join_form_submission(test_case, test_name, s, response, 
     # Check if the member was created and that we see it when we
     # filter for it.
     existing_members = Member.objects.filter(
-        Q(phone_number=s.phone)
+        Q(phone_number=s.phone_number)
         | Q(primary_email_address=s.email_address)
         | Q(stripe_email_address=s.email_address)
         | Q(additional_email_addresses__contains=[s.email_address])
@@ -100,7 +100,7 @@ def pull_apart_join_form_submission(submission):
     s.street_address = submission["parsed_street_address"]
     s.city = submission["parsed_city"] if "parsed_city" in submission else submission["city"]
     s.state = submission["state"]
-    s.phone = submission["parsed_phone"]
+    s.phone_number = submission["parsed_phone"]
 
     return request, s
 
@@ -379,7 +379,7 @@ class TestJoinForm(TestCase):
 
         # Name, email, phone, location, apt, rooftop, referral
         form, _ = pull_apart_join_form_submission(valid_join_form_submission)
-        form["email"] = "notareal@email.meshmeshmeshmeshmesh"
+        form["email_address"] = "notareal@email.meshmeshmeshmeshmesh"
         response = self.c.post("/api/v1/join/", form, content_type="application/json")
 
         code = 400
@@ -418,7 +418,7 @@ class TestJoinForm(TestCase):
         con = json.loads(response.content.decode("utf-8"))
 
         self.assertEqual(
-            f"(NYC) Address '{form['street_address']}, {form['city']}, {form['state']} {form['zip']}' not found in geosearch.planninglabs.nyc.",
+            f"(NYC) Address '{form['street_address']}, {form['city']}, {form['state']} {form['zip_code']}' not found in geosearch.planninglabs.nyc.",
             con["detail"],
             f"Did not get correct response content for bad address join form: {response.content.decode('utf-8')}",
         )
@@ -503,7 +503,7 @@ class TestJoinForm(TestCase):
         # Now test that the member can "move" and still access the join form
         v_sub_2 = valid_join_form_submission.copy()
         v_sub_2["street_address"] = "152 Broome Street"
-        v_sub_2["phone"] = "+1 555-555-5555"
+        v_sub_2["phone_number"] = "+1 555-555-5555"
 
         form, s = pull_apart_join_form_submission(v_sub_2)
 
@@ -628,7 +628,7 @@ class TestJoinForm(TestCase):
         # Now test that the member can "move" and still access the join form
         # (even with a new email, provided they use the same phone number)
         v_sub_2 = valid_join_form_submission.copy()
-        v_sub_2["email"] = "jsmith1234@yahoo.com"
+        v_sub_2["email_address"] = "jsmith1234@yahoo.com"
         v_sub_2["street_address"] = "152 Broome Street"
 
         form, s = pull_apart_join_form_submission(v_sub_2)
@@ -681,7 +681,7 @@ class TestJoinForm(TestCase):
         # Now test that the member can "move" and still access the join form
         # (even with a new phone number, so long as they use the same email)
         v_sub_2 = valid_join_form_submission.copy()
-        v_sub_2["phone"] = "+1 212-555-5555"
+        v_sub_2["phone_number"] = "+1 212-555-5555"
         v_sub_2["street_address"] = "152 Broome Street"
 
         form, s = pull_apart_join_form_submission(v_sub_2)
@@ -735,8 +735,8 @@ class TestJoinForm(TestCase):
         # (even if they don't provide an email, and give a badly formatted phone number)
         v_sub_2 = valid_join_form_submission.copy()
         v_sub_2["street_address"] = "152 Broome Street"
-        v_sub_2["phone"] = "+1 5 8 5 75 8-3 425  "
-        v_sub_2["email"] = None
+        v_sub_2["phone_number"] = "+1 5 8 5 75 8-3 425  "
+        v_sub_2["email_address"] = None
 
         form, s = pull_apart_join_form_submission(v_sub_2)
 
@@ -891,7 +891,7 @@ class TestJoinForm(TestCase):
         # Now test that the member can "move", use the stripe email address,
         # and we will connect it to their old registration
         v_sub_2 = valid_join_form_submission.copy()
-        v_sub_2["email"] = "jsmith+stripe@gmail.com"
+        v_sub_2["email_address"] = "jsmith+stripe@gmail.com"
         v_sub_2["street_address"] = "152 Broome Street"
         v_sub_2["dob_addr_response"] = copy.deepcopy(valid_join_form_submission["dob_addr_response"])
         v_sub_2["dob_addr_response"]["features"][0]["properties"]["housenumber"] = "152"
@@ -926,7 +926,7 @@ class TestJoinForm(TestCase):
         # Now test that the member can "move" again, use an additional email address,
         # and we will connect it to their old registration
         v_sub_3 = valid_join_form_submission.copy()
-        v_sub_3["email"] = "jsmith+other@gmail.com"
+        v_sub_3["email_address"] = "jsmith+other@gmail.com"
         v_sub_3["street_address"] = "178 Broome Street"
         v_sub_3["dob_addr_response"] = copy.deepcopy(valid_join_form_submission["dob_addr_response"])
         v_sub_3["dob_addr_response"]["features"][0]["properties"]["housenumber"] = "178"
