@@ -13,7 +13,7 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 import logging
 import os
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 from django.http.request import HttpRequest
 from dotenv import load_dotenv
@@ -71,7 +71,7 @@ CSP_DEFAULT_SRC = [
 
 # We don't use any of these advanced features, so be safe and disallow any scripts from
 # using them on our pages
-PERMISSIONS_POLICY = {
+PERMISSIONS_POLICY: Dict[str, List[str]] = {
     "accelerometer": [],
     "ambient-light-sensor": [],
     "autoplay": [],
