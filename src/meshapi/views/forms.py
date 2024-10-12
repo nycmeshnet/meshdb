@@ -15,7 +15,6 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework_dataclasses.serializers import DataclassSerializer
-from validate_email import email_address
 
 from meshapi.exceptions import AddressError
 from meshapi.models import Building, Install, Member, Node
