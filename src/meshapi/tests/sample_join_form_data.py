@@ -60,37 +60,6 @@ valid_join_form_submission_with_apartment_in_address = {
     },
 }
 
-valid_join_form_submission_no_email = {
-    "first_name": "John",
-    "last_name": "Smith",
-    "email": None,
-    "phone": "+1585-758-3425",  # CSH's phone number :P
-    "street_address": "151 Broome St",  # Also covers New York County Test Case
-    "parsed_street_address": "151 Broome Street",
-    "city": "New York",
-    "state": "NY",
-    "zip": 10002,
-    "apartment": "",
-    "roof_access": True,
-    "referral": "Googled it or something IDK",
-    "ncl": True,
-    "dob_addr_response": {
-        "features": [
-            {
-                "properties": {
-                    "housenumber": "151",
-                    "street": "Broome Street",
-                    "borough": "New York",
-                    "region_a": "NY",
-                    "postalcode": "10002",
-                    "addendum": {"pad": {"bin": 1077609}},
-                },
-                "geometry": {"coordinates": [0, 0]},
-            }
-        ]
-    },
-}
-
 richmond_join_form_submission = {
     "first_name": "Maya",
     "last_name": "Viernes",
