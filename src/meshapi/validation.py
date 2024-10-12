@@ -19,7 +19,7 @@ NYC_PLANNING_LABS_GEOCODE_URL = "https://geosearch.planninglabs.nyc/v2/search"
 DOB_BUILDING_HEIGHT_API_URL = "https://data.cityofnewyork.us/resource/qb5r-6dgf.json"
 
 
-def validate_email_address(email_address: str) -> bool:
+def validate_email_address(email_address: str) -> Optional[bool]:
     return validate_email(
         email_address=email_address,
         check_format=True,

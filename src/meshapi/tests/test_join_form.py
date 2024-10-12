@@ -43,9 +43,9 @@ def validate_successful_join_form_submission(test_case, test_name, s, response, 
     # filter for it.
     existing_members = Member.objects.filter(
         Q(phone_number=s.phone)
-        | Q(primary_email_address=s.email)
-        | Q(stripe_email_address=s.email)
-        | Q(additional_email_addresses__contains=[s.email])
+        | Q(primary_email_address=s.email_address)
+        | Q(stripe_email_address=s.email_address)
+        | Q(additional_email_addresses__contains=[s.email_address])
     )
 
     test_case.assertEqual(
@@ -60,7 +60,7 @@ def validate_successful_join_form_submission(test_case, test_name, s, response, 
         street_address=s.street_address,
         city=s.city,
         state=s.state,
-        zip_code=s.zip,
+        zip_code=s.zip_code,
     )
 
     length = 1
@@ -199,7 +199,7 @@ class TestJoinForm(TestCase):
     def test_valid_join_form_aussie_intl_phone(self):
         request, s = pull_apart_join_form_submission(valid_join_form_submission)
 
-        request["phone"] = "+61 3 96 69491 6"  # Australian bureau of meteorology (badly formatted)
+        request["phone_number"] = "+61 3 96 69491 6"  # Australian bureau of meteorology (badly formatted)
 
         response = self.c.post("/api/v1/join/", request, content_type="application/json")
         code = 201
@@ -218,7 +218,7 @@ class TestJoinForm(TestCase):
     def test_valid_join_form_guatemala_intl_phone(self):
         request, s = pull_apart_join_form_submission(valid_join_form_submission)
 
-        request["phone"] = "+502 23 5 4 00 0 0"  # US Embassy in Guatemala (badly formatted)
+        request["phone_number"] = "+502 23 5 4 00 0 0"  # US Embassy in Guatemala (badly formatted)
 
         response = self.c.post("/api/v1/join/", request, content_type="application/json")
         code = 201
@@ -237,7 +237,7 @@ class TestJoinForm(TestCase):
     def test_valid_join_form_no_country_code_us_phone(self):
         request, s = pull_apart_join_form_submission(valid_join_form_submission)
 
-        request["phone"] = "212 555 5555"
+        request["phone_number"] = "212 555 5555"
 
         response = self.c.post("/api/v1/join/", request, content_type="application/json")
         code = 201
@@ -274,8 +274,8 @@ class TestJoinForm(TestCase):
     def test_no_phone_or_email(self):
         request, _ = pull_apart_join_form_submission(valid_join_form_submission)
 
-        request["email"] = None
-        request["phone"] = None
+        request["email_address"] = None
+        request["phone_number"] = None
 
         response = self.c.post("/api/v1/join/", request, content_type="application/json")
         code = 400
@@ -288,7 +288,7 @@ class TestJoinForm(TestCase):
     def test_invalid_email_valid_phone(self):
         request, _ = pull_apart_join_form_submission(valid_join_form_submission)
 
-        request["email"] = "aljksdafljkasfjldsaf"
+        request["email_address"] = "aljksdafljkasfjldsaf"
 
         response = self.c.post("/api/v1/join/", request, content_type="application/json")
         code = 400
@@ -357,7 +357,7 @@ class TestJoinForm(TestCase):
 
         # Name, email, phone, location, apt, rooftop, referral
         form, _ = pull_apart_join_form_submission(valid_join_form_submission)
-        form["phone"] = "555-555-55555"
+        form["phone_number"] = "555-555-55555"
         response = self.c.post("/api/v1/join/", form, content_type="application/json")
 
         code = 400
@@ -1025,11 +1025,11 @@ class TestJoinFormRaceCondition(TransactionTestCase):
         results = []
 
         member1_submission = valid_join_form_submission.copy()
-        member1_submission["email"] = "member1@xyz.com"
-        member1_submission["phone"] = "+1 212 555 5555"
+        member1_submission["email_address"] = "member1@xyz.com"
+        member1_submission["phone_number"] = "+1 212 555 5555"
         member2_submission = valid_join_form_submission.copy()
-        member2_submission["email"] = "member2@xyz.com"
-        member1_submission["phone"] = "+1 212 555 2222"
+        member2_submission["email_address"] = "member2@xyz.com"
+        member1_submission["phone_number"] = "+1 212 555 2222"
 
         def invoke_join_form(submission, results):
             # Slow down the creation of the Install object to force a race condition

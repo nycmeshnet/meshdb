@@ -104,7 +104,7 @@ valid_join_form_submission_with_apartment_in_address = {
     "first_name": "John",
     "last_name": "Smith",
     "email_address": "jsmith@gmail.com",
-    "phone_number": "+1585-758-3425",
+    "phone_number": "+1 585-758-3425",
     "parsed_phone": "+1 585-758-3425",  # CSH's phone number :P
     "street_address": "151 Broome St, Apt 1B",  # Apt shouldn't be here, but this example tests robustness
     "parsed_street_address": "151 Broome Street",
@@ -137,7 +137,7 @@ valid_join_form_submission_no_email = {
     "first_name": "John",
     "last_name": "Smith",
     "email_address": None,
-    "phone_number": "+1585-758-3425",  # CSH's phone number :P
+    "phone_number": "+1 585-758-3425",  # CSH's phone number :P
     "parsed_phone": "+1 585-758-3425",  # CSH's phone number :P
     "street_address": "151 Broome St",  # Also covers New York County Test Case
     "parsed_street_address": "151 Broome Street",
@@ -170,7 +170,7 @@ richmond_join_form_submission = {
     "first_name": "Maya",
     "last_name": "Viernes",
     "email_address": "maya.viernes@gmail.com",
-    "phone_number": "+1585-758-3425",  # CSH's phone number :P
+    "phone_number": "+1 585-758-3425",  # CSH's phone number :P
     "parsed_phone": "+1 585-758-3425",  # CSH's phone number :P
     "street_address": "475 Seaview Ave",
     "parsed_street_address": "475 Seaview Avenue",
@@ -203,7 +203,7 @@ kings_join_form_submission = {
     "first_name": "Anna",
     "last_name": "Edwards",
     "email_address": "aedwards@gmail.com",
-    "phone_number": "+1585-758-3425",  # CSH's phone number :P
+    "phone_number": "+1 585-758-3425",  # CSH's phone number :P
     "parsed_phone": "+1 585-758-3425",  # CSH's phone number :P
     "street_address": "188 Prospect Park W",
     "parsed_street_address": "188 Prospect Park West",
@@ -236,7 +236,7 @@ queens_join_form_submission = {
     "first_name": "Lee",
     "last_name": "Cho",
     "email_address": "lcho@gmail.com",
-    "phone_number": "+1585-758-3425",  # CSH's phone number :P
+    "phone_number": "+1 585-758-3425",  # CSH's phone number :P
     "parsed_phone": "+1 585-758-3425",  # CSH's phone number :P
     "street_address": "36-01 35th Ave",
     "parsed_street_address": "36-01 35th Avenue",
@@ -269,7 +269,7 @@ bronx_join_form_submission = {
     "first_name": "Richie",
     "last_name": "Smith",
     "email_address": "rsmith@gmail.com",
-    "phone_number": "+1585-758-3425",  # CSH's phone number :P
+    "phone_number": "+1 585-758-3425",  # CSH's phone number :P
     "parsed_phone": "+1 585-758-3425",  # CSH's phone number :P
     "street_address": "250 Bedford Park Blvd W",
     "parsed_street_address": "250 Bedford Park Blvd West",
@@ -302,7 +302,7 @@ non_nyc_join_form_submission = {
     "first_name": "Jane",
     "last_name": "Doe",
     "email_address": "jdoe@gmail.com",
-    "phone_number": "+1585-758-3425",
+    "phone_number": "+1 585-758-3425",
     "parsed_phone": "+1 585-758-3425",  # CSH's phone number :P
     "street_address": "480 E Broad St",
     "parsed_street_address": "480 East Broad Street",
@@ -339,7 +339,7 @@ jefferson_join_form_submission = {
     "first_name": "John",
     "last_name": "Smith",
     "email_address": "jsmith@gmail.com",
-    "phone_number": "+1585-758-3425",
+    "phone_number": "+1 585-758-3425",
     "parsed_phone": "+1 585-758-3425",  # CSH's phone number :P
     "street_address": "476 Jefferson Street",
     "parsed_street_address": "476 Jefferson Street",
