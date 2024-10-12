@@ -435,7 +435,7 @@ class TestUISPImportUpdateObjects(TransactionTestCase):
             change_messages,
             [
                 "Changed connected device pair from [nycmesh-1234-dev1, nycmesh-5678-dev2] to [nycmesh-1234-dev1, nycmesh-9012-dev3]",
-                "Marked as Inactive due to being offline for more than 30 days",
+                "Marked as Inactive due to it being offline in UISP for more than 30 days",
             ],
         )
 
@@ -503,11 +503,11 @@ class TestUISPImportUpdateObjects(TransactionTestCase):
         self.link.refresh_from_db()
         self.assertEqual(self.link.from_device, self.device1)
         self.assertEqual(self.link.to_device, self.device2)
-        self.assertEqual(self.link.status, Link.LinkStatus.ACTIVE)
+        self.assertEqual(self.link.status, Link.LinkStatus.INACTIVE)
         self.assertEqual(self.link.type, Link.LinkType.FIVE_GHZ)
         self.assertEqual(self.link.abandon_date, None)
 
-        self.assertEqual(change_messages, [])
+        self.assertEqual(change_messages, ["Marked as Inactive due to it being offline in UISP"])
 
     @patch("meshapi.util.uisp_import.update_objects.get_uisp_link_last_seen")
     def test_update_link_reactivate_old_device(self, mock_get_last_seen):
@@ -535,7 +535,7 @@ class TestUISPImportUpdateObjects(TransactionTestCase):
         self.assertEqual(
             change_messages,
             [
-                "Marked as Active due to coming back online in UISP. Warning: this link was "
+                "Marked as Active due to it coming back online in UISP. Warning: this link was "
                 "previously abandoned on 2018-11-14, if this link has been re-purposed, "
                 "please make sure the device names and network numbers are updated to reflect the new location"
             ],
@@ -590,7 +590,7 @@ class TestUISPImportUpdateObjects(TransactionTestCase):
             [
                 'Changed name from "nycmesh-1234-dev1" to "nycmesh-5678-dev1"',
                 "Changed network number from 1234 to 5678",
-                "Marked as Inactive due to being offline for more than 30 days",
+                "Marked as Inactive due to it being offline in UISP for more than 30 days",
             ],
         )
 
@@ -606,12 +606,14 @@ class TestUISPImportUpdateObjects(TransactionTestCase):
         self.device1.refresh_from_db()
         self.assertEqual(self.device1.name, "nycmesh-1234-dev1")
         self.assertEqual(self.device1.node, self.node1)
-        self.assertEqual(self.device1.status, Device.DeviceStatus.ACTIVE)
+        self.assertEqual(self.device1.status, Device.DeviceStatus.INACTIVE)
         self.assertEqual(self.device1.abandon_date, None)
 
         self.assertEqual(
             change_messages,
-            [],
+            [
+                "Marked as Inactive due to it being offline in UISP",
+            ],
         )
 
     def test_update_device_add_abandon_date(self):
@@ -663,7 +665,7 @@ class TestUISPImportUpdateObjects(TransactionTestCase):
         self.assertEqual(
             change_messages,
             [
-                "Marked as Active due to coming back online in UISP. Warning: this device was "
+                "Marked as Active due to it coming back online in UISP. Warning: this device was "
                 "previously abandoned on 2018-11-14, if this device has been re-purposed, "
                 "please make sure the device name and network number are updated to reflect the new location "
                 "and function"
