@@ -46,13 +46,14 @@ PROFILING_ENABLED = DEBUG and not os.environ.get("DISABLE_PROFILING", "False") =
 FLAGS: Dict[str, Any] = {
     "MAINTENANCE_MODE": [],
     "EDIT_PANORAMAS": [],
+    "INTEGRATION_ENABLED_SEND_JOIN_REQUEST_SLACK_MESSAGES": [],
+    "INTEGRATION_ENABLED_CREATE_OSTICKET_TICKETS": [],
 }
 
 USE_X_FORWARDED_HOST = True
 
 LOS_URL = os.environ.get("LOS_URL", "https://devlos.mesh.nycmesh.net")
 MAP_URL = os.environ.get("MAP_BASE_URL", "https://devmap.mesh.nycmesh.net")
-PG_ADMIN_URL = os.environ.get("PG_ADMIN_URL", "/pgadmin/")
 FORMS_URL = os.environ.get("FORMS_URL", "https://devforms.mesh.nycmesh.net")
 
 # SMTP Config for password reset emails
