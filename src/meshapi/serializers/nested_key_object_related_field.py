@@ -1,5 +1,6 @@
 import typing
 from typing import Any, Dict, Tuple, cast
+from uuid import UUID
 
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Model
@@ -42,7 +43,16 @@ class NestedKeyObjectRelatedField(serializers.RelatedField):
         return ("id",) + self.additional_keys
 
     def to_representation(self, value: Model) -> dict[str, Any]:
-        return {key: getattr(value, key) for key in self._get_key_fields()}
+        output = {}
+        for key in self._get_key_fields():
+            output[key] = getattr(value, key)
+
+            # Convert UUID objects to str so that the resulting data
+            # is trivially JSON serializable
+            if isinstance(output[key], UUID):
+                output[key] = str(output[key])
+
+        return output
 
     def to_internal_value(self, data: dict) -> Model:
         queryset = self.get_queryset()
