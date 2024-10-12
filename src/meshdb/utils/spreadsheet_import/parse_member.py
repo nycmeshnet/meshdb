@@ -291,16 +291,8 @@ def get_or_create_member(
     )
 
     existing_member_filter_criteria = []
-    if len(other_emails) > 0:
-        existing_member_filter_criteria.extend(
-            Q(primary_email_address=email)
-            | Q(stripe_email_address=email)
-            | Q(additional_email_addresses__contains=[email])
-            for email in other_emails + ([stripe_email] if stripe_email else [])
-        )
-
-    if formatted_phone_number:
-        existing_member_filter_criteria.append(Q(phone_number=formatted_phone_number))
+    if len(primary_emails) > 0:
+        existing_member_filter_criteria.append(Q(primary_email_address=primary_emails[0]))
 
     existing_members = []
     if existing_member_filter_criteria:
