@@ -1,9 +1,7 @@
 import json
 import logging
-import operator
 from dataclasses import dataclass
 from datetime import date
-from functools import reduce
 from json.decoder import JSONDecodeError
 from typing import Optional
 
@@ -110,8 +108,8 @@ def join_form(request: Request) -> Response:
 
     join_form_full_name = f"{r.first_name} {r.last_name}"
 
-    if not r.email_address and not r.phone_number:
-        return Response({"detail": "Must provide an email or phone number"}, status=status.HTTP_400_BAD_REQUEST)
+    if not r.email:
+        return Response({"detail": "Must provide an email"}, status=status.HTTP_400_BAD_REQUEST)
 
     if r.email_address and not validate_email_address(r.email_address):
         return Response({"detail": f"{r.email_address} is not a valid email"}, status=status.HTTP_400_BAD_REQUEST)
@@ -191,29 +189,17 @@ def join_form(request: Request) -> Response:
                 status=status.HTTP_409_CONFLICT,
             )
 
-    # Check if there's an existing member. Group members by matching on both email and phone
-    # A member can have multiple install requests, if they move apartments for example
-    existing_member_filter_criteria = []
-    if r.email_address:
-        existing_member_filter_criteria.append(
-            Q(primary_email_address=r.email_address)
-            | Q(stripe_email_address=r.email_address)
-            | Q(additional_email_addresses__contains=[r.email_address])
-        )
-
-    if formatted_phone_number:
-        existing_member_filter_criteria.append(
-            Q(phone_number=formatted_phone_number) | Q(additional_phone_numbers=[formatted_phone_number])
-        )
-
-    existing_members = list(
-        Member.objects.filter(
-            reduce(
-                operator.or_,
-                existing_member_filter_criteria,
-            )
-        )
-    )
+    # A member can have multiple install requests, if they move apartments for example, so we
+    # check if there's an existing member. Group members by matching only on primary email address
+    # This is sublte but important. We do NOT want to dedupe on phone number, or even on additional
+    # email addresses at this time because this could lead to a situation where the email address
+    # entered in the join form does not match the email address we send the OSTicket to.
+    #
+    # That seems like a minor problem, but is actually a potential safety risk. Consider the case
+    # where a couple uses one person's email address to fill out the join form, but signs up for
+    # stripe payments with the other person's email address. If they then break up, and one person
+    # moves out, we definitely do not want to send an email with their new home address to their ex
+    existing_members = list(Member.objects.filter(Q(primary_email_address=r.email)))
 
     join_form_member = (
         existing_members[0]

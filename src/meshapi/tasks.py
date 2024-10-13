@@ -84,7 +84,7 @@ celery_app.conf.beat_schedule = {
         "schedule": crontab(minute="0", hour="*/1"),
     },
     "import-from-uisp-hourly": {
-        "task": "meshapi.tasks.run_update_panoramas",
+        "task": "meshapi.tasks.run_update_from_uisp",
         "schedule": crontab(minute="10", hour="*/1"),
     },
 }
