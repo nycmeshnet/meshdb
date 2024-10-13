@@ -75,7 +75,7 @@ class QueryInstallFilter(filters.FilterSet):
         parameters=[query_form_password_param],
         summary="Query & filter based on Install attributes. "
         "Results are returned as flattened spreadsheet row style output",
-        auth=["bearer"],
+        auth=[],
     ),
 )
 class QueryInstall(FilterRequiredListAPIView):

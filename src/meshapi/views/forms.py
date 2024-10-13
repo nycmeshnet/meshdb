@@ -146,8 +146,6 @@ def join_form(request: Request) -> Response:
 
     changed_info: dict[str, str | int] = {}
 
-    # TODO: Notify member if we changed any of their information
-    # Name (won't touch), email (won't touch), phone, st addr, unit (won't touch), city, State, Zip
     if formatted_phone_number and r.phone_number != formatted_phone_number:
         logging.warning(f"Changed phone_number: {formatted_phone_number} != {r.phone_number}")
         changed_info["phone_number"] = formatted_phone_number
@@ -183,7 +181,6 @@ def join_form(request: Request) -> Response:
                     # If this is an existing member, then set a flag to let them know we have
                     # their information in case they need to update anything.
                     "member_exists": None,
-                    # TODO: Add a "trust me bro" parameter. Maybe log if it breaks
                     "changed_info": changed_info,
                 },
                 status=status.HTTP_409_CONFLICT,
