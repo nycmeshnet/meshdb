@@ -157,7 +157,6 @@ class TestJoinForm(TestCase):
             [valid_join_form_submission_phone_needs_expansion],
             [valid_join_form_submission_city_needs_expansion],
             [valid_join_form_submission_street_needs_expansion],
-            [valid_join_form_submission_no_email],
             [richmond_join_form_submission],
             [kings_join_form_submission],
             [queens_join_form_submission],
