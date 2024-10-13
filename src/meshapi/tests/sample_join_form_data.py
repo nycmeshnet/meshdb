@@ -317,6 +317,25 @@ non_nyc_join_form_submission = {
     "dob_addr_response": {"features": []},
 }
 
+new_jersey_join_form_submission = {
+    "first_name": "Jane",
+    "last_name": "Doe",
+    "email_address": "jdoe@gmail.com",
+    "phone_number": "+1 585-758-3425",
+    "parsed_phone": "+1 585-758-3425",  # CSH's phone number :P
+    "street_address": "711 Hudson St",
+    "parsed_street_address": "711 Hudson Street",
+    "city": "Hoboken",
+    "state": "NJ",
+    "zip_code": "07030",
+    "apartment": "",
+    "roof_access": True,
+    "referral": "Googled it or something IDK",
+    "ncl": True,
+    "trust_me_bro": True,
+    "dob_addr_response": {"features": []},
+}
+
 invalid_join_form_submission = {
     "first_name": 25,
     "last_name": 69,

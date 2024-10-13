@@ -28,6 +28,7 @@ from .sample_join_form_data import (
     valid_join_form_submission_needs_expansion,
     valid_join_form_submission_no_email,
     valid_join_form_submission_with_apartment_in_address,
+    new_jersey_join_form_submission,
 )
 from .util import TestThread
 
@@ -306,6 +307,41 @@ class TestJoinForm(TestCase):
 
         # Name, email, phone, location, apt, rooftop, referral
         form, _ = pull_apart_join_form_submission(non_nyc_join_form_submission)
+        response = self.c.post("/api/v1/join/", form, content_type="application/json")
+
+        code = 400
+        self.assertEqual(
+            code,
+            response.status_code,
+            f"status code incorrect for Non NYC Join Form. Should be {code}, but got {response.status_code}.\n Response is: {response.content.decode('utf-8')}",
+        )
+
+    def test_new_jersey_join_form(self):
+        self.requests_mocker.get(
+            NYC_PLANNING_LABS_GEOCODE_URL,
+            json=new_jersey_join_form_submission["dob_addr_response"],
+        )
+
+        # Name, email, phone, location, apt, rooftop, referral
+        form, _ = pull_apart_join_form_submission(new_jersey_join_form_submission)
+        response = self.c.post("/api/v1/join/", form, content_type="application/json")
+
+        code = 400
+        self.assertEqual(
+            code,
+            response.status_code,
+            f"status code incorrect for Non NYC Join Form. Should be {code}, but got {response.status_code}.\n Response is: {response.content.decode('utf-8')}",
+        )
+
+    def test_new_jersey_but_nyc_zip_join_form(self):
+        self.requests_mocker.get(
+            NYC_PLANNING_LABS_GEOCODE_URL,
+            json=new_jersey_join_form_submission["dob_addr_response"],
+        )
+
+        # Name, email, phone, location, apt, rooftop, referral
+        form, _ = pull_apart_join_form_submission(new_jersey_join_form_submission)
+        form["zip_code"] = "10002"
         response = self.c.post("/api/v1/join/", form, content_type="application/json")
 
         code = 400

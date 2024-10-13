@@ -179,7 +179,7 @@ def geocode_nyc_address(street_address: str, city: str, state: str, zip_code: st
             return nyc_addr_info
         # If the user has given us an invalid address. Tell them to buzz
         # off.
-        except AddressError as e:
+        except (AddressError, ValueError) as e:
             logging.exception("AddressError when validating address")
             # Raise to next level
             raise e
