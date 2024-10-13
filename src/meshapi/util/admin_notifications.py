@@ -52,7 +52,7 @@ def notify_administrators_of_data_issue(
         + ", ".join(f"<{get_admin_url(m, site_base_url)}|{m}>" for m in model_instances)
         + ". Please open the database admin UI using the provided links to correct this.\n\n"
         + "The current database state of these object(s) is: \n"
-        + f"```\n{json.dumps(serializer.data, indent=2)}\n```",
+        + f"```\n{json.dumps(serializer.data, indent=2, default=str)}\n```",
     }
 
     if not SLACK_ADMIN_NOTIFICATIONS_WEBHOOK_URL:

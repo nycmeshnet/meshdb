@@ -33,7 +33,7 @@ valid_join_form_submission = {
 
 # Join form submission, but the phone and the address are going to be corrected
 # by us and the member needs to confirm that
-valid_join_form_submission_needs_expansion = {
+valid_join_form_submission_phone_needs_expansion = {
     "first_name": "John",
     "last_name": "Smith",
     "email_address": "jsmith@gmail.com",
