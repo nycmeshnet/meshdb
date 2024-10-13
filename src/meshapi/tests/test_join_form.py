@@ -775,7 +775,6 @@ class TestJoinForm(TestCase):
             f"status code incorrect for Valid Join Form. Should be {code}, but got {response1.status_code}.\n Response is: {response1.content.decode('utf-8')}",
         )
 
-        
     def test_different_street_addr_same_bin_multi_node(self):
         """ "
         This test case simulates a new building joining the Jefferson structure to

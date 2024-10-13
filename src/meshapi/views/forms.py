@@ -108,7 +108,7 @@ def join_form(request: Request) -> Response:
 
     join_form_full_name = f"{r.first_name} {r.last_name}"
 
-    if not r.email:
+    if not r.email_address:
         return Response({"detail": "Must provide an email"}, status=status.HTTP_400_BAD_REQUEST)
 
     if r.email_address and not validate_email_address(r.email_address):
@@ -199,7 +199,7 @@ def join_form(request: Request) -> Response:
     # where a couple uses one person's email address to fill out the join form, but signs up for
     # stripe payments with the other person's email address. If they then break up, and one person
     # moves out, we definitely do not want to send an email with their new home address to their ex
-    existing_members = list(Member.objects.filter(Q(primary_email_address=r.email)))
+    existing_members = list(Member.objects.filter(Q(primary_email_address=r.email_address)))
 
     join_form_member = (
         existing_members[0]
