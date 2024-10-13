@@ -96,7 +96,8 @@ class NYCAddressInfo:
         # the closest matching street address it can find, so check that
         # the ZIP of what we entered matches what we got.
 
-        found_zip = nyc_planning_resp["features"][0]["properties"]["postalcode"]
+        # For some insane reason this is an integer, so we have to cast it to a string
+        found_zip = str(nyc_planning_resp["features"][0]["properties"]["postalcode"])
         if found_zip != zip_code:
             raise AddressError(
                 f"(NYC) Could not find address '{street_address}, {city}, {state} {zip_code}'. "
@@ -110,7 +111,7 @@ class NYCAddressInfo:
 
         self.city = addr_props["borough"].replace("Manhattan", "New York")
         self.state = addr_props["region_a"]
-        self.zip = addr_props["postalcode"]
+        self.zip = str(addr_props["postalcode"])
 
         if (
             not addr_props.get("addendum", {}).get("pad", {}).get("bin")
