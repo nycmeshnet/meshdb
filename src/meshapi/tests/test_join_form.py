@@ -28,6 +28,7 @@ from .sample_join_form_data import (
     valid_join_form_submission_city_needs_expansion,
     valid_join_form_submission_needs_expansion,
     valid_join_form_submission_no_email,
+    valid_join_form_submission_street_needs_expansion,
     valid_join_form_submission_with_apartment_in_address,
 )
 from .util import TestThread
@@ -156,6 +157,7 @@ class TestJoinForm(TestCase):
         [
             [valid_join_form_submission_needs_expansion],
             [valid_join_form_submission_city_needs_expansion],
+            [valid_join_form_submission_street_needs_expansion],
             [valid_join_form_submission_no_email],
             [richmond_join_form_submission],
             [kings_join_form_submission],
@@ -175,7 +177,7 @@ class TestJoinForm(TestCase):
         request["trust_me_bro"] = False
 
         response = self.c.post("/api/v1/join/", request, content_type="application/json")
-        code = 202
+        code = 409
         self.assertEqual(
             code,
             response.status_code,
