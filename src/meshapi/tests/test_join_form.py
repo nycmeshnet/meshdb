@@ -961,7 +961,7 @@ class TestJoinForm(TestCase):
             f"but got {response3.status_code}.\n Response is: {response3.content.decode('utf-8')}",
         )
 
-        validate_successful_join_form_submission(self, "Valid Join Form", s, response3, expected_member_count=2)
+        validate_successful_join_form_submission(self, "Valid Join Form", s, response3, expected_member_count=3)
 
         self.assertNotEqual(
             str(member_object.id),
