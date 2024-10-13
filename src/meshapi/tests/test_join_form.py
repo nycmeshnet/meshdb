@@ -760,7 +760,7 @@ class TestJoinForm(TestCase):
 
     def test_no_email_join_form(self):
         no_email_submission = valid_join_form_submission.copy()
-        no_email_submission["email"] = None
+        no_email_submission["email_address"] = None
 
         # Name, email, phone, location, apt, rooftop, referral
         form, s = pull_apart_join_form_submission(no_email_submission)
