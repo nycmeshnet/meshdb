@@ -350,6 +350,24 @@ class TestJoinForm(TestCase):
             f"status code incorrect for Non NYC Join Form. Should be {code}, but got {response.status_code}.\n Response is: {response.content.decode('utf-8')}",
         )
 
+    def test_nyc_join_form_but_new_jersey_zip(self):
+        self.requests_mocker.get(
+            NYC_PLANNING_LABS_GEOCODE_URL,
+            json=valid_join_form_submission["dob_addr_response"],
+        )
+
+        # Name, email, phone, location, apt, rooftop, referral
+        form, _ = pull_apart_join_form_submission(valid_join_form_submission)
+        form["zip_code"] = "07030"
+        response = self.c.post("/api/v1/join/", form, content_type="application/json")
+
+        code = 400
+        self.assertEqual(
+            code,
+            response.status_code,
+            f"status code incorrect for Non NYC Join Form. Should be {code}, but got {response.status_code}.\n Response is: {response.content.decode('utf-8')}",
+        )
+
     def test_empty_join_form(self):
         self.requests_mocker.get(
             NYC_PLANNING_LABS_GEOCODE_URL,
