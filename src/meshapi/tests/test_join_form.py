@@ -24,7 +24,6 @@ from .sample_join_form_data import (
     queens_join_form_submission,
     richmond_join_form_submission,
     valid_join_form_submission,
-    valid_join_form_submission_no_email,
     valid_join_form_submission_with_apartment_in_address,
 )
 from .util import TestThread
@@ -120,7 +119,6 @@ class TestJoinForm(TestCase):
     @parameterized.expand(
         [
             [valid_join_form_submission],
-            [valid_join_form_submission_no_email],
             [richmond_join_form_submission],
             [kings_join_form_submission],
             [queens_join_form_submission],
@@ -427,15 +425,6 @@ class TestJoinForm(TestCase):
 
     @mock.patch("meshapi.views.forms.notify_administrators_of_data_issue")
     def test_member_moved_join_form_but_somehow_duplicate_objects_already_exist_for_them(self, mock_admin_notif_func):
-        # Create a pre-exsiting duplicate member object,
-        # that won't be matched until the second join form submission
-        pre_existing_member = Member(
-            name="John Smith",
-            primary_email_address="jsmith23@yahoo.com",
-            phone_number="+1-555-555-5555",
-        )
-        pre_existing_member.save()
-
         # Name, email, phone, location, apt, rooftop, referral
         form, s = pull_apart_join_form_submission(valid_join_form_submission)
         response1 = self.c.post("/api/v1/join/", form, content_type="application/json")
@@ -449,10 +438,16 @@ class TestJoinForm(TestCase):
 
         validate_successful_join_form_submission(self, "Valid Join Form", s, response1)
 
+        pre_existing_duplicate_member = Member(
+            name="John Smith",
+            primary_email_address="jsmith@gmail.com",
+            phone_number="+1-555-555-5555",
+        )
+        pre_existing_duplicate_member.save()
+
         # Now test that the member can "move" and still access the join form
         v_sub_2 = valid_join_form_submission.copy()
         v_sub_2["street_address"] = "152 Broome Street"
-        v_sub_2["phone"] = "+1 555-555-5555"
 
         form, s = pull_apart_join_form_submission(v_sub_2)
 
@@ -479,7 +474,7 @@ class TestJoinForm(TestCase):
         self.assertEqual(
             set(mock_admin_notif_func.call_args.args[0]),
             {
-                pre_existing_member,
+                pre_existing_duplicate_member,
                 Member.objects.get(
                     id=json.loads(
                         response1.content.decode("utf-8"),
@@ -560,7 +555,7 @@ class TestJoinForm(TestCase):
             ANY,
         )
 
-    def test_member_moved_and_used_a_new_email_join_form(self):
+    def test_member_moved_and_used_additional_email_join_form(self):
         # Name, email, phone, location, apt, rooftop, referral
         form, s = pull_apart_join_form_submission(valid_join_form_submission)
         response1 = self.c.post("/api/v1/join/", form, content_type="application/json")
@@ -574,8 +569,18 @@ class TestJoinForm(TestCase):
 
         validate_successful_join_form_submission(self, "Valid Join Form", s, response1)
 
-        # Now test that the member can "move" and still access the join form
-        # (even with a new email, provided they use the same phone number)
+        # Add the email we're going to use below (jsmith1234@yahoo.com) as an additional email
+        # to confirm that we don't de-duplicate on these additional addresses
+        join_form_1_member = Member.objects.get(
+            id=json.loads(
+                response1.content.decode("utf-8"),
+            )["member_id"]
+        )
+        join_form_1_member.additional_email_addresses.append("jsmith1234@yahoo.com")
+        join_form_1_member.save()
+
+        # Now test that the member can "move" and still access the join form, getting a new install
+        # number and member object when this happens
         v_sub_2 = valid_join_form_submission.copy()
         v_sub_2["email"] = "jsmith1234@yahoo.com"
         v_sub_2["street_address"] = "152 Broome Street"
@@ -592,9 +597,11 @@ class TestJoinForm(TestCase):
             f"status code incorrect for Valid Join Form. Should be {code}, but got {response2.status_code}.\n Response is: {response2.content.decode('utf-8')}",
         )
 
-        validate_successful_join_form_submission(self, "Valid Join Form", s, response2)
+        validate_successful_join_form_submission(self, "Valid Join Form", s, response2, expected_member_count=2)
 
-        self.assertEqual(
+        # Ensure we created a new member ID for the second request, since the primary email address
+        # doesn't match
+        self.assertNotEqual(
             json.loads(
                 response1.content.decode("utf-8"),
             )["member_id"],
@@ -603,15 +610,13 @@ class TestJoinForm(TestCase):
             )["member_id"],
         )
 
-        # Make sure the member's primary email wasn't changed (prevents join form griefing)
-        # but also confirm we noted the new email in additional emails
+        # Also ensure the original member's primary email wasn't changed (prevents join form griefing)
         member = Member.objects.get(
             id=json.loads(
                 response1.content.decode("utf-8"),
             )["member_id"]
         )
         self.assertEqual(member.primary_email_address, "jsmith@gmail.com")
-        self.assertEqual(member.additional_email_addresses, ["jsmith1234@yahoo.com"])
 
     def test_member_moved_and_used_a_new_phone_number_join_form(self):
         # Name, email, phone, location, apt, rooftop, referral
@@ -666,58 +671,20 @@ class TestJoinForm(TestCase):
         self.assertEqual(member.phone_number, "+1 585-758-3425")
         self.assertEqual(member.additional_phone_numbers, ["+1 212-555-5555"])
 
-    def test_member_moved_and_used_only_a_badly_formatted_phone_number_join_form(self):
+    def test_no_email_join_form(self):
+        no_email_submission = valid_join_form_submission.copy()
+        no_email_submission["email"] = None
+
         # Name, email, phone, location, apt, rooftop, referral
-        form, s = pull_apart_join_form_submission(valid_join_form_submission)
+        form, s = pull_apart_join_form_submission(no_email_submission)
         response1 = self.c.post("/api/v1/join/", form, content_type="application/json")
 
-        code = 201
+        code = 400
         self.assertEqual(
             code,
             response1.status_code,
             f"status code incorrect for Valid Join Form. Should be {code}, but got {response1.status_code}.\n Response is: {response1.content.decode('utf-8')}",
         )
-
-        validate_successful_join_form_submission(self, "Valid Join Form", s, response1)
-
-        # Now test that the member can "move" and still access the join form
-        # (even if they don't provide an email, and give a badly formatted phone number)
-        v_sub_2 = valid_join_form_submission.copy()
-        v_sub_2["street_address"] = "152 Broome Street"
-        v_sub_2["phone"] = "+1 5 8 5 75 8-3 425  "
-        v_sub_2["email"] = None
-
-        form, s = pull_apart_join_form_submission(v_sub_2)
-
-        # Name, email, phone, location, apt, rooftop, referral
-        response2 = self.c.post("/api/v1/join/", form, content_type="application/json")
-
-        code = 201
-        self.assertEqual(
-            code,
-            response2.status_code,
-            f"status code incorrect for Valid Join Form. Should be {code}, but got {response2.status_code}.\n Response is: {response2.content.decode('utf-8')}",
-        )
-
-        validate_successful_join_form_submission(self, "Valid Join Form", s, response2)
-
-        # Make sure the member's primary phone number wasn't changed,
-        # and that the member matches up to the original submission
-        self.assertEqual(
-            json.loads(
-                response1.content.decode("utf-8"),
-            )["member_id"],
-            json.loads(
-                response2.content.decode("utf-8"),
-            )["member_id"],
-        )
-        member = Member.objects.get(
-            id=json.loads(
-                response1.content.decode("utf-8"),
-            )["member_id"]
-        )
-        self.assertEqual(member.phone_number, "+1 585-758-3425")
-        self.assertEqual(member.additional_phone_numbers, [])
 
     def test_different_street_addr_same_bin_multi_node(self):
         """ "
@@ -813,7 +780,7 @@ class TestJoinForm(TestCase):
             set(building2.nodes.all().values_list("network_number", flat=True)),
         )
 
-    def test_member_moved_and_used_stripe_email_join_form(self):
+    def test_member_moved_and_used_non_primary_email_join_form(self):
         self.requests_mocker.get(
             NYC_PLANNING_LABS_GEOCODE_URL,
             json=valid_join_form_submission["dob_addr_response"],
@@ -837,8 +804,8 @@ class TestJoinForm(TestCase):
         member_object.additional_email_addresses = ["jsmith+other@gmail.com"]
         member_object.save()
 
-        # Now test that the member can "move", use the stripe email address,
-        # and we will connect it to their old registration
+        # Now test that the member can move, use the stripe email address,
+        # and we will NOT connect it to their old registration
         v_sub_2 = valid_join_form_submission.copy()
         v_sub_2["email"] = "jsmith+stripe@gmail.com"
         v_sub_2["street_address"] = "152 Broome Street"
@@ -863,17 +830,26 @@ class TestJoinForm(TestCase):
             f"but got {response2.status_code}.\n Response is: {response2.content.decode('utf-8')}",
         )
 
-        validate_successful_join_form_submission(self, "", s, response2)
+        validate_successful_join_form_submission(self, "", s, response2, expected_member_count=2)
 
-        self.assertEqual(
+        self.assertNotEqual(
             str(member_object.id),
             json.loads(
                 response2.content.decode("utf-8"),
             )["member_id"],
         )
 
-        # Now test that the member can "move" again, use an additional email address,
-        # and we will connect it to their old registration
+        self.assertNotEqual(
+            json.loads(
+                response1.content.decode("utf-8"),
+            )["install_number"],
+            json.loads(
+                response2.content.decode("utf-8"),
+            )["install_number"],
+        )
+
+        # Now test that the member can move again, use an additional email address,
+        # and we will still not connect it to their old registration
         v_sub_3 = valid_join_form_submission.copy()
         v_sub_3["email"] = "jsmith+other@gmail.com"
         v_sub_3["street_address"] = "178 Broome Street"
@@ -898,13 +874,38 @@ class TestJoinForm(TestCase):
             f"but got {response3.status_code}.\n Response is: {response3.content.decode('utf-8')}",
         )
 
-        validate_successful_join_form_submission(self, "Valid Join Form", s, response3)
+        validate_successful_join_form_submission(self, "Valid Join Form", s, response3, expected_member_count=2)
 
-        self.assertEqual(
+        self.assertNotEqual(
             str(member_object.id),
             json.loads(
                 response3.content.decode("utf-8"),
             )["member_id"],
+        )
+        self.assertNotEqual(
+            json.loads(
+                response1.content.decode("utf-8"),
+            )["install_number"],
+            json.loads(
+                response3.content.decode("utf-8"),
+            )["install_number"],
+        )
+
+        self.assertNotEqual(
+            json.loads(
+                response2.content.decode("utf-8"),
+            )["member_id"],
+            json.loads(
+                response3.content.decode("utf-8"),
+            )["member_id"],
+        )
+        self.assertNotEqual(
+            json.loads(
+                response2.content.decode("utf-8"),
+            )["install_number"],
+            json.loads(
+                response3.content.decode("utf-8"),
+            )["install_number"],
         )
 
     def test_pre_existing_building_and_node(self):
