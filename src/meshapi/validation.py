@@ -66,6 +66,10 @@ class NYCAddressInfo:
         if state != "New York" and state != "NY":
             raise ValueError(f"(NYC) State '{state}' is not New York.")
 
+        # We only support the five boroughs of NYC at this time
+        if not NYCZipCodes.match_zip(zip_code):
+            raise ValueError(f"Non-NYC zip code detected: {zip_code}")
+
         self.address = f"{street_address}, {city}, {state} {zip_code}"
 
         try:
@@ -167,10 +171,6 @@ def validate_phone_number_field(phone_number: str) -> None:
 
 
 def geocode_nyc_address(street_address: str, city: str, state: str, zip_code: str) -> Optional[NYCAddressInfo]:
-    # We only support the five boroughs of NYC at this time
-    if not NYCZipCodes.match_zip(zip_code):
-        raise ValueError(f"Non-NYC zip code detected: {zip_code}")
-
     attempts_remaining = 2
     while attempts_remaining > 0:
         attempts_remaining -= 1
