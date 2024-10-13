@@ -20,6 +20,7 @@ from .sample_join_form_data import (
     bronx_join_form_submission,
     jefferson_join_form_submission,
     kings_join_form_submission,
+    new_jersey_join_form_submission,
     non_nyc_join_form_submission,
     queens_join_form_submission,
     richmond_join_form_submission,
@@ -28,7 +29,6 @@ from .sample_join_form_data import (
     valid_join_form_submission_needs_expansion,
     valid_join_form_submission_no_email,
     valid_join_form_submission_with_apartment_in_address,
-    new_jersey_join_form_submission,
 )
 from .util import TestThread
 
