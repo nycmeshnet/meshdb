@@ -53,8 +53,8 @@ FLAGS: Dict[str, Any] = {
 USE_X_FORWARDED_HOST = True
 
 SECURE_HSTS_SECONDS = 30  # TODO: Increase me to 31536000 https://github.com/nycmeshnet/meshdb/issues/642
-SECURE_HSTS_PRELOAD = True
-SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+SECURE_HSTS_PRELOAD = False
+SECURE_HSTS_INCLUDE_SUBDOMAINS = False
 
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"
