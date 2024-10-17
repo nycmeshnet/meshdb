@@ -55,7 +55,7 @@ def get_spreadsheet_install_notes(row: SpreadsheetRow) -> str:
         notes = f"Spreadsheet Contact Notes:\n{row.contactNotes}"
 
     if notes:
-        notes += f"-------\n\n"
+        notes += f"\n-------\n\n"
 
     return notes
 
