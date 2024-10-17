@@ -385,7 +385,7 @@ class GeocodeRequest:
     street_address: str
     city: str
     state: str
-    zip: int
+    zip: str
 
 
 class GeocodeSerializer(DataclassSerializer):

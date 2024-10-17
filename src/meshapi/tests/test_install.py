@@ -159,7 +159,7 @@ class TestInstallAPI(TestCase):
             f"status code incorrect. Should be {code}, but got {response.status_code}",
         )
         response_obj = json.loads(response.content)
-        self.assertNotEquals(response_obj["install_number"], 123)
+        self.assertNotEqual(response_obj["install_number"], 123)
 
         response = self.client.post(
             "/api/v1/installs/",
@@ -234,7 +234,7 @@ class TestInstallAPI(TestCase):
             f"status code incorrect. Should be {code}, but got {response.status_code}",
         )
         response_obj = json.loads(response.content)
-        self.assertNotEquals(response_obj["install_number"], 1)
+        self.assertNotEqual(response_obj["install_number"], 1)
         self.assertEqual(len(Install.objects.all()), 3)
 
     def test_get_install_by_id(self):
