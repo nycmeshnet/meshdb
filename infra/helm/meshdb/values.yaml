@@ -24,7 +24,7 @@ pg:
       cpu: 1
       memory: 512Mi
     requests:
-      cpu: 200m
+      cpu: 1
       memory: 256Mi
   nodeSelector: {}
   affinity: {}
@@ -49,7 +49,7 @@ meshweb:
       memory: 512Mi
     requests:
       cpu: 200m
-      memory: 350Mi
+      memory: 512Mi
   nodeSelector: {}
   affinity: {}
   tolerations: []
@@ -60,10 +60,10 @@ nginx:
   securityContext: {}
   resources:
     limits:
-      cpu: 1
-      memory: 100Mi
-    requests:
       cpu: 250m
+      memory: 128Mi
+    requests:
+      cpu: 100m
       memory: 30Mi
   nodeSelector: {}
   affinity: {}
@@ -93,11 +93,11 @@ redis:
   securityContext: {}
   resources:
     limits:
-      cpu: 1
+      cpu: 250m
       memory: 512Mi
     requests:
-      cpu: 50m
-      memory: 30Mi
+      cpu: 250m
+      memory: 256Mi
   nodeSelector: {}
   affinity: {}
   tolerations: []
@@ -108,11 +108,11 @@ pelias:
   securityContext: {}
   resources:
     limits:
-      cpu: 1
-      memory: 512Mi
-    requests:
       cpu: 250m
-      memory: 250Mi
+      memory: 256Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
   nodeSelector: {}
   affinity: {}
   tolerations: []
