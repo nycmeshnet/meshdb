@@ -77,6 +77,7 @@ def run_update_from_uisp() -> None:
         logging.exception(e)
         raise e
 
+
 jitter_minutes = 0 if MESHDB_ENVIRONMENT == "prod" else 2
 
 celery_app.conf.beat_schedule = {
