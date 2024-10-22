@@ -172,8 +172,11 @@ class MapDataLinkSerializer(serializers.ModelSerializer):
     installDate = JavascriptDateField(source="install_date")
 
     def convert_status_to_spreadsheet_status(self, link: Link) -> str:
-        if link.status != Link.LinkStatus.ACTIVE:
+        if link.status == Link.LinkStatus.PLANNED:
             return str(link.status).lower()
+
+        if link.status == Link.LinkStatus.INACTIVE:
+            return "dead"
 
         if link.type == Link.LinkType.FIBER:
             return "fiber"
