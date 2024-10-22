@@ -25,7 +25,6 @@ def get_uisp_devices() -> List[UISPDevice]:
     return json.loads(
         session.get(
             os.path.join(UISP_URL, "api/v2.1/devices"),
-            verify=False,
         ).content.decode("UTF8")
     )
 
@@ -39,7 +38,6 @@ def get_uisp_links() -> List[UISPDataLink]:
     return json.loads(
         session.get(
             os.path.join(UISP_URL, "api/v2.1/data-links"),
-            verify=False,
         ).content.decode("UTF8")
     )
 
@@ -54,7 +52,6 @@ def get_uisp_device_detail(device_id: str, session: Optional[requests.Session] =
     return json.loads(
         session.get(
             os.path.join(UISP_URL, f"api/v2.1/devices/{device_id}"),
-            verify=False,
         ).content.decode("UTF8")
     )
 
@@ -69,12 +66,12 @@ def get_uisp_token(session: requests.Session) -> str:
             "username": UISP_USER,
             "password": UISP_PASS,
         },
-        verify=False,
     ).headers["x-auth-token"]
 
 
 def get_uisp_session() -> requests.Session:
     session = requests.Session()
+    session.verify = os.path.join(os.path.dirname(__file__), "uisp.mesh.nycmesh.net.crt")
     session.headers = {"x-auth-token": get_uisp_token(session)}
 
     return session

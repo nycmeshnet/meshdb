@@ -13,7 +13,7 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 import logging
 import os
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 from django.http.request import HttpRequest
 from dotenv import load_dotenv
@@ -51,6 +51,51 @@ FLAGS: Dict[str, Any] = {
 }
 
 USE_X_FORWARDED_HOST = True
+
+SECURE_HSTS_SECONDS = 30  # TODO: Increase me to 31536000 https://github.com/nycmeshnet/meshdb/issues/642
+SECURE_HSTS_PRELOAD = False
+SECURE_HSTS_INCLUDE_SUBDOMAINS = False
+
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"
+
+CSP_REPORT_ONLY = True  # TODO: Set me to false https://github.com/nycmeshnet/meshdb/issues/644
+CSP_DEFAULT_SRC = [
+    "'self'",
+    "*.nycmesh.net",
+    "maps.googleapis.com",
+    "maps.gstatic.com",
+    "fonts.googleapis.com",
+    "fonts.gstatic.com",
+    "'unsafe-inline'",  # TODO: Remove me https://github.com/nycmeshnet/meshdb/issues/645
+    "*.browser-intake-us5-datadoghq.com",
+]
+CSP_REPORT_URI = [
+    "https://csp-report.browser-intake-us5-datadoghq.com/api/v2/logs"
+    "?dd-api-key=pubca00a94e49167539d2e291bea2b0f20f&dd-evp-origin=content-security-policy"
+    f"&ddsource=csp-report&ddtags=service%3Ameshdb%2Cenv%3A{MESHDB_ENVIRONMENT}"
+]
+
+# We don't use any of these advanced features, so be safe and disallow any scripts from
+# using them on our pages
+PERMISSIONS_POLICY: Dict[str, List[str]] = {
+    "accelerometer": [],
+    "ambient-light-sensor": [],
+    "autoplay": [],
+    "camera": [],
+    "display-capture": [],
+    "document-domain": [],
+    "encrypted-media": [],
+    "fullscreen": [],
+    "geolocation": [],
+    "gyroscope": [],
+    "interest-cohort": [],
+    "magnetometer": [],
+    "microphone": [],
+    "midi": [],
+    "payment": [],
+    "usb": [],
+}
 
 LOS_URL = os.environ.get("LOS_URL", "https://devlos.mesh.nycmesh.net")
 MAP_URL = os.environ.get("MAP_BASE_URL", "https://devmap.mesh.nycmesh.net")
@@ -118,6 +163,10 @@ if DEBUG:
         "http://127.0.0.1",
     ]
 
+    CSP_DEFAULT_SRC += [
+        "*",
+    ]
+
 # Application definition
 
 INSTALLED_APPS = [
@@ -148,6 +197,8 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "corsheaders.middleware.CorsMiddleware",
+    "django_permissions_policy.PermissionsPolicyMiddleware",
+    "csp.middleware.CSPMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
