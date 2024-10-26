@@ -22,7 +22,7 @@ pg:
   resources:
     limits:
       cpu: 1
-      memory: 512Mi
+      memory: 1Gi
     requests:
       cpu: 1
       memory: 256Mi
@@ -107,12 +107,12 @@ pelias:
   podSecurityContext: {}
   securityContext: {}
   resources:
-    limits:
-      cpu: 250m
-      memory: 256Mi
+    #limits:
+    #  cpu: 250m
+    #  memory: 512Mi
     requests:
-      cpu: 100m
-      memory: 128Mi
+      cpu: 250m
+      memory: 512Mi
   nodeSelector: {}
   affinity: {}
   tolerations: []
