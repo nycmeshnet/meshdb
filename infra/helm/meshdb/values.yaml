@@ -85,7 +85,13 @@ redis:
   port: 6379
   podSecurityContext: {}
   securityContext: {}
-  resources: {}
+  resources:
+    limits:
+      cpu: 250m
+      memory: 512Mi
+    requests:
+      cpu: 250m
+      memory: 256Mi
   nodeSelector: {}
   affinity: {}
   tolerations: []
