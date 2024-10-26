@@ -98,7 +98,13 @@ pelias:
   port: 3000
   podSecurityContext: {}
   securityContext: {}
-  resources: {}
+  resources:
+    limits:
+      cpu: 250m
+      memory: 256Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
   nodeSelector: {}
   affinity: {}
   tolerations: []
