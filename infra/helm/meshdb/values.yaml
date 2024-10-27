@@ -43,7 +43,13 @@ meshweb:
     tag: main
   podSecurityContext: {}
   securityContext: {}
-  resources: {}
+  resources:
+    limits:
+      cpu: 1
+      memory: 512Mi
+    requests:
+      cpu: 200m
+      memory: 512Mi
   nodeSelector: {}
   affinity: {}
   tolerations: []
