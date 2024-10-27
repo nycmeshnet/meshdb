@@ -48,7 +48,7 @@ meshweb:
       cpu: 1
       memory: 512Mi
     requests:
-      cpu: 200m
+      cpu: 384m
       memory: 512Mi
   nodeSelector: {}
   affinity: {}
@@ -107,9 +107,9 @@ pelias:
   podSecurityContext: {}
   securityContext: {}
   resources:
-    #limits:
-    #  cpu: 250m
-    #  memory: 512Mi
+    limits:
+     cpu: 250m
+     memory: 1536Mi
     requests:
       cpu: 250m
       memory: 512Mi
