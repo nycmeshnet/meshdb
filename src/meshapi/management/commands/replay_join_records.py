@@ -65,7 +65,7 @@ class Command(BaseCommand):
             record.replayed += 1
             record.replay_code = str(response.status_code)
 
-            print(response.status_code)
+            print(f"{response.status_code} : {response.data}")
 
             # Update info to S3
             key = record.submission_time.strftime(f"{JOIN_RECORD_BASE_NAME}/%Y/%m/%d/%H/%M/%S.json")

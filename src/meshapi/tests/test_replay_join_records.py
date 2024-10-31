@@ -49,3 +49,6 @@ class TestReplayJoinRecords(TestCase):
             data=sample_join_records
         )
         management.call_command("replay_join_records", "--noinput")
+
+        # TODO: Assert that replayed data was correctly replayed. I want the HTTP code,
+        # and I want the UUIDs so I can look it up in the DB and verify it.
