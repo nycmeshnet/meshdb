@@ -24,8 +24,6 @@ class Command(BaseCommand):
 
         parser.add_argument("--look", action="store_true", help="Print Join Records and quit")
 
-        parser.add_argument("--raw", action="store_true", help="Print the raw JoinRecord object")
-
     def handle(self, *args: Any, **options: Any) -> None:
         p = JoinRecordProcessor()
 
@@ -37,8 +35,8 @@ class Command(BaseCommand):
         table.field_names = (key.name for key in fields(JoinRecord))
 
         for entry in join_records:
-            # Ignore submissions that are known good
             if (not options["all"]) and (entry.code == "200" or entry.code == "201"):
+                # Ignore submissions that are known good
                 join_records.remove(entry)
                 continue
 
@@ -46,6 +44,7 @@ class Command(BaseCommand):
 
         if not options["all"]:
             print("The following Join Requests have not been successfully submitted.")
+
         print(table)
 
         if options["look"]:
@@ -67,6 +66,6 @@ class Command(BaseCommand):
 
             print(f"{response.status_code} : {response.data}")
 
-            # Update info to S3
+            # Upload info to S3
             key = record.submission_time.strftime(f"{JOIN_RECORD_BASE_NAME}/%Y/%m/%d/%H/%M/%S.json")
             p.upload(record, key)

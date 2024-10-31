@@ -15,7 +15,7 @@ from botocore.client import ClientError, Config
 
 JOIN_RECORD_ENDPOINT = os.environ.get("JOIN_RECORD_ENDPOINT")
 JOIN_RECORD_BUCKET_NAME = os.environ.get("JOIN_RECORD_BUCKET_NAME")
-JOIN_RECORD_BASE_NAME = os.environ.get("JOIN_RECORD_BASE_NAME")
+JOIN_RECORD_BASE_NAME = os.environ.get("JOIN_RECORD_BASE_NAME", "sample-basename")
 JOIN_RECORD_ACCESS_KEY = os.environ.get("JOIN_RECORD_ACCESS_KEY")
 JOIN_RECORD_SECRET_KEY = os.environ.get("JOIN_RECORD_SECRET_KEY")
 
