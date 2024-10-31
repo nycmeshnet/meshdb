@@ -54,16 +54,18 @@ class Command(BaseCommand):
         if not options["noinput"]:
             proceed_with_replay = input("Proceed with replay? (y/N): ")
             if proceed_with_replay.lower() != "yes" and proceed_with_replay.lower() != "y":
-                logging.warning("Operation cancelled.")
+                print("Operation cancelled.")
 
-        logging.info("Replaying Join Records...")
+        print("Replaying Join Records...")
 
         for record in join_records:
             # Make the request
-            r = JoinFormRequest(**record)
+            r = JoinFormRequest(**{k: v for k, v in record.__dict__.items() if k in JoinFormRequest.__dataclass_fields__})
             response = process_join_form(r)
-            record.replays += 1
-            record.replay_code = response.status_code
+            record.replayed += 1
+            record.replay_code = str(response.status_code)
+
+            print(response.status_code)
 
             # Update info to S3
             key = record.submission_time.strftime(f"{JOIN_RECORD_BASE_NAME}/%Y/%m/%d/%H/%M/%S.json")
