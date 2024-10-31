@@ -75,7 +75,11 @@ CSP_DEFAULT_SRC = [
     "*.browser-intake-us5-datadoghq.com",
 ]
 CSP_IMG_SRC = [
-
+    "'self'",
+    "https://maps.googleapis.com",
+    "https://maps.gstatic.com",
+    "https://cdn.jsdelivr.net",
+    "https://cdn.redoc.ly",  # Redoc
     "https://node-db.netlify.app",  # Panorama images
 ]
 CSP_REPORT_URI = [
