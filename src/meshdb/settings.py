@@ -62,17 +62,21 @@ SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"
 CSP_REPORT_ONLY = True  # TODO: Set me to false https://github.com/nycmeshnet/meshdb/issues/644
 CSP_DEFAULT_SRC = [
     "'self'",
-    "*.nycmesh.net",
-    "maps.googleapis.com",
-    "maps.gstatic.com",
-    "fonts.googleapis.com",
-    "fonts.gstatic.com",
-    "cdn.jsdelivr.net",
+    "https://*.nycmesh.net",
+    "https://maps.googleapis.com",
+    "https://maps.gstatic.com",
+    "https://fonts.googleapis.com",
+    "https://fonts.gstatic.com",
+    "https://cdn.jsdelivr.net",
     "data:",
-    "cdn.redoc.ly",  # Redoc
+    "https://cdn.redoc.ly",  # Redoc
     "blob:",  # Redoc
     "'unsafe-inline'",  # TODO: Remove me https://github.com/nycmeshnet/meshdb/issues/645
     "*.browser-intake-us5-datadoghq.com",
+]
+CSP_IMG_SRC = [
+
+    "https://node-db.netlify.app",  # Panorama images
 ]
 CSP_REPORT_URI = [
     "https://csp-report.browser-intake-us5-datadoghq.com/api/v2/logs"
