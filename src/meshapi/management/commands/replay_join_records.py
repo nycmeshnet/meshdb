@@ -6,11 +6,11 @@ from typing import Any
 from django.core.management.base import BaseCommand
 
 
-
 from prettytable import PrettyTable
 
 from meshapi.util.join_records import JOIN_RECORD_BASE_NAME, JoinRecord, JoinRecordProcessor
 from meshapi.views.forms import JoinFormRequest, process_join_form
+
 
 class Command(BaseCommand):
     help = "Replay join form submissions that we may not have accepted properly"
@@ -30,7 +30,7 @@ class Command(BaseCommand):
         p = JoinRecordProcessor()
 
         join_records = p.get_all()
-                
+
         table = PrettyTable()
         table.padding_width = 0
 
@@ -43,7 +43,7 @@ class Command(BaseCommand):
                 continue
 
             table.add_row(asdict(entry).values())
-        
+
         if not options["all"]:
             print("The following Join Requests have not been successfully submitted.")
         print(table)
@@ -66,6 +66,5 @@ class Command(BaseCommand):
             record.replay_code = response.status_code
 
             # Update info to S3
-            key = record.submission_time.strftime(f"{JOIN_RECORD_BASE_NAME}/%Y/%m/%d/%H/%M/%S.json") 
+            key = record.submission_time.strftime(f"{JOIN_RECORD_BASE_NAME}/%Y/%m/%d/%H/%M/%S.json")
             p.upload(record, key)
-            
