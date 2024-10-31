@@ -1,9 +1,11 @@
 import datetime
 import os
+from time import sleep
 from unittest.mock import patch
 from django.core import management
 from django.test import TestCase
 
+from meshapi.models.install import Install
 from meshapi.util.join_records import JOIN_RECORD_BASE_NAME, JoinRecord, MockJoinRecordProcessor
 from meshapi.views.forms import process_join_form
 
@@ -22,9 +24,8 @@ class TestReplayJoinRecords(TestCase):
         # Delete S3 Bucket
         return super().tearDown()
 
-    @patch("meshapi.views.forms.process_join_form", wraps=process_join_form)
     @patch("meshapi.util.join_records.JoinRecordProcessor")
-    def test_happy_replay_join_records(self, MockJoinRecordProcessorClass, mock_process_join_form):
+    def test_happy_replay_join_records(self, MockJoinRecordProcessorClass):
         os.environ[JOIN_RECORD_BASE_NAME] = "mock-join-record-test"
         sample_join_records = {
             f"{JOIN_RECORD_BASE_NAME}/2024/10/30/12/34/56.json": JoinRecord(
@@ -44,10 +45,9 @@ class TestReplayJoinRecords(TestCase):
                 submission_time=datetime.datetime(2024, 10, 30, 12, 34, 56),
                 code="500",
                 replayed=0,
-                replay_code="",
+                install_number="",
             )
         }
-
 
         # Set up a mocked instance of the bucket
         mock_processor = MockJoinRecordProcessor(
@@ -62,11 +62,12 @@ class TestReplayJoinRecords(TestCase):
         self.assertEqual(1, len(records), f"Got unexpected number of records in mocked S3 bucket.")
         for r in records:
             expected_code = "201"
-            self.assertEqual(expected_code, r.replay_code, f"Did not find correct replay code in mocked S3 bucket. Expected: {expected_code}, Got: {r.replay_code}")
+            self.assertEqual(expected_code, r.code, f"Did not find correct replay code in mocked S3 bucket. Expected: {expected_code}, Got: {r.code}")
             self.assertEqual(1, r.replayed, f"Did not get expected replay count.")
 
-        # TODO: Assert that replayed data was correctly replayed. I want the HTTP code,
-        # and I want the UUIDs so I can look it up in the DB and verify it.
-
-        join_form_response = mock_process_join_form.return_value
-        print(join_form_response)
+            # XXX (wdn): Assert that replayed data was correctly replayed.
+            # It's probably good enough to do this with the install number,
+            # but it would be nice to have the UUIDs that get returned.
+            install = Install.objects.get(install_number=r.install_number)
+            self.assertEqual("Jon Smith", install.member.name, "Did not get expected name for submitted install.")
+            self.assertEqual("197 Prospect Place", install.building.street_address, "Did not get expected street address for submitted install.")

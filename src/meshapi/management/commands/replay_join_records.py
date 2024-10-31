@@ -61,8 +61,10 @@ class Command(BaseCommand):
             # Make the request
             r = JoinFormRequest(**{k: v for k, v in record.__dict__.items() if k in JoinFormRequest.__dataclass_fields__})
             response = process_join_form(r)
+            record.code = str(response.status_code)
             record.replayed += 1
-            record.replay_code = str(response.status_code)
+            if response.data.get("install_number"):
+                record.install_number = response.data["install_number"]
 
             print(f"{response.status_code} : {response.data}")
 

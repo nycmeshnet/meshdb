@@ -25,8 +25,7 @@ class JoinRecord(JoinFormRequest):
     submission_time: datetime.datetime  # When it was submitted
     code: str
     replayed: int
-    replay_code: str
-
+    install_number: int
 
 class JoinRecordProcessorInterface(ABC):
     @abstractmethod

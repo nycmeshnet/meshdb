@@ -19,6 +19,9 @@ NYC_PLANNING_LABS_GEOCODE_URL = "https://geosearch.planninglabs.nyc/v2/search"
 DOB_BUILDING_HEIGHT_API_URL = "https://data.cityofnewyork.us/resource/qb5r-6dgf.json"
 
 
+# FIXME (wdn): When we can't reach the internet to get the email, this returns 400.
+# That's wrong. It should be 500 because it's our fault. I've seen this reject
+# valid emails because of this and it makes testing offline impossible unless you mock it.
 def validate_email_address(email_address: str) -> Optional[bool]:
     return validate_email(
         email_address=email_address,
