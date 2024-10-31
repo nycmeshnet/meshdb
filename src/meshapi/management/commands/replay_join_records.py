@@ -1,6 +1,5 @@
 from argparse import ArgumentParser
 from dataclasses import asdict, fields
-import json
 import logging
 from typing import Any
 
@@ -25,7 +24,7 @@ class Command(BaseCommand):
 
         parser.add_argument("--look", action="store_true", help="Print Join Records and quit")
 
-        parser.add_argument("--json", action="store_true", help="Print records as JSON instead of in a table.")
+        parser.add_argument("--raw", action="store_true", help="Print the raw JoinRecord object")
 
     def handle(self, *args: Any, **options: Any) -> None:
         p = JoinRecordProcessor()
@@ -47,14 +46,7 @@ class Command(BaseCommand):
         
         if not options["all"]:
             print("The following Join Requests have not been successfully submitted.")
-
-        if options["json"]:
-            for record in join_records:
-                d = asdict(record)
-                d['submission_time'] = d['submission_time'].strftime("%Y-%m-%d %H:%M:%S")  # Custom format
-                print(json.dumps(d))
-        else:
-            print(table)
+        print(table)
 
         if options["look"]:
             return

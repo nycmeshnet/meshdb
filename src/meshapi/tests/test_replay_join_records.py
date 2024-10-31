@@ -1,10 +1,11 @@
 
+import datetime
 import os
 from unittest.mock import patch
 from django.core import management
 from django.test import TestCase
 
-from meshapi.util.join_records import MockJoinRecordProcessor
+from meshapi.util.join_records import JOIN_RECORD_BASE_NAME, JoinRecord, MockJoinRecordProcessor
 
 # Integration test to ensure that we can fetch JoinRecords from an S3 bucket,
 # replay them into the join form, and insert the objects we expect. 
@@ -22,7 +23,11 @@ class TestReplayJoinRecords(TestCase):
 
     @patch('meshapi.util.join_records.JoinRecordProcessor')
     def test_happy_replay_join_records(self, MockJoinRecordProcessorClass):
-        sample_join_records = {}
+        sample_join_records = { f"{JOIN_RECORD_BASE_NAME}/2024/10/30/12/34/56.json":
+
+JoinRecord(first_name='Jon', last_name='Smith', email_address='js@gmail.com', phone_number='+1 585-475-2411', street_address='197 Prospect Place', city='Brooklyn', state='NY', zip_code='11238', apartment='1', roof_access=True
+, referral='I googled it.', ncl=True, trust_me_bro=False, submission_time=datetime.datetime(2024, 10, 30, 12, 41, 27), code='', replayed=0, replay_code='')
+        }
         MockJoinRecordProcessorClass.side_effect = lambda *args, **kwargs: MockJoinRecordProcessor(data=sample_join_records)
         management.call_command("replay_join_records", "--noinput")
         
