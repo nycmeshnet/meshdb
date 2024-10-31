@@ -95,7 +95,9 @@ services:
     environment:
       - MINIO_ROOT_USER=admin
       - MINIO_ROOT_PASSWORD=admin1234
-      - MINIO_DEFAULT_BUCKETS=nycmesh
+      - MINIO_DEFAULT_BUCKETS=meshdb-join-form-log
+      - MINIO_ACCESS_KEY=sampleaccesskey
+      - MINIO_SECRET_KEY=samplesecretkey
 
 volumes:
   postgres_data:

@@ -101,6 +101,10 @@ def join_form(request: Request) -> Response:
         logging.exception("TypeError while processing JoinForm")
         return Response({"detail": "Got incomplete form request"}, status=status.HTTP_400_BAD_REQUEST)
 
+    return process_join_form(r)
+
+
+def process_join_form(r: JoinFormRequest) -> Response:
     if not r.ncl:
         return Response(
             {"detail": "You must agree to the Network Commons License!"}, status=status.HTTP_400_BAD_REQUEST
