@@ -111,3 +111,47 @@ class TestReplayJoinRecords(TestCase):
                 install.building.street_address,
                 "Did not get expected street address for submitted install.",
             )
+
+    @patch("meshapi.util.join_records.JoinRecordProcessor")
+    def test_nj_replay_join_records(self, MockJoinRecordProcessorClass):
+        os.environ[JOIN_RECORD_BASE_NAME] = "mock-join-record-test"
+        sample_join_records = {
+            f"{JOIN_RECORD_BASE_NAME}/2024/10/30/12/34/56.json": JoinRecord(
+                first_name="Jon",
+                last_name="Smith",
+                email_address="js@gmail.com",
+                phone_number="+1 585-475-2411",
+                street_address="711 Hudson Street",
+                city="Hoboken",
+                state="NJ",
+                zip_code="07030",
+                apartment="",
+                roof_access=True,
+                referral="Totally faked mocked join record.",
+                ncl=True,
+                trust_me_bro=False,
+                submission_time="2024-10-30T12:34:56",
+                code="400",
+                replayed=1,
+                install_number=None,
+            )
+        }
+
+        # Set up a mocked instance of the bucket
+        mock_processor = MockJoinRecordProcessor(data=sample_join_records)
+        MockJoinRecordProcessorClass.side_effect = lambda *args, **kwargs: mock_processor
+
+        # Replay the records
+        management.call_command("replay_join_records", "--noinput")
+
+        records = mock_processor.get_all()
+        self.assertEqual(1, len(records), "Got unexpected number of records in mocked S3 bucket.")
+        for r in records:
+            expected_code = "400"
+            self.assertEqual(
+                expected_code,
+                r.code,
+                f"Did not find correct replay code in mocked S3 bucket. Expected: {expected_code}, Got: {r.code}",
+            )
+            self.assertEqual(2, r.replayed, "Did not get expected replay count.")
+            self.assertEqual(None, r.install_number, "Install Number is not None.")

@@ -75,8 +75,6 @@ class JoinRecordProcessor(JoinRecordProcessorInterface):
 
     def get_all(self) -> list[JoinRecord]:
         response = self.s3_client.list_objects_v2(Bucket=JOIN_RECORD_BUCKET_NAME)
-        print(response)
-
         join_records = []
 
         # Loop through each object and get its contents

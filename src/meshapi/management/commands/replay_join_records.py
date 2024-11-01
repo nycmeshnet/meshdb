@@ -41,7 +41,7 @@ class Command(BaseCommand):
             table.add_row(asdict(entry).values())
 
         if not options["all"]:
-            print("The following Join Requests have not been successfully submitted.")
+            print("The following Join Requests HAVE NOT been successfully submitted.")
 
         print(table)
 
