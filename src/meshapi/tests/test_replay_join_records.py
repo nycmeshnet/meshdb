@@ -5,7 +5,12 @@ from django.core import management
 from django.test import TestCase
 
 from meshapi.models.install import Install
-from meshapi.util.join_records import JOIN_RECORD_BASE_NAME, JoinRecord, MockJoinRecordProcessor
+from meshapi.util.join_records import (
+    JOIN_RECORD_BASE_NAME,
+    JoinRecord,
+    MockJoinRecordProcessor,
+    s3_content_to_join_record,
+)
 
 
 # Integration test to ensure that we can fetch JoinRecords from an S3 bucket,
@@ -21,6 +26,37 @@ class TestReplayJoinRecords(TestCase):
     def tearDown(self) -> None:
         # Delete S3 Bucket
         return super().tearDown()
+
+    # This is just to make codecov happy
+    def test_s3_content_to_join_record(self):
+        sample_key = "dev-join-form-submissions/2024/11/01/11/33/49.json"
+        sample_s3_content = """{"first_name":"Jon","last_name":"Smith","email_address":"js@gmail.com","phone_number":"+1 585-475-2411","street_address":"197 Prospect Place","apartment":"1","city":"Brooklyn","state":"NY","zip_code":"11238","roof_access":true,"referral":"I googled it.","ncl":true,"trust_me_bro":false,"code":"201","replayed":0,"install_number":1002}"""
+        sample_join_record: JoinRecord = JoinRecord(
+            first_name="Jon",
+            last_name="Smith",
+            email_address="js@gmail.com",
+            phone_number="+1 585-475-2411",
+            street_address="197 Prospect Place",
+            apartment="1",
+            city="Brooklyn",
+            state="NY",
+            zip_code="11238",
+            roof_access=True,
+            referral="I googled it.",
+            ncl=True,
+            trust_me_bro=False,
+            submission_time="2024-11-01T11:33:49",
+            code="201",
+            replayed=0,
+            install_number=1002,
+        )
+        join_record = s3_content_to_join_record(sample_key, sample_s3_content)
+        try:
+            self.assertEqual(join_record, sample_join_record, "Join Records do not match")
+        except AssertionError as e:
+            print(sample_join_record)
+            print(join_record)
+            raise e
 
     @patch("meshapi.util.join_records.JoinRecordProcessor")
     def test_happy_replay_join_records(self, MockJoinRecordProcessorClass):
