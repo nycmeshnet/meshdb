@@ -1,4 +1,3 @@
-import logging
 from argparse import ArgumentParser
 from dataclasses import asdict, fields
 from datetime import datetime

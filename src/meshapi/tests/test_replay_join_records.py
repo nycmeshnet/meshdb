@@ -1,6 +1,4 @@
-import datetime
 import os
-from time import sleep
 from unittest.mock import patch
 
 from django.core import management
@@ -8,7 +6,6 @@ from django.test import TestCase
 
 from meshapi.models.install import Install
 from meshapi.util.join_records import JOIN_RECORD_BASE_NAME, JoinRecord, MockJoinRecordProcessor
-from meshapi.views.forms import process_join_form
 
 
 # Integration test to ensure that we can fetch JoinRecords from an S3 bucket,
@@ -58,7 +55,7 @@ class TestReplayJoinRecords(TestCase):
         management.call_command("replay_join_records", "--noinput")
 
         records = mock_processor.get_all()
-        self.assertEqual(1, len(records), f"Got unexpected number of records in mocked S3 bucket.")
+        self.assertEqual(1, len(records), "Got unexpected number of records in mocked S3 bucket.")
         for r in records:
             expected_code = "201"
             self.assertEqual(
@@ -66,7 +63,7 @@ class TestReplayJoinRecords(TestCase):
                 r.code,
                 f"Did not find correct replay code in mocked S3 bucket. Expected: {expected_code}, Got: {r.code}",
             )
-            self.assertEqual(1, r.replayed, f"Did not get expected replay count.")
+            self.assertEqual(1, r.replayed, "Did not get expected replay count.")
 
             # XXX (wdn): Assert that replayed data was correctly replayed.
             # It's probably good enough to do this with the install number,

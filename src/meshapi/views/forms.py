@@ -332,7 +332,7 @@ def process_join_form(r: JoinFormRequest) -> Response:
                 [join_form_member],
                 MemberSerializer,
                 name_change_note,
-                request,
+                None,
             )
 
         if len(existing_members) > 1:
@@ -340,7 +340,7 @@ def process_join_form(r: JoinFormRequest) -> Response:
                 existing_members + [join_form_member],
                 MemberSerializer,
                 "Possible duplicate member objects detected",
-                request,
+                None,
             )
 
     success_message = f"""JoinForm submission success {"(trust_me_bro)" if r.trust_me_bro else ""}. \
