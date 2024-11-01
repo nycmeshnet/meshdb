@@ -101,10 +101,10 @@ def join_form(request: Request) -> Response:
         logging.exception("TypeError while processing JoinForm")
         return Response({"detail": "Got incomplete form request"}, status=status.HTTP_400_BAD_REQUEST)
 
-    return process_join_form(r)
+    return process_join_form(r, request)
 
 
-def process_join_form(r: JoinFormRequest) -> Response:
+def process_join_form(r: JoinFormRequest, request: Optional[Request] = None) -> Response:
     if not r.ncl:
         return Response(
             {"detail": "You must agree to the Network Commons License!"}, status=status.HTTP_400_BAD_REQUEST
@@ -332,7 +332,7 @@ def process_join_form(r: JoinFormRequest) -> Response:
                 [join_form_member],
                 MemberSerializer,
                 name_change_note,
-                None,
+                request,
             )
 
         if len(existing_members) > 1:
@@ -340,7 +340,7 @@ def process_join_form(r: JoinFormRequest) -> Response:
                 existing_members + [join_form_member],
                 MemberSerializer,
                 "Possible duplicate member objects detected",
-                None,
+                request,
             )
 
     success_message = f"""JoinForm submission success {"(trust_me_bro)" if r.trust_me_bro else ""}. \
