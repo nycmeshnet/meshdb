@@ -2,6 +2,7 @@ import datetime
 import os
 from time import sleep
 from unittest.mock import patch
+
 from django.core import management
 from django.test import TestCase
 
@@ -42,18 +43,16 @@ class TestReplayJoinRecords(TestCase):
                 referral="Totally faked mocked join record.",
                 ncl=True,
                 trust_me_bro=False,
-                submission_time=datetime.datetime(2024, 10, 30, 12, 34, 56),
+                submission_time="2024-10-30T12:34:56",
                 code="500",
                 replayed=0,
-                install_number="",
+                install_number=None,
             )
         }
 
         # Set up a mocked instance of the bucket
-        mock_processor = MockJoinRecordProcessor(
-            data=sample_join_records
-        )
-        MockJoinRecordProcessorClass.side_effect = lambda *args, **kwargs: mock_processor 
+        mock_processor = MockJoinRecordProcessor(data=sample_join_records)
+        MockJoinRecordProcessorClass.side_effect = lambda *args, **kwargs: mock_processor
 
         # Replay the records
         management.call_command("replay_join_records", "--noinput")
@@ -62,7 +61,11 @@ class TestReplayJoinRecords(TestCase):
         self.assertEqual(1, len(records), f"Got unexpected number of records in mocked S3 bucket.")
         for r in records:
             expected_code = "201"
-            self.assertEqual(expected_code, r.code, f"Did not find correct replay code in mocked S3 bucket. Expected: {expected_code}, Got: {r.code}")
+            self.assertEqual(
+                expected_code,
+                r.code,
+                f"Did not find correct replay code in mocked S3 bucket. Expected: {expected_code}, Got: {r.code}",
+            )
             self.assertEqual(1, r.replayed, f"Did not get expected replay count.")
 
             # XXX (wdn): Assert that replayed data was correctly replayed.
@@ -70,4 +73,8 @@ class TestReplayJoinRecords(TestCase):
             # but it would be nice to have the UUIDs that get returned.
             install = Install.objects.get(install_number=r.install_number)
             self.assertEqual("Jon Smith", install.member.name, "Did not get expected name for submitted install.")
-            self.assertEqual("197 Prospect Place", install.building.street_address, "Did not get expected street address for submitted install.")
+            self.assertEqual(
+                "197 Prospect Place",
+                install.building.street_address,
+                "Did not get expected street address for submitted install.",
+            )

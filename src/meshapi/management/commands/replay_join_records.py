@@ -1,11 +1,10 @@
+import logging
 from argparse import ArgumentParser
 from dataclasses import asdict, fields
-import logging
+from datetime import datetime
 from typing import Any
 
 from django.core.management.base import BaseCommand
-
-
 from prettytable import PrettyTable
 
 from meshapi.util.join_records import JOIN_RECORD_BASE_NAME, JoinRecord, JoinRecordProcessor
@@ -59,7 +58,9 @@ class Command(BaseCommand):
 
         for record in join_records:
             # Make the request
-            r = JoinFormRequest(**{k: v for k, v in record.__dict__.items() if k in JoinFormRequest.__dataclass_fields__})
+            r = JoinFormRequest(
+                **{k: v for k, v in record.__dict__.items() if k in JoinFormRequest.__dataclass_fields__}
+            )
             response = process_join_form(r)
             record.code = str(response.status_code)
             record.replayed += 1
@@ -69,5 +70,6 @@ class Command(BaseCommand):
             print(f"{response.status_code} : {response.data}")
 
             # Upload info to S3
-            key = record.submission_time.strftime(f"{JOIN_RECORD_BASE_NAME}/%Y/%m/%d/%H/%M/%S.json")
+            submission_datetime = datetime.fromisoformat(record.submission_time)
+            key = submission_datetime.strftime(f"{JOIN_RECORD_BASE_NAME}/%Y/%m/%d/%H/%M/%S.json")
             p.upload(record, key)

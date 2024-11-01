@@ -1,17 +1,16 @@
-from abc import ABC, abstractmethod
-from dataclasses import dataclass
-import datetime
-import logging
-import os
-
-from meshapi.views.forms import JoinFormRequest
-
-from dataclasses import dataclass, fields
 import datetime
 import json
+import logging
+import os
+import tempfile
+from abc import ABC, abstractmethod
+from dataclasses import dataclass, fields
+from typing import Optional
 
 import boto3
 from botocore.client import ClientError, Config
+
+from meshapi.views.forms import JoinFormRequest
 
 JOIN_RECORD_ENDPOINT = os.environ.get("JOIN_RECORD_ENDPOINT")
 JOIN_RECORD_BUCKET_NAME = os.environ.get("JOIN_RECORD_BUCKET_NAME")
@@ -22,10 +21,11 @@ JOIN_RECORD_SECRET_KEY = os.environ.get("JOIN_RECORD_SECRET_KEY")
 
 @dataclass
 class JoinRecord(JoinFormRequest):
-    submission_time: datetime.datetime  # When it was submitted
+    submission_time: str
     code: str
     replayed: int
-    install_number: int
+    install_number: Optional[int]
+
 
 class JoinRecordProcessorInterface(ABC):
     @abstractmethod
@@ -41,7 +41,7 @@ class JoinRecordProcessorInterface(ABC):
         pass
 
 
-class JoinRecordProcessor:
+class JoinRecordProcessor(JoinRecordProcessorInterface):
     def __init__(self) -> None:
         self.s3_client = boto3.client(
             "s3",
@@ -52,8 +52,10 @@ class JoinRecordProcessor:
         )
 
     def upload(self, join_record: JoinRecord, key: str) -> None:
+        with tempfile.NamedTemporaryFile() as tmp:
+            tmp.write(str.encode(json.dumps(join_record)))
         try:
-            self.s3_client.upload_file(join_record, JOIN_RECORD_BUCKET_NAME, key)
+            self.s3_client.upload_file(tmp, JOIN_RECORD_BUCKET_NAME, key)
         except ClientError as e:
             logging.error(e)
 
@@ -79,7 +81,7 @@ class JoinRecordProcessor:
                 datetime_components = object_key.split(".")[0].split("/")[1:]
                 year, month, day, hour, minute, second = map(int, datetime_components)
                 result_datetime = datetime.datetime(year, month, day, hour, minute, second)
-                join_record.submission_time = result_datetime
+                join_record.submission_time = result_datetime.isoformat()
 
                 join_records.append(join_record)
         else:
@@ -88,7 +90,7 @@ class JoinRecordProcessor:
         return join_records
 
 
-class MockJoinRecordProcessor:
+class MockJoinRecordProcessor(JoinRecordProcessorInterface):
     def __init__(self, data: dict[str, JoinRecord]) -> None:
         self.bucket_name: str = "mock_bucket"
         # Store join record by S3 key and value.
