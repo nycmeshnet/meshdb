@@ -45,7 +45,7 @@ spec:
               command:
                 - /bin/sh
                 - -c
-                - pg_isready -U ${DB_USER}
+                - pg_isready -U {{ .Values.pg.user | quote }}
             periodSeconds: 5
             initialDelaySeconds: 5
             timeoutSeconds: 3
