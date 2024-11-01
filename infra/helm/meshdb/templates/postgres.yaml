@@ -43,6 +43,8 @@ spec:
           livenessProbe:
             exec:
               command:
+                - /bin/sh
+                - -c
                 - pg_isready -U ${DB_USER}
             periodSeconds: 5
             initialDelaySeconds: 5
