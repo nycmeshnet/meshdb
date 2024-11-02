@@ -34,7 +34,7 @@ class TestAdminSearchView(TestCase):
         sample_install_copy["member"] = self.member
 
         self.install = Install(**sample_install_copy)
-        self.install.referral = "redditor"
+        self.install.referral = "reddit or something, I don't remember"
         self.install.save()
 
         self.node1 = Node(**sample_node)
