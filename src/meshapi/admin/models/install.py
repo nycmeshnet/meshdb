@@ -60,8 +60,10 @@ class InstallAdmin(RankedSearchMixin, ImportExportMixin, ExportActionMixin, Simp
         # Install number
         "install_number__iexact",
         "node__network_number__iexact",
+        "ticket_number__iexact",
         # Search by building details
         "building__street_address__icontains",
+        "unit__icontains",
         "building__zip_code__iexact",
         "building__bin__iexact",
         # Search by member details
@@ -70,6 +72,7 @@ class InstallAdmin(RankedSearchMixin, ImportExportMixin, ExportActionMixin, Simp
         "member__phone_number__iexact",
         "member__slack_handle__iexact",
         # Notes
+        "@referral",
         "@notes",
     ]
     search_vector = (
@@ -82,6 +85,8 @@ class InstallAdmin(RankedSearchMixin, ImportExportMixin, ExportActionMixin, Simp
         + SearchVector("building__street_address", weight="C")
         + SearchVector("building__zip_code", weight="C")
         + SearchVector("building__bin", weight="C")
+        + SearchVector("ticket_number", weight="C")
+        + SearchVector("referral", weight="D")
         + SearchVector("notes", weight="D")
     )
     autocomplete_fields = ["building", "member"]

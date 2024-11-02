@@ -34,6 +34,7 @@ class TestAdminSearchView(TestCase):
         sample_install_copy["member"] = self.member
 
         self.install = Install(**sample_install_copy)
+        self.install.referral = "redditor"
         self.install.save()
 
         self.node1 = Node(**sample_node)
@@ -160,4 +161,8 @@ class TestAdminSearchView(TestCase):
 
     def test_search_install_empty(self):
         response = self._call("/admin/meshapi/install/?q=", 200)
+        self.assertEqual(1, get_admin_results_count(response.content.decode()))
+
+    def test_search_install_referral(self):
+        response = self._call("/admin/meshapi/install/?q=reddit", 200)
         self.assertEqual(1, get_admin_results_count(response.content.decode()))
