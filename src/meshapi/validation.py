@@ -110,6 +110,12 @@ class NYCAddressInfo:
         self.street_address = humanify_street_address(f"{addr_props['housenumber']} {addr_props['street']}")
 
         self.city = addr_props["borough"].replace("Manhattan", "New York")
+
+        # Queens addresses are special and different, but it seems the neighborhood name
+        # that the city gives us is always a good value for "City"
+        if self.city == "Queens":
+            self.city = addr_props.get("neighbourhood", "Queens")
+
         self.state = addr_props["region_a"]
         self.zip = str(addr_props["postalcode"])
 
