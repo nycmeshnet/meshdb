@@ -83,6 +83,7 @@ class InstallAdmin(RankedSearchMixin, ImportExportMixin, ExportActionMixin, Simp
         + SearchVector("member__phone_number", weight="B")
         + SearchVector("member__slack_handle", weight="C")
         + SearchVector("building__street_address", weight="C")
+        + SearchVector("unit", weight="C")
         + SearchVector("building__zip_code", weight="C")
         + SearchVector("building__bin", weight="C")
         + SearchVector("ticket_number", weight="C")
