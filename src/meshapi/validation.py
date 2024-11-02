@@ -22,6 +22,7 @@ DOB_BUILDING_HEIGHT_API_URL = "https://data.cityofnewyork.us/resource/qb5r-6dgf.
 # FIXME (wdn): When we can't reach the internet to get the email, this returns 400.
 # That's wrong. It should be 500 because it's our fault. I've seen this reject
 # valid emails because of this and it makes testing offline impossible unless you mock it.
+# https://github.com/nycmeshnet/meshdb/issues/692
 def validate_email_address(email_address: str) -> Optional[bool]:
     return validate_email(
         email_address=email_address,
