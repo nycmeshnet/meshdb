@@ -10,9 +10,6 @@ data:
   DB_USER_RO: {{ .Values.pg.user_ro | quote }}
   DB_HOST: {{ include "meshdb.fullname" . }}-postgres.{{ .Values.meshdb_app_namespace }}.svc.cluster.local
   DB_PORT: {{ .Values.pg.port | quote }}
-  # Backups
-  BACKUP_S3_BUCKET_NAME: {{ .Values.meshweb.backup_s3_bucket_name | quote }}
-  BACKUP_S3_BASE_FOLDER: {{ .Values.meshweb.backup_s3_base_folder | quote }}
 
   SMTP_HOST: {{ .Values.email.smtp_host | quote }}
   SMTP_PORT: {{ .Values.email.smtp_port | quote }}

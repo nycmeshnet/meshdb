@@ -12,7 +12,6 @@ These instructions will set up a 4 node k3s cluster on proxmox.
 | -------- | ------- |
 | `ACCESS_KEY_ID` | Access key ID for s3 backups |
 | `SECRET_ACCESS_KEY` | Secret access key for s3 backups |
-| `BACKUP_S3_BUCKET_NAME` | Name of the s3 bucket to store backups |
 | `DJANGO_SECRET_KEY` | Django secret key |
 | `GH_TOKEN` | Github token for pulling down panoramas |
 | `NN_ASSIGN_PSK` | Legacy node number assign password |
