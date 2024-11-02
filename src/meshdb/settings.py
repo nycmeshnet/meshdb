@@ -68,7 +68,6 @@ CSP_DEFAULT_SRC = [
     "https://fonts.googleapis.com",
     "https://fonts.gstatic.com",
     "https://cdn.jsdelivr.net",
-    "data:",
     "https://cdn.redoc.ly",  # Redoc
     "blob:",  # Redoc
     "'unsafe-inline'",  # TODO: Remove me https://github.com/nycmeshnet/meshdb/issues/645
@@ -76,6 +75,7 @@ CSP_DEFAULT_SRC = [
 ]
 CSP_IMG_SRC = [
     "'self'",
+    "data:",
     "https://maps.googleapis.com",
     "https://maps.gstatic.com",
     "https://cdn.jsdelivr.net",
