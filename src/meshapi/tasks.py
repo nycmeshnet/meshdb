@@ -5,6 +5,7 @@ from celery.schedules import crontab
 from django.core import management
 from flags.state import disable_flag, enable_flag
 
+from meshapi.util.django_flag_decorator import skip_if_flag_disabled
 from meshapi.util.uisp_import.fetch_uisp import get_uisp_devices, get_uisp_links
 from meshapi.util.uisp_import.sync_handlers import (
     import_and_sync_uisp_devices,
@@ -17,6 +18,7 @@ from meshdb.settings import MESHDB_ENVIRONMENT
 
 
 @celery_app.task
+@skip_if_flag_disabled("TASK_ENABLED_RUN_DATABASE_BACKUP")
 def run_database_backup() -> None:
     # Don't run a backup unless it's prod
     if MESHDB_ENVIRONMENT != "prod":
@@ -34,6 +36,7 @@ def run_database_backup() -> None:
 
 
 @celery_app.task
+@skip_if_flag_disabled("TASK_ENABLED_RESET_DEV_DATABASE")
 def reset_dev_database() -> None:
     # Only reset dev environments (very important!)
     if "dev" not in MESHDB_ENVIRONMENT:
@@ -55,6 +58,7 @@ def reset_dev_database() -> None:
 
 
 @celery_app.task
+@skip_if_flag_disabled("TASK_ENABLED_UPDATE_PANORAMAS")
 def run_update_panoramas() -> None:
     logging.info("Running panorama sync task")
     try:
@@ -66,6 +70,7 @@ def run_update_panoramas() -> None:
 
 
 @celery_app.task
+@skip_if_flag_disabled("TASK_ENABLED_SYNC_WITH_UISP")
 def run_update_from_uisp() -> None:
     logging.info("Running UISP import & sync tasks")
     try:
