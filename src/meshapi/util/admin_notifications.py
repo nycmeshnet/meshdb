@@ -2,28 +2,16 @@ import json
 import logging
 import os
 from typing import Optional, Sequence, Type
-from urllib.parse import urljoin
 
 import requests
-from django.contrib.contenttypes.models import ContentType
 from django.db.models import Model
 from django.http import HttpRequest
-from django.urls import reverse
 from rest_framework.serializers import Serializer
+
+from meshapi.admin.utils import get_admin_url
 
 SLACK_ADMIN_NOTIFICATIONS_WEBHOOK_URL = os.environ.get("SLACK_ADMIN_NOTIFICATIONS_WEBHOOK_URL")
 SITE_BASE_URL = os.environ.get("SITE_BASE_URL")
-
-
-def get_admin_url(model: Model, site_base_url: str) -> str:
-    content_type = ContentType.objects.get_for_model(model.__class__)
-    return urljoin(
-        site_base_url,
-        reverse(
-            f"admin:{content_type.app_label}_{content_type.model}_change",
-            args=(model.pk,),
-        ),
-    )
 
 
 def notify_administrators_of_data_issue(
@@ -52,7 +40,7 @@ def notify_administrators_of_data_issue(
         + ", ".join(f"<{get_admin_url(m, site_base_url)}|{m}>" for m in model_instances)
         + ". Please open the database admin UI using the provided links to correct this.\n\n"
         + "The current database state of these object(s) is: \n"
-        + f"```\n{json.dumps(serializer.data, indent=2)}\n```",
+        + f"```\n{json.dumps(serializer.data, indent=2, default=str)}\n```",
     }
 
     if not SLACK_ADMIN_NOTIFICATIONS_WEBHOOK_URL:

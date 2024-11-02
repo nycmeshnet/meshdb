@@ -2,6 +2,7 @@ import os
 from unittest import mock
 
 from django.test import TestCase
+from flags.state import enable_flag
 
 from meshapi.tasks import reset_dev_database, run_database_backup
 
@@ -14,6 +15,7 @@ class TestRunDatabaseBackupTask(TestCase):
     def test_run_database_backup(self, mock_call_command_func):
         os.environ["AWS_ACCESS_KEY_ID"] = "fake"
         os.environ["AWS_SECRET_ACCESS_KEY"] = "alsofake"
+        enable_flag("TASK_ENABLED_RUN_DATABASE_BACKUP")
         run_database_backup()
         mock_call_command_func.assert_has_calls([mock.call("dbbackup")])
 
@@ -22,6 +24,7 @@ class TestRunDatabaseBackupTask(TestCase):
     def test_run_database_backup_not_prod(self, mock_call_command_func):
         os.environ["AWS_ACCESS_KEY_ID"] = "fake"
         os.environ["AWS_SECRET_ACCESS_KEY"] = "alsofake"
+        enable_flag("TASK_ENABLED_RUN_DATABASE_BACKUP")
         with self.assertRaises(EnvironmentError):
             run_database_backup()
 
@@ -30,6 +33,7 @@ class TestRunDatabaseBackupTask(TestCase):
     def test_run_database_backup_no_creds(self, mock_call_command_func):
         os.environ["AWS_ACCESS_KEY_ID"] = ""
         os.environ["AWS_SECRET_ACCESS_KEY"] = ""
+        enable_flag("TASK_ENABLED_RUN_DATABASE_BACKUP")
         with self.assertRaises(ValueError):
             run_database_backup()
 
@@ -40,6 +44,7 @@ class TestResetDevDatabaseTask(TestCase):
     def test_run_reset_dev_database(self, mock_call_command_func):
         os.environ["AWS_ACCESS_KEY_ID"] = "fake"
         os.environ["AWS_SECRET_ACCESS_KEY"] = "alsofake"
+        enable_flag("TASK_ENABLED_RESET_DEV_DATABASE")
         reset_dev_database()
         mock_call_command_func.assert_has_calls(
             [mock.call("dbrestore", "--noinput", "--database", "default"), mock.call("scramble_members", "--noinput")]
@@ -50,6 +55,7 @@ class TestResetDevDatabaseTask(TestCase):
     def test_run_reset_dev_database_not_dev(self, mock_call_command_func):
         os.environ["AWS_ACCESS_KEY_ID"] = "fake"
         os.environ["AWS_SECRET_ACCESS_KEY"] = "alsofake"
+        enable_flag("TASK_ENABLED_RESET_DEV_DATABASE")
         with self.assertRaises(EnvironmentError):
             reset_dev_database()
 
@@ -58,5 +64,6 @@ class TestResetDevDatabaseTask(TestCase):
     def test_run_reset_dev_database_no_creds(self, mock_call_command_func):
         os.environ["AWS_ACCESS_KEY_ID"] = ""
         os.environ["AWS_SECRET_ACCESS_KEY"] = ""
+        enable_flag("TASK_ENABLED_RESET_DEV_DATABASE")
         with self.assertRaises(ValueError):
             reset_dev_database()

@@ -15,6 +15,7 @@ from meshdb.utils.spreadsheet_import.building.constants import (
     LOCAL_MESH_NOMINATIM_ADDR,
     NYC_COUNTIES,
     OSM_CITY_SUBSTITUTIONS,
+    QUEENS_NEIGHBORHOODS,
     AddressParsingResult,
     AddressTruthSource,
     DatabaseAddress,
@@ -46,12 +47,17 @@ def normalize_whitespace_and_case(input_str: str) -> str:
 def database_address_components_to_normalized_address_string(
     address: DatabaseAddress,
 ) -> str:
+    city = address.city
+
+    # In Queens, most addresses can be refered to under multiple city names. e.g.
+    # 11396 can be called East Elmhurst, Flushing, or Queens but OSM and the
+    # city planning API often return no results if you use Flushing. These automated
+    # tools seem quite happy with "Queens" in all cases though, so we map everything to that
+    if city and city.lower() in QUEENS_NEIGHBORHOODS:
+        city = "Queens"
+
     return ", ".join(
-        [
-            component
-            for component in [address.street_address, address.city, address.state, address.zip_code]
-            if component
-        ]
+        [component for component in [address.street_address, city, address.state, address.zip_code] if component]
     )
 
 
@@ -282,6 +288,12 @@ class AddressParser:
         )
         street_address = humanify_street_address(street_address.replace("B'WAY", "BROADWAY"))
         city = closest_nyc_location["properties"]["borough"].replace("Manhattan", "New York")
+
+        # Queens addresses are special and different, but it seems the neighborhood name
+        # that the city gives us is always a good value for "City"
+        if city == "Queens":
+            city = closest_nyc_location["properties"].get("neighbourhood", "Queens")
+
         state = closest_nyc_location["properties"][
             "region_a"
         ]  # I think this is some euro-centric GIS standard?? (they call state "region")
@@ -367,10 +379,11 @@ class AddressParser:
 
             closest_osm_location = self._get_closest_osm_location(normalized_osm_addr, (row.latitude, row.longitude))
 
-            if not closest_osm_location:
-                raise AddressError(f"Unable to find '{input_address}' in OSM database")
-
-            if closest_osm_location.raw["type"] in ["postcode", "administrative", "neighbourhood"]:
+            if closest_osm_location and closest_osm_location.raw["type"] in [
+                "postcode",
+                "administrative",
+                "neighbourhood",
+            ]:
                 # Fall back to string parsing for vague place descriptions
                 raise AddressError(
                     f"Address '{input_address}' is not substantial enough to resolve to a specific place"
@@ -386,8 +399,8 @@ class AddressParser:
                 else:
                     pelias_zip_code_int = int(pelias_zip_code_str)
 
-            if osm_location_is_in_nyc(closest_osm_location.raw["address"]) or NYCZipCodes.match_zip(
-                pelias_zip_code_int
+            if NYCZipCodes.match_zip(pelias_zip_code_int) or (
+                closest_osm_location and osm_location_is_in_nyc(closest_osm_location.raw["address"])
             ):
                 # We are in NYC, call the city planning API
                 result = self._find_nyc_building(
@@ -395,6 +408,9 @@ class AddressParser:
                 )
             else:
                 # We are not in NYC, the best we can do is the OSM geolocation
+                if not closest_osm_location:
+                    raise AddressError(f"Unable to find '{input_address}' in OSM database")
+
                 r_addr = closest_osm_location.raw["address"]
 
                 for prop in ["house_number", "road", "ISO3166-2-lvl4", "postcode"]:

@@ -1,10 +1,9 @@
 import json
 import logging
-import operator
 from dataclasses import dataclass
 from datetime import date
-from functools import reduce
 from json.decoder import JSONDecodeError
+from typing import Optional
 
 from django.db import IntegrityError, transaction
 from django.db.models import Q
@@ -23,6 +22,7 @@ from meshapi.util.admin_notifications import notify_administrators_of_data_issue
 from meshapi.util.django_pglocks import advisory_lock
 from meshapi.util.network_number import NETWORK_NUMBER_MAX, NETWORK_NUMBER_MIN, get_next_available_network_number
 from meshapi.validation import (
+    NYCAddressInfo,
     geocode_nyc_address,
     normalize_phone_number,
     validate_email_address,
@@ -30,22 +30,25 @@ from meshapi.validation import (
 )
 from meshdb.utils.spreadsheet_import.building.constants import AddressTruthSource
 
+logging.basicConfig()
+
 
 # Join Form
 @dataclass
 class JoinFormRequest:
     first_name: str
     last_name: str
-    email: str
-    phone: str
+    email_address: str
+    phone_number: str
     street_address: str
     city: str
     state: str
-    zip: int
+    zip_code: str
     apartment: str
     roof_access: bool
     referral: str
     ncl: bool
+    trust_me_bro: bool  # Used to override member data correction
 
 
 class JoinFormRequestSerializer(DataclassSerializer):
@@ -74,6 +77,7 @@ form_err_response_schema = inline_serializer("ErrorResponse", fields={"detail": 
                         "install_id": serializers.UUIDField(),
                         "install_number": serializers.IntegerField(),
                         "member_exists": serializers.BooleanField(),
+                        "changed_info": serializers.DictField(),
                     },
                 ),
                 description="Request received, an install has been created (along with member and "
@@ -104,25 +108,31 @@ def join_form(request: Request) -> Response:
 
     join_form_full_name = f"{r.first_name} {r.last_name}"
 
-    if not r.email and not r.phone:
-        return Response({"detail": "Must provide an email or phone number"}, status=status.HTTP_400_BAD_REQUEST)
+    if not r.email_address:
+        return Response({"detail": "Must provide an email"}, status=status.HTTP_400_BAD_REQUEST)
 
-    if r.email and not validate_email_address(r.email):
-        return Response({"detail": f"{r.email} is not a valid email"}, status=status.HTTP_400_BAD_REQUEST)
+    if r.email_address and not validate_email_address(r.email_address):
+        return Response({"detail": f"{r.email_address} is not a valid email"}, status=status.HTTP_400_BAD_REQUEST)
 
     # Expects country code!!!!
-    if r.phone and not validate_phone_number(r.phone):
-        return Response({"detail": f"{r.phone} is not a valid phone number"}, status=status.HTTP_400_BAD_REQUEST)
+    if r.phone_number and not validate_phone_number(r.phone_number):
+        return Response({"detail": f"{r.phone_number} is not a valid phone number"}, status=status.HTTP_400_BAD_REQUEST)
 
-    formatted_phone_number = normalize_phone_number(r.phone) if r.phone else None
+    formatted_phone_number = normalize_phone_number(r.phone_number) if r.phone_number else None
 
     try:
-        nyc_addr_info = geocode_nyc_address(r.street_address, r.city, r.state, r.zip)
+        try:
+            nyc_addr_info: Optional[NYCAddressInfo] = geocode_nyc_address(r.street_address, r.city, r.state, r.zip_code)
+        except Exception as e:
+            # Ensure this gets logged
+            logging.exception(e)
+            raise e
     except ValueError:
+        logging.debug(r.street_address, r.city, r.state, r.zip_code)
         return Response(
             {
                 "detail": "Non-NYC registrations are not supported at this time. Check back later, "
-                "or email support@nycmesh.net"
+                "or send an email to support@nycmesh.net"
             },
             status=status.HTTP_400_BAD_REQUEST,
         )
@@ -134,43 +144,73 @@ def join_form(request: Request) -> Response:
             {"detail": "Your address could not be validated."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
 
-    # Check if there's an existing member. Group members by matching on both email and phone
-    # A member can have multiple install requests, if they move apartments for example
-    existing_member_filter_criteria = []
-    if r.email:
-        existing_member_filter_criteria.append(
-            Q(primary_email_address=r.email)
-            | Q(stripe_email_address=r.email)
-            | Q(additional_email_addresses__contains=[r.email])
-        )
+    changed_info: dict[str, str | int] = {}
 
-    if formatted_phone_number:
-        existing_member_filter_criteria.append(
-            Q(phone_number=formatted_phone_number) | Q(additional_phone_numbers=[formatted_phone_number])
-        )
+    if formatted_phone_number and r.phone_number != formatted_phone_number:
+        logging.warning(f"Changed phone_number: {formatted_phone_number} != {r.phone_number}")
+        changed_info["phone_number"] = formatted_phone_number
 
-    existing_members = list(
-        Member.objects.filter(
-            reduce(
-                operator.or_,
-                existing_member_filter_criteria,
+    if r.street_address != nyc_addr_info.street_address:
+        logging.warning(f"Changed street_address: {r.street_address} != {nyc_addr_info.street_address}")
+        changed_info["street_address"] = nyc_addr_info.street_address
+
+    if r.city != nyc_addr_info.city:
+        logging.warning(f"Changed city: {r.city} != {nyc_addr_info.city}")
+        changed_info["city"] = nyc_addr_info.city
+
+    # Let the member know we need to confirm some info with them. We'll send
+    # back a dictionary with the info that needs confirming.
+    # This is not a rejection. We expect another join form submission with all
+    # of this info in place for us.
+    if changed_info:
+        if r.trust_me_bro:
+            logging.warning(
+                "Got trust_me_bro, even though info was still updated "
+                f"(email: {r.email_address}, changed_info: {changed_info}). "
+                "Proceeding with install request submission."
             )
-        )
-    )
+        else:
+            logging.warning("Please confirm a few details")
+            return Response(
+                {
+                    "detail": "Please confirm a few details.",
+                    "building_id": None,
+                    "member_id": None,
+                    "install_id": None,
+                    "install_number": None,
+                    # If this is an existing member, then set a flag to let them know we have
+                    # their information in case they need to update anything.
+                    "member_exists": None,
+                    "changed_info": changed_info,
+                },
+                status=status.HTTP_409_CONFLICT,
+            )
+
+    # A member can have multiple install requests, if they move apartments for example, so we
+    # check if there's an existing member. Group members by matching only on primary email address
+    # This is sublte but important. We do NOT want to dedupe on phone number, or even on additional
+    # email addresses at this time because this could lead to a situation where the email address
+    # entered in the join form does not match the email address we send the OSTicket to.
+    #
+    # That seems like a minor problem, but is actually a potential safety risk. Consider the case
+    # where a couple uses one person's email address to fill out the join form, but signs up for
+    # stripe payments with the other person's email address. If they then break up, and one person
+    # moves out, we definitely do not want to send an email with their new home address to their ex
+    existing_members = list(Member.objects.filter(Q(primary_email_address=r.email_address)))
 
     join_form_member = (
         existing_members[0]
         if len(existing_members) > 0
         else Member(
             name=join_form_full_name,
-            primary_email_address=r.email,
+            primary_email_address=r.email_address,
             phone_number=formatted_phone_number,
             slack_handle=None,
         )
     )
 
-    if r.email not in join_form_member.all_email_addresses:
-        join_form_member.additional_email_addresses.append(r.email)
+    if r.email_address not in join_form_member.all_email_addresses:
+        join_form_member.additional_email_addresses.append(r.email_address)
 
     if formatted_phone_number not in join_form_member.all_phone_numbers:
         join_form_member.additional_phone_numbers.append(formatted_phone_number)
@@ -299,10 +339,14 @@ def join_form(request: Request) -> Response:
                 request,
             )
 
-    logging.info(
-        f"JoinForm submission success. building_id: {join_form_building.id}, "
-        f"member_id: {join_form_member.id}, install_number: {join_form_install.install_number}"
-    )
+    success_message = f"""JoinForm submission success {"(trust_me_bro)" if r.trust_me_bro else ""}. \
+building_id: {join_form_building.id}, member_id: {join_form_member.id}, \
+install_number: {join_form_install.install_number}"""
+
+    if r.trust_me_bro:
+        logging.warning(success_message)
+    else:
+        logging.info(success_message)
 
     return Response(
         {
@@ -314,6 +358,7 @@ def join_form(request: Request) -> Response:
             # If this is an existing member, then set a flag to let them know we have
             # their information in case they need to update anything.
             "member_exists": True if len(existing_members) > 0 else False,
+            "changed_info": {},
         },
         status=status.HTTP_201_CREATED,
     )
