@@ -3,7 +3,6 @@ import json
 import logging
 import os
 import tempfile
-from abc import ABC, abstractmethod
 from dataclasses import dataclass, fields
 from typing import Optional
 
@@ -41,27 +40,13 @@ def s3_content_to_join_record(object_key: str, content: str) -> JoinRecord:
     return join_record
 
 
-class JoinRecordProcessorInterface(ABC):
-    @abstractmethod
-    def __init__(self) -> None:
-        pass
-
-    @abstractmethod
-    def upload(self, join_record: JoinRecord, key: str) -> None:
-        pass
-
-    @abstractmethod
-    def get_all(self) -> list[JoinRecord]:
-        pass
-
-
-class JoinRecordProcessor(JoinRecordProcessorInterface):
+class JoinRecordProcessor:
     def __init__(self) -> None:
         self.s3_client = boto3.client(
             "s3",
             endpoint_url=JOIN_RECORD_ENDPOINT,
-            #aws_access_key_id=JOIN_RECORD_ACCESS_KEY,
-            #aws_secret_access_key=JOIN_RECORD_SECRET_KEY,
+            # aws_access_key_id=JOIN_RECORD_ACCESS_KEY,
+            # aws_secret_access_key=JOIN_RECORD_SECRET_KEY,
             config=Config(signature_version="s3v4"),  # Ensure S3 signature v4 is used
         )
 
@@ -91,16 +76,3 @@ class JoinRecordProcessor(JoinRecordProcessorInterface):
             print("Bucket is empty or does not exist.")
 
         return join_records
-
-
-class MockJoinRecordProcessor(JoinRecordProcessorInterface):
-    def __init__(self, data: dict[str, JoinRecord]) -> None:
-        self.bucket_name: str = "mock_bucket"
-        # Store join record by S3 key and value.
-        self.bucket: dict[str, JoinRecord] = data
-
-    def upload(self, join_record: JoinRecord, key: str) -> None:
-        self.bucket[key] = join_record
-
-    def get_all(self) -> list[JoinRecord]:
-        return list(self.bucket.values())

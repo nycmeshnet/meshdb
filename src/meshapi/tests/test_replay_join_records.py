@@ -5,12 +5,20 @@ from django.core import management
 from django.test import TestCase
 
 from meshapi.models.install import Install
-from meshapi.util.join_records import (
-    JOIN_RECORD_BASE_NAME,
-    JoinRecord,
-    MockJoinRecordProcessor,
-    s3_content_to_join_record,
-)
+from meshapi.util.join_records import JOIN_RECORD_BASE_NAME, JoinRecord, s3_content_to_join_record
+
+
+class MockJoinRecordProcessor:
+    def __init__(self, data: dict[str, JoinRecord]) -> None:
+        self.bucket_name: str = "mock_bucket"
+        # Store join record by S3 key and value.
+        self.bucket: dict[str, JoinRecord] = data
+
+    def upload(self, join_record: JoinRecord, key: str) -> None:
+        self.bucket[key] = join_record
+
+    def get_all(self) -> list[JoinRecord]:
+        return list(self.bucket.values())
 
 
 # Integration test to ensure that we can fetch JoinRecords from an S3 bucket,
