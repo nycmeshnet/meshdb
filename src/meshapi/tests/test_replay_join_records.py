@@ -19,14 +19,6 @@ from meshapi.util.join_records import (
 # somehow from Russia), and maybe mock a MeshDB 500 that just ends in us putting
 # the data back.
 class TestReplayJoinRecords(TestCase):
-    def setUp(self) -> None:
-        # Create S3 bucket in MinIO, put some sample data in there
-        return super().setUp()
-
-    def tearDown(self) -> None:
-        # Delete S3 Bucket
-        return super().tearDown()
-
     # This is just to make codecov happy
     def test_s3_content_to_join_record(self):
         sample_key = "dev-join-form-submissions/2024/11/01/11/33/49.json"
