@@ -6,7 +6,7 @@ from typing import Any
 from django.core.management.base import BaseCommand
 from prettytable import PrettyTable
 
-from meshapi.util.join_records import JOIN_RECORD_BASE_NAME, JoinRecord, JoinRecordProcessor
+from meshapi.util.join_records import JOIN_RECORD_PREFIX, JoinRecord, JoinRecordProcessor
 from meshapi.views.forms import JoinFormRequest, process_join_form
 
 
@@ -71,5 +71,5 @@ class Command(BaseCommand):
 
             # Upload info to S3
             submission_datetime = datetime.fromisoformat(record.submission_time)
-            key = submission_datetime.strftime(f"{JOIN_RECORD_BASE_NAME}/%Y/%m/%d/%H/%M/%S.json")
+            key = submission_datetime.strftime(f"{JOIN_RECORD_PREFIX}/%Y/%m/%d/%H/%M/%S.json")
             p.upload(record, key)

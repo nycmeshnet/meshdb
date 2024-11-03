@@ -1,4 +1,3 @@
-from datetime import datetime
 import os
 from unittest.mock import patch
 
@@ -6,7 +5,10 @@ from django.core import management
 from django.test import TestCase
 
 from meshapi.models.install import Install
-from meshapi.util.join_records import JOIN_RECORD_BASE_NAME, JoinRecord, JoinRecordProcessor, s3_content_to_join_record
+from meshapi.util.join_records import JoinRecord, JoinRecordProcessor, s3_content_to_join_record
+
+MOCK_JOIN_RECORD_PREFIX = "join-record-test"
+
 
 # Integration test to ensure that we can fetch JoinRecords from an S3 bucket,
 # replay them into the join form, and insert the objects we expect.
@@ -14,6 +16,10 @@ from meshapi.util.join_records import JOIN_RECORD_BASE_NAME, JoinRecord, JoinRec
 # somehow from Russia), and maybe mock a MeshDB 500 that just ends in us putting
 # the data back.
 class TestReplayJoinRecords(TestCase):
+    def setUp(self) -> None:
+        p = JoinRecordProcessor()
+        p.flush_test_data()
+
     def tearDown(self) -> None:
         p = JoinRecordProcessor()
         p.flush_test_data()
@@ -49,10 +55,10 @@ class TestReplayJoinRecords(TestCase):
             print(join_record)
             raise e
 
+    @patch("meshapi.util.join_records.JOIN_RECORD_PREFIX", MOCK_JOIN_RECORD_PREFIX)
     def test_replay_join_records(self):
-        os.environ[JOIN_RECORD_BASE_NAME] = "join-record-test"
         sample_join_records: dict[str, JoinRecord] = {
-            f"{JOIN_RECORD_BASE_NAME}/2024/10/30/12/34/56.json": JoinRecord(
+            f"{MOCK_JOIN_RECORD_PREFIX}/2024/10/30/12/34/56.json": JoinRecord(
                 first_name="Jon",
                 last_name="Smith",
                 email_address="js@gmail.com",
@@ -71,7 +77,7 @@ class TestReplayJoinRecords(TestCase):
                 replayed=0,
                 install_number=None,
             ),
-            f"{JOIN_RECORD_BASE_NAME}/2024/10/30/12/34/57.json": JoinRecord(
+            f"{MOCK_JOIN_RECORD_PREFIX}/2024/10/30/12/34/57.json": JoinRecord(
                 first_name="Jon",
                 last_name="Smith",
                 email_address="js@gmail.com",
@@ -89,18 +95,17 @@ class TestReplayJoinRecords(TestCase):
                 code="400",
                 replayed=1,
                 install_number=None,
-            )
+            ),
         }
 
         # Load the samples into S3
         p = JoinRecordProcessor()
         for key, record in sample_join_records.items():
+            print(key)
             p.upload(record, key)
 
         # Replay the records
         management.call_command("replay_join_records", "--noinput")
-
-        management.call_command("replay_join_records", "--look", "--all")
 
         # FIXME (wdn): I had to combine these tests because I couldn't figure
         # out how to make the mock atomic and they kept poisoning each other.

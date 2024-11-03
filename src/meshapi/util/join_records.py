@@ -14,7 +14,7 @@ from meshapi.views.forms import JoinFormRequest
 
 JOIN_RECORD_ENDPOINT = os.environ.get("S3_ENDPOINT", None)
 JOIN_RECORD_BUCKET_NAME = os.environ.get("JOIN_RECORD_BUCKET_NAME")
-JOIN_RECORD_BASE_NAME = os.environ.get("JOIN_RECORD_BASE_NAME", "sample-basename")
+JOIN_RECORD_PREFIX = os.environ.get("JOIN_RECORD_PREFIX", "sample-basename")
 JOIN_RECORD_ACCESS_KEY = os.environ.get("AWS_ACCESS_KEY_ID")
 JOIN_RECORD_SECRET_KEY = os.environ.get("AWS_SECRET_KEY")
 
@@ -63,7 +63,7 @@ class JoinRecordProcessor:
             logging.error(e)
 
     def get_all(self) -> list[JoinRecord]:
-        response = self.s3_client.list_objects_v2(Bucket=JOIN_RECORD_BUCKET_NAME, Prefix=JOIN_RECORD_BASE_NAME)
+        response = self.s3_client.list_objects_v2(Bucket=JOIN_RECORD_BUCKET_NAME, Prefix=JOIN_RECORD_PREFIX)
         join_records = []
 
         # Loop through each object and get its contents
@@ -83,20 +83,20 @@ class JoinRecordProcessor:
 
     # I hardcoded the folder prefix to prevent any shenanigans
     def flush_test_data(self):
-        #bucket = self.s3_client.Bucket(JOIN_RECORD_BUCKET_NAME)
-        #bucket.objects.filter(Prefix="join-record-test").delete()
+        # bucket = self.s3_client.Bucket(JOIN_RECORD_BUCKET_NAME)
+        # bucket.objects.filter(Prefix="join-record-test").delete()
         folder_path = "join-record-test"
 
         # List all objects within the specified folder
         objects_to_delete = self.s3_client.list_objects_v2(Bucket=JOIN_RECORD_BUCKET_NAME, Prefix=folder_path)
-        
+
         # Check if any objects are found
-        if 'Contents' in objects_to_delete:
+        if "Contents" in objects_to_delete:
             # Prepare delete request
-            delete_keys = [{'Key': obj['Key']} for obj in objects_to_delete['Contents']]
-            
+            delete_keys = [{"Key": obj["Key"]} for obj in objects_to_delete["Contents"]]
+
             # Delete all objects in one call
-            self.s3_client.delete_objects(Bucket=JOIN_RECORD_BUCKET_NAME, Delete={'Objects': delete_keys})
+            self.s3_client.delete_objects(Bucket=JOIN_RECORD_BUCKET_NAME, Delete={"Objects": delete_keys})
             print(f"Folder '{folder_path}' deleted from bucket '{JOIN_RECORD_BUCKET_NAME}'.")
         else:
             print(f"No objects found in folder '{folder_path}'.")
