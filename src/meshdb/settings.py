@@ -48,6 +48,10 @@ FLAGS: Dict[str, Any] = {
     "EDIT_PANORAMAS": [],
     "INTEGRATION_ENABLED_SEND_JOIN_REQUEST_SLACK_MESSAGES": [],
     "INTEGRATION_ENABLED_CREATE_OSTICKET_TICKETS": [],
+    "TASK_ENABLED_RUN_DATABASE_BACKUP": [],
+    "TASK_ENABLED_RESET_DEV_DATABASE": [],
+    "TASK_ENABLED_UPDATE_PANORAMAS": [],
+    "TASK_ENABLED_SYNC_WITH_UISP": [],
 }
 
 USE_X_FORWARDED_HOST = True
@@ -68,7 +72,6 @@ CSP_DEFAULT_SRC = [
     "https://fonts.googleapis.com",
     "https://fonts.gstatic.com",
     "https://cdn.jsdelivr.net",
-    "data:",
     "https://cdn.redoc.ly",  # Redoc
     "blob:",  # Redoc
     "'unsafe-inline'",  # TODO: Remove me https://github.com/nycmeshnet/meshdb/issues/645
@@ -76,6 +79,7 @@ CSP_DEFAULT_SRC = [
 ]
 CSP_IMG_SRC = [
     "'self'",
+    "data:",
     "https://maps.googleapis.com",
     "https://maps.gstatic.com",
     "https://cdn.jsdelivr.net",

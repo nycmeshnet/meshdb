@@ -274,7 +274,7 @@ queens_join_form_submission = {
     "parsed_phone": "+1 585-758-3425",  # CSH's phone number :P
     "street_address": "36-01 35th Ave",
     "parsed_street_address": "36-01 35th Avenue",
-    "city": "Queens",
+    "city": "Astoria",
     "state": "NY",
     "zip_code": "11106",
     "apartment": "",
@@ -291,6 +291,7 @@ queens_join_form_submission = {
                     "borough": "Queens",
                     "region_a": "NY",
                     "postalcode": "11106",
+                    "neighbourhood": "Astoria",
                     "addendum": {"pad": {"bin": 123456}},
                 },
                 "geometry": {"coordinates": [0, 0]},
