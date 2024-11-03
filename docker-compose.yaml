@@ -95,8 +95,6 @@ services:
       - MINIO_ROOT_USER=sampleaccesskey
       - MINIO_ROOT_PASSWORD=samplesecretkey
       - MINIO_DEFAULT_BUCKETS=meshdb-join-form-log
-      - MINIO_ACCESS_KEY=sampleaccesskey
-      - MINIO_SECRET_KEY=samplesecretkey
 
   # I hate computers: https://github.com/minio/minio/issues/4769
   createbuckets:
