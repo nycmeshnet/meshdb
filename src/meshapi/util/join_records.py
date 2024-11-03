@@ -81,7 +81,7 @@ class JoinRecordProcessor:
         return join_records
 
     # I hardcoded the folder prefix to prevent any shenanigans
-    def flush_test_data(self):
+    def flush_test_data(self) -> None:
         # bucket = self.s3_client.Bucket(JOIN_RECORD_BUCKET_NAME)
         # bucket.objects.filter(Prefix="join-record-test").delete()
         folder_path = "join-record-test"
