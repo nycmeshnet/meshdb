@@ -100,6 +100,11 @@ spec:
                 secretKeyRef:
                   name: meshdb-secrets
                   key: slack-webhook
+            - name: WEBSITE_MAP_BUILD_WEBHOOK_URL
+              valueFrom:
+                secretKeyRef:
+                  name: meshdb-secrets
+                  key: website-map-build-webhook-url
           {{- if .livenessProbe }}
           livenessProbe:
             {{- toYaml .livenessProbe | nindent 12 }}

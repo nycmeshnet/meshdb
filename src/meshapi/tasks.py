@@ -122,7 +122,8 @@ if MESHDB_ENVIRONMENT == "prod":
     }
 
     WEBSITE_MAP_BUILD_CRONTAB_EXPRESSIONS = [
-        crontab(minute="40", hour="*/1"),
+        crontab(minute="40", hour="3-12/3"),
+        crontab(minute="40", hour="13-23,0-2"),
     ]
     for i, crontab_expression in enumerate(WEBSITE_MAP_BUILD_CRONTAB_EXPRESSIONS):
         celery_app.conf.beat_schedule[f"run-website-map-build-{i}"] = {
