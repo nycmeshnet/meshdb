@@ -1,3 +1,4 @@
+import dataclasses
 import datetime
 import json
 import logging
@@ -51,15 +52,18 @@ class JoinRecordProcessor:
         )
 
     def upload(self, join_record: JoinRecord, key: str) -> None:
-        with tempfile.NamedTemporaryFile() as tmp:
-            tmp.write(str.encode(json.dumps(join_record)))
         try:
-            self.s3_client.upload_file(tmp, JOIN_RECORD_BUCKET_NAME, key)
+            self.s3_client.put_object(
+                Bucket=JOIN_RECORD_BUCKET_NAME,
+                Key=key,
+                Body=json.dumps(dataclasses.asdict(join_record)),
+                ContentType="application/json",
+            )
         except ClientError as e:
             logging.error(e)
 
     def get_all(self) -> list[JoinRecord]:
-        response = self.s3_client.list_objects_v2(Bucket=JOIN_RECORD_BUCKET_NAME)
+        response = self.s3_client.list_objects_v2(Bucket=JOIN_RECORD_BUCKET_NAME, Prefix=JOIN_RECORD_BASE_NAME)
         join_records = []
 
         # Loop through each object and get its contents
@@ -76,3 +80,23 @@ class JoinRecordProcessor:
             print("Bucket is empty or does not exist.")
 
         return join_records
+
+    # I hardcoded the folder prefix to prevent any shenanigans
+    def flush_test_data(self):
+        #bucket = self.s3_client.Bucket(JOIN_RECORD_BUCKET_NAME)
+        #bucket.objects.filter(Prefix="join-record-test").delete()
+        folder_path = "join-record-test"
+
+        # List all objects within the specified folder
+        objects_to_delete = self.s3_client.list_objects_v2(Bucket=JOIN_RECORD_BUCKET_NAME, Prefix=folder_path)
+        
+        # Check if any objects are found
+        if 'Contents' in objects_to_delete:
+            # Prepare delete request
+            delete_keys = [{'Key': obj['Key']} for obj in objects_to_delete['Contents']]
+            
+            # Delete all objects in one call
+            self.s3_client.delete_objects(Bucket=JOIN_RECORD_BUCKET_NAME, Delete={'Objects': delete_keys})
+            print(f"Folder '{folder_path}' deleted from bucket '{JOIN_RECORD_BUCKET_NAME}'.")
+        else:
+            print(f"No objects found in folder '{folder_path}'.")

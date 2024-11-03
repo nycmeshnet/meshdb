@@ -33,7 +33,7 @@ class Command(BaseCommand):
         table.field_names = (key.name for key in fields(JoinRecord))
 
         for entry in join_records:
-            if (not options["all"]) and (entry.code == "200" or entry.code == "201"):
+            if (not options["all"]) and entry.install_number:
                 # Ignore submissions that are known good
                 join_records.remove(entry)
                 continue
@@ -52,6 +52,7 @@ class Command(BaseCommand):
             proceed_with_replay = input("Proceed with replay? (y/N): ")
             if proceed_with_replay.lower() != "yes" and proceed_with_replay.lower() != "y":
                 print("Operation cancelled.")
+                return
 
         print("Replaying Join Records...")
 
