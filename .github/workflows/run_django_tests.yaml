@@ -43,8 +43,7 @@ jobs:
         #  - api
         volumes:
           - 'minio_data:/data'
-        command: |
-          server /data --console-address ":9001"
+        command: server /data --console-address ":9001"
         environment:
           - MINIO_ROOT_USER=sampleaccesskey
           - MINIO_ROOT_PASSWORD=samplesecretkey
