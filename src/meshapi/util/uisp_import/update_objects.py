@@ -75,12 +75,19 @@ def update_device_from_uisp_data(
 
 def update_link_from_uisp_data(
     existing_link: Link,
+    uisp_link_id: str,
     uisp_from_device: Device,
     uisp_to_device: Device,
     uisp_status: Link.LinkStatus,
     uisp_session: Optional[requests.Session] = None,
 ) -> List[str]:
     change_messages = []
+
+    if uisp_link_id != existing_link.uisp_id:
+        existing_link.uisp_id = uisp_link_id
+        # TODO: Convert this to a log warning instead of an admin message if this fix holds
+        #  GH issue: https://github.com/nycmeshnet/meshdb/issues/691
+        change_messages.append(f"Changed UISP link ID to {uisp_link_id}")
 
     uisp_device_pair = {uisp_to_device, uisp_from_device}
     db_device_pair = {existing_link.from_device, existing_link.to_device}
