@@ -1,6 +1,7 @@
 import logging
 import os
 
+import requests
 from celery.schedules import crontab
 from django.core import management
 from flags.state import disable_flag, enable_flag
@@ -83,6 +84,24 @@ def run_update_from_uisp() -> None:
         raise e
 
 
+@celery_app.task
+@skip_if_flag_disabled("TASK_ENABLED_WEBSITE_MAP_BUILD_WEBHOOK")
+def run_website_map_build() -> None:
+    website_map_build_webhook = os.environ.get("WEBSITE_MAP_BUILD_WEBHOOK_URL")
+    try:
+        if not website_map_build_webhook:
+            raise ValueError("Missing WEBSITE_MAP_BUILD_WEBHOOK_URL env var")
+
+        logging.info("Calling website map build webhook")
+
+        response = requests.post(website_map_build_webhook)
+        response.raise_for_status()
+    except Exception as e:
+        # Make sure the failure gets logged.
+        logging.exception(e)
+        raise e
+
+
 jitter_minutes = 0 if MESHDB_ENVIRONMENT == "prod" else 2
 
 celery_app.conf.beat_schedule = {
@@ -101,6 +120,15 @@ if MESHDB_ENVIRONMENT == "prod":
         "task": "meshapi.tasks.run_database_backup",
         "schedule": crontab(minute="20", hour="*/1"),
     }
+
+    WEBSITE_MAP_BUILD_CRONTAB_EXPRESSIONS = [
+        crontab(minute="40", hour="*/1"),
+    ]
+    for i, crontab_expression in enumerate(WEBSITE_MAP_BUILD_CRONTAB_EXPRESSIONS):
+        celery_app.conf.beat_schedule[f"run-website-map-build-{i}"] = {
+            "task": "meshapi.tasks.run_database_backup",
+            "schedule": crontab_expression,
+        }
 
 if MESHDB_ENVIRONMENT == "dev3":
     celery_app.conf.beat_schedule["run-reset-dev-database-daily"] = {
