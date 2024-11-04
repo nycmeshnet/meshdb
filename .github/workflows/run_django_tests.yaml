@@ -33,40 +33,26 @@ jobs:
         image: redis
         ports:
           - 6379:6379
-
-      minio:
-        image: quay.io/minio/minio
-        ports:
-          - '9000:9000'
-          - '9001:9001'
-        #networks:
-        #  - api
-        volumes:
-          - 'minio_data:/data'
-        command: server /data --console-address ":9001"
-        environment:
-          - MINIO_ROOT_USER=sampleaccesskey
-          - MINIO_ROOT_PASSWORD=samplesecretkey
-          - MINIO_DEFAULT_BUCKETS=meshdb-join-form-log
-
-      # I hate computers: https://github.com/minio/minio/issues/4769
-      createbuckets:
-        image: minio/mc
-        depends_on:
-          - minio
-        entrypoint: >
-          /bin/sh -c "
-          /usr/bin/mc config host add myminio http://minio:9000 sampleaccesskey samplesecretkey;
-          /usr/bin/mc mb myminio/meshdb-join-form-log;
-          exit 0;
-          "
-
     steps:
       - uses: actions/checkout@v3
       - name: Set up Python
         uses: actions/setup-python@65d7f2d534ac1bc67fcd62888c5f4f3d2cb2b236 # v4
         with:
           python-version: '3.11'
+      - name: Setup Minio
+        run: |
+            docker run -d -p 9000:9000 --name minio \
+            -e "MINIO_ACCESS_KEY=sampleaccesskey" \
+            -e "MINIO_SECRET_KEY=samplesecretkey" \
+            -e "MINIO_DEFAULT_BUCKETS=meshdb-join-form-log" \
+            -v /tmp/data:/data \
+            -v /tmp/config:/root/.minio \
+            minio/minio server /data
+
+            export AWS_ACCESS_KEY_ID=sampleaccesskey
+            export AWS_SECRET_ACCESS_KEY=samplesecretkey
+            export AWS_EC2_METADATA_DISABLED=true
+            aws --endpoint-url http://127.0.0.1:9000/ s3 mb s3://meshdb-join-form-log
       - name: "Upgrade pip"
         run: "pip install --upgrade pip"
       - name: "Install package"
@@ -85,6 +71,12 @@ jobs:
           PANO_GITHUB_TOKEN: ${{ secrets.PANO_GITHUB_TOKEN }}
           DB_USER_RO: meshdb_ro
           DB_PASSWORD_RO: readonly
+          JOIN_RECORD_BUCKET_NAME: meshdb-join-form-log
+          JOIN_RECORD_PREFIX: dev-join-form-submissions
+          S3_ENDPOINT: http://127.0.0.1:9000
+          AWS_ACCESS_KEY_ID: sampleaccesskey 
+          AWS_SECRET_ACCESS_KEY: samplesecretkey
+          AWS_REGION: us-east-1
         run: coverage run src/manage.py test meshapi meshapi_hooks
       - name: Write coverage report to disk
         run: coverage html
