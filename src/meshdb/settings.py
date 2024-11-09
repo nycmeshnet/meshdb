@@ -446,7 +446,7 @@ SPECTACULAR_SETTINGS = {
         {
             "name": "Sectors",
             "description": 'Special devices with antennas with broad coverage of a radial "slice" of land area. '
-            "See https://wiki.mesh.nycmesh.net/books/3-hardware-firmware/page/ubiquiti-liteap-sector#bkmrk-page-title",
+            "See https://wiki.nycmesh.net/books/3-hardware-firmware/page/ubiquiti-liteap-sector#bkmrk-page-title",
         },
         {
             "name": "Access Points",
