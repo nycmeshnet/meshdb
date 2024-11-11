@@ -37,6 +37,7 @@ logging.basicConfig()
 
 DISABLE_RECAPTCHA_VALIDATION = os.environ.get("RECAPTCHA_DISABLE_VALIDATION") == "True"
 
+
 # Join Form
 @dataclass
 class JoinFormRequest:

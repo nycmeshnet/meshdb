@@ -19,7 +19,7 @@ from meshdb.utils.spreadsheet_import.building.pelias import humanify_street_addr
 
 RECAPTCHA_SECRET_KEY_V2 = os.environ.get("RECAPTCHA_SERVER_SECRET_KEY_V2")
 RECAPTCHA_SECRET_KEY_V3 = os.environ.get("RECAPTCHA_SERVER_SECRET_KEY_V3")
-RECAPTCHA_INVISIBLE_TOKEN_SCORE_THRESHOLD = os.environ.get("RECAPTCHA_INVISIBLE_TOKEN_SCORE_THRESHOLD", 0.5)
+RECAPTCHA_INVISIBLE_TOKEN_SCORE_THRESHOLD = float(os.environ.get("RECAPTCHA_INVISIBLE_TOKEN_SCORE_THRESHOLD", 0.5))
 
 NYC_PLANNING_LABS_GEOCODE_URL = "https://geosearch.planninglabs.nyc/v2/search"
 DOB_BUILDING_HEIGHT_API_URL = "https://data.cityofnewyork.us/resource/qb5r-6dgf.json"
@@ -213,7 +213,7 @@ def geocode_nyc_address(street_address: str, city: str, state: str, zip_code: st
     return None
 
 
-def check_recaptcha_token(token: str, server_secret: str, remote_ip: Optional[str]):
+def check_recaptcha_token(token: Optional[str], server_secret: str, remote_ip: Optional[str]) -> float:
     captcha_response = requests.post(
         RECAPTCHA_TOKEN_VALIDATION_URL,
         {"secret": server_secret, "response": token, "remoteip": remote_ip},
@@ -234,10 +234,13 @@ def check_recaptcha_token(token: str, server_secret: str, remote_ip: Optional[st
     return response_json.get("score", 1.0)
 
 
-def validate_captcha_tokens(request: Request, recaptcha_invisible_token: str, recaptcha_checkbox_token: str):
+def validate_captcha_tokens(
+    request: Request, recaptcha_invisible_token: Optional[str], recaptcha_checkbox_token: Optional[str]
+) -> None:
     if not RECAPTCHA_SECRET_KEY_V3 or not RECAPTCHA_SECRET_KEY_V2:
         raise EnvironmentError(
-            "Enviornment variables RECAPTCHA_SECRET_KEY_V2 and RECAPTCHA_SECRET_KEY_V3 must be set in order to validate recaptcha tokens"
+            "Enviornment variables RECAPTCHA_SECRET_KEY_V2 and RECAPTCHA_SECRET_KEY_V3 must be "
+            "set in order to validate recaptcha tokens"
         )
 
     # If we have a checkbox token, just check that token is valid, and if it is, we are good, since
@@ -267,5 +270,6 @@ def validate_captcha_tokens(request: Request, recaptcha_invisible_token: str, re
 
     if invisible_token_score < RECAPTCHA_INVISIBLE_TOKEN_SCORE_THRESHOLD:
         raise ValueError(
-            f"Score of {invisible_token_score} is less than our threshold of {RECAPTCHA_INVISIBLE_TOKEN_SCORE_THRESHOLD}"
+            f"Score of {invisible_token_score} is less than our threshold of "
+            f"{RECAPTCHA_INVISIBLE_TOKEN_SCORE_THRESHOLD}"
         )
