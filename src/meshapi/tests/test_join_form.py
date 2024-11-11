@@ -2,7 +2,7 @@ import copy
 import json
 import time
 from unittest import mock
-from unittest.mock import ANY
+from unittest.mock import ANY, patch
 
 import requests_mock
 from django.contrib.auth.models import User
@@ -106,6 +106,7 @@ def pull_apart_join_form_submission(submission):
     return request, s
 
 
+@patch("meshapi.views.forms.DISABLE_RECAPTCHA_VALIDATION", True)
 class TestJoinForm(TestCase):
     c = Client()
     admin_c = Client()
@@ -1060,6 +1061,7 @@ def slow_install_init(*args, **kwargs):
     return result
 
 
+@patch("meshapi.views.forms.DISABLE_RECAPTCHA_VALIDATION", True)
 class TestJoinFormRaceCondition(TransactionTestCase):
     c = Client()
     admin_c = Client()

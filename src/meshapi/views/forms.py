@@ -1,10 +1,12 @@
 import json
 import logging
+import os
 from dataclasses import dataclass
 from datetime import date
 from json.decoder import JSONDecodeError
 from typing import Optional
 
+from django.conf import settings
 from django.db import IntegrityError, transaction
 from django.db.models import Q
 from drf_spectacular.utils import OpenApiResponse, extend_schema, extend_schema_view, inline_serializer
@@ -25,6 +27,7 @@ from meshapi.validation import (
     NYCAddressInfo,
     geocode_nyc_address,
     normalize_phone_number,
+    validate_captcha_tokens,
     validate_email_address,
     validate_phone_number,
 )
@@ -32,6 +35,7 @@ from meshdb.utils.spreadsheet_import.building.constants import AddressTruthSourc
 
 logging.basicConfig()
 
+DISABLE_RECAPTCHA_VALIDATION = os.environ.get("RECAPTCHA_DISABLE_VALIDATION") == "True"
 
 # Join Form
 @dataclass
@@ -49,6 +53,8 @@ class JoinFormRequest:
     referral: str
     ncl: bool
     trust_me_bro: bool  # Used to override member data correction
+    recaptcha_invisible_token: Optional[str]
+    recaptcha_checkbox_token: Optional[str]
 
 
 class JoinFormRequestSerializer(DataclassSerializer):
@@ -105,6 +111,13 @@ def join_form(request: Request) -> Response:
 
 
 def process_join_form(r: JoinFormRequest, request: Optional[Request] = None) -> Response:
+    if not settings.DEBUG and not DISABLE_RECAPTCHA_VALIDATION:
+        try:
+            validate_captcha_tokens(request, r.recaptcha_invisible_token, r.recaptcha_checkbox_token)
+        except Exception:
+            logging.exception("Captcha validation failed")
+            return Response({"detail": "Captcha verification failed"}, status=status.HTTP_401_UNAUTHORIZED)
+
     if not r.ncl:
         return Response(
             {"detail": "You must agree to the Network Commons License!"}, status=status.HTTP_400_BAD_REQUEST
