@@ -14,9 +14,6 @@ from meshapi.views.forms import JoinFormRequest
 JOIN_RECORD_ENDPOINT = os.environ.get("S3_ENDPOINT", None)
 JOIN_RECORD_BUCKET_NAME = os.environ.get("JOIN_RECORD_BUCKET_NAME")
 JOIN_RECORD_PREFIX = os.environ.get("JOIN_RECORD_PREFIX", "sample-basename")
-JOIN_RECORD_ACCESS_KEY = os.environ.get("AWS_ACCESS_KEY_ID")
-JOIN_RECORD_SECRET_KEY = os.environ.get("AWS_SECRET_KEY")
-
 
 @dataclass
 class JoinRecord(JoinFormRequest):
@@ -45,8 +42,6 @@ class JoinRecordProcessor:
         self.s3_client = boto3.client(
             "s3",
             endpoint_url=JOIN_RECORD_ENDPOINT,
-            # aws_access_key_id=JOIN_RECORD_ACCESS_KEY,
-            # aws_secret_access_key=JOIN_RECORD_SECRET_KEY,
             config=Config(signature_version="s3v4"),  # Ensure S3 signature v4 is used
         )
 

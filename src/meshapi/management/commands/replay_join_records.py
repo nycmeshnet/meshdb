@@ -11,7 +11,7 @@ from meshapi.views.forms import JoinFormRequest, process_join_form
 
 
 class Command(BaseCommand):
-    help = "Replay join form submissions that we may not have accepted properly"
+    help = "Replay join form submissions that we may not have accepted properly. Defaults to viewing, pass --write to write the records to MeshDB."
 
     def add_arguments(self, parser: ArgumentParser) -> None:
         parser.add_argument(
@@ -20,10 +20,15 @@ class Command(BaseCommand):
 
         parser.add_argument("--all", action="store_true", help="Fetch all Join Records, not just failed ones")
 
-        parser.add_argument("--look", action="store_true", help="Print Join Records and quit")
+        parser.add_argument("--write", action="store_true", help="After a confirmation dialogue, replay the records into the Join Form endpoint.")
+
+        parser.add_argument("--date", type=str, help="Show records submitted since this date (%Y-%m-%d)")
+        parser.add_argument("--time", type=str, help="Show records submitted since this time (%H:%M:%S) in 24-Hour UTC")
 
     def handle(self, *args: Any, **options: Any) -> None:
         p = JoinRecordProcessor()
+
+        since_time = datetime.strptime(f"{options['date']} {options['time']}", "%Y-%m-%d %H:%M:%S")
 
         join_records = p.get_all()
 
