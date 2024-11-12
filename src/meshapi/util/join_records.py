@@ -57,11 +57,11 @@ class JoinRecordProcessor:
         except ClientError as e:
             logging.error(e)
 
-    def get_all(self, since: Optional[datetime.datetime]) -> list[JoinRecord]:
+    def get_all(self, since: Optional[datetime.datetime] = None) -> list[JoinRecord]:
         response = self.s3_client.list_objects_v2(
             Bucket=JOIN_RECORD_BUCKET_NAME,
             Prefix=JOIN_RECORD_PREFIX,
-            StartAfter=since.strftime("%Y/%m/%d/%H/%M/%S") if type(since) == datetime.datetime else None,
+            StartAfter=since.strftime(f"{JOIN_RECORD_PREFIX}/%Y/%m/%d/%H/%M/%S.json") if type(since) == datetime.datetime else None,
         )
 
         join_records = []
@@ -85,15 +85,11 @@ class JoinRecordProcessor:
     def flush_test_data(self) -> None:
         folder_path = "join-record-test"
 
-        # List all objects within the specified folder
         objects_to_delete = self.s3_client.list_objects_v2(Bucket=JOIN_RECORD_BUCKET_NAME, Prefix=folder_path)
 
-        # Check if any objects are found
         if "Contents" in objects_to_delete:
-            # Prepare delete request
             delete_keys = [{"Key": obj["Key"]} for obj in objects_to_delete["Contents"]]
 
-            # Delete all objects in one call
             self.s3_client.delete_objects(Bucket=JOIN_RECORD_BUCKET_NAME, Delete={"Objects": delete_keys})
             print(f"Folder '{folder_path}' deleted from bucket '{JOIN_RECORD_BUCKET_NAME}'.")
         else:

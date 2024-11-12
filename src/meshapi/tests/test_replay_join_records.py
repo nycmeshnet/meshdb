@@ -6,6 +6,8 @@ from django.test import TestCase
 from meshapi.models.install import Install
 from meshapi.util.join_records import JoinRecord, JoinRecordProcessor, s3_content_to_join_record
 
+from datetime import datetime
+
 MOCK_JOIN_RECORD_PREFIX = "join-record-test"
 
 
@@ -15,13 +17,73 @@ MOCK_JOIN_RECORD_PREFIX = "join-record-test"
 # somehow from Russia), and maybe mock a MeshDB 500 that just ends in us putting
 # the data back.
 class TestReplayJoinRecords(TestCase):
+    p = JoinRecordProcessor()
+
     def setUp(self) -> None:
-        p = JoinRecordProcessor()
-        p.flush_test_data()
+        self.p.flush_test_data()
 
     def tearDown(self) -> None:
-        p = JoinRecordProcessor()
-        p.flush_test_data()
+        self.p.flush_test_data()
+
+    @patch("meshapi.util.join_records.JOIN_RECORD_PREFIX", MOCK_JOIN_RECORD_PREFIX)
+    def test_list_since(self):
+        sample_join_records: dict[str, JoinRecord] = {
+            f"{MOCK_JOIN_RECORD_PREFIX}/2024/10/20/12/34/56.json": JoinRecord(
+                first_name="Jon",
+                last_name="Smith",
+                email_address="js@gmail.com",
+                phone_number="+1 585-475-2411",
+                street_address="197 Prospect Place",
+                city="Brooklyn",
+                state="NY",
+                zip_code="11238",
+                apartment="1",
+                roof_access=True,
+                referral="Older faked mocked join record.",
+                ncl=True,
+                trust_me_bro=False,
+                submission_time="2024-10-20T12:34:56",
+                code="500",
+                replayed=0,
+                install_number=None,
+            ),
+            f"{MOCK_JOIN_RECORD_PREFIX}/2024/10/30/12/34/57.json": JoinRecord(
+                first_name="Jon",
+                last_name="Smith",
+                email_address="js@gmail.com",
+                phone_number="+1 585-475-2411",
+                street_address="711 Hudson Street",
+                city="Hoboken",
+                state="NJ",
+                zip_code="07030",
+                apartment="",
+                roof_access=True,
+                referral="Totally faked mocked join record.",
+                ncl=True,
+                trust_me_bro=False,
+                submission_time="2024-10-30T12:34:57",
+                code="400",
+                replayed=1,
+                install_number=None,
+            ),
+        }
+
+        # Load the samples into S3
+        for key, record in sample_join_records.items():
+            self.p.upload(record, key)
+
+        l = self.p.get_all(since=datetime.fromisoformat("2024-10-01 00:00:00"))
+
+        self.assertEqual(len(l), 2)
+
+        self.assertEqual(sample_join_records[f"{MOCK_JOIN_RECORD_PREFIX}/2024/10/20/12/34/56.json"], l[0])
+        self.assertEqual(sample_join_records[f"{MOCK_JOIN_RECORD_PREFIX}/2024/10/30/12/34/57.json"], l[1])
+
+        l = self.p.get_all(since=datetime.fromisoformat("2024-10-25 00:00:00"))
+        self.assertEqual(len(l), 1)
+
+        self.assertEqual(sample_join_records[f"{MOCK_JOIN_RECORD_PREFIX}/2024/10/30/12/34/57.json"], l[0])
+
 
     # This is just to make codecov happy
     def test_s3_content_to_join_record(self):
@@ -98,17 +160,13 @@ class TestReplayJoinRecords(TestCase):
         }
 
         # Load the samples into S3
-        p = JoinRecordProcessor()
         for key, record in sample_join_records.items():
-            print(key)
-            p.upload(record, key)
+            self.p.upload(record, key)
 
         # Replay the records
         management.call_command("replay_join_records", "--noinput")
 
-        # FIXME (wdn): I had to combine these tests because I couldn't figure
-        # out how to make the mock atomic and they kept poisoning each other.
-        records = p.get_all()
+        records = self.p.get_all()
 
         self.assertEqual(2, len(records), "Got unexpected number of records in mocked S3 bucket.")
 
