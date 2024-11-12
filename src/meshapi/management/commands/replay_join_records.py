@@ -20,17 +20,22 @@ class Command(BaseCommand):
 
         parser.add_argument("--all", action="store_true", help="Fetch all Join Records, not just failed ones")
 
-        parser.add_argument("--write", action="store_true", help="After a confirmation dialogue, replay the records into the Join Form endpoint.")
+        parser.add_argument(
+            "--write",
+            action="store_true",
+            help="After a confirmation dialogue, replay the records into the Join Form endpoint.",
+        )
 
-        parser.add_argument("--date", type=str, help="Show records submitted since this date (%Y-%m-%d)")
-        parser.add_argument("--time", type=str, help="Show records submitted since this time (%H:%M:%S) in 24-Hour UTC")
+        parser.add_argument(
+            "--since",
+            type=lambda s: datetime.fromisoformat(s),
+            help="Show records submitted since this date and time (UTC, 24-Hour) (%Y-%m-%d %H:%M:%S)",
+        )
 
     def handle(self, *args: Any, **options: Any) -> None:
         p = JoinRecordProcessor()
 
-        since_time = datetime.strptime(f"{options['date']} {options['time']}", "%Y-%m-%d %H:%M:%S")
-
-        join_records = p.get_all()
+        join_records = p.get_all(options["since"])
 
         table = PrettyTable()
         table.padding_width = 0

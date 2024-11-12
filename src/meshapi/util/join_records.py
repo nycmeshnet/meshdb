@@ -15,6 +15,7 @@ JOIN_RECORD_ENDPOINT = os.environ.get("S3_ENDPOINT", None)
 JOIN_RECORD_BUCKET_NAME = os.environ.get("JOIN_RECORD_BUCKET_NAME")
 JOIN_RECORD_PREFIX = os.environ.get("JOIN_RECORD_PREFIX", "sample-basename")
 
+
 @dataclass
 class JoinRecord(JoinFormRequest):
     submission_time: str
@@ -56,8 +57,13 @@ class JoinRecordProcessor:
         except ClientError as e:
             logging.error(e)
 
-    def get_all(self) -> list[JoinRecord]:
-        response = self.s3_client.list_objects_v2(Bucket=JOIN_RECORD_BUCKET_NAME, Prefix=JOIN_RECORD_PREFIX)
+    def get_all(self, since: Optional[datetime.datetime]) -> list[JoinRecord]:
+        response = self.s3_client.list_objects_v2(
+            Bucket=JOIN_RECORD_BUCKET_NAME,
+            Prefix=JOIN_RECORD_PREFIX,
+            StartAfter=since.strftime("%Y/%m/%d/%H/%M/%S") if type(since) == datetime.datetime else None,
+        )
+
         join_records = []
 
         # Loop through each object and get its contents
