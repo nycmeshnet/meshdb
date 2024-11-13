@@ -11,7 +11,8 @@ from meshapi.views.forms import JoinFormRequest, process_join_form
 
 
 class Command(BaseCommand):
-    help = "Replay join form submissions that we may not have accepted properly. Defaults to viewing, pass --write to write the records to MeshDB."
+    help = "Replay join form submissions that we may not have accepted properly."
+    "Defaults to viewing. Pass --write to write the records to MeshDB."
 
     def add_arguments(self, parser: ArgumentParser) -> None:
         parser.add_argument(

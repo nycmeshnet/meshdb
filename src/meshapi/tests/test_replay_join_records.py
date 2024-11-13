@@ -1,3 +1,5 @@
+import json
+from datetime import datetime
 from unittest.mock import patch
 
 from django.core import management
@@ -5,8 +7,6 @@ from django.test import TestCase
 
 from meshapi.models.install import Install
 from meshapi.util.join_records import JoinRecord, JoinRecordProcessor, s3_content_to_join_record
-
-from datetime import datetime
 
 MOCK_JOIN_RECORD_PREFIX = "join-record-test"
 
@@ -72,23 +72,41 @@ class TestReplayJoinRecords(TestCase):
         for key, record in sample_join_records.items():
             self.p.upload(record, key)
 
-        l = self.p.get_all(since=datetime.fromisoformat("2024-10-01 00:00:00"))
+        records_since = self.p.get_all(since=datetime.fromisoformat("2024-10-01 00:00:00"))
 
-        self.assertEqual(len(l), 2)
+        self.assertEqual(len(records_since), 2)
 
-        self.assertEqual(sample_join_records[f"{MOCK_JOIN_RECORD_PREFIX}/2024/10/20/12/34/56.json"], l[0])
-        self.assertEqual(sample_join_records[f"{MOCK_JOIN_RECORD_PREFIX}/2024/10/30/12/34/57.json"], l[1])
+        self.assertEqual(sample_join_records[f"{MOCK_JOIN_RECORD_PREFIX}/2024/10/20/12/34/56.json"], records_since[0])
+        self.assertEqual(sample_join_records[f"{MOCK_JOIN_RECORD_PREFIX}/2024/10/30/12/34/57.json"], records_since[1])
 
-        l = self.p.get_all(since=datetime.fromisoformat("2024-10-25 00:00:00"))
-        self.assertEqual(len(l), 1)
+        records_since = self.p.get_all(since=datetime.fromisoformat("2024-10-25 00:00:00"))
+        self.assertEqual(len(records_since), 1)
 
-        self.assertEqual(sample_join_records[f"{MOCK_JOIN_RECORD_PREFIX}/2024/10/30/12/34/57.json"], l[0])
-
+        self.assertEqual(sample_join_records[f"{MOCK_JOIN_RECORD_PREFIX}/2024/10/30/12/34/57.json"], records_since[0])
 
     # This is just to make codecov happy
     def test_s3_content_to_join_record(self):
         sample_key = "dev-join-form-submissions/2024/11/01/11/33/49.json"
-        sample_s3_content = """{"first_name":"Jon","last_name":"Smith","email_address":"js@gmail.com","phone_number":"+1 585-475-2411","street_address":"197 Prospect Place","apartment":"1","city":"Brooklyn","state":"NY","zip_code":"11238","roof_access":true,"referral":"I googled it.","ncl":true,"trust_me_bro":false,"code":"201","replayed":0,"install_number":1002}"""
+        sample_s3_content = json.dumps(
+            {
+                "first_name": "Jon",
+                "last_name": "Smith",
+                "email_address": "js@gmail.com",
+                "phone_number": "+1 585-475-2411",
+                "street_address": "197 Prospect Place",
+                "apartment": "1",
+                "city": "Brooklyn",
+                "state": "NY",
+                "zip_code": "11238",
+                "roof_access": True,
+                "referral": "I googled it.",
+                "ncl": True,
+                "trust_me_bro": False,
+                "code": "201",
+                "replayed": 0,
+                "install_number": 1002,
+            }
+        )
         sample_join_record: JoinRecord = JoinRecord(
             first_name="Jon",
             last_name="Smith",
