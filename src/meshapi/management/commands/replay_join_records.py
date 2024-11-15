@@ -1,6 +1,6 @@
 from argparse import ArgumentParser
 from dataclasses import asdict, fields
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any
 
 from django.core.management.base import BaseCommand
@@ -36,7 +36,10 @@ class Command(BaseCommand):
     def handle(self, *args: Any, **options: Any) -> None:
         p = JoinRecordProcessor()
 
-        join_records = p.get_all(options["since"])
+        # Default to getting join records from 1 week ago unless otherwise specified
+        since = options["since"] or self.past_week()
+
+        join_records = p.get_all(since)
 
         table = PrettyTable()
         table.padding_width = 0
@@ -56,7 +59,7 @@ class Command(BaseCommand):
 
         print(table)
 
-        if options["look"]:
+        if not options["write"]:
             return
 
         if not options["noinput"]:
@@ -84,3 +87,7 @@ class Command(BaseCommand):
             submission_datetime = datetime.fromisoformat(record.submission_time)
             key = submission_datetime.strftime(f"{JOIN_RECORD_PREFIX}/%Y/%m/%d/%H/%M/%S.json")
             p.upload(record, key)
+
+    @staticmethod
+    def past_week() -> datetime:
+        return datetime.now() - timedelta(days=7)

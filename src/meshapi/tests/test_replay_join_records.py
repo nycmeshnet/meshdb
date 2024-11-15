@@ -1,5 +1,5 @@
 import json
-from datetime import datetime
+from datetime import datetime, timedelta
 from unittest.mock import patch
 
 from django.core import management
@@ -26,7 +26,7 @@ class TestReplayJoinRecords(TestCase):
         self.p.flush_test_data()
 
     @patch("meshapi.util.join_records.JOIN_RECORD_PREFIX", MOCK_JOIN_RECORD_PREFIX)
-    def test_list_since(self):
+    def test_get_all_since(self):
         sample_join_records: dict[str, JoinRecord] = {
             f"{MOCK_JOIN_RECORD_PREFIX}/2024/10/20/12/34/56.json": JoinRecord(
                 first_name="Jon",
@@ -134,8 +134,12 @@ class TestReplayJoinRecords(TestCase):
             print(join_record)
             raise e
 
+    @patch("meshapi.management.commands.replay_join_records.Command.past_week")
     @patch("meshapi.util.join_records.JOIN_RECORD_PREFIX", MOCK_JOIN_RECORD_PREFIX)
-    def test_replay_join_records(self):
+    def test_replay_join_records(self, past_week_function):
+        halloween_minus_one_week = datetime(2024, 10, 31, 8, 0, 0, 0) - timedelta(days=7)
+        past_week_function.return_value = halloween_minus_one_week
+
         sample_join_records: dict[str, JoinRecord] = {
             f"{MOCK_JOIN_RECORD_PREFIX}/2024/10/30/12/34/56.json": JoinRecord(
                 first_name="Jon",
@@ -181,8 +185,8 @@ class TestReplayJoinRecords(TestCase):
         for key, record in sample_join_records.items():
             self.p.upload(record, key)
 
-        # Replay the records
-        management.call_command("replay_join_records", "--noinput")
+        # Replay the records (this should get from the last week (halloween -7 days))
+        management.call_command("replay_join_records", "--noinput", "--write")
 
         records = self.p.get_all()
 

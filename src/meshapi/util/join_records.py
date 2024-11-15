@@ -63,7 +63,7 @@ class JoinRecordProcessor:
             Prefix=JOIN_RECORD_PREFIX,
             StartAfter=since.strftime(f"{JOIN_RECORD_PREFIX}/%Y/%m/%d/%H/%M/%S.json")
             if isinstance(since, datetime.datetime)
-            else None,
+            else "",
         )
 
         join_records = []
