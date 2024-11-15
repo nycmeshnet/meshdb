@@ -6,9 +6,13 @@ from django.core import management
 from django.test import TestCase
 
 from meshapi.models.install import Install
+from meshapi.tests.sample_join_records import (
+    MOCK_JOIN_RECORD_PREFIX,
+    basic_sample_join_records,
+    sample_join_record_s3_content,
+    since_sample_join_records,
+)
 from meshapi.util.join_records import JoinRecord, JoinRecordProcessor, s3_content_to_join_record
-
-MOCK_JOIN_RECORD_PREFIX = "join-record-test"
 
 
 # Integration test to ensure that we can fetch JoinRecords from an S3 bucket,
@@ -27,86 +31,25 @@ class TestReplayJoinRecords(TestCase):
 
     @patch("meshapi.util.join_records.JOIN_RECORD_PREFIX", MOCK_JOIN_RECORD_PREFIX)
     def test_get_all_since(self):
-        sample_join_records: dict[str, JoinRecord] = {
-            f"{MOCK_JOIN_RECORD_PREFIX}/2024/10/20/12/34/56.json": JoinRecord(
-                first_name="Jon",
-                last_name="Smith",
-                email_address="js@gmail.com",
-                phone_number="+1 585-475-2411",
-                street_address="197 Prospect Place",
-                city="Brooklyn",
-                state="NY",
-                zip_code="11238",
-                apartment="1",
-                roof_access=True,
-                referral="Older faked mocked join record.",
-                ncl=True,
-                trust_me_bro=False,
-                submission_time="2024-10-20T12:34:56",
-                code="500",
-                replayed=0,
-                install_number=None,
-            ),
-            f"{MOCK_JOIN_RECORD_PREFIX}/2024/10/30/12/34/57.json": JoinRecord(
-                first_name="Jon",
-                last_name="Smith",
-                email_address="js@gmail.com",
-                phone_number="+1 585-475-2411",
-                street_address="711 Hudson Street",
-                city="Hoboken",
-                state="NJ",
-                zip_code="07030",
-                apartment="",
-                roof_access=True,
-                referral="Totally faked mocked join record.",
-                ncl=True,
-                trust_me_bro=False,
-                submission_time="2024-10-30T12:34:57",
-                code="400",
-                replayed=1,
-                install_number=None,
-            ),
-        }
-
         # Load the samples into S3
-        for key, record in sample_join_records.items():
+        for key, record in since_sample_join_records.items():
             self.p.upload(record, key)
 
         records_since = self.p.get_all(since=datetime.fromisoformat("2024-10-01 00:00:00"))
 
         self.assertEqual(len(records_since), 2)
 
-        self.assertEqual(sample_join_records[f"{MOCK_JOIN_RECORD_PREFIX}/2024/10/20/12/34/56.json"], records_since[0])
-        self.assertEqual(sample_join_records[f"{MOCK_JOIN_RECORD_PREFIX}/2024/10/30/12/34/57.json"], records_since[1])
+        self.assertEqual(since_sample_join_records[f"{MOCK_JOIN_RECORD_PREFIX}/2024/10/20/12/34/56.json"], records_since[0])
+        self.assertEqual(since_sample_join_records[f"{MOCK_JOIN_RECORD_PREFIX}/2024/10/30/12/34/57.json"], records_since[1])
 
         records_since = self.p.get_all(since=datetime.fromisoformat("2024-10-25 00:00:00"))
         self.assertEqual(len(records_since), 1)
 
-        self.assertEqual(sample_join_records[f"{MOCK_JOIN_RECORD_PREFIX}/2024/10/30/12/34/57.json"], records_since[0])
+        self.assertEqual(since_sample_join_records[f"{MOCK_JOIN_RECORD_PREFIX}/2024/10/30/12/34/57.json"], records_since[0])
 
     # This is just to make codecov happy
     def test_s3_content_to_join_record(self):
         sample_key = "dev-join-form-submissions/2024/11/01/11/33/49.json"
-        sample_s3_content = json.dumps(
-            {
-                "first_name": "Jon",
-                "last_name": "Smith",
-                "email_address": "js@gmail.com",
-                "phone_number": "+1 585-475-2411",
-                "street_address": "197 Prospect Place",
-                "apartment": "1",
-                "city": "Brooklyn",
-                "state": "NY",
-                "zip_code": "11238",
-                "roof_access": True,
-                "referral": "I googled it.",
-                "ncl": True,
-                "trust_me_bro": False,
-                "code": "201",
-                "replayed": 0,
-                "install_number": 1002,
-            }
-        )
         sample_join_record: JoinRecord = JoinRecord(
             first_name="Jon",
             last_name="Smith",
@@ -126,7 +69,7 @@ class TestReplayJoinRecords(TestCase):
             replayed=0,
             install_number=1002,
         )
-        join_record = s3_content_to_join_record(sample_key, sample_s3_content)
+        join_record = s3_content_to_join_record(sample_key, sample_join_record_s3_content)
         try:
             self.assertEqual(join_record, sample_join_record, "Join Records do not match")
         except AssertionError as e:
@@ -136,53 +79,12 @@ class TestReplayJoinRecords(TestCase):
 
     @patch("meshapi.management.commands.replay_join_records.Command.past_week")
     @patch("meshapi.util.join_records.JOIN_RECORD_PREFIX", MOCK_JOIN_RECORD_PREFIX)
-    def test_replay_join_records(self, past_week_function):
+    def test_replay_basic_join_records(self, past_week_function):
         halloween_minus_one_week = datetime(2024, 10, 31, 8, 0, 0, 0) - timedelta(days=7)
         past_week_function.return_value = halloween_minus_one_week
 
-        sample_join_records: dict[str, JoinRecord] = {
-            f"{MOCK_JOIN_RECORD_PREFIX}/2024/10/30/12/34/56.json": JoinRecord(
-                first_name="Jon",
-                last_name="Smith",
-                email_address="js@gmail.com",
-                phone_number="+1 585-475-2411",
-                street_address="197 Prospect Place",
-                city="Brooklyn",
-                state="NY",
-                zip_code="11238",
-                apartment="1",
-                roof_access=True,
-                referral="Totally faked mocked join record.",
-                ncl=True,
-                trust_me_bro=False,
-                submission_time="2024-10-30T12:34:56",
-                code="500",
-                replayed=0,
-                install_number=None,
-            ),
-            f"{MOCK_JOIN_RECORD_PREFIX}/2024/10/30/12/34/57.json": JoinRecord(
-                first_name="Jon",
-                last_name="Smith",
-                email_address="js@gmail.com",
-                phone_number="+1 585-475-2411",
-                street_address="711 Hudson Street",
-                city="Hoboken",
-                state="NJ",
-                zip_code="07030",
-                apartment="",
-                roof_access=True,
-                referral="Totally faked mocked join record.",
-                ncl=True,
-                trust_me_bro=False,
-                submission_time="2024-10-30T12:34:57",
-                code="400",
-                replayed=1,
-                install_number=None,
-            ),
-        }
-
         # Load the samples into S3
-        for key, record in sample_join_records.items():
+        for key, record in basic_sample_join_records.items():
             self.p.upload(record, key)
 
         # Replay the records (this should get from the last week (halloween -7 days))
