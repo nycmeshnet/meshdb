@@ -6,11 +6,7 @@ from django.core import management
 from django.test import TestCase
 
 from meshapi.models.install import Install
-from meshapi.tests.sample_join_records import (
-    MOCK_JOIN_RECORD_PREFIX,
-    basic_sample_join_records,
-    sample_join_record_s3_content,
-)
+from meshapi.tests.sample_join_records import MOCK_JOIN_RECORD_PREFIX, basic_sample_join_records
 from meshapi.util.join_records import JoinRecord, JoinRecordProcessor, s3_content_to_join_record
 
 
@@ -38,43 +34,19 @@ class TestReplayJoinRecords(TestCase):
 
         self.assertEqual(len(records_since), 2)
 
-        self.assertEqual(basic_sample_join_records[f"{MOCK_JOIN_RECORD_PREFIX}/2024/10/28/12/34/56.json"], records_since[0])
-        self.assertEqual(basic_sample_join_records[f"{MOCK_JOIN_RECORD_PREFIX}/2024/10/30/12/34/57.json"], records_since[1])
+        self.assertEqual(
+            basic_sample_join_records[f"{MOCK_JOIN_RECORD_PREFIX}/2024/10/28/12/34/56.json"], records_since[0]
+        )
+        self.assertEqual(
+            basic_sample_join_records[f"{MOCK_JOIN_RECORD_PREFIX}/2024/10/30/12/34/57.json"], records_since[1]
+        )
 
         records_since = self.p.get_all(since=datetime.fromisoformat("2024-10-29 00:00:00"))
         self.assertEqual(len(records_since), 1)
 
-        self.assertEqual(basic_sample_join_records[f"{MOCK_JOIN_RECORD_PREFIX}/2024/10/30/12/34/57.json"], records_since[0])
-
-    # This is just to make codecov happy
-    def test_s3_content_to_join_record(self):
-        sample_key = "dev-join-form-submissions/2024/11/01/11/33/49.json"
-        sample_join_record: JoinRecord = JoinRecord(
-            first_name="Jon",
-            last_name="Smith",
-            email_address="js@gmail.com",
-            phone_number="+1 585-475-2411",
-            street_address="197 Prospect Place",
-            apartment="1",
-            city="Brooklyn",
-            state="NY",
-            zip_code="11238",
-            roof_access=True,
-            referral="I googled it.",
-            ncl=True,
-            trust_me_bro=False,
-            submission_time="2024-11-01T11:33:49",
-            code="201",
-            replayed=0,
-            install_number=1002,
+        self.assertEqual(
+            basic_sample_join_records[f"{MOCK_JOIN_RECORD_PREFIX}/2024/10/30/12/34/57.json"], records_since[0]
         )
-        join_record = s3_content_to_join_record(sample_key, sample_join_record_s3_content)
-        try:
-            self.assertEqual(join_record, sample_join_record, "Join Records do not match")
-        except AssertionError as e:
-            print(sample_join_record)
-            print(join_record)
-            raise e
 
     @patch("meshapi.management.commands.replay_join_records.Command.past_week")
     @patch("meshapi.util.join_records.JOIN_RECORD_PREFIX", MOCK_JOIN_RECORD_PREFIX)
@@ -124,3 +96,57 @@ class TestReplayJoinRecords(TestCase):
         )
         self.assertEqual(2, r.replayed, "Did not get expected replay count.")
         self.assertEqual(None, r.install_number, "Install Number is not None.")
+
+    # This is just to make codecov happy
+    def test_s3_content_to_join_record(self):
+        sample_key = "dev-join-form-submissions/2024/11/01/11/33/49.json"
+
+        # We're converting this...
+        sample_join_record_s3_content = json.dumps(
+            {
+                "first_name": "Jon",
+                "last_name": "Smith",
+                "email_address": "js@gmail.com",
+                "phone_number": "+1 585-475-2411",
+                "street_address": "197 Prospect Place",
+                "apartment": "1",
+                "city": "Brooklyn",
+                "state": "NY",
+                "zip_code": "11238",
+                "roof_access": True,
+                "referral": "I googled it.",
+                "ncl": True,
+                "trust_me_bro": False,
+                "code": "201",
+                "replayed": 0,
+                "install_number": 1002,
+            }
+        )
+
+        # To this.
+        sample_join_record: JoinRecord = JoinRecord(
+            first_name="Jon",
+            last_name="Smith",
+            email_address="js@gmail.com",
+            phone_number="+1 585-475-2411",
+            street_address="197 Prospect Place",
+            apartment="1",
+            city="Brooklyn",
+            state="NY",
+            zip_code="11238",
+            roof_access=True,
+            referral="I googled it.",
+            ncl=True,
+            trust_me_bro=False,
+            submission_time="2024-11-01T11:33:49",
+            code="201",
+            replayed=0,
+            install_number=1002,
+        )
+        join_record = s3_content_to_join_record(sample_key, sample_join_record_s3_content)
+        try:
+            self.assertEqual(join_record, sample_join_record, "Join Records do not match")
+        except AssertionError as e:
+            print(sample_join_record)
+            print(join_record)
+            raise e
