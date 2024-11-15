@@ -10,7 +10,6 @@ from meshapi.tests.sample_join_records import (
     MOCK_JOIN_RECORD_PREFIX,
     basic_sample_join_records,
     sample_join_record_s3_content,
-    since_sample_join_records,
 )
 from meshapi.util.join_records import JoinRecord, JoinRecordProcessor, s3_content_to_join_record
 
@@ -32,20 +31,20 @@ class TestReplayJoinRecords(TestCase):
     @patch("meshapi.util.join_records.JOIN_RECORD_PREFIX", MOCK_JOIN_RECORD_PREFIX)
     def test_get_all_since(self):
         # Load the samples into S3
-        for key, record in since_sample_join_records.items():
+        for key, record in basic_sample_join_records.items():
             self.p.upload(record, key)
 
         records_since = self.p.get_all(since=datetime.fromisoformat("2024-10-01 00:00:00"))
 
         self.assertEqual(len(records_since), 2)
 
-        self.assertEqual(since_sample_join_records[f"{MOCK_JOIN_RECORD_PREFIX}/2024/10/20/12/34/56.json"], records_since[0])
-        self.assertEqual(since_sample_join_records[f"{MOCK_JOIN_RECORD_PREFIX}/2024/10/30/12/34/57.json"], records_since[1])
+        self.assertEqual(basic_sample_join_records[f"{MOCK_JOIN_RECORD_PREFIX}/2024/10/28/12/34/56.json"], records_since[0])
+        self.assertEqual(basic_sample_join_records[f"{MOCK_JOIN_RECORD_PREFIX}/2024/10/30/12/34/57.json"], records_since[1])
 
-        records_since = self.p.get_all(since=datetime.fromisoformat("2024-10-25 00:00:00"))
+        records_since = self.p.get_all(since=datetime.fromisoformat("2024-10-29 00:00:00"))
         self.assertEqual(len(records_since), 1)
 
-        self.assertEqual(since_sample_join_records[f"{MOCK_JOIN_RECORD_PREFIX}/2024/10/30/12/34/57.json"], records_since[0])
+        self.assertEqual(basic_sample_join_records[f"{MOCK_JOIN_RECORD_PREFIX}/2024/10/30/12/34/57.json"], records_since[0])
 
     # This is just to make codecov happy
     def test_s3_content_to_join_record(self):
