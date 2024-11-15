@@ -44,24 +44,3 @@ basic_sample_join_records: dict[str, JoinRecord] = {
         install_number=None,
     ),
 }
-
-sample_join_record_s3_content = json.dumps(
-    {
-        "first_name": "Jon",
-        "last_name": "Smith",
-        "email_address": "js@gmail.com",
-        "phone_number": "+1 585-475-2411",
-        "street_address": "197 Prospect Place",
-        "apartment": "1",
-        "city": "Brooklyn",
-        "state": "NY",
-        "zip_code": "11238",
-        "roof_access": True,
-        "referral": "I googled it.",
-        "ncl": True,
-        "trust_me_bro": False,
-        "code": "201",
-        "replayed": 0,
-        "install_number": 1002,
-    }
-)
