@@ -1,5 +1,3 @@
-import json
-
 from meshapi.util.join_records import JoinRecord
 
 MOCK_JOIN_RECORD_PREFIX = "join-record-test"
