@@ -99,15 +99,13 @@ def notify_admins_of_changes(
 
     if created:
         message = (
-            f"created {db_object._meta.verbose_name} based on information from UISP. "
+            f"*created {db_object._meta.verbose_name} based on information from UISP*. "
             f"The following items may require attention:\n" + "\n".join(" - " + change for change in change_list)
         )
     else:
         message = (
-            f"modified {db_object._meta.verbose_name} based on information from UISP. "
-            f"The following changes were made:\n"
-            + "\n".join(" - " + change for change in change_list)
-            + "\n(to prevent this, make changes to these fields in UISP rather than directly in MeshDB)"
+            f"*modified {db_object._meta.verbose_name} based on information from UISP*. "
+            f"The following changes were made:\n" + "\n".join(" - " + change for change in change_list) + "\n"
         )
 
     notify_administrators_of_data_issue(
