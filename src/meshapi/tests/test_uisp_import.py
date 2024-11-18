@@ -550,6 +550,35 @@ class TestUISPImportUpdateObjects(TransactionTestCase):
         )
 
     @patch("meshapi.util.uisp_import.update_objects.get_uisp_link_last_seen")
+    def test_update_link_reactivate_recent_device(self, mock_get_last_seen):
+        self.link.status = Link.LinkStatus.INACTIVE
+        self.link.abandon_date = datetime.date.today() - datetime.timedelta(days=2)
+        self.link.save()
+
+        last_seen_date = datetime.datetime.now(datetime.timezone.utc)
+        mock_get_last_seen.return_value = last_seen_date
+
+        change_messages = update_link_from_uisp_data(
+            self.link,
+            uisp_link_id="fake-uisp-uuid",
+            uisp_from_device=self.device1,
+            uisp_to_device=self.device2,
+            uisp_status=Link.LinkStatus.ACTIVE,
+        )
+
+        self.link.refresh_from_db()
+        self.assertEqual(self.link.from_device, self.device1)
+        self.assertEqual(self.link.to_device, self.device2)
+        self.assertEqual(self.link.status, Link.LinkStatus.ACTIVE)
+        self.assertEqual(self.link.type, Link.LinkType.FIVE_GHZ)
+        self.assertEqual(self.link.abandon_date, None)
+
+        self.assertEqual(
+            change_messages,
+            ["Marked as Active due to it coming back online in UISP"],
+        )
+
+    @patch("meshapi.util.uisp_import.update_objects.get_uisp_link_last_seen")
     def test_update_link_no_changes(self, mock_get_last_seen):
         mock_get_last_seen.return_value = datetime.datetime.now(datetime.timezone.utc)
 
@@ -680,6 +709,31 @@ class TestUISPImportUpdateObjects(TransactionTestCase):
                 "please make sure the device name and network number are updated to reflect the new location "
                 "and function"
             ],
+        )
+
+    def test_update_device_reactivate_recent_device(self):
+        self.device1.status = Device.DeviceStatus.INACTIVE
+        self.device1.abandon_date = datetime.date.today() - datetime.timedelta(days=2)
+        self.device1.save()
+
+        last_seen_date = datetime.datetime.now(datetime.timezone.utc)
+        change_messages = update_device_from_uisp_data(
+            self.device1,
+            uisp_node=self.node1,
+            uisp_name="nycmesh-1234-dev1",
+            uisp_status=Device.DeviceStatus.ACTIVE,
+            uisp_last_seen=last_seen_date,
+        )
+
+        self.device1.refresh_from_db()
+        self.assertEqual(self.device1.name, "nycmesh-1234-dev1")
+        self.assertEqual(self.device1.node, self.node1)
+        self.assertEqual(self.device1.status, Device.DeviceStatus.ACTIVE)
+        self.assertEqual(self.device1.abandon_date, None)
+
+        self.assertEqual(
+            change_messages,
+            ["Marked as Active due to it coming back online in UISP"],
         )
 
     def test_update_device_no_changes(self):
