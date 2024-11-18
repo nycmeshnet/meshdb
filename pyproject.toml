@@ -30,7 +30,7 @@ dependencies = [
     "djangorestframework-dataclasses==1.3.*",
     "django-nonrelated-inlines==0.2.*",
     "django-filter==24.1",
-    "django-jsonform==2.23.0",
+    "django-jsonform==2.23.*",
     "faker==24.3.*",
     # FIXME: Go back to PyPI when https://github.com/jazzband/django-dbbackup/pull/515 or https://github.com/jazzband/django-dbbackup/pull/511 is merged
     #  https://github.com/nycmeshnet/meshdb/issues/527
