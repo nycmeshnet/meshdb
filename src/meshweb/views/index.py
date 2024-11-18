@@ -1,14 +1,8 @@
 from django.conf import settings
 from django.http import HttpRequest, HttpResponse
 from django.template import loader
-from drf_spectacular.utils import extend_schema
-from rest_framework import permissions
-from rest_framework.decorators import api_view, permission_classes
 
 
-@extend_schema(exclude=True)  # Don't show on docs page
-@api_view(["GET"])
-@permission_classes([permissions.AllowAny])
 def index(request: HttpRequest) -> HttpResponse:
     template = loader.get_template("meshweb/index.html")
     links = {

@@ -3,10 +3,9 @@ import io
 import math
 
 import matplotlib.pyplot as plt
-import matplotlib.transforms
 import numpy as np
 from django.db.models import Min
-from django.http import HttpResponse
+from django.http import HttpRequest, HttpResponse
 from matplotlib import ticker
 
 from meshapi.models import Install
@@ -17,7 +16,7 @@ plt.rcParams["svg.fonttype"] = "none"
 VALID_DATA_MODES = ["install_requests", "active_installs"]
 
 
-def website_stats_graph(request):
+def website_stats_graph(request: HttpRequest) -> HttpResponse:
     """
     Renders an SVG graph for embedding on the website, showing install growth over time
 
@@ -33,7 +32,7 @@ def website_stats_graph(request):
         days = int(request.GET.get("days", 0))
         if days < 0:
             raise ValueError()
-    except ValueError as e:
+    except ValueError:
         return HttpResponse(status=400, content="Invalid number of days to aggregate data for")
 
     data_source = request.GET.get("data", "install_requests")
