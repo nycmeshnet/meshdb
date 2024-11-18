@@ -10,6 +10,7 @@ from django.conf import settings
 from django.db import IntegrityError, transaction
 from django.db.models import Q
 from drf_spectacular.utils import OpenApiResponse, extend_schema, extend_schema_view, inline_serializer
+from ipware import get_client_ip
 from rest_framework import permissions, serializers, status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.request import Request
@@ -114,7 +115,15 @@ def join_form(request: Request) -> Response:
 def process_join_form(r: JoinFormRequest, request: Optional[Request] = None) -> Response:
     if not settings.DEBUG and not DISABLE_RECAPTCHA_VALIDATION:
         try:
-            validate_captcha_tokens(request, r.recaptcha_invisible_token, r.recaptcha_checkbox_token)
+            request_source_ip, request_source_ip_is_routable = get_client_ip(request)
+            if not request_source_ip_is_routable:
+                request_source_ip = None
+
+            validate_captcha_tokens(
+                r.recaptcha_invisible_token,
+                r.recaptcha_checkbox_token,
+                request_source_ip,
+            )
         except Exception:
             logging.exception("Captcha validation failed")
             return Response({"detail": "Captcha verification failed"}, status=status.HTTP_401_UNAUTHORIZED)

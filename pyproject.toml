@@ -45,6 +45,7 @@ dependencies = [
     "django-sql-explorer==5.2.*",
     "django-simple-history==3.7.*",
     "prettytable==3.11.*",
+    "django-ipware==7.0.1",
 ]
 
 [project.optional-dependencies]

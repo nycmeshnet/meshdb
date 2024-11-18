@@ -214,9 +214,13 @@ def geocode_nyc_address(street_address: str, city: str, state: str, zip_code: st
 
 
 def check_recaptcha_token(token: Optional[str], server_secret: str, remote_ip: Optional[str]) -> float:
+    payload = {"secret": server_secret, "response": token}
+    if remote_ip:
+        payload["remoteip"] = remote_ip
+
     captcha_response = requests.post(
         RECAPTCHA_TOKEN_VALIDATION_URL,
-        {"secret": server_secret, "response": token, "remoteip": remote_ip},
+        payload,
     )
 
     captcha_response.raise_for_status()
@@ -235,7 +239,7 @@ def check_recaptcha_token(token: Optional[str], server_secret: str, remote_ip: O
 
 
 def validate_captcha_tokens(
-    request: Request, recaptcha_invisible_token: Optional[str], recaptcha_checkbox_token: Optional[str]
+    recaptcha_invisible_token: Optional[str], recaptcha_checkbox_token: Optional[str], remote_ip: Optional[str]
 ) -> None:
     if not RECAPTCHA_SECRET_KEY_V3 or not RECAPTCHA_SECRET_KEY_V2:
         raise EnvironmentError(
@@ -246,13 +250,7 @@ def validate_captcha_tokens(
     # If we have a checkbox token, just check that token is valid, and if it is, we are good, since
     # completing the checkbox is a good indication of human-ness
     if recaptcha_checkbox_token:
-        check_recaptcha_token(
-            recaptcha_invisible_token,
-            RECAPTCHA_SECRET_KEY_V2,
-            request.META.get(
-                "REMOTE_ADDR"
-            ),  # TODO: Make sure this actually works correctly with the reverse proxy in prod)
-        )
+        check_recaptcha_token(recaptcha_checkbox_token, RECAPTCHA_SECRET_KEY_V2, remote_ip)
         # The above call will throw if the token is invalid, so if we reach this point we are done
         # validating
         return
@@ -260,13 +258,7 @@ def validate_captcha_tokens(
     # If we don't have a checkbox token, get the score associated with the "invisible" token
     # and if it's too low, throw an exception so we 401 them
     # (which will prompt them to submit a checkbox in the frontend)
-    invisible_token_score = check_recaptcha_token(
-        recaptcha_invisible_token,
-        RECAPTCHA_SECRET_KEY_V3,
-        request.META.get(
-            "REMOTE_ADDR"
-        ),  # TODO: Make sure this actually works correctly with the reverse proxy in prod)
-    )
+    invisible_token_score = check_recaptcha_token(recaptcha_invisible_token, RECAPTCHA_SECRET_KEY_V3, remote_ip)
 
     if invisible_token_score < RECAPTCHA_INVISIBLE_TOKEN_SCORE_THRESHOLD:
         raise ValueError(
