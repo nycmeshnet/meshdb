@@ -120,6 +120,8 @@ class TestReplayJoinRecords(TestCase):
                 "code": "201",
                 "replayed": 0,
                 "install_number": 1002,
+                "recaptcha_checkbox_token": None,
+                "recaptcha_invisible_token": None,
             }
         )
 
