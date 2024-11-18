@@ -8,7 +8,6 @@ from typing import List, Optional
 import phonenumbers
 import requests
 from django.core.exceptions import ValidationError
-from rest_framework.request import Request
 from validate_email import validate_email
 
 from meshapi.exceptions import AddressAPIError, AddressError, OpenDataAPIError
