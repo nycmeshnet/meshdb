@@ -41,8 +41,11 @@ If you would like to develop in a [Dev Container](https://code.visualstudio.com/
 1. Make sure you have VS Code installed.
 2. Install the Dev Containers extension: `ms-vscode-remote.remote-containers`
 3. [Open the repo folder in the container](https://code.visualstudio.com/docs/devcontainers/containers#_quick-start-open-an-existing-folder-in-a-container).
-4. In a different shell, outside of VS Code, start the other containers: `docker compose up -d postgres pelias redis` (as below).
+4. In a different shell, outside of VS Code, start the other containers: `docker compose up -d postgres pelias redis minio createbuckets` (as below).
 5. Continue on the VS Code terminal (where your project is opened) follow normal developer setup.
+
+> [!NOTE]
+> You only need `createbuckets` once. It will initialize the bucket that MinIO talks to
 
 #### Host
 
@@ -217,7 +220,7 @@ still going to need somewhere to put that database, so go ahead and boot up the
 one in your `docker-compose.yaml`
 
 ```sh
-docker compose up -d postgres pelias redis
+docker compose up -d postgres pelias redis minio
 ```
 
 Finally, run the tests:
