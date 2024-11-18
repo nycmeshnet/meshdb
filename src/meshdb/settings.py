@@ -56,7 +56,7 @@ FLAGS: Dict[str, Any] = {
 
 USE_X_FORWARDED_HOST = True
 
-SECURE_HSTS_SECONDS = 30  # TODO: Increase me to 31536000 https://github.com/nycmeshnet/meshdb/issues/642
+SECURE_HSTS_SECONDS = 31536000
 SECURE_HSTS_PRELOAD = False
 SECURE_HSTS_INCLUDE_SUBDOMAINS = False
 
@@ -446,7 +446,7 @@ SPECTACULAR_SETTINGS = {
         {
             "name": "Sectors",
             "description": 'Special devices with antennas with broad coverage of a radial "slice" of land area. '
-            "See https://wiki.mesh.nycmesh.net/books/3-hardware-firmware/page/ubiquiti-liteap-sector#bkmrk-page-title",
+            "See https://wiki.nycmesh.net/books/3-hardware-firmware/page/ubiquiti-liteap-sector#bkmrk-page-title",
         },
         {
             "name": "Access Points",
