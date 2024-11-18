@@ -44,6 +44,14 @@ If you would like to develop in a [Dev Container](https://code.visualstudio.com/
 4. In a different shell, outside of VS Code, start the other containers: `docker compose up -d postgres pelias redis` (as below).
 5. Continue on the VS Code terminal (where your project is opened) follow normal developer setup.
 
+##### Advanced - MinIO for Local Dev
+If you are going to use [minio](https://min.io/) for local S3 bucket emulation (not required for most tasks), also
+start the minio related containers with `docker compose up -d minio createbuckets`. To have your local DB instance 
+use Minio, you will also need to set `S3_ENDPOINT="http://127.0.0.1:9000"` in your `.env` file.
+
+> [!NOTE]
+> You only need `createbuckets` once. It will initialize the bucket that MinIO talks to
+
 #### Host
 
 If you are not using a Dev Container, for safety, create a venv
