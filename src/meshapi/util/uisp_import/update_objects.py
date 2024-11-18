@@ -4,7 +4,10 @@ from typing import List, Optional
 import requests
 
 from meshapi.models import Device, Link, Node
-from meshapi.util.uisp_import.constants import UISP_OFFLINE_DURATION_BEFORE_MARKING_INACTIVE
+from meshapi.util.uisp_import.constants import (
+    UISP_ABANDON_DATE_AGE_BEFORE_WARNING_ABOUT_REACTIVATION,
+    UISP_OFFLINE_DURATION_BEFORE_MARKING_INACTIVE,
+)
 from meshapi.util.uisp_import.utils import get_uisp_link_last_seen
 
 
@@ -50,7 +53,11 @@ def update_device_from_uisp_data(
             existing_device.status = Device.DeviceStatus.ACTIVE
 
             change_message = f"Marked as {Device.DeviceStatus.ACTIVE} due to it coming back online in UISP"
-            if existing_device.abandon_date:
+            if (
+                existing_device.abandon_date
+                and datetime.date.today() - existing_device.abandon_date
+                > UISP_ABANDON_DATE_AGE_BEFORE_WARNING_ABOUT_REACTIVATION
+            ):
                 change_message += (
                     ". Warning: this device was previously abandoned on "
                     f"{existing_device.abandon_date.isoformat()}, if this device has been re-purposed, "
