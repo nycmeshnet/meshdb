@@ -7,6 +7,7 @@ on:
   workflow_dispatch:
     branches:
       - main
+  pull_request:
 
 permissions: read-all
 
@@ -14,7 +15,7 @@ jobs:
   push_to_registry:
     name: Push Docker Image to Docker Hub
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
+#    if: github.ref == 'refs/heads/main'
     steps:
       - name: Check out the repo
         uses: actions/checkout@v4
@@ -47,7 +48,7 @@ jobs:
       environment: dev3
     secrets: inherit
     needs: push_to_registry
-    if: github.ref == 'refs/heads/main'
+#    if: github.ref == 'refs/heads/main'
 
   deploy_to_prod:
     name: Deploy to prod
