@@ -21,8 +21,6 @@ basic_sample_join_records: dict[str, JoinRecord] = {
         code="500",
         replayed=0,
         install_number=None,
-        recaptcha_checkbox_token=None,
-        recaptcha_invisible_token=None,
     ),
     f"{MOCK_JOIN_RECORD_PREFIX}/2024/10/30/12/34/57.json": JoinRecord(
         first_name="Jon",
@@ -42,7 +40,5 @@ basic_sample_join_records: dict[str, JoinRecord] = {
         code="400",
         replayed=1,
         install_number=None,
-        recaptcha_checkbox_token=None,
-        recaptcha_invisible_token=None,
     ),
 }
