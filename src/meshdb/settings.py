@@ -18,10 +18,7 @@ from typing import Any, Dict, List
 from django.http.request import HttpRequest
 from dotenv import load_dotenv
 
-from meshdb import logger
-
 load_dotenv()
-logger.configure()
 
 MESHDB_ENVIRONMENT = os.environ.get("MESHDB_ENVIRONMENT", "")
 
@@ -299,6 +296,28 @@ DBBACKUP_CONNECTORS = {
     }
 }
 DBBACKUP_DATABASES = ["default"]
+
+LOGGING = {
+    "version": 1,
+    "formatters": {
+        "verbose": {
+            "format": "[%(asctime)s] [%(process)d] [%(levelname)s] %(message)s",
+        },
+    },
+    "handlers": {
+        "console": {
+            "level": "INFO",
+            "class": "logging.StreamHandler",
+            "formatter": "verbose",
+        },
+    },
+    "loggers": {
+        "": {
+            "handlers": ["console"],
+            "level": "INFO",
+        },
+    },
+}
 
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
