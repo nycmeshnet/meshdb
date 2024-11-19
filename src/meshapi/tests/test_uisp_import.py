@@ -1728,7 +1728,7 @@ class TestUISPImportHandlers(TransactionTestCase):
         new_los = LOS.objects.get(from_building=self.building1, to_building=self.building3)
         self.assertEqual(new_los.source, LOS.LOSSource.EXISTING_LINK)
         self.assertEqual(new_los.analysis_date, datetime.date.today())
-        self.assertEqual(new_los.notes, f"Created automatically from Link ID {self.link2.id} (NN1234 → NN9012)\n\n")
+        self.assertEqual(new_los.notes, f"Created automatically from Link ID {self.link2.id} (NN1234 ↔ NN9012)\n\n")
 
     def test_sync_same_building_link_with_los(self):
         self.device3b = Device(
