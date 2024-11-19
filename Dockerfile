@@ -18,4 +18,4 @@ COPY ./src/meshweb/static .
 
 COPY ./src .
 
-ENTRYPOINT ./scripts/entrypoint.sh && exec gunicorn 'meshdb.wsgi' --graceful-timeout 2 --bind=0.0.0.0:8081
+ENTRYPOINT ./scripts/entrypoint.sh && exec gunicorn 'meshdb.wsgi' --enable-stdio-inheritance --graceful-timeout 2 --bind=0.0.0.0:8081
