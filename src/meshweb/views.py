@@ -40,6 +40,8 @@ def index(request: HttpRequest) -> HttpResponse:
     }
     request_source_ip, request_source_ip_is_routable = get_client_ip(request)
     logging.info(f"Got source IP, on MeshDB: {request_source_ip}, Routable: {request_source_ip_is_routable}")
+    logging.info(f"x_forwarded_for: {request.headers.get('X-Forwarded-For','')}")
+    logging.info(f"headers: {request.headers}")
 
     context = {"links": links}
     return HttpResponse(template.render(context, request))
