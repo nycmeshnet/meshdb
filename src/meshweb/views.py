@@ -1,9 +1,12 @@
+import logging
+
 from django.conf import settings
 from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
 from django.template import loader
 from django.urls import reverse
 from drf_spectacular.utils import extend_schema
 from flags.state import disable_flag, enable_flag, flag_enabled
+from ipware import get_client_ip
 from rest_framework import permissions
 from rest_framework.decorators import api_view, permission_classes
 
@@ -35,6 +38,9 @@ def index(request: HttpRequest) -> HttpResponse:
             ("/api-docs/redoc/", "API Documentation (Redoc)"),
         ],
     }
+    request_source_ip, request_source_ip_is_routable = get_client_ip(request)
+    logging.warning(f"Got source IP, on MeshDB: {request_source_ip}, Routable: {request_source_ip_is_routable}")
+
     context = {"links": links}
     return HttpResponse(template.render(context, request))
 
