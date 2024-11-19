@@ -242,7 +242,7 @@ def validate_captcha_tokens(
 ) -> None:
     if not RECAPTCHA_SECRET_KEY_V3 or not RECAPTCHA_SECRET_KEY_V2:
         raise EnvironmentError(
-            "Enviornment variables RECAPTCHA_SECRET_KEY_V2 and RECAPTCHA_SECRET_KEY_V3 must be "
+            "Enviornment variables RECAPTCHA_SERVER_SECRET_KEY_V2 and RECAPTCHA_SERVER_SECRET_KEY_V3 must be "
             "set in order to validate recaptcha tokens"
         )
 

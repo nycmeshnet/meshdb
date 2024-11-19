@@ -14,6 +14,7 @@ from meshapi.models import Building, Install, Member, Node
 from meshapi.views import JoinFormRequest
 
 from ..serializers import MemberSerializer
+from ..util.constants import RECAPTCHA_CHECKBOX_TOKEN_HEADER, RECAPTCHA_INVISIBLE_TOKEN_HEADER
 from ..validation import DOB_BUILDING_HEIGHT_API_URL, NYC_PLANNING_LABS_GEOCODE_URL
 from .sample_data import sample_building, sample_node
 from .sample_join_form_data import (
@@ -164,8 +165,17 @@ class TestJoinForm(TestCase):
 
             request, s = pull_apart_join_form_submission(valid_join_form_submission)
 
-            response = self.c.post("/api/v1/join/", request, content_type="application/json")
+            response = self.c.post(
+                "/api/v1/join/",
+                request,
+                content_type="application/json",
+                headers={
+                    RECAPTCHA_INVISIBLE_TOKEN_HEADER: "",
+                    RECAPTCHA_CHECKBOX_TOKEN_HEADER: "",
+                },
+            )
             self.assertContains(response, "Captcha verification failed", status_code=401)
+            mock_validate_captcha_tokens.assert_called_once_with(None, None, None)
 
     @patch("meshapi.views.forms.validate_captcha_tokens")
     def test_valid_join_form_captcha_env_vars_not_configured(self, mock_validate_captcha_tokens):
@@ -192,15 +202,17 @@ class TestJoinForm(TestCase):
                 json=valid_join_form_submission["dob_addr_response"],
             )
 
-            request, s = pull_apart_join_form_submission(
-                {
-                    **valid_join_form_submission,
-                    "recaptcha_invisible_token": "mock_invisible_token",
-                    "recaptcha_checkbox_token": "mock_checkbox_token",
-                }
-            )
+            request, s = pull_apart_join_form_submission(valid_join_form_submission)
 
-            response = self.c.post("/api/v1/join/", request, content_type="application/json")
+            response = self.c.post(
+                "/api/v1/join/",
+                request,
+                content_type="application/json",
+                headers={
+                    RECAPTCHA_INVISIBLE_TOKEN_HEADER: "mock_invisible_token",
+                    RECAPTCHA_CHECKBOX_TOKEN_HEADER: "mock_checkbox_token",
+                },
+            )
             self.assertEqual(response.status_code, 201)
             validate_successful_join_form_submission(self, "Valid Join Form", s, response)
             validate_captcha_tokens.assert_called_once_with("mock_invisible_token", "mock_checkbox_token", "1.1.1.1")

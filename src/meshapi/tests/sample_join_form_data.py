@@ -29,8 +29,6 @@ valid_join_form_submission = {
             }
         ]
     },
-    "recaptcha_invisible_token": None,
-    "recaptcha_checkbox_token": None,
 }
 
 # Join form submission, but the phone and the address are going to be corrected
@@ -66,8 +64,6 @@ valid_join_form_submission_phone_needs_expansion = {
             }
         ]
     },
-    "recaptcha_invisible_token": None,
-    "recaptcha_checkbox_token": None,
 }
 
 valid_join_form_submission_city_needs_expansion = {
@@ -102,8 +98,6 @@ valid_join_form_submission_city_needs_expansion = {
             }
         ]
     },
-    "recaptcha_invisible_token": None,
-    "recaptcha_checkbox_token": None,
 }
 
 valid_join_form_submission_street_needs_expansion = {
@@ -138,8 +132,6 @@ valid_join_form_submission_street_needs_expansion = {
             }
         ]
     },
-    "recaptcha_invisible_token": None,
-    "recaptcha_checkbox_token": None,
 }
 
 valid_join_form_submission_with_apartment_in_address = {
@@ -173,8 +165,6 @@ valid_join_form_submission_with_apartment_in_address = {
             }
         ]
     },
-    "recaptcha_invisible_token": None,
-    "recaptcha_checkbox_token": None,
 }
 
 valid_join_form_submission_no_email = {
@@ -208,8 +198,6 @@ valid_join_form_submission_no_email = {
             }
         ]
     },
-    "recaptcha_invisible_token": None,
-    "recaptcha_checkbox_token": None,
 }
 
 richmond_join_form_submission = {
@@ -243,8 +231,6 @@ richmond_join_form_submission = {
             }
         ]
     },
-    "recaptcha_invisible_token": None,
-    "recaptcha_checkbox_token": None,
 }
 
 kings_join_form_submission = {
@@ -278,8 +264,6 @@ kings_join_form_submission = {
             }
         ]
     },
-    "recaptcha_invisible_token": None,
-    "recaptcha_checkbox_token": None,
 }
 
 queens_join_form_submission = {
@@ -314,8 +298,6 @@ queens_join_form_submission = {
             }
         ]
     },
-    "recaptcha_invisible_token": None,
-    "recaptcha_checkbox_token": None,
 }
 
 bronx_join_form_submission = {
@@ -349,8 +331,6 @@ bronx_join_form_submission = {
             }
         ]
     },
-    "recaptcha_invisible_token": None,
-    "recaptcha_checkbox_token": None,
 }
 
 non_nyc_join_form_submission = {
@@ -370,8 +350,6 @@ non_nyc_join_form_submission = {
     "ncl": True,
     "trust_me_bro": True,
     "dob_addr_response": {"features": []},
-    "recaptcha_invisible_token": None,
-    "recaptcha_checkbox_token": None,
 }
 
 new_jersey_join_form_submission = {
@@ -391,8 +369,6 @@ new_jersey_join_form_submission = {
     "ncl": True,
     "trust_me_bro": True,
     "dob_addr_response": {"features": []},
-    "recaptcha_invisible_token": None,
-    "recaptcha_checkbox_token": None,
 }
 
 invalid_join_form_submission = {
@@ -410,8 +386,6 @@ invalid_join_form_submission = {
     "ncl": "a duck",
     "trust_me_bro": True,
     "dob_addr_response": {"features": []},
-    "recaptcha_invisible_token": None,
-    "recaptcha_checkbox_token": None,
 }
 
 
@@ -446,6 +420,4 @@ jefferson_join_form_submission = {
             }
         ]
     },
-    "recaptcha_invisible_token": None,
-    "recaptcha_checkbox_token": None,
 }

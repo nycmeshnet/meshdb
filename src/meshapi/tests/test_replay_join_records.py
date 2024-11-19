@@ -120,8 +120,6 @@ class TestReplayJoinRecords(TestCase):
                 "code": "201",
                 "replayed": 0,
                 "install_number": 1002,
-                "recaptcha_checkbox_token": None,
-                "recaptcha_invisible_token": None,
             }
         )
 
@@ -144,8 +142,6 @@ class TestReplayJoinRecords(TestCase):
             code="201",
             replayed=0,
             install_number=1002,
-            recaptcha_checkbox_token=None,
-            recaptcha_invisible_token=None,
         )
         join_record = s3_content_to_join_record(sample_key, sample_join_record_s3_content)
         try:

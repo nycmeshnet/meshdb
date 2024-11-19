@@ -22,6 +22,7 @@ from meshapi.models import Building, Install, Member, Node
 from meshapi.permissions import HasNNAssignPermission, LegacyNNAssignmentPassword
 from meshapi.serializers import MemberSerializer
 from meshapi.util.admin_notifications import notify_administrators_of_data_issue
+from meshapi.util.constants import RECAPTCHA_CHECKBOX_TOKEN_HEADER, RECAPTCHA_INVISIBLE_TOKEN_HEADER
 from meshapi.util.django_pglocks import advisory_lock
 from meshapi.util.network_number import NETWORK_NUMBER_MAX, NETWORK_NUMBER_MIN, get_next_available_network_number
 from meshapi.validation import (
@@ -55,8 +56,6 @@ class JoinFormRequest:
     referral: str
     ncl: bool
     trust_me_bro: bool  # Used to override member data correction
-    recaptcha_invisible_token: Optional[str]
-    recaptcha_checkbox_token: Optional[str]
 
 
 class JoinFormRequestSerializer(DataclassSerializer):
@@ -109,15 +108,23 @@ def join_form(request: Request) -> Response:
         logging.exception("TypeError while processing JoinForm")
         return Response({"detail": "Got incomplete form request"}, status=status.HTTP_400_BAD_REQUEST)
 
-    if not settings.DEBUG and not DISABLE_RECAPTCHA_VALIDATION:
+    if not DISABLE_RECAPTCHA_VALIDATION:
         try:
             request_source_ip, request_source_ip_is_routable = get_client_ip(request)
             if not request_source_ip_is_routable:
                 request_source_ip = None
 
+            recaptcha_invisible_token = request.headers.get(RECAPTCHA_INVISIBLE_TOKEN_HEADER)
+            if recaptcha_invisible_token == "":
+                recaptcha_invisible_token = None
+
+            recaptcha_checkbox_token = request.headers.get(RECAPTCHA_CHECKBOX_TOKEN_HEADER)
+            if recaptcha_checkbox_token == "":
+                recaptcha_checkbox_token = None
+
             validate_captcha_tokens(
-                r.recaptcha_invisible_token,
-                r.recaptcha_checkbox_token,
+                recaptcha_invisible_token,
+                recaptcha_checkbox_token,
                 request_source_ip,
             )
         except Exception:
