@@ -6,7 +6,6 @@ from datetime import date
 from json.decoder import JSONDecodeError
 from typing import Optional
 
-from django.conf import settings
 from django.db import IntegrityError, transaction
 from django.db.models import Q
 from drf_spectacular.utils import OpenApiResponse, extend_schema, extend_schema_view, inline_serializer
