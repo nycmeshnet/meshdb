@@ -437,7 +437,6 @@ class TestUISPImportUpdateObjects(TransactionTestCase):
         self.assertEqual(
             change_messages,
             [
-                "Changed UISP link ID to fake-uisp-uuid2",
                 "Changed connected device pair from [nycmesh-1234-dev1, nycmesh-5678-dev2] to [nycmesh-1234-dev1, nycmesh-9012-dev3]",
                 "Marked as Inactive due to it being offline in UISP for more than 30 days",
             ],
@@ -1529,7 +1528,6 @@ class TestUISPImportHandlers(TransactionTestCase):
 
         mock_notify_admins.assert_has_calls(
             [
-                call(self.link4, ["Changed UISP link ID to uisp-uuid40b"]),
                 call(self.link5b, ["Marked as Active due to it coming back online in UISP"]),
                 call(
                     self.link5a,
