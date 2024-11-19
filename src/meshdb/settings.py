@@ -18,7 +18,10 @@ from typing import Any, Dict, List
 from django.http.request import HttpRequest
 from dotenv import load_dotenv
 
+from meshdb import logger
+
 load_dotenv()
+logger.configure()
 
 MESHDB_ENVIRONMENT = os.environ.get("MESHDB_ENVIRONMENT", "")
 
