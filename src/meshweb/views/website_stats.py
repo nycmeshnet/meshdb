@@ -27,7 +27,7 @@ matplotlib_lock = threading.Lock()
 
 
 @receiver(check_request_enabled)
-def cors_allow_website_stats_to_all(sender, request, **kwargs):
+def cors_allow_website_stats_to_all(sender: None, request: HttpRequest, **kwargs: dict) -> bool:
     """
     This handler adds an allow all CORS header to the stats endpoints, this should be totally safe since
     these endpoints don't modify any data (and images are exempt from CORS anyway)
