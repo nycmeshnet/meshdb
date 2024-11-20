@@ -41,9 +41,6 @@ def cors_allow_website_stats_to_all(sender, request, **kwargs):
 def compute_graph_stats(
     data_source: str, start_datetime: datetime.datetime, end_datetime: datetime.datetime
 ) -> List[int]:
-    if Install.objects.count() == 0:
-        return []
-
     buckets = [0 for _ in range(GRAPH_X_AXIS_DATAPOINT_COUNT)]
 
     total_duration_seconds = (end_datetime - start_datetime).total_seconds()
@@ -179,6 +176,10 @@ def parse_stats_request_params(request: HttpRequest) -> Tuple[str, datetime.date
         start_datetime = datetime.datetime.now() - datetime.timedelta(days=days)
     else:
         # "All" Case
+        initial_date = Install.objects.all().aggregate(Min("request_date"))["request_date__min"]
+        if initial_date is None:
+            raise EnvironmentError("No installs found, is the database empty?")
+
         start_datetime = datetime.datetime.combine(
             Install.objects.all().aggregate(Min("request_date"))["request_date__min"],
             datetime.datetime.min.time(),
@@ -204,19 +205,10 @@ def website_stats_graph(request: HttpRequest) -> HttpResponse:
         data_source, start_datetime, end_datetime = parse_stats_request_params(request)
     except ValueError as e:
         return HttpResponse(status=400, content=e.args[0])
+    except EnvironmentError as e:
+        return HttpResponse(status=500, content=e.args[0])
 
     datapoints = compute_graph_stats(data_source, start_datetime, end_datetime)
-    if not datapoints:
-        return HttpResponse(
-            status=500,
-            content='<svg xmlns:xlink="http://www.w3.org/1999/xlink" xmlns="http://www.w3.org/2000/svg" '
-            + 'width="432pt" height="270pt" '
-            + 'viewBox="-10 -20 500 20" '
-            + 'version="1.1">'
-            + "<text>No installs found, is the database empty?</text>"
-            + "</svg>",
-            content_type="image/svg+xml",
-        )
 
     return HttpResponse(
         render_graph(data_source, datapoints, start_datetime, end_datetime), content_type="image/svg+xml"
@@ -239,11 +231,10 @@ def website_stats_json(request: HttpRequest) -> HttpResponse:
         data_source, start_datetime, end_datetime = parse_stats_request_params(request)
     except ValueError as e:
         return JsonResponse(status=400, data={"error": e.args[0]})
+    except EnvironmentError as e:
+        return JsonResponse(status=500, data={"error": e.args[0]})
 
     datapoints = compute_graph_stats(data_source, start_datetime, end_datetime)
-    if not datapoints:
-        return JsonResponse(status=500, data={"error": "No installs found, is the database empty?"})
-
     return JsonResponse(
         {
             "start": int(start_datetime.timestamp()),
