@@ -4,10 +4,16 @@ from unittest.mock import patch
 
 from django.core import management
 from django.test import TestCase
+from moto import mock_aws
 
 from meshapi.models.install import Install
 from meshapi.tests.sample_join_records import MOCK_JOIN_RECORD_PREFIX, basic_sample_join_records
-from meshapi.util.join_records import JoinRecord, JoinRecordProcessor, s3_content_to_join_record
+from meshapi.util.join_records import (
+    JOIN_RECORD_BUCKET_NAME,
+    JoinRecord,
+    JoinRecordProcessor,
+    s3_content_to_join_record,
+)
 
 
 # Integration test to ensure that we can fetch JoinRecords from an S3 bucket,
@@ -15,10 +21,12 @@ from meshapi.util.join_records import JoinRecord, JoinRecordProcessor, s3_conten
 # We should test a happy case, a case when the JoinRecord is bad (like a JoinRecord
 # somehow from Russia), and maybe mock a MeshDB 500 that just ends in us putting
 # the data back.
+@mock_aws
 class TestReplayJoinRecords(TestCase):
     p = JoinRecordProcessor()
 
     def setUp(self) -> None:
+        self.p.s3_client.create_bucket(Bucket=JOIN_RECORD_BUCKET_NAME)
         self.p.flush_test_data()
 
     def tearDown(self) -> None:

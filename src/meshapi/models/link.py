@@ -78,8 +78,22 @@ class Link(models.Model):
     )
 
     def __str__(self) -> str:
-        if self.from_device.node.network_number and self.to_device.node.network_number:
-            return f"NN{self.from_device.node.network_number} → NN{self.to_device.node.network_number}"
+        from_name = None
+        to_name = None
+
+        if self.to_device.node == self.from_device.node:
+            from_name = self.from_device.name
+            to_name = self.to_device.name
+
+        if not from_name and self.from_device.node.network_number:
+            from_name = f"NN{self.from_device.node.network_number}"
+
+        if not to_name and self.to_device.node.network_number:
+            to_name = f"NN{self.to_device.node.network_number}"
+
+        if from_name and to_name:
+            return f"{from_name} ↔ {to_name}"
+
         return f"MeshDB Link ID {self.id}"
 
     @property
