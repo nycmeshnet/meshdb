@@ -1,11 +1,16 @@
 import datetime
 import io
+import json
 import math
+from typing import List, Tuple
 
 import matplotlib.pyplot as plt
 import numpy as np
+from corsheaders.signals import check_request_enabled
 from django.db.models import Min
-from django.http import HttpRequest, HttpResponse
+from django.dispatch import receiver
+from django.http import HttpRequest, HttpResponse, JsonResponse
+from django.urls import reverse
 from matplotlib import ticker
 
 from meshapi.models import Install
@@ -14,66 +19,34 @@ from meshapi.models import Install
 plt.rcParams["svg.fonttype"] = "none"
 
 VALID_DATA_MODES = ["install_requests", "active_installs"]
+GRAPH_X_AXIS_DATAPOINT_COUNT = 100
 
 
-def compute_graph_stats():
-    pass
-
-
-def render_graph():
-    pass
-
-
-def website_stats_graph(request: HttpRequest) -> HttpResponse:
+@receiver(check_request_enabled)
+def cors_allow_website_stats_to_all(sender, request, **kwargs):
     """
-    Renders an SVG graph for embedding on the website, showing install growth over time
+    This handler adds an allow all CORS header to the stats endpoints, this should be totally safe since
+    these endpoints don't modify any data (and images are exempt from CORS anyway)
 
-    Accepts two optional HTTP GET Params:
-     days - an integer representing the number of days prior to the current date to render graphs for (default: "all")
-     data - the data mode to use, either "install_requests" or "active_installs" (default: "install_requests")
-
-    Returns HTTP 400 with a plain text description of the error if anything is wrong with these
-    params, otherwise HTTP 200 with the response content being an SVG XML which is ready for browser
-    embedding and display
+    This allows this data to be embeded on the nycmesh.net site. The advantage of this over adding
+    the domain staically in settings.py is that this way the netlify-hosted test domains created
+    during PRs will work also
     """
-    try:
-        days = int(request.GET.get("days", 0))
-        if days < 0:
-            raise ValueError()
-    except ValueError:
-        return HttpResponse(status=400, content="Invalid number of days to aggregate data for")
+    return request.path in [
+        reverse("legacy-stats-svg"),
+        reverse("legacy-stats-json"),
+    ]
 
-    data_source = request.GET.get("data", "install_requests")
-    if data_source not in VALID_DATA_MODES:
-        return HttpResponse(status=400, content=f"Invalid data mode param, expecting one of: {VALID_DATA_MODES}")
 
+def compute_graph_stats(
+    data_source: str, start_datetime: datetime.datetime, end_datetime: datetime.datetime
+) -> List[int]:
     if Install.objects.count() == 0:
-        return HttpResponse(
-            status=500,
-            content='<svg xmlns:xlink="http://www.w3.org/1999/xlink" xmlns="http://www.w3.org/2000/svg" '
-            + 'width="432pt" height="270pt" '
-            + 'viewBox="-10 -20 500 20" '
-            + 'version="1.1">'
-            + "<text>No installs found, is the database empty?</text>"
-            + "</svg>",
-            content_type="image/svg+xml",
-        )
+        return []
 
-    intervals = 100
-    buckets = [0 for _ in range(intervals)]
+    buckets = [0 for _ in range(GRAPH_X_AXIS_DATAPOINT_COUNT)]
 
-    if days > 0:
-        start_time = datetime.datetime.now() - datetime.timedelta(days=days)
-    else:
-        # "All" Case
-        start_time = datetime.datetime.combine(
-            Install.objects.all().aggregate(Min("request_date"))["request_date__min"],
-            datetime.datetime.min.time(),
-        )
-    end_time = datetime.datetime.now()
-    total_duration = end_time - start_time
-    total_duration_seconds = total_duration.total_seconds()
-
+    total_duration_seconds = (end_datetime - start_datetime).total_seconds()
     base_object_queryset = Install.objects.all()
 
     if data_source == "active_installs":
@@ -81,16 +54,16 @@ def website_stats_graph(request: HttpRequest) -> HttpResponse:
         # so it definitely underestimates historical values
         base_object_queryset = base_object_queryset.filter(status=Install.InstallStatus.ACTIVE)
         object_queryset = base_object_queryset.filter(
-            install_date__gte=start_time.date(),
-            install_date__lte=end_time.date(),
+            install_date__gte=start_datetime.date(),
+            install_date__lte=end_datetime.date(),
         )
-        buckets[0] = base_object_queryset.filter(install_date__lt=start_time).count()
+        buckets[0] = base_object_queryset.filter(install_date__lt=start_datetime).count()
     else:
         object_queryset = base_object_queryset.filter(
-            request_date__gte=start_time.date(),
-            request_date__lte=end_time.date(),
+            request_date__gte=start_datetime.date(),
+            request_date__lte=end_datetime.date(),
         )
-        buckets[0] = base_object_queryset.filter(request_date__lt=start_time).count()
+        buckets[0] = base_object_queryset.filter(request_date__lt=start_datetime).count()
 
     for install in object_queryset:
         if data_source == "active_installs":
@@ -98,18 +71,27 @@ def website_stats_graph(request: HttpRequest) -> HttpResponse:
         else:
             counting_date = install.request_date
 
-        relative_seconds = (counting_date - start_time.date()).total_seconds()
-        bucket_index = math.floor((relative_seconds / total_duration_seconds) * intervals)
+        relative_seconds = (counting_date - start_datetime.date()).total_seconds()
+        bucket_index = math.floor((relative_seconds / total_duration_seconds) * GRAPH_X_AXIS_DATAPOINT_COUNT)
         buckets[bucket_index] += 1
 
     # Make cumulative
-    for i in range(intervals):
+    for i in range(GRAPH_X_AXIS_DATAPOINT_COUNT):
         if i > 0:
             buckets[i] += buckets[i - 1]
 
+    return buckets
+
+
+def render_graph(
+    data_source: str,
+    data_buckets: List[int],
+    start_datetime: datetime.datetime,
+    end_datetime: datetime.datetime,
+) -> str:
     plt.figure()
-    x = np.arange(0, intervals, 1)
-    y = buckets
+    x = np.arange(0, GRAPH_X_AXIS_DATAPOINT_COUNT, 1)
+    y = data_buckets
 
     fig, ax = plt.subplots(figsize=(6, 3.75))
 
@@ -117,6 +99,7 @@ def website_stats_graph(request: HttpRequest) -> HttpResponse:
     ax.plot(y, color=plot_color)
     ax.fill_between(x, y, 0, alpha=0.125, color=plot_color)
 
+    total_duration = end_datetime - start_datetime
     if total_duration < datetime.timedelta(days=366):
         if total_duration < datetime.timedelta(days=8):
             vertical_divisions = 7
@@ -126,13 +109,13 @@ def website_stats_graph(request: HttpRequest) -> HttpResponse:
             vertical_divisions = 12
 
         ax.minorticks_on()
-        ax.xaxis.set_minor_locator(ticker.MultipleLocator((intervals - 1) / vertical_divisions))
+        ax.xaxis.set_minor_locator(ticker.MultipleLocator((GRAPH_X_AXIS_DATAPOINT_COUNT - 1) / vertical_divisions))
 
     plt.grid(which="minor", axis="x", color="#eeeeee", linewidth=1)
 
     ax.set_xticklabels([])
     ax.set_xticks([])
-    ax.set_yticks([buckets[0], buckets[-1]])
+    ax.set_yticks([data_buckets[0], data_buckets[-1]])
     ax.tick_params(axis="both", which="both", length=0)
 
     ax.spines["top"].set_visible(False)
@@ -140,7 +123,7 @@ def website_stats_graph(request: HttpRequest) -> HttpResponse:
     ax.spines["bottom"].set_visible(False)
     ax.spines["left"].set_visible(False)
 
-    ax.set_ylim((buckets[0], buckets[-1]))
+    ax.set_ylim((data_buckets[0], data_buckets[-1]))
     ax.yaxis.tick_right()
     ax.tick_params(
         axis="both",
@@ -156,12 +139,12 @@ def website_stats_graph(request: HttpRequest) -> HttpResponse:
     ax2 = ax.secondary_xaxis("bottom")
     ax2.set_xticklabels(
         [
-            start_time.date().strftime("%b %-d, %Y"),
-            end_time.date().strftime("%b %-d, %Y"),
+            start_datetime.date().strftime("%b %-d, %Y"),
+            end_datetime.date().strftime("%b %-d, %Y"),
         ],
-        position=(-1, -100),
+        position=(-1, -GRAPH_X_AXIS_DATAPOINT_COUNT),
     )
-    ax2.set_ticks([8, intervals - 8])
+    ax2.set_ticks([int(GRAPH_X_AXIS_DATAPOINT_COUNT * 0.08), int(GRAPH_X_AXIS_DATAPOINT_COUNT * 0.92)])
     ax2.tick_params(
         axis="both",
         which="both",
@@ -177,7 +160,94 @@ def website_stats_graph(request: HttpRequest) -> HttpResponse:
 
     plt.tight_layout()
 
-    buf = io.BytesIO()
+    buf = io.StringIO()
     plt.savefig(buf, format="svg")
 
-    return HttpResponse(buf.getvalue(), content_type="image/svg+xml")
+    return buf.getvalue()
+
+
+def parse_stats_request_params(request: HttpRequest) -> Tuple[str, datetime.datetime, datetime.datetime]:
+    days = int(request.GET.get("days", 0))
+    if days < 0:
+        raise ValueError("Invalid number of days to aggregate data for")
+
+    data_source = request.GET.get("data", "install_requests")
+    if data_source not in VALID_DATA_MODES:
+        raise ValueError(f"Invalid data mode param, expecting one of: {VALID_DATA_MODES}")
+
+    if days > 0:
+        start_datetime = datetime.datetime.now() - datetime.timedelta(days=days)
+    else:
+        # "All" Case
+        start_datetime = datetime.datetime.combine(
+            Install.objects.all().aggregate(Min("request_date"))["request_date__min"],
+            datetime.datetime.min.time(),
+        )
+    end_datetime = datetime.datetime.now()
+
+    return data_source, start_datetime, end_datetime
+
+
+def website_stats_graph(request: HttpRequest) -> HttpResponse:
+    """
+    Renders an SVG graph for embedding on the website, showing install growth over time
+
+    Accepts two optional HTTP GET Params:
+     days - an integer representing the number of days prior to the current date to render graphs for (default: "all")
+     data - the data mode to use, either "install_requests" or "active_installs" (default: "install_requests")
+
+    Returns HTTP 400 with a plain text description of the error if anything is wrong with these
+    params, otherwise HTTP 200 with the response content being an SVG XML which is ready for browser
+    embedding and display
+    """
+    try:
+        data_source, start_datetime, end_datetime = parse_stats_request_params(request)
+    except ValueError as e:
+        return HttpResponse(status=400, content=e.args[0])
+
+    datapoints = compute_graph_stats(data_source, start_datetime, end_datetime)
+    if not datapoints:
+        return HttpResponse(
+            status=500,
+            content='<svg xmlns:xlink="http://www.w3.org/1999/xlink" xmlns="http://www.w3.org/2000/svg" '
+            + 'width="432pt" height="270pt" '
+            + 'viewBox="-10 -20 500 20" '
+            + 'version="1.1">'
+            + "<text>No installs found, is the database empty?</text>"
+            + "</svg>",
+            content_type="image/svg+xml",
+        )
+
+    return HttpResponse(
+        render_graph(data_source, datapoints, start_datetime, end_datetime), content_type="image/svg+xml"
+    )
+
+
+def website_stats_json(request: HttpRequest) -> HttpResponse:
+    """
+    Renders an JSON response containing the information in the stats graphs rendered above,
+    showing install growth over time
+
+    Accepts two optional HTTP GET Params:
+     days - an integer representing the number of days prior to the current date to pull stats for (default: "all")
+     data - the data mode to use, either "install_requests" or "active_installs" (default: "install_requests")
+
+    Returns HTTP 400 with a plain text description of the error if anything is wrong with these
+    params, otherwise HTTP 200 with the response content being an JSON data containing map render info
+    """
+    try:
+        data_source, start_datetime, end_datetime = parse_stats_request_params(request)
+    except ValueError as e:
+        return JsonResponse(status=400, data={"error": e.args[0]})
+
+    datapoints = compute_graph_stats(data_source, start_datetime, end_datetime)
+    if not datapoints:
+        return JsonResponse(status=500, data={"error": "No installs found, is the database empty?"})
+
+    return JsonResponse(
+        {
+            "start": int(start_datetime.timestamp()),
+            "end": int(end_datetime.timestamp()),
+            "data": datapoints,
+        }
+    )
