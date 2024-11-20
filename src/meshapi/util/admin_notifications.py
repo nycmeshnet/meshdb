@@ -14,7 +14,7 @@ SLACK_ADMIN_NOTIFICATIONS_WEBHOOK_URL = os.environ.get("SLACK_ADMIN_NOTIFICATION
 SITE_BASE_URL = os.environ.get("SITE_BASE_URL")
 
 
-def escape_slack_text(text: str):
+def escape_slack_text(text: str) -> str:
     return text.replace("↔", "<->").replace("&", "&amp;").replace("<", "&lt;").replace(">", "&rt;")
 
 
