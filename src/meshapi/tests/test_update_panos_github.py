@@ -1,9 +1,9 @@
 import os
 from unittest.mock import MagicMock, patch
 
-from django.contrib.auth.models import User
-from django.test import Client, TestCase
+from django.test import TestCase
 
+from django.core import management
 from meshapi.models import Building, Install, Member
 from meshapi.models.node import Node
 from meshapi.util.panoramas import (
@@ -18,8 +18,6 @@ from .sample_data import sample_building, sample_install, sample_member, sample_
 
 
 class TestPanoPipeline(TestCase):
-    c = Client()
-
     def setUp(self):
         sample_install_copy = sample_install.copy()
         self.building_1 = Building(**sample_building)
@@ -37,10 +35,9 @@ class TestPanoPipeline(TestCase):
         self.install = Install(**sample_install_copy)
         self.install.save()
 
-        self.admin_user = User.objects.create_superuser(
-            username="admin", password="admin_password", email="admin@example.com"
-        )
-        self.c.login(username="admin", password="admin_password")
+    # This should hit the github api and then just not set anything in an empty db
+    def test_sync_panoramas(self):
+        management.call_command("sync_panoramas")
 
     def test_set_panoramas(self):
         # Fabricate some fake panorama photos
@@ -92,50 +89,6 @@ class TestPanoPipeline(TestCase):
             f"https://node-db.netlify.app/panoramas/{n}b.jpg",
         ]
         self.assertEqual(saved_panoramas, building.panoramas)
-
-
-class TestPanoAuthentication(TestCase):
-    c = Client()
-    admin_c = Client()
-
-    def setUp(self):
-        self.admin_user = User.objects.create_superuser(
-            username="admin", password="admin_password", email="admin@example.com"
-        )
-        self.admin_c.login(username="admin", password="admin_password")
-
-    def test_update_panoramas_unauthenticated(self):
-        response = self.c.get("/api/v1/update-panoramas/")
-        code = 403
-        self.assertEqual(
-            code,
-            response.status_code,
-            f"status code incorrect. Should be {code}, but got {response.status_code}",
-        )
-
-    # This tests the endpoint, but not the actual full pipeline.
-    @patch("meshapi.views.os.environ.get")
-    @patch("meshapi.views.requests.get")
-    def test_update_panoramas_authenticated(self, mock_requests, mock_os):
-        fake_dir = "data/panoramas"
-        mock_os.return_value = fake_dir
-
-        mock_response = MagicMock()
-        mock_response.status_code = 200
-        mock_response.json.return_value = {
-            "commit": {"commit": {"tree": {"sha": "4"}}},
-            "tree": [{"type": "blob", "path": f"{fake_dir}/lol.txt"}],
-        }
-        mock_requests.return_value = mock_response
-
-        response = self.admin_c.post("/api/v1/update-panoramas/")
-        code = 200
-        self.assertEqual(
-            code,
-            response.status_code,
-            f"status code incorrect. Should be {code}, but got {response.status_code}",
-        )
-
 
 class TestPanoUtils(TestCase):
     def setUp(self):

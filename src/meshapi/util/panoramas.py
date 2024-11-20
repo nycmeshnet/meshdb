@@ -129,6 +129,8 @@ def sync_github_panoramas() -> tuple[int, list[str]]:
 
     attempts = 3
     while attempts > 0:
+        logging.info(f"Attempting to get GitHub tree info (attempts left: {attempts}")
+
         try:
             head_tree_sha = get_head_tree_sha(owner, repo, branch, token)
             if not head_tree_sha:
@@ -141,7 +143,7 @@ def sync_github_panoramas() -> tuple[int, list[str]]:
                 raise GitHubError("Could not get file list from GitHub")
             break
         except GitHubError as e:
-            logging.warning(f"Caught GitHub error. ({e}) Probably flaky API. Retrying...")
+            logging.warning(f"Caught GitHub error. ({e}) Probably flaky API.")
             attempts -= 1
 
     panos: dict[str, list[PanoramaTitle]] = group_panoramas_by_install_or_nn(filenames)
