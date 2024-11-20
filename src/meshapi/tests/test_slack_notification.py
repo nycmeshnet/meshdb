@@ -94,6 +94,7 @@ class TestSlackNotification(TestCase):
 
     @requests_mock.Mocker()
     @patch("meshapi.util.admin_notifications.SLACK_ADMIN_NOTIFICATIONS_WEBHOOK_URL", "https://mock-slack-url")
+    @patch("meshapi.util.admin_notifications.SITE_BASE_URL", "http://localhost")
     def test_slack_notification_link_text_escape(self, requests_mocker):
         node1 = Node(**sample_node)
         node1.network_number = 101
