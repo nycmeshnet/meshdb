@@ -52,5 +52,4 @@ urlpatterns = [
     path("mapdata/kiosks/", views.KioskListWrapper.as_view(), name="meshapi-v1-map-data-kiosks"),
     path("geography/whole-mesh.kml", views.WholeMeshKML.as_view(), name="meshapi-v1-geography-whole-mesh-kml"),
     path("geography/nyc-geocode/v2/search", views.NYCGeocodeWrapper.as_view(), name="meshapi-v1-geography-geocode"),
-    path("update-panoramas/", views.update_panoramas, name="meshapi-v1-update-panoramas"),
 ]

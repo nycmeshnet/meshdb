@@ -12,7 +12,7 @@ from meshapi.util.uisp_import.sync_handlers import (
     import_and_sync_uisp_links,
     sync_link_table_into_los_objects,
 )
-from meshapi.views.panoramas import sync_github_panoramas
+from meshapi.util.panoramas import sync_github_panoramas
 from meshdb.celery import app as celery_app
 from meshdb.settings import MESHDB_ENVIRONMENT
 
@@ -62,7 +62,9 @@ def reset_dev_database() -> None:
 def run_update_panoramas() -> None:
     logging.info("Running panorama sync task")
     try:
-        sync_github_panoramas()
+        panoramas_saved, warnings = sync_github_panoramas()
+        logging.info(f"Saved {panoramas_saved} panoramas. Got {len(warnings)} warnings.")
+        logging.warning(f"warnings:\n{warnings}")
     except Exception as e:
         # Make sure the failure gets logged.
         logging.exception(e)

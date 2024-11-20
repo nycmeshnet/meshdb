@@ -2,7 +2,7 @@ import logging
 import os
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Union
+from typing import Optional, Union
 
 import requests
 from drf_spectacular.utils import extend_schema
@@ -24,6 +24,9 @@ PANO_REPO = "node-db"
 PANO_BRANCH = "master"
 PANO_DIR = "data/panoramas"
 PANO_HOST = "https://node-db.netlify.app/panoramas/"
+
+# Set timeout to 10s. Fetching 14k+ items takes a long time.
+GITHUB_API_TIMEOUT_SECONDS = 10
 
 
 """
@@ -115,28 +118,6 @@ class BadPanoramaTitle(Exception):
 class GitHubError(Exception):
     pass
 
-
-# View called to make MeshDB refresh the panoramas.
-@extend_schema(exclude=True)  # Don't show on docs page
-@api_view(["POST"])
-@permission_classes([HasPanoramaUpdatePermission])
-def update_panoramas(request: Request) -> Response:
-    try:
-        panoramas_saved, warnings = sync_github_panoramas()
-        return Response(
-            {
-                "detail": f"Saved {panoramas_saved} panoramas. Got {len(warnings)} warnings.",
-                "saved": panoramas_saved,
-                "warnings": len(warnings),
-                "warn_install_nums": warnings,
-            },
-            status=status.HTTP_200_OK,
-        )
-    except (ValueError, GitHubError) as e:
-        logging.exception("Error when syncing panoramas")
-        return Response({"detail": str(type(e).__name__)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-
 # Used by the above api route, and also the celery task
 @advisory_lock("update_panoramas_lock")
 def sync_github_panoramas() -> tuple[int, list[str]]:
@@ -150,13 +131,24 @@ def sync_github_panoramas() -> tuple[int, list[str]]:
     if token is None:
         raise ValueError("Environment variable PANO_GITHUB_TOKEN not found")
 
-    head_tree_sha = get_head_tree_sha(owner, repo, branch, token)
-    if not head_tree_sha:
-        raise GitHubError("Could not get head tree SHA from GitHub")
+    filenames = []
 
-    filenames = list_files_in_git_directory(owner, repo, directory, head_tree_sha, token)
-    if not filenames:
-        raise GitHubError("Could not get file list from GitHub")
+    attempts = 3
+    while attempts > 0:
+        try:
+            head_tree_sha = get_head_tree_sha(owner, repo, branch, token)
+            if not head_tree_sha:
+                raise GitHubError("Could not get head tree SHA from GitHub")
+
+            logging.info(f"head_tree_sha is {head_tree_sha}")
+
+            filenames = list_files_in_git_directory(owner, repo, directory, head_tree_sha, token) or []
+            if not filenames:
+                raise GitHubError("Could not get file list from GitHub")
+            break
+        except GitHubError as e:
+            logging.warning(f"Caught GitHub error. ({e}) Probably flaky API. Retrying...")
+            attempts -= 1
 
     panos: dict[str, list[PanoramaTitle]] = group_panoramas_by_install_or_nn(filenames)
     return set_panoramas(panos)
@@ -201,7 +193,7 @@ def save_building_panoramas(building: Building, panorama_titles: list[PanoramaTi
     # Add new panoramas
     for p in panoramas:
         if p not in building.panoramas:
-            building.panoramas.append(p)
+            building.panoramas += p
     building.save()
 
     return len(panoramas)
@@ -234,11 +226,15 @@ def set_panoramas(panos: dict[str, list[PanoramaTitle]]) -> tuple[int, list[str]
                     warnings.append(str(key))
             else:
                 try:
-                    install = Install.objects.get(install_number=int(key))
-
+                    # This int parsing has been known to fail, so we except a ValueError below.
+                    install = Install.objects.get(install_number=int(key)) 
                     panoramas_saved += save_building_panoramas(install.building, filenames)
                 except Install.DoesNotExist:
                     logging.warning(f"Install #{key} Does not exist")
+                    warnings.append(key)
+                except ValueError:
+                    logging.warning(f"Could not save panoramas for key {key}")
+                    warnings.append(key)
         except Exception:
             logging.exception(f"Could not add panorama to building (key = {key})")
             warnings.append(str(key))
@@ -250,10 +246,10 @@ def set_panoramas(panos: dict[str, list[PanoramaTitle]]) -> tuple[int, list[str]
 
 # Gets the tree-sha, which we need to use the trees API (allows us to list up to
 # 100k/7MB of data)
-def get_head_tree_sha(owner: str, repo: str, branch: str, token: str = "") -> str | None:
+def get_head_tree_sha(owner: str, repo: str, branch: str, token: str = "") -> Optional[str]:
     url = f"https://api.github.com/repos/{owner}/{repo}/branches/{branch}"
     master = requests.get(
-        url, headers={"Authorization": f"Bearer {token}"}, timeout=DEFAULT_EXTERNAL_API_TIMEOUT_SECONDS
+        url, headers={"Authorization": f"Bearer {token}"}, timeout=GITHUB_API_TIMEOUT_SECONDS, 
     )
     if master.status_code != 200:
         logging.error(f"Error: Got status {master.status_code} from GitHub trying to get SHA.")
@@ -265,10 +261,10 @@ def get_head_tree_sha(owner: str, repo: str, branch: str, token: str = "") -> st
 # Returns all the filenames, stripped of extensions and everything
 def list_files_in_git_directory(
     owner: str, repo: str, directory: str, tree: str, token: str = ""
-) -> Union[list[str], None]:
+) -> Optional[list[str]]:
     url = f"https://api.github.com/repos/{owner}/{repo}/git/trees/{tree}?recursive=1"
     response = requests.get(
-        url, headers={"Authorization": f"Bearer {token}"}, timeout=DEFAULT_EXTERNAL_API_TIMEOUT_SECONDS
+        url, headers={"Authorization": f"Bearer {token}"}, timeout=GITHUB_API_TIMEOUT_SECONDS
     )
     if response.status_code != 200:
         logging.error(f"Error: Failed to fetch GitHub directory contents. Status code: {response.status_code}")

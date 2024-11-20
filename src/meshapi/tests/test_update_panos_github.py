@@ -6,7 +6,7 @@ from django.test import Client, TestCase
 
 from meshapi.models import Building, Install, Member
 from meshapi.models.node import Node
-from meshapi.views.panoramas import (
+from meshapi.util.panoramas import (
     BadPanoramaTitle,
     PanoramaTitle,
     get_head_tree_sha,
