@@ -273,10 +273,9 @@ class TestUISPImportUtils(TestCase):
         mock_notify.assert_called_once_with(
             [device],
             DeviceSerializer,
-            message="modified device based on information from UISP. The following changes were made:\n"
+            message="*modified device based on information from UISP*. The following changes were made:\n"
             " - Mock change 1\n"
-            " - Mock change 2\n"
-            "(to prevent this, make changes to these fields in UISP rather than directly in MeshDB)",
+            " - Mock change 2\n",
         )
 
     @patch("meshapi.util.uisp_import.utils.notify_administrators_of_data_issue")
@@ -304,7 +303,7 @@ class TestUISPImportUtils(TestCase):
         mock_notify.assert_called_once_with(
             [sector],
             SectorSerializer,
-            message="created sector based on information from UISP. The following items may require attention:\n"
+            message="*created sector based on information from UISP*. The following items may require attention:\n"
             " - Mock change 1\n"
             " - Mock change 2",
         )
@@ -316,7 +315,7 @@ class TestUISPImportUtils(TestCase):
         mock_notify.assert_called_once_with(
             [sector],
             SectorSerializer,
-            message="created sector based on information from UISP. The following items may require attention:\n"
+            message="*created sector based on information from UISP*. The following items may require attention:\n"
             " - Mock change 1\n"
             " - Mock change 2",
         )
@@ -348,7 +347,7 @@ class TestUISPImportUtils(TestCase):
         mock_notify.assert_called_once_with(
             [ap],
             AccessPointSerializer,
-            message="created access point based on information from UISP. The following items may require attention:\n"
+            message="*created access point based on information from UISP*. The following items may require attention:\n"
             " - Mock change 1\n"
             " - Mock change 2",
         )

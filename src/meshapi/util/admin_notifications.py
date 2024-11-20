@@ -34,8 +34,11 @@ def notify_administrators_of_data_issue(
         )
         return
 
+    if "\n" not in message:
+        message = f"*{message}*"
+
     slack_message = {
-        "text": f"Encountered the following data issue which may require admin attention: *{message}*. "
+        "text": f"Encountered the following data issue which may require admin attention: {message}. "
         f"When processing the following {model_instances[0]._meta.verbose_name_plural}: "
         + ", ".join(f"<{get_admin_url(m, site_base_url)}|{m}>" for m in model_instances)
         + ". Please open the database admin UI using the provided links to correct this.\n\n"
