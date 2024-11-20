@@ -28,9 +28,9 @@ from meshapi.validation import (
     NYCAddressInfo,
     geocode_nyc_address,
     normalize_phone_number,
-    validate_captcha_tokens,
     validate_email_address,
     validate_phone_number,
+    validate_recaptcha_tokens,
 )
 from meshdb.utils.spreadsheet_import.building.constants import AddressTruthSource
 
@@ -121,11 +121,7 @@ def join_form(request: Request) -> Response:
             if recaptcha_checkbox_token == "":
                 recaptcha_checkbox_token = None
 
-            validate_captcha_tokens(
-                recaptcha_invisible_token,
-                recaptcha_checkbox_token,
-                request_source_ip,
-            )
+            validate_recaptcha_tokens(recaptcha_invisible_token, recaptcha_checkbox_token, request_source_ip)
         except Exception:
             logging.exception("Captcha validation failed")
             return Response({"detail": "Captcha verification failed"}, status=status.HTTP_401_UNAUTHORIZED)

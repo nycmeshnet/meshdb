@@ -4,7 +4,7 @@ import pytest
 import requests_mock
 from django.test import TestCase
 
-from meshapi.validation import RECAPTCHA_TOKEN_VALIDATION_URL, check_recaptcha_token, validate_captcha_tokens
+from meshapi.validation import RECAPTCHA_TOKEN_VALIDATION_URL, check_recaptcha_token, validate_recaptcha_tokens
 
 
 class TestHelpers(TestCase):
@@ -84,7 +84,7 @@ class TestHelpers(TestCase):
     @mock.patch("meshapi.validation.RECAPTCHA_SECRET_KEY_V3", "fake_secret_v3")
     def test_validate_token_good_invisible(self, mock_check_recaptcha_token):
         mock_check_recaptcha_token.return_value = 0.6
-        validate_captcha_tokens("invisible_token", None, None)
+        validate_recaptcha_tokens("invisible_token", None, None)
         mock_check_recaptcha_token.assert_called_once_with("invisible_token", "fake_secret_v3", None)
 
     @mock.patch("meshapi.validation.check_recaptcha_token")
@@ -93,7 +93,7 @@ class TestHelpers(TestCase):
     def test_validate_token_bad_invisible(self, mock_check_recaptcha_token):
         mock_check_recaptcha_token.return_value = 0.3
         with pytest.raises(ValueError):
-            validate_captcha_tokens("invisible_token", None, None)
+            validate_recaptcha_tokens("invisible_token", None, None)
 
         mock_check_recaptcha_token.assert_called_once_with("invisible_token", "fake_secret_v3", None)
 
@@ -102,7 +102,7 @@ class TestHelpers(TestCase):
     @mock.patch("meshapi.validation.RECAPTCHA_SECRET_KEY_V3", "fake_secret_v3")
     def test_validate_token_good_checkbox(self, mock_check_recaptcha_token):
         mock_check_recaptcha_token.return_value = 1.0
-        validate_captcha_tokens("invisible_token", "checkbox_token", None)
+        validate_recaptcha_tokens("invisible_token", "checkbox_token", None)
         mock_check_recaptcha_token.assert_called_once_with("checkbox_token", "fake_secret_v2", None)
 
     @mock.patch("meshapi.validation.check_recaptcha_token")
@@ -111,7 +111,7 @@ class TestHelpers(TestCase):
     def test_validate_token_invalid_checkbox(self, mock_check_recaptcha_token):
         mock_check_recaptcha_token.side_effect = ValueError()
         with pytest.raises(ValueError):
-            validate_captcha_tokens("invisible_token", "checkbox_token", None)
+            validate_recaptcha_tokens("invisible_token", "checkbox_token", None)
         mock_check_recaptcha_token.assert_called_once_with("checkbox_token", "fake_secret_v2", None)
 
     @mock.patch("meshapi.validation.check_recaptcha_token")
@@ -120,9 +120,9 @@ class TestHelpers(TestCase):
     def test_validate_token_invalid_invisible(self, mock_check_recaptcha_token):
         mock_check_recaptcha_token.side_effect = ValueError()
         with pytest.raises(ValueError):
-            validate_captcha_tokens("invisible_token", None, None)
+            validate_recaptcha_tokens("invisible_token", None, None)
         mock_check_recaptcha_token.assert_called_once_with("invisible_token", "fake_secret_v3", None)
 
     def test_validate_token_no_env_vars(self):
         with pytest.raises(EnvironmentError):
-            validate_captcha_tokens("invisible_token", None, None)
+            validate_recaptcha_tokens("invisible_token", None, None)

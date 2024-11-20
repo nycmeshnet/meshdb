@@ -153,7 +153,7 @@ class TestJoinForm(TestCase):
         )
         validate_successful_join_form_submission(self, "Valid Join Form", s, response)
 
-    @patch("meshapi.views.forms.validate_captcha_tokens")
+    @patch("meshapi.views.forms.validate_recaptcha_tokens")
     def test_valid_join_form_invalid_captcha(self, mock_validate_captcha_tokens):
         mock_validate_captcha_tokens.side_effect = ValueError
 
@@ -177,7 +177,7 @@ class TestJoinForm(TestCase):
             self.assertContains(response, "Captcha verification failed", status_code=401)
             mock_validate_captcha_tokens.assert_called_once_with(None, None, None)
 
-    @patch("meshapi.views.forms.validate_captcha_tokens")
+    @patch("meshapi.views.forms.validate_recaptcha_tokens")
     def test_valid_join_form_captcha_env_vars_not_configured(self, mock_validate_captcha_tokens):
         mock_validate_captcha_tokens.side_effect = EnvironmentError
 
@@ -192,7 +192,7 @@ class TestJoinForm(TestCase):
             response = self.c.post("/api/v1/join/", request, content_type="application/json")
             self.assertContains(response, "Captcha verification failed", status_code=401)
 
-    @patch("meshapi.views.forms.validate_captcha_tokens")
+    @patch("meshapi.views.forms.validate_recaptcha_tokens")
     @patch("meshapi.views.forms.get_client_ip")
     def test_valid_join_form_captcha_valid(self, mock_get_client_ip, validate_captcha_tokens):
         mock_get_client_ip.return_value = ("1.1.1.1", True)

@@ -237,7 +237,7 @@ def check_recaptcha_token(token: Optional[str], server_secret: str, remote_ip: O
     return response_json.get("score", 1.0)
 
 
-def validate_captcha_tokens(
+def validate_recaptcha_tokens(
     recaptcha_invisible_token: Optional[str], recaptcha_checkbox_token: Optional[str], remote_ip: Optional[str]
 ) -> None:
     if not RECAPTCHA_SECRET_KEY_V3 or not RECAPTCHA_SECRET_KEY_V2:
