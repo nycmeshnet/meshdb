@@ -18,8 +18,10 @@ class TestLink(TestCase):
         self.c.login(username="admin", password="admin_password")
 
         self.node1 = Node(**sample_node)
+        self.node1.network_number = 101
         self.node1.save()
         self.node2 = Node(**sample_node)
+        self.node2.network_number = 102
         self.node2.save()
 
         self.device1 = Device(**sample_device)
@@ -127,3 +129,45 @@ class TestLink(TestCase):
         )
         inactive_link_install_date.save()
         self.assertEqual(datetime.date(2020, 9, 8), inactive_link_install_date.last_functioning_date_estimate)
+
+    def test_link__str__(self):
+        self.assertEqual("NN101 ↔ NN102", str(self.link))
+        node1_other_device = Device(**sample_device)
+        node1_other_device.node = self.node1
+        node1_other_device.save()
+
+        self.link.to_device = node1_other_device
+        self.link.save()
+
+        self.assertEqual("NN101 ↔ NN101", str(self.link))
+
+        self.device1.name = "nycmesh-101-device1"
+        self.device1.save()
+
+        self.assertEqual("nycmesh-101-device1 ↔ NN101", str(self.link))
+
+        node1_other_device.name = "nycmesh-101-other-device"
+        node1_other_device.save()
+
+        self.assertEqual("nycmesh-101-device1 ↔ nycmesh-101-other-device", str(self.link))
+
+        no_nn_node_1 = Node(**sample_node)
+        no_nn_node_1.status = Link.LinkStatus.PLANNED
+        no_nn_node_1.save()
+
+        no_nn_node_2 = Node(**sample_node)
+        no_nn_node_2.status = Link.LinkStatus.PLANNED
+        no_nn_node_2.save()
+
+        no_nn_device_1 = Device(**sample_device)
+        no_nn_device_1.node = no_nn_node_1
+        no_nn_device_1.save()
+
+        no_nn_device_2 = Device(**sample_device)
+        no_nn_device_2.node = no_nn_node_2
+        no_nn_device_2.save()
+
+        no_nns_link = Link(from_device=no_nn_device_1, to_device=no_nn_device_2)
+        no_nns_link.save()
+
+        self.assertEqual(f"MeshDB Link ID {no_nns_link.id}", str(no_nns_link))
