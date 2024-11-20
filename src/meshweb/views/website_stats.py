@@ -16,6 +16,14 @@ plt.rcParams["svg.fonttype"] = "none"
 VALID_DATA_MODES = ["install_requests", "active_installs"]
 
 
+def compute_graph_stats():
+    pass
+
+
+def render_graph():
+    pass
+
+
 def website_stats_graph(request: HttpRequest) -> HttpResponse:
     """
     Renders an SVG graph for embedding on the website, showing install growth over time
@@ -105,30 +113,6 @@ def website_stats_graph(request: HttpRequest) -> HttpResponse:
 
     fig, ax = plt.subplots(figsize=(6, 3.75))
 
-    title_color = "#ff3a30" if data_source == "active_installs" else "#777"
-    titlefont = {
-        "family": "Helvetica Neue",
-        "weight": "bold",
-        "size": 15,
-        "color": title_color,
-    }
-
-    plt.suptitle(
-        "Active Installs" if data_source == "active_installs" else "Install Requests",
-        fontsize=12,
-        fontweight="bold",
-        fontfamily="Helvetica Neue",
-        horizontalalignment="left",
-        x=0.155,
-    )
-    ax.set_title(
-        "{x:,.0f}".format(x=buckets[-1]),
-        ha="left",
-        pad=10,
-        fontdict=titlefont,
-        x=0.04,
-    )
-
     plot_color = "#ff3a30" if data_source == "active_installs" else "#aaaaaa"
     ax.plot(y, color=plot_color)
     ax.fill_between(x, y, 0, alpha=0.125, color=plot_color)
@@ -163,7 +147,7 @@ def website_stats_graph(request: HttpRequest) -> HttpResponse:
         which="both",
         labelcolor="#777",
         length=0,
-        labelsize=9,
+        labelsize=12,
         pad=-8,
         labelfontfamily="Helvetica Neue",
     )
@@ -183,7 +167,7 @@ def website_stats_graph(request: HttpRequest) -> HttpResponse:
         which="both",
         labelcolor="#777",
         length=0,
-        labelsize=9,
+        labelsize=12,
         pad=10,
         labelfontfamily="Helvetica Neue",
     )
@@ -191,7 +175,7 @@ def website_stats_graph(request: HttpRequest) -> HttpResponse:
     ax2.spines["top"].set_visible(False)
     ax2.spines["bottom"].set_visible(False)
 
-    plt.subplots_adjust(top=0.84)
+    plt.tight_layout()
 
     buf = io.BytesIO()
     plt.savefig(buf, format="svg")
