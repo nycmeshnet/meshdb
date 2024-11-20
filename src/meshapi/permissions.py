@@ -42,10 +42,6 @@ class HasNNAssignPermission(HasDjangoPermission):
     django_permission = "meshapi.assign_nn"
 
 
-class HasPanoramaUpdatePermission(HasDjangoPermission):
-    django_permission = "meshapi.update_panoramas"
-
-
 class HasMaintenanceModePermission(HasDjangoPermission):
     django_permission = "meshapi.maintenance_mode"
 

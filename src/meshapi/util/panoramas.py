@@ -2,20 +2,13 @@ import logging
 import os
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional, Union
+from typing import Optional
 
 import requests
-from drf_spectacular.utils import extend_schema
-from rest_framework import status
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework.request import Request
-from rest_framework.response import Response
 
 from meshapi.models import Install
 from meshapi.models.building import Building
 from meshapi.models.node import Node
-from meshapi.permissions import HasPanoramaUpdatePermission
-from meshapi.util.constants import DEFAULT_EXTERNAL_API_TIMEOUT_SECONDS
 from meshapi.util.django_pglocks import advisory_lock
 
 # Config for gathering/generating panorama links
@@ -117,6 +110,7 @@ class BadPanoramaTitle(Exception):
 
 class GitHubError(Exception):
     pass
+
 
 # Used by the above api route, and also the celery task
 @advisory_lock("update_panoramas_lock")
@@ -227,7 +221,7 @@ def set_panoramas(panos: dict[str, list[PanoramaTitle]]) -> tuple[int, list[str]
             else:
                 try:
                     # This int parsing has been known to fail, so we except a ValueError below.
-                    install = Install.objects.get(install_number=int(key)) 
+                    install = Install.objects.get(install_number=int(key))
                     panoramas_saved += save_building_panoramas(install.building, filenames)
                 except Install.DoesNotExist:
                     logging.warning(f"Install #{key} Does not exist")
@@ -249,7 +243,9 @@ def set_panoramas(panos: dict[str, list[PanoramaTitle]]) -> tuple[int, list[str]
 def get_head_tree_sha(owner: str, repo: str, branch: str, token: str = "") -> Optional[str]:
     url = f"https://api.github.com/repos/{owner}/{repo}/branches/{branch}"
     master = requests.get(
-        url, headers={"Authorization": f"Bearer {token}"}, timeout=GITHUB_API_TIMEOUT_SECONDS, 
+        url,
+        headers={"Authorization": f"Bearer {token}"},
+        timeout=GITHUB_API_TIMEOUT_SECONDS,
     )
     if master.status_code != 200:
         logging.error(f"Error: Got status {master.status_code} from GitHub trying to get SHA.")
@@ -263,9 +259,7 @@ def list_files_in_git_directory(
     owner: str, repo: str, directory: str, tree: str, token: str = ""
 ) -> Optional[list[str]]:
     url = f"https://api.github.com/repos/{owner}/{repo}/git/trees/{tree}?recursive=1"
-    response = requests.get(
-        url, headers={"Authorization": f"Bearer {token}"}, timeout=GITHUB_API_TIMEOUT_SECONDS
-    )
+    response = requests.get(url, headers={"Authorization": f"Bearer {token}"}, timeout=GITHUB_API_TIMEOUT_SECONDS)
     if response.status_code != 200:
         logging.error(f"Error: Failed to fetch GitHub directory contents. Status code: {response.status_code}")
         return None

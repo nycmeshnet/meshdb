@@ -6,13 +6,13 @@ from django.core import management
 from flags.state import disable_flag, enable_flag
 
 from meshapi.util.django_flag_decorator import skip_if_flag_disabled
+from meshapi.util.panoramas import sync_github_panoramas
 from meshapi.util.uisp_import.fetch_uisp import get_uisp_devices, get_uisp_links
 from meshapi.util.uisp_import.sync_handlers import (
     import_and_sync_uisp_devices,
     import_and_sync_uisp_links,
     sync_link_table_into_los_objects,
 )
-from meshapi.util.panoramas import sync_github_panoramas
 from meshdb.celery import app as celery_app
 from meshdb.settings import MESHDB_ENVIRONMENT
 
