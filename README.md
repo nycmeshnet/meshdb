@@ -294,6 +294,10 @@ then edit the relevant `.env` variable to reflect the URL of the desired endpoin
 ADMIN_MAP_BASE_URL=http://localhost:3000
 ```
 
+## How to add environment variables
+
+Follow this PR: https://github.com/nycmeshnet/meshdb/pull/617/files
+
 ### Backups
 
 **The Proper Way**
