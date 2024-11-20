@@ -144,7 +144,7 @@ def render_graph(
         ],
         position=(-1, -GRAPH_X_AXIS_DATAPOINT_COUNT),
     )
-    ax2.set_ticks([int(GRAPH_X_AXIS_DATAPOINT_COUNT * 0.08), int(GRAPH_X_AXIS_DATAPOINT_COUNT * 0.92)])
+    ax2.set_ticks([int(GRAPH_X_AXIS_DATAPOINT_COUNT * 0.09), int(GRAPH_X_AXIS_DATAPOINT_COUNT * 0.89)])
     ax2.tick_params(
         axis="both",
         which="both",
