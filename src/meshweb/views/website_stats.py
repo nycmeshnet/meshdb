@@ -1,7 +1,7 @@
 import datetime
 import io
-import json
 import math
+import threading
 from typing import List, Tuple
 
 import matplotlib.pyplot as plt
@@ -20,6 +20,10 @@ plt.rcParams["svg.fonttype"] = "none"
 
 VALID_DATA_MODES = ["install_requests", "active_installs"]
 GRAPH_X_AXIS_DATAPOINT_COUNT = 100
+
+# Matplotlib is not thread safe, so when the browser makes concurrent requests, we might accidentally
+# mix the configuration of multiple requests. This mutex protects all access to matplotlib functions
+matplotlib_lock = threading.Lock()
 
 
 @receiver(check_request_enabled)
@@ -210,9 +214,10 @@ def website_stats_graph(request: HttpRequest) -> HttpResponse:
 
     datapoints = compute_graph_stats(data_source, start_datetime, end_datetime)
 
-    return HttpResponse(
-        render_graph(data_source, datapoints, start_datetime, end_datetime), content_type="image/svg+xml"
-    )
+    with matplotlib_lock:
+        return HttpResponse(
+            render_graph(data_source, datapoints, start_datetime, end_datetime), content_type="image/svg+xml"
+        )
 
 
 def website_stats_json(request: HttpRequest) -> HttpResponse:
