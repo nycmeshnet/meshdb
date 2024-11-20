@@ -1,4 +1,5 @@
 import datetime
+import logging
 from typing import List, Optional
 
 import requests
@@ -92,9 +93,10 @@ def update_link_from_uisp_data(
 
     if uisp_link_id != existing_link.uisp_id:
         existing_link.uisp_id = uisp_link_id
-        # TODO: Convert this to a log warning instead of an admin message if this fix holds
-        #  GH issue: https://github.com/nycmeshnet/meshdb/issues/691
-        change_messages.append(f"Changed UISP link ID to {uisp_link_id}")
+        logging.info(
+            f"Changed UISP link ID to {uisp_link_id} for {existing_link} link (ID {existing_link.id}). "
+            f"This is likely due to a UISP UUID rotation"
+        )
 
     uisp_device_pair = {uisp_to_device, uisp_from_device}
     db_device_pair = {existing_link.from_device, existing_link.to_device}

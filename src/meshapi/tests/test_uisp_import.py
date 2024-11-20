@@ -437,7 +437,6 @@ class TestUISPImportUpdateObjects(TransactionTestCase):
         self.assertEqual(
             change_messages,
             [
-                "Changed UISP link ID to fake-uisp-uuid2",
                 "Changed connected device pair from [nycmesh-1234-dev1, nycmesh-5678-dev2] to [nycmesh-1234-dev1, nycmesh-9012-dev3]",
                 "Marked as Inactive due to it being offline in UISP for more than 30 days",
             ],
@@ -1583,7 +1582,6 @@ class TestUISPImportHandlers(TransactionTestCase):
 
         mock_notify_admins.assert_has_calls(
             [
-                call(self.link4, ["Changed UISP link ID to uisp-uuid40b"]),
                 call(self.link5b, ["Marked as Active due to it coming back online in UISP"]),
                 call(
                     self.link5a,
@@ -1784,7 +1782,7 @@ class TestUISPImportHandlers(TransactionTestCase):
         new_los = LOS.objects.get(from_building=self.building1, to_building=self.building3)
         self.assertEqual(new_los.source, LOS.LOSSource.EXISTING_LINK)
         self.assertEqual(new_los.analysis_date, datetime.date.today())
-        self.assertEqual(new_los.notes, f"Created automatically from Link ID {self.link2.id} (NN1234 → NN9012)\n\n")
+        self.assertEqual(new_los.notes, f"Created automatically from Link ID {self.link2.id} (NN1234 ↔ NN9012)\n\n")
 
     def test_sync_same_building_link_with_los(self):
         self.device3b = Device(
