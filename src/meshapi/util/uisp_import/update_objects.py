@@ -140,17 +140,6 @@ def update_link_from_uisp_data(
         if uisp_status == Link.LinkStatus.ACTIVE:
             existing_link.status = Link.LinkStatus.ACTIVE
             change_message = f"Marked as {Link.LinkStatus.ACTIVE} due to it coming back online in UISP"
-            if (
-                existing_link.abandon_date
-                and datetime.date.today() - existing_link.abandon_date
-                > UISP_ABANDON_DATE_AGE_BEFORE_WARNING_ABOUT_REACTIVATION
-            ):
-                change_message += (
-                    ". Warning: this link was previously abandoned on "
-                    f"{existing_link.abandon_date.isoformat()}, if this link has been re-purposed, "
-                    "please make sure the device names and network numbers are updated to reflect the new location"
-                )
-
             existing_link.abandon_date = None
             change_messages.append(change_message)
 
