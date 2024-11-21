@@ -540,11 +540,7 @@ class TestUISPImportUpdateObjects(TransactionTestCase):
 
         self.assertEqual(
             change_messages,
-            [
-                "Marked as Active due to it coming back online in UISP. Warning: this link was "
-                "previously abandoned on 2018-11-14, if this link has been re-purposed, "
-                "please make sure the device names and network numbers are updated to reflect the new location"
-            ],
+            ["Marked as Active due to it coming back online in UISP"],
         )
 
     @patch("meshapi.util.uisp_import.update_objects.get_uisp_link_last_seen")
