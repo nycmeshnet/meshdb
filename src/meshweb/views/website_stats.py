@@ -3,7 +3,7 @@ import io
 import math
 import re
 import threading
-from typing import List, Tuple
+from typing import List, Optional, Tuple, cast
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -39,7 +39,10 @@ def cors_allow_website_stats_to_all(sender: None, request: HttpRequest, **kwargs
     ]:
         return False
 
-    origin = request.META.get("HTTP_ORIGIN")
+    origin: Optional[str] = cast(Optional[str], request.META.get("HTTP_ORIGIN"))
+    if not origin:
+        return False
+
     if re.fullmatch(r"https://deploy-preview-\d{1,5}--nycmesh-website\.netlify\.app", origin):
         return True
 
