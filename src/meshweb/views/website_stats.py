@@ -39,11 +39,11 @@ def cors_allow_website_stats_to_all(sender: None, request: HttpRequest, **kwargs
     ]:
         return False
 
-    host = request.get_host()
-    if re.fullmatch(r"deploy-preview-\d{1,5}--nycmesh-website\.netlify\.app", host):
+    origin = request.META.get("HTTP_ORIGIN")
+    if re.fullmatch(r"https://deploy-preview-\d{1,5}--nycmesh-website\.netlify\.app", origin):
         return True
 
-    if host in ["nycmesh.net", "www.nycmesh.net"]:
+    if origin in ["https://nycmesh.net", "https://www.nycmesh.net"]:
         return True
 
     return False
