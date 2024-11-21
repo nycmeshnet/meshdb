@@ -88,9 +88,9 @@ def run_update_from_uisp() -> None:
 jitter_minutes = 0 if MESHDB_ENVIRONMENT == "prod" else 2
 
 celery_app.conf.beat_schedule = {
-    "update-panoramas-every-fifteen-minutes": {
+    "update-panoramas-hourly": {
         "task": "meshapi.tasks.run_update_panoramas",
-        "schedule": crontab(minute=f"*/{str(jitter_minutes + 15)}"),
+        "schedule": crontab(minute=str(jitter_minutes), hour="*/1"),
     },
     "import-from-uisp-hourly": {
         "task": "meshapi.tasks.run_update_from_uisp",
