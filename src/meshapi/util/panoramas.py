@@ -142,10 +142,15 @@ def sync_github_panoramas() -> tuple[int, list[str]]:
             filenames = list_files_in_git_directory(owner, repo, directory, head_tree_sha, token) or []
             if not filenames:
                 raise GitHubError("Could not get file list from GitHub")
+
             break
         except GitHubError as e:
             logging.warning(f"Caught GitHub error. ({e}) Probably flaky API.")
             attempts -= 1
+
+            if attempts <= 0:
+                logging.error("Could not contact GitHub. Can't sync panoramas!")
+                return (0, [])
 
     panos: dict[str, list[PanoramaTitle]] = group_panoramas_by_install_or_nn(filenames)
     return set_panoramas(panos)
