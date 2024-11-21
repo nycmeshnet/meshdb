@@ -1,9 +1,9 @@
 import os
 from unittest.mock import MagicMock, patch
 
+from django.core import management
 from django.test import TestCase
 
-from django.core import management
 from meshapi.models import Building, Install, Member
 from meshapi.models.node import Node
 from meshapi.util.panoramas import (
@@ -133,6 +133,7 @@ class TestSaveBuildings(TestCase):
         # Save no panoramas, and make sure that none of the panoramas got clobbered.
         save_building_panoramas(self.building_1, [])
         self.assertEqual(saved_panoramas, self.building_1.panoramas)
+
 
 class TestPanoUtils(TestCase):
     def setUp(self):

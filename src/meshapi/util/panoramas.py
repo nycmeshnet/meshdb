@@ -4,8 +4,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
 
-from django.db import transaction
 import requests
+from django.db import transaction
 
 from meshapi.models import Install
 from meshapi.models.building import Building
