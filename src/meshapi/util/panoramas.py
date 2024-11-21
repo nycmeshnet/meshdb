@@ -259,7 +259,7 @@ def get_head_tree_sha(owner: str, repo: str, branch: str, token: str = "") -> Op
         timeout=GITHUB_API_TIMEOUT_SECONDS,
     )
     if master.status_code != 200:
-        logging.error(f"Error: Got status {master.status_code} from GitHub trying to get SHA.")
+        logging.error(f"Error: Got status {master.status_code} from GitHub trying to get SHA: {master.content}")
         return None
     master_json = master.json()
     return master_json["commit"]["commit"]["tree"]["sha"]
