@@ -11,6 +11,7 @@ from meshapi.util.panoramas import (
     PanoramaTitle,
     get_head_tree_sha,
     list_files_in_git_directory,
+    save_building_panoramas,
     set_panoramas,
 )
 
@@ -89,6 +90,49 @@ class TestPanoPipeline(TestCase):
             f"https://node-db.netlify.app/panoramas/{n}b.jpg",
         ]
         self.assertEqual(saved_panoramas, building.panoramas)
+
+
+class TestSaveBuildings(TestCase):
+    def setUp(self):
+        sample_install_copy = sample_install.copy()
+        self.building_1 = Building(**sample_building)
+        self.building_1.save()
+        sample_install_copy["building"] = self.building_1
+
+        self.member = Member(**sample_member)
+        self.member.save()
+        sample_install_copy["member"] = self.member
+
+        self.node = Node(**sample_node)
+        self.node.save()
+        sample_install_copy["node"] = self.node
+
+        self.install = Install(**sample_install_copy)
+        self.install.save()
+
+    def test_save_building_panoramas(self):
+        n = self.install.install_number
+
+        # Save some panoramas
+        save_building_panoramas(self.building_1, PanoramaTitle.from_filenames([f"{n}.jpg", f"{n}a.jpg"]))
+        saved_panoramas = [
+            f"https://node-db.netlify.app/panoramas/{n}.jpg",
+            f"https://node-db.netlify.app/panoramas/{n}a.jpg",
+        ]
+        self.assertEqual(saved_panoramas, self.building_1.panoramas)
+
+        # Save another one, and check to make sure it got appended
+        save_building_panoramas(self.building_1, PanoramaTitle.from_filenames([f"{n}b.jpg"]))
+        saved_panoramas = [
+            f"https://node-db.netlify.app/panoramas/{n}.jpg",
+            f"https://node-db.netlify.app/panoramas/{n}a.jpg",
+            f"https://node-db.netlify.app/panoramas/{n}b.jpg",
+        ]
+        self.assertEqual(saved_panoramas, self.building_1.panoramas)
+
+        # Save no panoramas, and make sure that none of the panoramas got clobbered.
+        save_building_panoramas(self.building_1, [])
+        self.assertEqual(saved_panoramas, self.building_1.panoramas)
 
 class TestPanoUtils(TestCase):
     def setUp(self):

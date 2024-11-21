@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
 
+from django.db import transaction
 import requests
 
 from meshapi.models import Install
@@ -176,9 +177,11 @@ def group_panoramas_by_install_or_nn(filenames: list[str]) -> dict[str, list[Pan
 # clobber the panoramas already saved (since a robot should probably be
 # controlling this), but for now, it either appends to the current list,
 # or bails if the current list and the new list are the same.
+@transaction.atomic
 def save_building_panoramas(building: Building, panorama_titles: list[PanoramaTitle]) -> int:
     # Generate storage URL for panorama
     panoramas = []
+    panoramas_saved = 0
     for filename in panorama_titles:
         panoramas.append(filename.get_url())
 
@@ -189,10 +192,11 @@ def save_building_panoramas(building: Building, panorama_titles: list[PanoramaTi
     # Add new panoramas
     for p in panoramas:
         if p not in building.panoramas:
-            building.panoramas += p
+            building.panoramas.append(p)
+            panoramas_saved += 1
     building.save()
 
-    return len(panoramas)
+    return panoramas_saved
 
 
 # Given a list of panoramas grouped by install number/network number, find the
