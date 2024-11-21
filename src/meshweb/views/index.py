@@ -15,7 +15,8 @@ def index(request: HttpRequest) -> HttpResponse:
             ("/admin", "Admin Panel"),
             ("/api/v1/geography/whole-mesh.kml", "KML Download"),
             ("/explorer/play", "SQL Explorer"),
-            (settings.FORMS_URL, "Other Forms"),
+            (f"{settings.FORMS_URL}/nn-assign/", "NN Assign Form"),
+            (f"{settings.FORMS_URL}/query/", "Query Form"),
         ],
         "Developer Tools": [
             ("https://github.com/nycmeshnet/meshdb", "Source Code"),
