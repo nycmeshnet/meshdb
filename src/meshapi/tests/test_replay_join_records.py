@@ -14,6 +14,7 @@ from meshapi.util.join_records import (
     JoinRecordProcessor,
     s3_content_to_join_record,
 )
+from meshapi.validation import NYCAddressInfo
 
 
 # Integration test to ensure that we can fetch JoinRecords from an S3 bucket,
@@ -58,10 +59,14 @@ class TestReplayJoinRecords(TestCase):
 
     @patch("meshapi.management.commands.replay_join_records.Command.past_week")
     @patch("meshapi.util.join_records.JOIN_RECORD_PREFIX", MOCK_JOIN_RECORD_PREFIX)
-    def test_replay_basic_join_records(self, past_week_function):
+    @patch("meshapi.views.forms.geocode_nyc_address")
+    def test_replay_basic_join_records(self, mock_geocode_func, past_week_function):
         halloween_minus_one_week = datetime(2024, 10, 31, 8, 0, 0, 0) - timedelta(days=7)
         past_week_function.return_value = halloween_minus_one_week
-
+        mock_geocode_func.side_effect = [
+            NYCAddressInfo("197 Prospect Place", "Brooklyn", "NY", "11238"),
+            ValueError("NJ not allowed yet!"),
+        ]
         # Load the samples into S3
         for key, record in basic_sample_join_records.items():
             self.p.upload(record, key)
