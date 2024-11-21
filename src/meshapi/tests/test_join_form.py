@@ -2,7 +2,7 @@ import copy
 import json
 import time
 from unittest import mock
-from unittest.mock import ANY
+from unittest.mock import ANY, patch
 
 import requests_mock
 from django.contrib.auth.models import User
@@ -14,7 +14,7 @@ from meshapi.models import Building, Install, Member, Node
 from meshapi.views import JoinFormRequest
 
 from ..serializers import MemberSerializer
-from ..validation import DOB_BUILDING_HEIGHT_API_URL, NYC_PLANNING_LABS_GEOCODE_URL
+from ..validation import DOB_BUILDING_HEIGHT_API_URL, NYC_PLANNING_LABS_GEOCODE_URL, NYCAddressInfo
 from .sample_data import sample_building, sample_node
 from .sample_join_form_data import (
     bronx_join_form_submission,
@@ -1076,8 +1076,11 @@ class TestJoinFormRaceCondition(TransactionTestCase):
         building = Building(**sample_building)
         building.save()
 
-    def test_valid_join_form(self):
+    @patch("meshapi.views.forms.geocode_nyc_address")
+    def test_valid_join_form(self, mock_geocode_func):
         results = []
+
+        mock_geocode_func.return_value = NYCAddressInfo("151 Broome Street", "Manhattan", "NY", "10002")
 
         member1_submission = valid_join_form_submission.copy()
         member1_submission["email_address"] = "member1@xyz.com"
