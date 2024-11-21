@@ -6,7 +6,7 @@ from typing import List, Tuple
 
 import matplotlib.pyplot as plt
 import numpy as np
-import re
+import regex
 from corsheaders.signals import check_request_enabled
 from django.db.models import Min
 from django.dispatch import receiver
@@ -40,7 +40,7 @@ def cors_allow_website_stats_to_all(sender: None, request: HttpRequest, **kwargs
         return False
 
     host = request.get_host()
-    if re.fullmatch(r"deploy-preview-\d{1,5}--nycmesh-website\.netlify\.app", host):
+    if regex.match(r"deploy-preview-\d{1,5}--nycmesh-website\.netlify\.app", host):
         return True
 
     if host in ["nycmesh.net", "www.nycmesh.net"]:
