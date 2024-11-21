@@ -1,8 +1,10 @@
-from django.test import TestCase
+from django.test import RequestFactory, TestCase
 from freezegun import freeze_time
+from parameterized import parameterized
 
 from meshapi.models import Building, Install, Member
 from meshapi.tests.sample_data import sample_building, sample_install, sample_member
+from meshweb.views import cors_allow_website_stats_to_all
 
 
 @freeze_time("2024-11-16")
@@ -164,3 +166,41 @@ class TestWebsiteStatsJSON(TestCase):
         json_response = self.client.get("/website-embeds/stats-graph.json?data=install_requests&days=31")
         self.assertEqual(json_response.status_code, 200)
         self.assertEqual(json_response.json(), {"data": [2] * 100, "start": 1729036800, "end": 1731715200})
+
+
+class TestWebsiteStatsCORS(TestCase):
+    @parameterized.expand(
+        [
+            ["https://nycmesh.net", True],
+            ["https://www.nycmesh.net", True],
+            ["https://deploy-preview-1--nycmesh-website.netlify.app", True],
+            ["https://deploy-preview-11--nycmesh-website.netlify.app", True],
+            ["https://deploy-preview-171--nycmesh-website.netlify.app", True],
+            ["https://deploy-preview-17111--nycmesh-website.netlify.app", True],
+            ["https://bad-guy.netlify.app", False],
+        ]
+    )
+    def test_stats_endpoints_cors(self, origin, expected):
+        rf = RequestFactory()
+
+        json_request = rf.post(
+            "https://mock-meshdb-url.example/website-embeds/stats-graph.json",
+            headers={"Origin": origin},
+        )
+        self.assertEqual(cors_allow_website_stats_to_all(None, json_request), expected)
+
+        svg_request = rf.post(
+            "https://mock-meshdb-url.example/website-embeds/stats-graph.svg",
+            headers={"Origin": origin},
+        )
+        self.assertEqual(cors_allow_website_stats_to_all(None, svg_request), expected)
+
+    def test_other_endpoint_cors(self):
+        rf = RequestFactory()
+
+        mock_join_form_request = rf.post(
+            "https://mock-meshdb-url.example/aslfkdjdsa",
+            headers={"Origin": "https://www.nycmesh.net"},
+        )
+
+        self.assertFalse(cors_allow_website_stats_to_all(None, mock_join_form_request))
