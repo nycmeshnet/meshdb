@@ -255,7 +255,7 @@ def get_head_tree_sha(owner: str, repo: str, branch: str, token: str = "") -> Op
     url = f"https://api.github.com/repos/{owner}/{repo}/branches/{branch}"
     master = requests.get(
         url,
-        headers={"Authorization": f"Bearer {token}"},
+        headers={"Authorization": f"Bearer {token}"} if token != "" else {},
         timeout=GITHUB_API_TIMEOUT_SECONDS,
     )
     if master.status_code != 200:
