@@ -150,7 +150,7 @@ def sync_github_panoramas() -> tuple[int, list[str]]:
 
             if attempts <= 0:
                 logging.error("Could not contact GitHub. Can't sync panoramas!")
-                return (0, [])
+                raise e
 
     panos: dict[str, list[PanoramaTitle]] = group_panoramas_by_install_or_nn(filenames)
     return set_panoramas(panos)
