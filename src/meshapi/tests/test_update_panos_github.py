@@ -247,3 +247,11 @@ class TestRetries(TestCase):
             panoramas_saved, warnings = sync_github_panoramas()
 
         self.assertEqual(self.saved_panoramas, self.building_1.panoramas)
+
+    @patch("meshapi.util.panoramas.list_files_in_git_directory")
+    def test_panorama_retries_2(self, list_files_in_git_directory):
+        list_files_in_git_directory.side_effect = GitHubError
+        with self.assertRaises(GitHubError):
+            panoramas_saved, warnings = sync_github_panoramas()
+
+        self.assertEqual(self.saved_panoramas, self.building_1.panoramas)
