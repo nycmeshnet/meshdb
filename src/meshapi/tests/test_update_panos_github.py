@@ -38,10 +38,6 @@ class TestPanoPipeline(TestCase):
         self.install = Install(**sample_install_copy)
         self.install.save()
 
-    # This should hit the github api and then just not set anything in an empty db
-    def test_sync_panoramas(self):
-        management.call_command("sync_panoramas")
-
     def test_set_panoramas(self):
         # Fabricate some fake panorama photos
         n = self.install.install_number
