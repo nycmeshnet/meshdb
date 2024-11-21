@@ -6,6 +6,7 @@ from typing import List, Tuple
 
 import matplotlib.pyplot as plt
 import numpy as np
+import regex
 from corsheaders.signals import check_request_enabled
 from django.db.models import Min
 from django.dispatch import receiver
@@ -29,17 +30,23 @@ matplotlib_lock = threading.Lock()
 @receiver(check_request_enabled)
 def cors_allow_website_stats_to_all(sender: None, request: HttpRequest, **kwargs: dict) -> bool:
     """
-    This handler adds an allow all CORS header to the stats endpoints, this should be totally safe since
-    these endpoints don't modify any data (and images are exempt from CORS anyway)
-
-    This allows this data to be embeded on the nycmesh.net site. The advantage of this over adding
-    the domain staically in settings.py is that this way the netlify-hosted test domains created
-    during PRs will work also
+    This handler adds an allow all CORS header to the stats endpoints for nycmesh.net and the
+    netlify-hosted test domains created during PRs
     """
-    return request.path in [
+    if request.path not in [
         reverse("legacy-stats-svg"),
         reverse("legacy-stats-json"),
-    ]
+    ]:
+        return False
+
+    host = request.get_host()
+    if regex.match(r"deploy-preview-\d{1,5}--nycmesh-website\.netlify\.app", host):
+        return True
+
+    if host in ["nycmesh.net", "www.nycmesh.net"]:
+        return True
+
+    return False
 
 
 def compute_graph_stats(
