@@ -15,8 +15,11 @@ import os
 from pathlib import Path
 from typing import Any, Dict, List
 
+from corsheaders.defaults import default_headers
 from django.http.request import HttpRequest
 from dotenv import load_dotenv
+
+from meshapi.util.constants import RECAPTCHA_CHECKBOX_TOKEN_HEADER, RECAPTCHA_INVISIBLE_TOKEN_HEADER
 
 load_dotenv()
 
@@ -149,6 +152,13 @@ CORS_ALLOWED_ORIGINS = [
     "https://adminmap.devdb.nycmesh.net",
     "https://devdb.nycmesh.net",
 ]
+
+CORS_ALLOW_HEADERS = [
+    *default_headers,
+    RECAPTCHA_CHECKBOX_TOKEN_HEADER,
+    RECAPTCHA_INVISIBLE_TOKEN_HEADER,
+]
+
 
 CSRF_TRUSTED_ORIGINS = [
     "http://meshdb:8081",
@@ -296,6 +306,28 @@ DBBACKUP_CONNECTORS = {
     }
 }
 DBBACKUP_DATABASES = ["default"]
+
+LOGGING = {
+    "version": 1,
+    "formatters": {
+        "verbose": {
+            "format": "[%(asctime)s] [%(process)d] [%(levelname)s] %(message)s",
+        },
+    },
+    "handlers": {
+        "console": {
+            "level": "INFO",
+            "class": "logging.StreamHandler",
+            "formatter": "verbose",
+        },
+    },
+    "loggers": {
+        "": {
+            "handlers": ["console"],
+            "level": "INFO",
+        },
+    },
+}
 
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators

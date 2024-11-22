@@ -2,7 +2,7 @@ import copy
 import json
 import time
 from unittest import mock
-from unittest.mock import ANY
+from unittest.mock import ANY, patch
 
 import requests_mock
 from django.contrib.auth.models import User
@@ -14,7 +14,8 @@ from meshapi.models import Building, Install, Member, Node
 from meshapi.views import JoinFormRequest
 
 from ..serializers import MemberSerializer
-from ..validation import DOB_BUILDING_HEIGHT_API_URL, NYC_PLANNING_LABS_GEOCODE_URL
+from ..util.constants import RECAPTCHA_CHECKBOX_TOKEN_HEADER, RECAPTCHA_INVISIBLE_TOKEN_HEADER
+from ..validation import DOB_BUILDING_HEIGHT_API_URL, NYC_PLANNING_LABS_GEOCODE_URL, NYCAddressInfo
 from .sample_data import sample_building, sample_node
 from .sample_join_form_data import (
     bronx_join_form_submission,
@@ -106,6 +107,7 @@ def pull_apart_join_form_submission(submission):
     return request, s
 
 
+@patch("meshapi.views.forms.DISABLE_RECAPTCHA_VALIDATION", True)
 class TestJoinForm(TestCase):
     c = Client()
     admin_c = Client()
@@ -150,6 +152,70 @@ class TestJoinForm(TestCase):
             f"status code incorrect for Valid Join Form. Should be {code}, but got {response.status_code}.\n Response is: {response.content.decode('utf-8')}",
         )
         validate_successful_join_form_submission(self, "Valid Join Form", s, response)
+
+    @patch("meshapi.views.forms.validate_recaptcha_tokens")
+    def test_valid_join_form_invalid_captcha(self, mock_validate_captcha_tokens):
+        mock_validate_captcha_tokens.side_effect = ValueError
+
+        with patch("meshapi.views.forms.DISABLE_RECAPTCHA_VALIDATION", False):
+            self.requests_mocker.get(
+                NYC_PLANNING_LABS_GEOCODE_URL,
+                json=valid_join_form_submission["dob_addr_response"],
+            )
+
+            request, s = pull_apart_join_form_submission(valid_join_form_submission)
+
+            response = self.c.post(
+                "/api/v1/join/",
+                request,
+                content_type="application/json",
+                headers={
+                    RECAPTCHA_INVISIBLE_TOKEN_HEADER: "",
+                    RECAPTCHA_CHECKBOX_TOKEN_HEADER: "",
+                },
+            )
+            self.assertContains(response, "Captcha verification failed", status_code=401)
+            mock_validate_captcha_tokens.assert_called_once_with(None, None, None)
+
+    @patch("meshapi.views.forms.validate_recaptcha_tokens")
+    def test_valid_join_form_captcha_env_vars_not_configured(self, mock_validate_captcha_tokens):
+        mock_validate_captcha_tokens.side_effect = EnvironmentError
+
+        with patch("meshapi.views.forms.DISABLE_RECAPTCHA_VALIDATION", False):
+            self.requests_mocker.get(
+                NYC_PLANNING_LABS_GEOCODE_URL,
+                json=valid_join_form_submission["dob_addr_response"],
+            )
+
+            request, s = pull_apart_join_form_submission(valid_join_form_submission)
+
+            response = self.c.post("/api/v1/join/", request, content_type="application/json")
+            self.assertContains(response, "Captcha verification failed", status_code=401)
+
+    @patch("meshapi.views.forms.validate_recaptcha_tokens")
+    @patch("meshapi.views.forms.get_client_ip")
+    def test_valid_join_form_captcha_valid(self, mock_get_client_ip, validate_captcha_tokens):
+        mock_get_client_ip.return_value = ("1.1.1.1", True)
+        with patch("meshapi.views.forms.DISABLE_RECAPTCHA_VALIDATION", False):
+            self.requests_mocker.get(
+                NYC_PLANNING_LABS_GEOCODE_URL,
+                json=valid_join_form_submission["dob_addr_response"],
+            )
+
+            request, s = pull_apart_join_form_submission(valid_join_form_submission)
+
+            response = self.c.post(
+                "/api/v1/join/",
+                request,
+                content_type="application/json",
+                headers={
+                    RECAPTCHA_INVISIBLE_TOKEN_HEADER: "mock_invisible_token",
+                    RECAPTCHA_CHECKBOX_TOKEN_HEADER: "mock_checkbox_token",
+                },
+            )
+            self.assertEqual(response.status_code, 201)
+            validate_successful_join_form_submission(self, "Valid Join Form", s, response)
+            validate_captcha_tokens.assert_called_once_with("mock_invisible_token", "mock_checkbox_token", "1.1.1.1")
 
     @parameterized.expand(
         [
@@ -1060,6 +1126,7 @@ def slow_install_init(*args, **kwargs):
     return result
 
 
+@patch("meshapi.views.forms.DISABLE_RECAPTCHA_VALIDATION", True)
 class TestJoinFormRaceCondition(TransactionTestCase):
     c = Client()
     admin_c = Client()
@@ -1076,8 +1143,11 @@ class TestJoinFormRaceCondition(TransactionTestCase):
         building = Building(**sample_building)
         building.save()
 
-    def test_valid_join_form(self):
+    @patch("meshapi.views.forms.geocode_nyc_address")
+    def test_valid_join_form(self, mock_geocode_func):
         results = []
+
+        mock_geocode_func.return_value = NYCAddressInfo("151 Broome Street", "Manhattan", "NY", "10002")
 
         member1_submission = valid_join_form_submission.copy()
         member1_submission["email_address"] = "member1@xyz.com"

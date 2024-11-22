@@ -4,10 +4,17 @@ from unittest.mock import patch
 
 from django.core import management
 from django.test import TestCase
+from moto import mock_aws
 
 from meshapi.models.install import Install
 from meshapi.tests.sample_join_records import MOCK_JOIN_RECORD_PREFIX, basic_sample_join_records
-from meshapi.util.join_records import JoinRecord, JoinRecordProcessor, s3_content_to_join_record
+from meshapi.util.join_records import (
+    JOIN_RECORD_BUCKET_NAME,
+    JoinRecord,
+    JoinRecordProcessor,
+    s3_content_to_join_record,
+)
+from meshapi.validation import NYCAddressInfo
 
 
 # Integration test to ensure that we can fetch JoinRecords from an S3 bucket,
@@ -15,10 +22,12 @@ from meshapi.util.join_records import JoinRecord, JoinRecordProcessor, s3_conten
 # We should test a happy case, a case when the JoinRecord is bad (like a JoinRecord
 # somehow from Russia), and maybe mock a MeshDB 500 that just ends in us putting
 # the data back.
+@mock_aws
 class TestReplayJoinRecords(TestCase):
     p = JoinRecordProcessor()
 
     def setUp(self) -> None:
+        self.p.s3_client.create_bucket(Bucket=JOIN_RECORD_BUCKET_NAME)
         self.p.flush_test_data()
 
     def tearDown(self) -> None:
@@ -50,10 +59,14 @@ class TestReplayJoinRecords(TestCase):
 
     @patch("meshapi.management.commands.replay_join_records.Command.past_week")
     @patch("meshapi.util.join_records.JOIN_RECORD_PREFIX", MOCK_JOIN_RECORD_PREFIX)
-    def test_replay_basic_join_records(self, past_week_function):
+    @patch("meshapi.views.forms.geocode_nyc_address")
+    def test_replay_basic_join_records(self, mock_geocode_func, past_week_function):
         halloween_minus_one_week = datetime(2024, 10, 31, 8, 0, 0, 0) - timedelta(days=7)
         past_week_function.return_value = halloween_minus_one_week
-
+        mock_geocode_func.side_effect = [
+            NYCAddressInfo("197 Prospect Place", "Brooklyn", "NY", "11238"),
+            ValueError("NJ not allowed yet!"),
+        ]
         # Load the samples into S3
         for key, record in basic_sample_join_records.items():
             self.p.upload(record, key)

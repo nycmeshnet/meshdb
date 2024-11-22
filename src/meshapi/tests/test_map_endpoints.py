@@ -6,6 +6,7 @@ import requests_mock
 from django.test import Client, TestCase
 
 from meshapi.models import LOS, AccessPoint, Building, Device, Install, Link, Member, Node, Sector
+from meshapi.serializers import MapDataLinkSerializer
 from meshapi.tests.sample_kiosk_data import SAMPLE_OPENDATA_NYC_LINKNYC_KIOSK_RESPONSE
 from meshapi.views import LINKNYC_KIOSK_DATA_URL
 
@@ -1158,6 +1159,56 @@ class TestViewsGetUnauthenticated(TestCase):
                     "to": 1706171,
                 },
             ],
+        )
+
+    def test_link_serializer_inactive_link(self):
+        sn1 = Node(
+            id=uuid.UUID("23d4acb4-43fc-4832-9ddd-219c12bdbc28"),
+            network_number=227,
+            status=Node.NodeStatus.ACTIVE,
+            latitude=0,
+            longitude=0,
+        )
+        sn1.save()
+
+        sn1_omni = Device(
+            id=uuid.UUID("116368d5-2437-4cfb-9d25-540533c8bfec"),
+            node=sn1,
+            status=Device.DeviceStatus.ACTIVE,
+        )
+        sn1_omni.save()
+
+        random = Node(
+            id=uuid.UUID("efe899b4-6a0c-4e28-8b1b-2d28669463cd"),
+            network_number=123,
+            latitude=0,
+            longitude=0,
+            status=Node.NodeStatus.ACTIVE,
+        )
+        random.save()
+
+        random_omni = Device(
+            id=uuid.UUID("a6106205-8d04-4a52-b3af-f0ffc1b84fcc"),
+            node=random,
+            status=Device.DeviceStatus.ACTIVE,
+        )
+        random_omni.save()
+
+        inactive_link = Link(
+            id=uuid.UUID("33986527-28a9-4146-bcd3-fee73034c45f"),
+            from_device=sn1_omni,
+            to_device=random_omni,
+            status=Link.LinkStatus.INACTIVE,
+            type=Link.LinkType.FIVE_GHZ,
+        )
+
+        self.assertEqual(
+            MapDataLinkSerializer(inactive_link).data,
+            {
+                "from": 227,
+                "to": 123,
+                "status": "dead",
+            },
         )
 
     def test_links_are_deduplicated(self):
