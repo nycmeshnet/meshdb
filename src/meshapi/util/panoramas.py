@@ -270,9 +270,14 @@ def list_files_in_git_directory(
     owner: str, repo: str, directory: str, tree: str, token: str = ""
 ) -> Optional[list[str]]:
     url = f"https://api.github.com/repos/{owner}/{repo}/git/trees/{tree}?recursive=1"
-    response = requests.get(url, headers={"Authorization": f"Bearer {token}"}, timeout=GITHUB_API_TIMEOUT_SECONDS)
+    response = requests.get(
+        url, headers={"Authorization": f"Bearer {token}"} if token != "" else {}, timeout=GITHUB_API_TIMEOUT_SECONDS
+    )
     if response.status_code != 200:
-        logging.error(f"Error: Failed to fetch GitHub directory contents. Status code: {response.status_code}")
+        logging.error(
+            "Error: Failed to fetch GitHub directory contents."
+            f"Status code: {response.status_code}. Error: {response.text}"
+        )
         return None
     files = []
     tree_res = response.json()
