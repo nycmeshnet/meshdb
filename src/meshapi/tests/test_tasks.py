@@ -69,6 +69,8 @@ class TestResetDevDatabaseTask(TestCase):
             reset_dev_database()
 
 
+@mock.patch("meshapi.util.panoramas.get_head_tree_sha", return_value="mockedsha")
+@mock.patch("meshapi.util.panoramas.list_files_in_git_directory", return_value=["713a.jpg", "713b.jpg"])
 class TestUpdatePanoramasTask:
     def test_update_panoramas_task(self):
         run_update_panoramas()

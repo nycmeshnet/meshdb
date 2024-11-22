@@ -1,4 +1,5 @@
 import os
+from unittest import mock
 from unittest.mock import MagicMock, patch
 
 from django.core import management
@@ -20,6 +21,14 @@ from meshapi.util.panoramas import (
 from .sample_data import sample_building, sample_install, sample_member, sample_node
 
 
+class TestSyncPanoramasCommand(TestCase):
+    # This should hit the github api and then just not set anything in an empty db
+    @mock.patch("meshapi.util.panoramas.get_head_tree_sha", return_value="mockedsha")
+    @mock.patch("meshapi.util.panoramas.list_files_in_git_directory", return_value=["713a.jpg", "713b.jpg"])
+    def test_sync_panoramas(self, get_head_tree_sha_function, list_files_in_git_directory_function):
+        management.call_command("sync_panoramas")
+
+
 class TestPanoPipeline(TestCase):
     def setUp(self):
         sample_install_copy = sample_install.copy()
@@ -37,10 +46,6 @@ class TestPanoPipeline(TestCase):
 
         self.install = Install(**sample_install_copy)
         self.install.save()
-
-    # This should hit the github api and then just not set anything in an empty db
-    def test_sync_panoramas(self):
-        management.call_command("sync_panoramas")
 
     def test_set_panoramas(self):
         # Fabricate some fake panorama photos
@@ -248,8 +253,9 @@ class TestRetries(TestCase):
 
         self.assertEqual(self.saved_panoramas, self.building_1.panoramas)
 
+    @patch("meshapi.util.panoramas.get_head_tree_sha", return_value="mockedsha")
     @patch("meshapi.util.panoramas.list_files_in_git_directory")
-    def test_panorama_retries_2(self, list_files_in_git_directory):
+    def test_panorama_retries_2(self, list_files_in_git_directory, _):
         list_files_in_git_directory.side_effect = GitHubError
         with self.assertRaises(GitHubError):
             panoramas_saved, warnings = sync_github_panoramas()
