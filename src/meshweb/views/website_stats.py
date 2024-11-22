@@ -78,9 +78,9 @@ def compute_graph_stats(
 
     for install in object_queryset:
         if data_source == "active_installs":
-            counting_date = install.install_date or install.request_date
+            counting_date = install.install_date or install.request_date.date()
         else:
-            counting_date = install.request_date
+            counting_date = install.request_date.date()
 
         relative_seconds = (counting_date - start_datetime.date()).total_seconds()
         bucket_index = math.floor((relative_seconds / total_duration_seconds) * GRAPH_X_AXIS_DATAPOINT_COUNT)
@@ -195,7 +195,7 @@ def parse_stats_request_params(request: HttpRequest) -> Tuple[str, datetime.date
             raise EnvironmentError("No installs found, is the database empty?")
 
         start_datetime = datetime.datetime.combine(
-            Install.objects.all().aggregate(Min("request_date"))["request_date__min"],
+            Install.objects.all().aggregate(Min("request_date"))["request_date__min"].date(),
             datetime.datetime.min.time(),
         )
     end_datetime = datetime.datetime.now()
