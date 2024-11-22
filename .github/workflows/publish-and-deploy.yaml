@@ -48,15 +48,6 @@ jobs:
     secrets: inherit
     needs: push_to_registry
     if: github.ref == 'refs/heads/main'
-
-  deploy_to_prod:
-    name: Deploy to prod
-    uses: ./.github/workflows/deploy-to-k8s.yaml
-    with:
-      environment: prod
-    secrets: inherit
-    needs: deploy_to_dev3
-    if: github.ref == 'refs/heads/main'
   
   deploy_to_prod2:
     name: Deploy to prod2
@@ -64,5 +55,5 @@ jobs:
     with:
       environment: prod2
     secrets: inherit
-    needs: deploy_to_prod
+    needs: deploy_to_dev3
     if: github.ref == 'refs/heads/main'
