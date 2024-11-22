@@ -1,25 +1,26 @@
 import os
 from unittest.mock import MagicMock, patch
 
-from django.contrib.auth.models import User
-from django.test import Client, TestCase
+from django.core import management
+from django.test import TestCase
 
 from meshapi.models import Building, Install, Member
 from meshapi.models.node import Node
-from meshapi.views.panoramas import (
+from meshapi.util.panoramas import (
     BadPanoramaTitle,
+    GitHubError,
     PanoramaTitle,
     get_head_tree_sha,
     list_files_in_git_directory,
+    save_building_panoramas,
     set_panoramas,
+    sync_github_panoramas,
 )
 
 from .sample_data import sample_building, sample_install, sample_member, sample_node
 
 
 class TestPanoPipeline(TestCase):
-    c = Client()
-
     def setUp(self):
         sample_install_copy = sample_install.copy()
         self.building_1 = Building(**sample_building)
@@ -37,18 +38,19 @@ class TestPanoPipeline(TestCase):
         self.install = Install(**sample_install_copy)
         self.install.save()
 
-        self.admin_user = User.objects.create_superuser(
-            username="admin", password="admin_password", email="admin@example.com"
-        )
-        self.c.login(username="admin", password="admin_password")
+    # This should hit the github api and then just not set anything in an empty db
+    def test_sync_panoramas(self):
+        management.call_command("sync_panoramas")
 
     def test_set_panoramas(self):
         # Fabricate some fake panorama photos
         n = self.install.install_number
         nn = self.install.node.network_number
         panos = {
+            "69420": PanoramaTitle.from_filenames(["69420.jpg", "69420a.jpg"]),  # Throw some BS ones in there
             str(n): PanoramaTitle.from_filenames([f"{n}.jpg", f"{n}a.jpg"]),
-            f"nn{nn}": PanoramaTitle.from_filenames([f"nn{nn}.jpg", f"nn{nn}a.jpg"]),
+            "": PanoramaTitle.from_filenames(["6942029019023190.jpg"]),  # Throw some BS ones in there
+            f"nn{nn}": PanoramaTitle.from_filenames([f"nn{nn}.jpg", f"nn{nn}a.jpg", f"nn{nn}b.jpg"]),
         }
 
         set_panoramas(panos)
@@ -60,8 +62,8 @@ class TestPanoPipeline(TestCase):
             f"https://node-db.netlify.app/panoramas/{n}a.jpg",
             f"https://node-db.netlify.app/panoramas/nn{nn}.jpg",
             f"https://node-db.netlify.app/panoramas/nn{nn}a.jpg",
+            f"https://node-db.netlify.app/panoramas/nn{nn}b.jpg",
         ]
-        print(building.panoramas)
         self.assertEqual(saved_panoramas, building.panoramas)
 
     def test_update_panoramas(self):
@@ -94,47 +96,47 @@ class TestPanoPipeline(TestCase):
         self.assertEqual(saved_panoramas, building.panoramas)
 
 
-class TestPanoAuthentication(TestCase):
-    c = Client()
-    admin_c = Client()
-
+class TestSaveBuildings(TestCase):
     def setUp(self):
-        self.admin_user = User.objects.create_superuser(
-            username="admin", password="admin_password", email="admin@example.com"
-        )
-        self.admin_c.login(username="admin", password="admin_password")
+        sample_install_copy = sample_install.copy()
+        self.building_1 = Building(**sample_building)
+        self.building_1.save()
+        sample_install_copy["building"] = self.building_1
 
-    def test_update_panoramas_unauthenticated(self):
-        response = self.c.get("/api/v1/update-panoramas/")
-        code = 403
-        self.assertEqual(
-            code,
-            response.status_code,
-            f"status code incorrect. Should be {code}, but got {response.status_code}",
-        )
+        self.member = Member(**sample_member)
+        self.member.save()
+        sample_install_copy["member"] = self.member
 
-    # This tests the endpoint, but not the actual full pipeline.
-    @patch("meshapi.views.os.environ.get")
-    @patch("meshapi.views.requests.get")
-    def test_update_panoramas_authenticated(self, mock_requests, mock_os):
-        fake_dir = "data/panoramas"
-        mock_os.return_value = fake_dir
+        self.node = Node(**sample_node)
+        self.node.save()
+        sample_install_copy["node"] = self.node
 
-        mock_response = MagicMock()
-        mock_response.status_code = 200
-        mock_response.json.return_value = {
-            "commit": {"commit": {"tree": {"sha": "4"}}},
-            "tree": [{"type": "blob", "path": f"{fake_dir}/lol.txt"}],
-        }
-        mock_requests.return_value = mock_response
+        self.install = Install(**sample_install_copy)
+        self.install.save()
 
-        response = self.admin_c.post("/api/v1/update-panoramas/")
-        code = 200
-        self.assertEqual(
-            code,
-            response.status_code,
-            f"status code incorrect. Should be {code}, but got {response.status_code}",
-        )
+    def test_save_building_panoramas(self):
+        n = self.install.install_number
+
+        # Save some panoramas
+        save_building_panoramas(self.building_1, PanoramaTitle.from_filenames([f"{n}.jpg", f"{n}a.jpg"]))
+        saved_panoramas = [
+            f"https://node-db.netlify.app/panoramas/{n}.jpg",
+            f"https://node-db.netlify.app/panoramas/{n}a.jpg",
+        ]
+        self.assertEqual(saved_panoramas, self.building_1.panoramas)
+
+        # Save another one, and check to make sure it got appended
+        save_building_panoramas(self.building_1, PanoramaTitle.from_filenames([f"{n}b.jpg"]))
+        saved_panoramas = [
+            f"https://node-db.netlify.app/panoramas/{n}.jpg",
+            f"https://node-db.netlify.app/panoramas/{n}a.jpg",
+            f"https://node-db.netlify.app/panoramas/{n}b.jpg",
+        ]
+        self.assertEqual(saved_panoramas, self.building_1.panoramas)
+
+        # Save no panoramas, and make sure that none of the panoramas got clobbered.
+        save_building_panoramas(self.building_1, [])
+        self.assertEqual(saved_panoramas, self.building_1.panoramas)
 
 
 class TestPanoUtils(TestCase):
@@ -189,10 +191,7 @@ class TestPanoUtils(TestCase):
             for case, _ in test_cases.items():
                 PanoramaTitle.from_filename(case)
 
-    # Crude test to sanity check that fn
-    # Also this API likes to give me 500s and it would be nice to know if that was
-    # a common enough thing to disrupt tests. I guess this is designed to detect
-    # flakiness
+    # Crude test to sanity check the API functions
     @patch("meshapi.views.requests.get")
     def test_github_API(self, mock_requests):
         mock_response = MagicMock()
@@ -211,3 +210,48 @@ class TestPanoUtils(TestCase):
         assert panorama_files is not None
         assert len(panorama_files) == 1
         assert panorama_files[0] == "lol.txt"
+
+
+class TestRetries(TestCase):
+    def setUp(self):
+        sample_install_copy = sample_install.copy()
+        self.building_1 = Building(**sample_building)
+        self.building_1.save()
+        sample_install_copy["building"] = self.building_1
+
+        self.member = Member(**sample_member)
+        self.member.save()
+        sample_install_copy["member"] = self.member
+
+        self.node = Node(**sample_node)
+        self.node.save()
+        sample_install_copy["node"] = self.node
+
+        self.install = Install(**sample_install_copy)
+        self.install.save()
+
+        n = self.install.install_number
+
+        # Save some panoramas
+        save_building_panoramas(self.building_1, PanoramaTitle.from_filenames([f"{n}.jpg", f"{n}a.jpg"]))
+        self.saved_panoramas = [
+            f"https://node-db.netlify.app/panoramas/{n}.jpg",
+            f"https://node-db.netlify.app/panoramas/{n}a.jpg",
+        ]
+        self.assertEqual(self.saved_panoramas, self.building_1.panoramas)
+
+    @patch("meshapi.util.panoramas.get_head_tree_sha")
+    def test_panorama_retries(self, get_head_tree_sha_function):
+        get_head_tree_sha_function.side_effect = GitHubError
+        with self.assertRaises(GitHubError):
+            panoramas_saved, warnings = sync_github_panoramas()
+
+        self.assertEqual(self.saved_panoramas, self.building_1.panoramas)
+
+    @patch("meshapi.util.panoramas.list_files_in_git_directory")
+    def test_panorama_retries_2(self, list_files_in_git_directory):
+        list_files_in_git_directory.side_effect = GitHubError
+        with self.assertRaises(GitHubError):
+            panoramas_saved, warnings = sync_github_panoramas()
+
+        self.assertEqual(self.saved_panoramas, self.building_1.panoramas)
