@@ -3,6 +3,7 @@ import unittest.mock as mock
 import pytest
 import requests_mock
 from django.test import TestCase
+from flags.state import disable_flag, enable_flag
 
 from meshapi.validation import RECAPTCHA_TOKEN_VALIDATION_URL, check_recaptcha_token, validate_recaptcha_tokens
 
@@ -84,6 +85,7 @@ class TestHelpers(TestCase):
     @mock.patch("meshapi.validation.RECAPTCHA_SECRET_KEY_V3", "fake_secret_v3")
     def test_validate_token_good_invisible(self, mock_check_recaptcha_token):
         mock_check_recaptcha_token.return_value = 0.6
+        disable_flag("JOIN_FORM_FAIL_ALL_INVISIBLE_RECAPTCHAS")
         validate_recaptcha_tokens("invisible_token", None, None)
         mock_check_recaptcha_token.assert_called_once_with("invisible_token", "fake_secret_v3", None)
 
@@ -123,6 +125,20 @@ class TestHelpers(TestCase):
             validate_recaptcha_tokens("invisible_token", None, None)
         mock_check_recaptcha_token.assert_called_once_with("invisible_token", "fake_secret_v3", None)
 
+    @mock.patch("meshapi.validation.RECAPTCHA_SECRET_KEY_V2", None)
+    @mock.patch("meshapi.validation.RECAPTCHA_SECRET_KEY_V3", None)
     def test_validate_token_no_env_vars(self):
         with pytest.raises(EnvironmentError):
             validate_recaptcha_tokens("invisible_token", None, None)
+
+    @mock.patch("meshapi.validation.check_recaptcha_token")
+    @mock.patch("meshapi.validation.RECAPTCHA_SECRET_KEY_V2", "fake_secret_v2")
+    @mock.patch("meshapi.validation.RECAPTCHA_SECRET_KEY_V3", "fake_secret_v3")
+    def test_validate_token_good_invisible_flag_enabled(self, mock_check_recaptcha_token):
+        mock_check_recaptcha_token.return_value = 0.6
+        enable_flag("JOIN_FORM_FAIL_ALL_INVISIBLE_RECAPTCHAS")
+
+        with pytest.raises(ValueError):
+            validate_recaptcha_tokens("invisible_token", None, None)
+
+        mock_check_recaptcha_token.assert_called_once_with("invisible_token", "fake_secret_v3", None)
