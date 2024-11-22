@@ -1,5 +1,6 @@
 import json
 import logging
+import os
 import time
 from dataclasses import dataclass
 from typing import List, Optional
@@ -15,8 +16,13 @@ from meshapi.zips import NYCZipCodes
 from meshdb.utils.spreadsheet_import.building.constants import INVALID_BIN_NUMBERS
 from meshdb.utils.spreadsheet_import.building.pelias import humanify_street_address
 
+RECAPTCHA_SECRET_KEY_V2 = os.environ.get("RECAPTCHA_SERVER_SECRET_KEY_V2")
+RECAPTCHA_SECRET_KEY_V3 = os.environ.get("RECAPTCHA_SERVER_SECRET_KEY_V3")
+RECAPTCHA_INVISIBLE_TOKEN_SCORE_THRESHOLD = float(os.environ.get("RECAPTCHA_INVISIBLE_TOKEN_SCORE_THRESHOLD", 0.5))
+
 NYC_PLANNING_LABS_GEOCODE_URL = "https://geosearch.planninglabs.nyc/v2/search"
 DOB_BUILDING_HEIGHT_API_URL = "https://data.cityofnewyork.us/resource/qb5r-6dgf.json"
+RECAPTCHA_TOKEN_VALIDATION_URL = "https://www.google.com/recaptcha/api/siteverify"
 
 
 # FIXME (wdn): When we can't reach the internet to get the email, this returns 400.
@@ -204,3 +210,57 @@ def geocode_nyc_address(street_address: str, city: str, state: str, zip_code: st
     # If we run out of tries, bail.
     logging.warning(f"Could not parse address: {street_address}, {city}, {state}, {zip_code}")
     return None
+
+
+def check_recaptcha_token(token: Optional[str], server_secret: str, remote_ip: Optional[str]) -> float:
+    payload = {"secret": server_secret, "response": token}
+    if remote_ip:
+        payload["remoteip"] = remote_ip
+
+    captcha_response = requests.post(
+        RECAPTCHA_TOKEN_VALIDATION_URL,
+        payload,
+    )
+
+    captcha_response.raise_for_status()
+
+    response_json = captcha_response.json()
+
+    # If "success" is missing or false, throw an error that this is an invalid token
+    if not response_json.get("success"):
+        raise ValueError("Invalid recaptcha token")
+
+    # If there is no score in the response, we are dealing with a v2 token,
+    # which has no concept of score, only binary success/failure of the manual
+    # checkbox captcha. In this case, we can be confident this is a human since
+    # they have completed the checkbox captcha, so we return 1.0 (100% human score)
+    return response_json.get("score", 1.0)
+
+
+def validate_recaptcha_tokens(
+    recaptcha_invisible_token: Optional[str], recaptcha_checkbox_token: Optional[str], remote_ip: Optional[str]
+) -> None:
+    if not RECAPTCHA_SECRET_KEY_V3 or not RECAPTCHA_SECRET_KEY_V2:
+        raise EnvironmentError(
+            "Enviornment variables RECAPTCHA_SERVER_SECRET_KEY_V2 and RECAPTCHA_SERVER_SECRET_KEY_V3 must be "
+            "set in order to validate recaptcha tokens"
+        )
+
+    # If we have a checkbox token, just check that token is valid, and if it is, we are good, since
+    # completing the checkbox is a good indication of human-ness
+    if recaptcha_checkbox_token:
+        check_recaptcha_token(recaptcha_checkbox_token, RECAPTCHA_SECRET_KEY_V2, remote_ip)
+        # The above call will throw if the token is invalid, so if we reach this point we are done
+        # validating
+        return
+
+    # If we don't have a checkbox token, get the score associated with the "invisible" token
+    # and if it's too low, throw an exception so we 401 them
+    # (which will prompt them to submit a checkbox in the frontend)
+    invisible_token_score = check_recaptcha_token(recaptcha_invisible_token, RECAPTCHA_SECRET_KEY_V3, remote_ip)
+
+    if invisible_token_score < RECAPTCHA_INVISIBLE_TOKEN_SCORE_THRESHOLD:
+        raise ValueError(
+            f"Score of {invisible_token_score} is less than our threshold of "
+            f"{RECAPTCHA_INVISIBLE_TOKEN_SCORE_THRESHOLD}"
+        )

@@ -15,8 +15,11 @@ import os
 from pathlib import Path
 from typing import Any, Dict, List
 
+from corsheaders.defaults import default_headers
 from django.http.request import HttpRequest
 from dotenv import load_dotenv
+
+from meshapi.util.constants import RECAPTCHA_CHECKBOX_TOKEN_HEADER, RECAPTCHA_INVISIBLE_TOKEN_HEADER
 
 load_dotenv()
 
@@ -149,6 +152,13 @@ CORS_ALLOWED_ORIGINS = [
     "https://adminmap.devdb.nycmesh.net",
     "https://devdb.nycmesh.net",
 ]
+
+CORS_ALLOW_HEADERS = [
+    *default_headers,
+    RECAPTCHA_CHECKBOX_TOKEN_HEADER,
+    RECAPTCHA_INVISIBLE_TOKEN_HEADER,
+]
+
 
 CSRF_TRUSTED_ORIGINS = [
     "http://meshdb:8081",

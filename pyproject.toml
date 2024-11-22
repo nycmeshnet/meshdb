@@ -44,6 +44,7 @@ dependencies = [
     "django-simple-history==3.7.*",
     "prettytable==3.11.*",
     "matplotlib==3.9.*",
+    "django-ipware==7.0.1",
 ]
 
 [project.optional-dependencies]

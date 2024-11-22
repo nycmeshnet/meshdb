@@ -1,5 +1,6 @@
 import json
 import logging
+import os
 from dataclasses import dataclass
 from datetime import date
 from json.decoder import JSONDecodeError
@@ -8,6 +9,7 @@ from typing import Optional
 from django.db import IntegrityError, transaction
 from django.db.models import Q
 from drf_spectacular.utils import OpenApiResponse, extend_schema, extend_schema_view, inline_serializer
+from ipware import get_client_ip
 from rest_framework import permissions, serializers, status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.request import Request
@@ -19,6 +21,7 @@ from meshapi.models import Building, Install, Member, Node
 from meshapi.permissions import HasNNAssignPermission, LegacyNNAssignmentPassword
 from meshapi.serializers import MemberSerializer
 from meshapi.util.admin_notifications import notify_administrators_of_data_issue
+from meshapi.util.constants import RECAPTCHA_CHECKBOX_TOKEN_HEADER, RECAPTCHA_INVISIBLE_TOKEN_HEADER
 from meshapi.util.django_pglocks import advisory_lock
 from meshapi.util.network_number import NETWORK_NUMBER_MAX, NETWORK_NUMBER_MIN, get_next_available_network_number
 from meshapi.validation import (
@@ -27,10 +30,13 @@ from meshapi.validation import (
     normalize_phone_number,
     validate_email_address,
     validate_phone_number,
+    validate_recaptcha_tokens,
 )
 from meshdb.utils.spreadsheet_import.building.constants import AddressTruthSource
 
 logging.basicConfig()
+
+DISABLE_RECAPTCHA_VALIDATION = os.environ.get("RECAPTCHA_DISABLE_VALIDATION") == "True"
 
 
 # Join Form
@@ -100,6 +106,25 @@ def join_form(request: Request) -> Response:
     except TypeError:
         logging.exception("TypeError while processing JoinForm")
         return Response({"detail": "Got incomplete form request"}, status=status.HTTP_400_BAD_REQUEST)
+
+    if not DISABLE_RECAPTCHA_VALIDATION:
+        try:
+            request_source_ip, request_source_ip_is_routable = get_client_ip(request)
+            if not request_source_ip_is_routable:
+                request_source_ip = None
+
+            recaptcha_invisible_token = request.headers.get(RECAPTCHA_INVISIBLE_TOKEN_HEADER)
+            if recaptcha_invisible_token == "":
+                recaptcha_invisible_token = None
+
+            recaptcha_checkbox_token = request.headers.get(RECAPTCHA_CHECKBOX_TOKEN_HEADER)
+            if recaptcha_checkbox_token == "":
+                recaptcha_checkbox_token = None
+
+            validate_recaptcha_tokens(recaptcha_invisible_token, recaptcha_checkbox_token, request_source_ip)
+        except Exception:
+            logging.exception("Captcha validation failed")
+            return Response({"detail": "Captcha verification failed"}, status=status.HTTP_401_UNAUTHORIZED)
 
     return process_join_form(r, request)
 
