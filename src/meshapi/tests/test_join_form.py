@@ -14,9 +14,8 @@ from meshapi.models import Building, Install, Member, Node
 from meshapi.views import JoinFormRequest
 
 from ..serializers import MemberSerializer
-from ..validation import DOB_BUILDING_HEIGHT_API_URL, NYC_PLANNING_LABS_GEOCODE_URL, NYCAddressInfo
 from ..util.constants import RECAPTCHA_CHECKBOX_TOKEN_HEADER, RECAPTCHA_INVISIBLE_TOKEN_HEADER
-from ..validation import DOB_BUILDING_HEIGHT_API_URL, NYC_PLANNING_LABS_GEOCODE_URL
+from ..validation import DOB_BUILDING_HEIGHT_API_URL, NYC_PLANNING_LABS_GEOCODE_URL, NYCAddressInfo
 from .sample_data import sample_building, sample_node
 from .sample_join_form_data import (
     bronx_join_form_submission,
