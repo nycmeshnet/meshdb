@@ -8,6 +8,7 @@ from typing import List, Optional
 import phonenumbers
 import requests
 from django.core.exceptions import ValidationError
+from flags.state import flag_state
 from validate_email import validate_email
 
 from meshapi.exceptions import AddressAPIError, AddressError, OpenDataAPIError
@@ -263,4 +264,10 @@ def validate_recaptcha_tokens(
         raise ValueError(
             f"Score of {invisible_token_score} is less than our threshold of "
             f"{RECAPTCHA_INVISIBLE_TOKEN_SCORE_THRESHOLD}"
+        )
+
+    if flag_state("JOIN_FORM_FAIL_ALL_INVISIBLE_RECAPTCHAS"):
+        raise ValueError(
+            f"Feature flag JOIN_FORM_FAIL_ALL_INVISIBLE_RECAPTCHAS enabled, failing validation "
+            f"even though this request should have succeeded"
         )
