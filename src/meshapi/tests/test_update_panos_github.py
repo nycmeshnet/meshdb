@@ -1,4 +1,5 @@
 import os
+from unittest import mock
 from unittest.mock import MagicMock, patch
 
 from django.core import management
@@ -19,7 +20,8 @@ from meshapi.util.panoramas import (
 
 from .sample_data import sample_building, sample_install, sample_member, sample_node
 
-
+@mock.patch("meshapi.util.panoramas.get_head_tree_sha", return_value="mockedsha")
+@mock.patch("meshapi.util.panoramas.list_files_in_git_directory", return_value=["713a.jpg", "713b.jpg"])
 class TestPanoPipeline(TestCase):
     def setUp(self):
         sample_install_copy = sample_install.copy()
