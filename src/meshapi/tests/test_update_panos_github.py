@@ -20,12 +20,14 @@ from meshapi.util.panoramas import (
 
 from .sample_data import sample_building, sample_install, sample_member, sample_node
 
+
 class TestSyncPanoramasCommand(TestCase):
     # This should hit the github api and then just not set anything in an empty db
     @mock.patch("meshapi.util.panoramas.get_head_tree_sha", return_value="mockedsha")
     @mock.patch("meshapi.util.panoramas.list_files_in_git_directory", return_value=["713a.jpg", "713b.jpg"])
     def test_sync_panoramas(self, get_head_tree_sha_function, list_files_in_git_directory_function):
         management.call_command("sync_panoramas")
+
 
 class TestPanoPipeline(TestCase):
     def setUp(self):
