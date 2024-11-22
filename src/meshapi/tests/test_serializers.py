@@ -179,8 +179,6 @@ class TestViewsGetAdmin(TestCaseWithFullData):
             "ticket_number": "69",
             "unit": "3",
         }
-        #self.assertEqual(type(self.install.request_date), datetime.datetime)
-        #self.assertEqual(self.install.request_date, datetime.datetime.fromisoformat("2022-02-27T00:00:00Z"))
         response = self._call(f"/api/v1/installs/{self.install.id}/", 200)
         self.assertEqual(json.loads(response.content), expected_install)
 

@@ -1,3 +1,4 @@
+from datetime import datetime
 import logging
 import os
 import time
@@ -34,7 +35,7 @@ def create_os_ticket_for_install(sender: ModelBase, instance: Install, created: 
     location = install.building.one_line_complete_address
     rooftop_access = install.roof_access
     ncl = True
-    timestamp = install.request_date
+    timestamp = datetime.fromisoformat(install.request_date).date()
     id = install.install_number
 
     if not email:
