@@ -36,7 +36,7 @@ from meshdb.utils.spreadsheet_import.building.constants import AddressTruthSourc
 
 logging.basicConfig()
 
-DISABLE_RECAPTCHA_VALIDATION = os.environ.get("RECAPTCHA_DISABLE_VALIDATION") == "True"
+DISABLE_RECAPTCHA_VALIDATION = os.environ.get("RECAPTCHA_DISABLE_VALIDATION").lower() == "true"
 
 
 # Join Form
