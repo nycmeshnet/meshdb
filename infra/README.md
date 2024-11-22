@@ -17,7 +17,6 @@ These instructions will set up a 4 node k3s cluster on proxmox.
 | `GH_TOKEN` | Github token for pulling down panoramas |
 | `NN_ASSIGN_PSK` | Legacy node number assign password |
 | `PG_PASSWORD` | meshdb postgres database password |
-| `PROJECT_PATH`  |  Absolute file system path to the clone of meshdb, likely `/root/meshdb`  |
 | `QUERY_PSK` | Legacy query password |
 | `SSH_KNOWN_HOSTS`  |  Copy paste from `ssh-keyscan <mgr node IP>`  |
 | `SSH_PRIVATE_KEY`  | SSH key for the mgr node.   |
