@@ -14,6 +14,7 @@ from meshapi.models import Building, Install, Member, Node
 from meshapi.views import JoinFormRequest
 
 from ..serializers import MemberSerializer
+from ..validation import DOB_BUILDING_HEIGHT_API_URL, NYC_PLANNING_LABS_GEOCODE_URL, NYCAddressInfo
 from ..util.constants import RECAPTCHA_CHECKBOX_TOKEN_HEADER, RECAPTCHA_INVISIBLE_TOKEN_HEADER
 from ..validation import DOB_BUILDING_HEIGHT_API_URL, NYC_PLANNING_LABS_GEOCODE_URL
 from .sample_data import sample_building, sample_node
@@ -1143,8 +1144,11 @@ class TestJoinFormRaceCondition(TransactionTestCase):
         building = Building(**sample_building)
         building.save()
 
-    def test_valid_join_form(self):
+    @patch("meshapi.views.forms.geocode_nyc_address")
+    def test_valid_join_form(self, mock_geocode_func):
         results = []
+
+        mock_geocode_func.return_value = NYCAddressInfo("151 Broome Street", "Manhattan", "NY", "10002")
 
         member1_submission = valid_join_form_submission.copy()
         member1_submission["email_address"] = "member1@xyz.com"
