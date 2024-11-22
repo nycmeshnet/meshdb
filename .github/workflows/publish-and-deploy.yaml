@@ -64,5 +64,5 @@ jobs:
     with:
       environment: prod2
     secrets: inherit
-    needs: deploy_to_dev3
+    needs: deploy_to_prod
     if: github.ref == 'refs/heads/main'
