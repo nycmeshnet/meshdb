@@ -57,3 +57,12 @@ jobs:
     secrets: inherit
     needs: deploy_to_dev3
     if: github.ref == 'refs/heads/main'
+  
+  deploy_to_prod2:
+    name: Deploy to prod2
+    uses: ./.github/workflows/deploy-to-k8s.yaml
+    with:
+      environment: prod2
+    secrets: inherit
+    needs: deploy_to_dev3
+    if: github.ref == 'refs/heads/main'
