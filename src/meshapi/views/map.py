@@ -1,6 +1,6 @@
 import logging
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from json import JSONDecodeError
 from typing import Any, Dict, List
 
@@ -133,6 +133,10 @@ class MapDataNodeList(generics.ListAPIView):
 
     def list(self, request: Request, *args: List[Any], **kwargs: Dict[str, Any]) -> Response:
         response = super().list(request, args, kwargs)
+
+        # FIXME (wdn): I think I should make datetimes like this: x = datetime.now().astimezone(timezone.utc)
+        # That I don't is probably why I get this error
+        # RuntimeWarning: DateTimeField HistoricalInstall.request_date received a naive datetime (2024-11-22 22:52:36.755801) while time zone support is active.
 
         access_points = []
         for ap in AccessPoint.objects.filter(Q(status=Device.DeviceStatus.ACTIVE)):

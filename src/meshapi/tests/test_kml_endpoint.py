@@ -30,7 +30,7 @@ def create_building_install_node_and_device(member_ref, nn, install_number=None)
         building=building,
         node=node,
         status=Install.InstallStatus.ACTIVE,
-        request_date=datetime.datetime.now(),
+        request_date=datetime.datetime.now(datetime.timezone.utc),
     )
     install.save()
 
