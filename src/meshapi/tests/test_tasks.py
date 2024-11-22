@@ -4,7 +4,7 @@ from unittest import mock
 from django.test import TestCase
 from flags.state import enable_flag
 
-from meshapi.tasks import reset_dev_database, run_database_backup
+from meshapi.tasks import reset_dev_database, run_database_backup, run_update_panoramas
 
 
 # Not intended to test the functionality of, say, dbbackup. More intended
@@ -67,3 +67,8 @@ class TestResetDevDatabaseTask(TestCase):
         enable_flag("TASK_ENABLED_RESET_DEV_DATABASE")
         with self.assertRaises(ValueError):
             reset_dev_database()
+
+
+class TestUpdatePanoramasTask:
+    def test_update_panoramas_task(self):
+        run_update_panoramas()
