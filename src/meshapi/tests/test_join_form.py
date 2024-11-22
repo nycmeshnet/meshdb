@@ -858,7 +858,7 @@ class TestJoinForm(TestCase):
         )
 
     def test_different_street_addr_same_bin_multi_node(self):
-        """ "
+        """
         This test case simulates a new building joining the Jefferson structure to
         make sure we handle the multi-address multi-node structures correctly
         """

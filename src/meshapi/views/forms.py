@@ -2,7 +2,7 @@ import json
 import logging
 import os
 from dataclasses import dataclass
-from datetime import date
+from datetime import date, datetime
 from json.decoder import JSONDecodeError
 from typing import Optional
 
@@ -293,7 +293,7 @@ def process_join_form(r: JoinFormRequest, request: Optional[Request] = None) -> 
     join_form_install = Install(
         status=Install.InstallStatus.REQUEST_RECEIVED,
         ticket_number=None,
-        request_date=date.today(),
+        request_date=datetime.now(),
         install_date=None,
         abandon_date=None,
         building=join_form_building,
