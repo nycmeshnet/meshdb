@@ -268,6 +268,6 @@ def validate_recaptcha_tokens(
 
     if flag_state("JOIN_FORM_FAIL_ALL_INVISIBLE_RECAPTCHAS"):
         raise ValueError(
-            f"Feature flag JOIN_FORM_FAIL_ALL_INVISIBLE_RECAPTCHAS enabled, failing validation "
-            f"even though this request should have succeeded"
+            "Feature flag JOIN_FORM_FAIL_ALL_INVISIBLE_RECAPTCHAS enabled, failing validation "
+            "even though this request should have succeeded"
         )
