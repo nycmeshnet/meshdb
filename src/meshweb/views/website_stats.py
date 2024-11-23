@@ -187,7 +187,7 @@ def parse_stats_request_params(request: HttpRequest) -> Tuple[str, datetime.date
         raise ValueError(f"Invalid data mode param, expecting one of: {VALID_DATA_MODES}")
 
     if days > 0:
-        start_datetime = datetime.datetime.now() - datetime.timedelta(days=days)
+        start_datetime = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=days)
     else:
         # "All" Case
         initial_date = Install.objects.all().aggregate(Min("request_date"))["request_date__min"]
@@ -197,8 +197,8 @@ def parse_stats_request_params(request: HttpRequest) -> Tuple[str, datetime.date
         start_datetime = datetime.datetime.combine(
             Install.objects.all().aggregate(Min("request_date"))["request_date__min"].date(),
             datetime.datetime.min.time(),
-        )
-    end_datetime = datetime.datetime.now()
+        ).astimezone(datetime.timezone.utc)
+    end_datetime = datetime.datetime.now(datetime.timezone.utc)
 
     return data_source, start_datetime, end_datetime
 
