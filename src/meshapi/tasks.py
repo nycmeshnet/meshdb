@@ -15,6 +15,7 @@ from meshapi.util.uisp_import.sync_handlers import (
 )
 from meshdb.celery import app as celery_app
 from meshdb.settings import MESHDB_ENVIRONMENT
+from datadog import statsd
 
 
 @celery_app.task
@@ -32,7 +33,10 @@ def run_database_backup() -> None:
         management.call_command("dbbackup")
     except Exception as e:
         logging.exception(e)
+        statsd.increment("meshdb.tasks.run_database_backup", tags=["status:failure"])
         raise e
+
+    statsd.increment("meshdb.tasks.run_database_backup", tags=["status:success"])
 
 
 @celery_app.task
@@ -54,8 +58,10 @@ def reset_dev_database() -> None:
         disable_flag("MAINTENANCE_MODE")
     except Exception as e:
         logging.exception(e)
+        statsd.increment("meshdb.tasks.reset_dev_database", tags=["status:failure"])
         raise e
 
+    statsd.increment("meshdb.tasks.reset_dev_database", tags=["status:success"])
 
 @celery_app.task
 @skip_if_flag_disabled("TASK_ENABLED_UPDATE_PANORAMAS")
@@ -68,7 +74,10 @@ def run_update_panoramas() -> None:
     except Exception as e:
         # Make sure the failure gets logged.
         logging.exception(e)
+        statsd.increment("meshdb.tasks.run_update_panoramas", tags=["status:failure"])
         raise e
+
+    statsd.increment("meshdb.tasks.run_update_panoramas", tags=["status:success"])
 
 
 @celery_app.task
@@ -82,7 +91,10 @@ def run_update_from_uisp() -> None:
     except Exception as e:
         # Make sure the failure gets logged.
         logging.exception(e)
+        statsd.increment("meshdb.tasks.run_update_from_uisp", tags=["status:failure"])
         raise e
+
+    statsd.increment("meshdb.tasks.run_update_from_uisp", tags=["status:success"])
 
 
 jitter_minutes = 0 if MESHDB_ENVIRONMENT == "prod2" else 2
