@@ -63,6 +63,9 @@ app = Celery("meshdb", broker=os.environ.get("CELERY_BROKER", "redis://localhost
 
 app.steps["worker"].add(LivenessProbe)
 
+# https://stackoverflow.com/questions/77479841/adding-celery-settings-what-does-it-do#78088996
+app.conf.broker_connection_retry_on_startup = True
+
 # Using a string here means the worker doesn't have to serialize
 # the configuration object to child processes.
 # - namespace='CELERY' means all celery-related configuration keys
