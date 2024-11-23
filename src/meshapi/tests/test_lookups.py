@@ -1,6 +1,6 @@
-import datetime
 import json
 import uuid
+from datetime import date, datetime, timezone
 
 from django.contrib.auth.models import User
 from django.test import Client, TestCase
@@ -206,7 +206,7 @@ class TestBuildingLookups(TestCase):
         i1 = Install(
             install_number=123,
             status=Install.InstallStatus.ACTIVE,
-            request_date=datetime.date.today(),
+            request_date=datetime.now(timezone.utc),
             building=b1,
             member=m1,
         )
@@ -215,7 +215,7 @@ class TestBuildingLookups(TestCase):
         i2 = Install(
             install_number=1234,
             status=Install.InstallStatus.ACTIVE,
-            request_date=datetime.date.today(),
+            request_date=datetime.now(timezone.utc),
             building=b2,
             member=m1,
         )
@@ -625,7 +625,7 @@ class TestInstallLookups(TestCase):
         i1 = Install(
             install_number=123,
             status=Install.InstallStatus.ACTIVE,
-            request_date=datetime.date.today(),
+            request_date=datetime.now(timezone.utc),
             building=self.b1,
             member=self.m1,
             node=self.n1,
@@ -635,7 +635,7 @@ class TestInstallLookups(TestCase):
         i2 = Install(
             install_number=1234,
             status=Install.InstallStatus.ACTIVE,
-            request_date=datetime.date.today(),
+            request_date=datetime.now(timezone.utc),
             building=self.b2,
             member=self.m1,
             node=self.n2,
@@ -645,7 +645,7 @@ class TestInstallLookups(TestCase):
         i3 = Install(
             install_number=12345,
             status=Install.InstallStatus.INACTIVE,
-            request_date=datetime.date.today(),
+            request_date=datetime.now(timezone.utc),
             building=self.b1,
             member=self.m1,
             node=self.n1,
@@ -855,7 +855,7 @@ class TestNodeLookups(TestCase):
         i1 = Install(
             install_number=123,
             status=Install.InstallStatus.ACTIVE,
-            request_date=datetime.date.today(),
+            request_date=datetime.now(timezone.utc),
             building=self.b1,
             member=self.m1,
             node=n1,
@@ -865,7 +865,7 @@ class TestNodeLookups(TestCase):
         i2 = Install(
             install_number=1234,
             status=Install.InstallStatus.ACTIVE,
-            request_date=datetime.date.today(),
+            request_date=datetime.now(timezone.utc),
             building=self.b2,
             member=self.m1,
             node=n2,
@@ -875,7 +875,7 @@ class TestNodeLookups(TestCase):
         i3 = Install(
             install_number=12345,
             status=Install.InstallStatus.INACTIVE,
-            request_date=datetime.date.today(),
+            request_date=datetime.now(timezone.utc),
             building=self.b1,
             member=self.m1,
         )
@@ -1381,14 +1381,14 @@ class TestLOSLookups(TestCase):
         i1 = Install(
             install_number=123456,
             status=Install.InstallStatus.ACTIVE,
-            request_date=datetime.date.today(),
+            request_date=datetime.now(timezone.utc),
             building=self.b1,
             member=m1,
             node=n1,
         )
         i1.save()
 
-        self.today = datetime.date.today()
+        self.today = date.today()
         self.l1 = LOS(
             from_building=self.b1,
             to_building=self.b2,

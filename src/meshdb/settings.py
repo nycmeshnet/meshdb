@@ -15,8 +15,11 @@ import os
 from pathlib import Path
 from typing import Any, Dict, List
 
+from corsheaders.defaults import default_headers
 from django.http.request import HttpRequest
 from dotenv import load_dotenv
+
+from meshapi.util.constants import RECAPTCHA_CHECKBOX_TOKEN_HEADER, RECAPTCHA_INVISIBLE_TOKEN_HEADER
 
 load_dotenv()
 
@@ -46,6 +49,7 @@ PROFILING_ENABLED = DEBUG and not os.environ.get("DISABLE_PROFILING", "False") =
 FLAGS: Dict[str, Any] = {
     "MAINTENANCE_MODE": [],
     "EDIT_PANORAMAS": [],
+    "JOIN_FORM_FAIL_ALL_INVISIBLE_RECAPTCHAS": [],
     "INTEGRATION_ENABLED_SEND_JOIN_REQUEST_SLACK_MESSAGES": [],
     "INTEGRATION_ENABLED_CREATE_OSTICKET_TICKETS": [],
     "TASK_ENABLED_RUN_DATABASE_BACKUP": [],
@@ -56,7 +60,7 @@ FLAGS: Dict[str, Any] = {
 
 USE_X_FORWARDED_HOST = True
 
-SECURE_HSTS_SECONDS = 30  # TODO: Increase me to 31536000 https://github.com/nycmeshnet/meshdb/issues/642
+SECURE_HSTS_SECONDS = 31536000
 SECURE_HSTS_PRELOAD = False
 SECURE_HSTS_INCLUDE_SUBDOMAINS = False
 
@@ -149,6 +153,13 @@ CORS_ALLOWED_ORIGINS = [
     "https://adminmap.devdb.nycmesh.net",
     "https://devdb.nycmesh.net",
 ]
+
+CORS_ALLOW_HEADERS = [
+    *default_headers,
+    RECAPTCHA_CHECKBOX_TOKEN_HEADER,
+    RECAPTCHA_INVISIBLE_TOKEN_HEADER,
+]
+
 
 CSRF_TRUSTED_ORIGINS = [
     "http://meshdb:8081",
@@ -296,6 +307,28 @@ DBBACKUP_CONNECTORS = {
     }
 }
 DBBACKUP_DATABASES = ["default"]
+
+LOGGING = {
+    "version": 1,
+    "formatters": {
+        "verbose": {
+            "format": "[%(asctime)s] [%(process)d] [%(levelname)s] %(message)s",
+        },
+    },
+    "handlers": {
+        "console": {
+            "level": "INFO",
+            "class": "logging.StreamHandler",
+            "formatter": "verbose",
+        },
+    },
+    "loggers": {
+        "": {
+            "handlers": ["console"],
+            "level": "INFO",
+        },
+    },
+}
 
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
@@ -446,7 +479,7 @@ SPECTACULAR_SETTINGS = {
         {
             "name": "Sectors",
             "description": 'Special devices with antennas with broad coverage of a radial "slice" of land area. '
-            "See https://wiki.mesh.nycmesh.net/books/3-hardware-firmware/page/ubiquiti-liteap-sector#bkmrk-page-title",
+            "See https://wiki.nycmesh.net/books/3-hardware-firmware/page/ubiquiti-liteap-sector#bkmrk-page-title",
         },
         {
             "name": "Access Points",

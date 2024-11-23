@@ -21,6 +21,7 @@ def create_os_ticket_for_install(sender: ModelBase, instance: Install, created: 
         return
 
     install: Install = instance
+    install.refresh_from_db()
     if not OSTICKET_API_TOKEN or not OSTICKET_NEW_TICKET_ENDPOINT:
         logging.error(
             f"Unable to create ticket for install {str(install)}, did you set the OSTICKET_API_TOKEN "
@@ -34,7 +35,7 @@ def create_os_ticket_for_install(sender: ModelBase, instance: Install, created: 
     location = install.building.one_line_complete_address
     rooftop_access = install.roof_access
     ncl = True
-    timestamp = install.request_date
+    timestamp = install.request_date.date()
     id = install.install_number
 
     if not email:

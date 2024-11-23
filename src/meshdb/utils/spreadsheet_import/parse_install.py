@@ -65,7 +65,7 @@ def create_install(row: SpreadsheetRow) -> Optional[models.Install]:
         install_number=row.id,
         status=translate_spreadsheet_status_to_db_status(row.status),
         ticket_number=None,
-        request_date=row.request_date.date(),
+        request_date=row.request_date,
         install_date=row.installDate,
         abandon_date=row.abandonDate,
         unit=row.apartment,

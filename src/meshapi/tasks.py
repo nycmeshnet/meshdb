@@ -6,13 +6,13 @@ from django.core import management
 from flags.state import disable_flag, enable_flag
 
 from meshapi.util.django_flag_decorator import skip_if_flag_disabled
+from meshapi.util.panoramas import sync_github_panoramas
 from meshapi.util.uisp_import.fetch_uisp import get_uisp_devices, get_uisp_links
 from meshapi.util.uisp_import.sync_handlers import (
     import_and_sync_uisp_devices,
     import_and_sync_uisp_links,
     sync_link_table_into_los_objects,
 )
-from meshapi.views.panoramas import sync_github_panoramas
 from meshdb.celery import app as celery_app
 from meshdb.settings import MESHDB_ENVIRONMENT
 
@@ -21,7 +21,7 @@ from meshdb.settings import MESHDB_ENVIRONMENT
 @skip_if_flag_disabled("TASK_ENABLED_RUN_DATABASE_BACKUP")
 def run_database_backup() -> None:
     # Don't run a backup unless it's prod
-    if MESHDB_ENVIRONMENT != "prod":
+    if MESHDB_ENVIRONMENT != "prod2":
         raise EnvironmentError(f'Not running database backup. This environment is: "{MESHDB_ENVIRONMENT}"')
 
     logging.info(f'Running database backup task. This environment is "{MESHDB_ENVIRONMENT}"')
@@ -62,7 +62,9 @@ def reset_dev_database() -> None:
 def run_update_panoramas() -> None:
     logging.info("Running panorama sync task")
     try:
-        sync_github_panoramas()
+        panoramas_saved, warnings = sync_github_panoramas()
+        logging.info(f"Saved {panoramas_saved} panoramas. Got {len(warnings)} warnings.")
+        logging.warning(f"warnings:\n{warnings}")
     except Exception as e:
         # Make sure the failure gets logged.
         logging.exception(e)
@@ -83,7 +85,7 @@ def run_update_from_uisp() -> None:
         raise e
 
 
-jitter_minutes = 0 if MESHDB_ENVIRONMENT == "prod" else 2
+jitter_minutes = 0 if MESHDB_ENVIRONMENT == "prod2" else 2
 
 celery_app.conf.beat_schedule = {
     "update-panoramas-hourly": {
@@ -96,7 +98,7 @@ celery_app.conf.beat_schedule = {
     },
 }
 
-if MESHDB_ENVIRONMENT == "prod":
+if MESHDB_ENVIRONMENT == "prod2":
     celery_app.conf.beat_schedule["run-database-backup-hourly"] = {
         "task": "meshapi.tasks.run_database_backup",
         "schedule": crontab(minute="20", hour="*/1"),

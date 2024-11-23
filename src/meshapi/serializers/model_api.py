@@ -1,3 +1,5 @@
+from datetime import timezone
+
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
 
@@ -38,6 +40,8 @@ class InstallSerializer(NestedKeyRelatedMixIn, serializers.ModelSerializer):
             "node": {"additional_keys": ("network_number",)},
             "install_number": {"read_only": True},
         }
+
+    request_date = serializers.DateTimeField(default_timezone=timezone.utc)
 
 
 class NodeSerializer(NestedKeyRelatedMixIn, serializers.ModelSerializer):
