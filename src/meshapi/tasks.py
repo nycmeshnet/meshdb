@@ -85,7 +85,7 @@ def run_update_from_uisp() -> None:
         raise e
 
 
-jitter_minutes = 0 if MESHDB_ENVIRONMENT == "prod" else 2
+jitter_minutes = 0 if MESHDB_ENVIRONMENT == "prod2" else 2
 
 celery_app.conf.beat_schedule = {
     "update-panoramas-hourly": {
@@ -98,7 +98,7 @@ celery_app.conf.beat_schedule = {
     },
 }
 
-if MESHDB_ENVIRONMENT == "prod":
+if MESHDB_ENVIRONMENT == "prod2":
     celery_app.conf.beat_schedule["run-database-backup-hourly"] = {
         "task": "meshapi.tasks.run_database_backup",
         "schedule": crontab(minute="20", hour="*/1"),
