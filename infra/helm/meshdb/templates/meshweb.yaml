@@ -115,10 +115,6 @@ spec:
                 secretKeyRef:
                   name: meshdb-secrets
                   key: recaptcha-v3-secret
-            - name: DD_AGENT_HOST
-              valueFrom:
-                  fieldRef:
-                      fieldPath: status.hostIP
           volumeMounts:
             - name: static-content-vol
               mountPath: /opt/meshdb/static
