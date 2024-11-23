@@ -2,6 +2,7 @@ import logging
 import os
 
 from celery.schedules import crontab
+from datadog import statsd
 from django.core import management
 from flags.state import disable_flag, enable_flag
 
@@ -15,7 +16,6 @@ from meshapi.util.uisp_import.sync_handlers import (
 )
 from meshdb.celery import app as celery_app
 from meshdb.settings import MESHDB_ENVIRONMENT
-from datadog import statsd
 
 
 @celery_app.task
@@ -62,6 +62,7 @@ def reset_dev_database() -> None:
         raise e
 
     statsd.increment("meshdb.tasks.reset_dev_database", tags=["status:success"])
+
 
 @celery_app.task
 @skip_if_flag_disabled("TASK_ENABLED_UPDATE_PANORAMAS")
