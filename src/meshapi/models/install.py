@@ -65,7 +65,7 @@ class Install(models.Model):
     )
 
     # Important dates
-    request_date = models.DateField(help_text="The date that this install request was received")
+    request_date = models.DateTimeField(help_text="The date and time that this install request was received")
     install_date = models.DateField(
         default=None,
         blank=True,

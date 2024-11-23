@@ -1,6 +1,6 @@
 from argparse import ArgumentParser
 from dataclasses import asdict, fields
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
 from django.core.management.base import BaseCommand
@@ -29,7 +29,7 @@ class Command(BaseCommand):
 
         parser.add_argument(
             "--since",
-            type=lambda s: datetime.fromisoformat(s),
+            type=lambda s: datetime.fromisoformat(s + "Z"),  # Adding the Z makes this a tz-aware datetime
             help="Show records submitted since this date and time (UTC, 24-Hour) (%Y-%m-%d %H:%M:%S)",
         )
 
@@ -90,4 +90,4 @@ class Command(BaseCommand):
 
     @staticmethod
     def past_week() -> datetime:
-        return datetime.now() - timedelta(days=7)
+        return datetime.now(timezone.utc) - timedelta(days=7)

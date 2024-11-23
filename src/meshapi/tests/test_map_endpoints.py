@@ -6,7 +6,7 @@ import requests_mock
 from django.test import Client, TestCase
 
 from meshapi.models import LOS, AccessPoint, Building, Device, Install, Link, Member, Node, Sector
-from meshapi.serializers import MapDataLinkSerializer
+from meshapi.serializers import JavascriptDateField, JavascriptDatetimeField, MapDataLinkSerializer
 from meshapi.tests.sample_kiosk_data import SAMPLE_OPENDATA_NYC_LINKNYC_KIOSK_RESPONSE
 from meshapi.views import LINKNYC_KIOSK_DATA_URL
 
@@ -58,7 +58,7 @@ class TestViewsGetUnauthenticated(TestCase):
             Install(
                 install_number=2,
                 status=Install.InstallStatus.INACTIVE,
-                request_date=datetime.date(2015, 3, 15),
+                request_date=datetime.datetime(2015, 3, 15).astimezone(datetime.timezone.utc),
                 install_date=datetime.date(2021, 7, 25),
                 roof_access=False,
                 building=buildings[-1],
@@ -96,7 +96,7 @@ class TestViewsGetUnauthenticated(TestCase):
                 install_number=3,
                 node=nodes[-1],
                 status=Install.InstallStatus.ACTIVE,
-                request_date=datetime.date(2015, 3, 15),
+                request_date=datetime.datetime(2015, 3, 15).astimezone(datetime.timezone.utc),
                 install_date=datetime.date(2014, 10, 14),
                 roof_access=False,
                 building=buildings[-1],
@@ -110,7 +110,7 @@ class TestViewsGetUnauthenticated(TestCase):
                 install_number=17232,
                 node=nodes[-1],
                 status=Install.InstallStatus.ACTIVE,
-                request_date=datetime.date(2024, 1, 27),
+                request_date=datetime.datetime(2024, 1, 27).astimezone(datetime.timezone.utc),
                 roof_access=True,
                 building=buildings[-1],
                 member=member,
@@ -141,7 +141,7 @@ class TestViewsGetUnauthenticated(TestCase):
                 install_number=19452,
                 node=nodes[-1],
                 status=Install.InstallStatus.REQUEST_RECEIVED,
-                request_date=datetime.date(2024, 1, 27),
+                request_date=datetime.datetime(2024, 1, 27).astimezone(datetime.timezone.utc),
                 roof_access=True,
                 building=buildings[-1],
                 member=member,
@@ -152,7 +152,7 @@ class TestViewsGetUnauthenticated(TestCase):
                 install_number=19453,
                 node=nodes[-1],
                 status=Install.InstallStatus.REQUEST_RECEIVED,
-                request_date=datetime.date(2024, 1, 27),
+                request_date=datetime.datetime(2024, 1, 27).astimezone(datetime.timezone.utc),
                 roof_access=True,
                 building=buildings[-1],
                 member=member,
@@ -182,7 +182,7 @@ class TestViewsGetUnauthenticated(TestCase):
             Install(
                 install_number=190,
                 status=Install.InstallStatus.REQUEST_RECEIVED,
-                request_date=datetime.date(2015, 9, 30),
+                request_date=datetime.datetime(2015, 9, 30).astimezone(datetime.timezone.utc),
                 roof_access=False,
                 building=buildings[-1],
                 member=member,
@@ -201,7 +201,7 @@ class TestViewsGetUnauthenticated(TestCase):
             Install(
                 install_number=14956,
                 status=Install.InstallStatus.PENDING,
-                request_date=datetime.date(2024, 1, 27),
+                request_date=datetime.datetime(2024, 1, 27).astimezone(datetime.timezone.utc),
                 roof_access=True,
                 building=buildings[-1],
                 member=member,
@@ -220,7 +220,7 @@ class TestViewsGetUnauthenticated(TestCase):
             Install(
                 install_number=245,
                 status=Install.InstallStatus.NN_REASSIGNED,
-                request_date=datetime.date(2024, 1, 27),
+                request_date=datetime.datetime(2024, 1, 27).astimezone(datetime.timezone.utc),
                 roof_access=True,
                 building=buildings[-1],
                 member=member,
@@ -250,7 +250,7 @@ class TestViewsGetUnauthenticated(TestCase):
                 install_number=15657,
                 node=nodes[-1],
                 status=Install.InstallStatus.REQUEST_RECEIVED,
-                request_date=datetime.date(2024, 1, 27),
+                request_date=datetime.datetime(2024, 1, 27).astimezone(datetime.timezone.utc),
                 roof_access=True,
                 building=buildings[-1],
                 member=member,
@@ -279,7 +279,7 @@ class TestViewsGetUnauthenticated(TestCase):
                 install_number=1234,
                 node=nodes[-1],
                 status=Install.InstallStatus.ACTIVE,
-                request_date=datetime.date(2024, 1, 27),
+                request_date=datetime.datetime(2024, 1, 27).astimezone(datetime.timezone.utc),
                 roof_access=True,
                 building=buildings[-1],
                 member=member,
@@ -308,7 +308,7 @@ class TestViewsGetUnauthenticated(TestCase):
                 install_number=9999,
                 node=nodes[-1],
                 status=Install.InstallStatus.ACTIVE,
-                request_date=datetime.date(2024, 1, 27),
+                request_date=datetime.datetime(2024, 1, 27).astimezone(datetime.timezone.utc),
                 roof_access=True,
                 building=buildings[-1],
                 member=member,
@@ -319,7 +319,7 @@ class TestViewsGetUnauthenticated(TestCase):
             Install(
                 install_number=2134,
                 status=Install.InstallStatus.CLOSED,
-                request_date=datetime.date(2024, 1, 27),
+                request_date=datetime.datetime(2024, 1, 27).astimezone(datetime.timezone.utc),
                 roof_access=True,
                 building=buildings[-1],
                 member=member,
@@ -338,7 +338,7 @@ class TestViewsGetUnauthenticated(TestCase):
             Install(
                 install_number=12381924,
                 status=Install.InstallStatus.PENDING,
-                request_date=datetime.date(2024, 1, 27),
+                request_date=datetime.datetime(2024, 1, 27).astimezone(datetime.timezone.utc),
                 roof_access=True,
                 building=buildings[-1],
                 node=nodes[-1],
@@ -607,7 +607,7 @@ class TestViewsGetUnauthenticated(TestCase):
         install = Install(
             install_number=1126,
             status=Install.InstallStatus.ACTIVE,
-            request_date=datetime.date(2015, 9, 30),
+            request_date=datetime.datetime(2015, 9, 30).astimezone(datetime.timezone.utc),
             roof_access=False,
             building=fake_building,
             node=nodes[-1],
@@ -688,7 +688,7 @@ class TestViewsGetUnauthenticated(TestCase):
             building=sn1_building,
             node=sn1,
             status=Install.InstallStatus.ACTIVE,
-            request_date=datetime.date(2015, 3, 15),
+            request_date=datetime.datetime(2015, 3, 15).astimezone(datetime.timezone.utc),
         )
         sn1_install.save()
 
@@ -745,7 +745,7 @@ class TestViewsGetUnauthenticated(TestCase):
             building=sn3_building,
             node=sn3,
             status=Install.InstallStatus.ACTIVE,
-            request_date=datetime.date(2015, 3, 15),
+            request_date=datetime.datetime(2015, 3, 15).astimezone(datetime.timezone.utc),
         )
         sn3_install.save()
 
@@ -786,7 +786,7 @@ class TestViewsGetUnauthenticated(TestCase):
             building=random_building,
             node=random,
             status=Install.InstallStatus.ACTIVE,
-            request_date=datetime.date(2015, 3, 15),
+            request_date=datetime.datetime(2015, 3, 15).astimezone(datetime.timezone.utc),
             member=member,
         )
         random_install.save()
@@ -813,7 +813,7 @@ class TestViewsGetUnauthenticated(TestCase):
             building=random_addl_building,
             node=random,
             status=Install.InstallStatus.ACTIVE,
-            request_date=datetime.date(2015, 3, 15),
+            request_date=datetime.datetime(2015, 3, 15).astimezone(datetime.timezone.utc),
             member=member,
         )
         random_addl_install.save()
@@ -824,7 +824,7 @@ class TestViewsGetUnauthenticated(TestCase):
             building=random_addl_building,
             node=random,
             status=Install.InstallStatus.ACTIVE,
-            request_date=datetime.date(2015, 3, 15),
+            request_date=datetime.datetime(2015, 3, 15).astimezone(datetime.timezone.utc),
             member=member,
         )
         random_addl_install_2.save()
@@ -844,7 +844,7 @@ class TestViewsGetUnauthenticated(TestCase):
             building=random_addl_building_inactive,
             node=random,
             status=Install.InstallStatus.INACTIVE,
-            request_date=datetime.date(2015, 3, 15),
+            request_date=datetime.datetime(2015, 3, 15).astimezone(datetime.timezone.utc),
             member=member,
         )
         random_addl_install_inactive.save()
@@ -1004,7 +1004,7 @@ class TestViewsGetUnauthenticated(TestCase):
             building=modern_hub_building,
             node=modern_hub,
             status=Install.InstallStatus.ACTIVE,
-            request_date=datetime.date(2015, 3, 15),
+            request_date=datetime.datetime(2015, 3, 15).astimezone(datetime.timezone.utc),
             member=member,
         )
         modern_hub_install.save()
@@ -1022,7 +1022,7 @@ class TestViewsGetUnauthenticated(TestCase):
             install_number=88892,
             building=potential_building,
             status=Install.InstallStatus.REQUEST_RECEIVED,
-            request_date=datetime.date(2015, 3, 15),
+            request_date=datetime.datetime(2015, 3, 15).astimezone(datetime.timezone.utc),
             member=member,
         )
         potential_install.save()
@@ -1246,7 +1246,7 @@ class TestViewsGetUnauthenticated(TestCase):
         Install(
             install_number=1934,
             status=Install.InstallStatus.ACTIVE,
-            request_date=datetime.date(2015, 3, 15),
+            request_date=datetime.datetime(2015, 3, 15).astimezone(datetime.timezone.utc),
             node=grand,
             member=member,
             building=grand_building,
@@ -1276,7 +1276,7 @@ class TestViewsGetUnauthenticated(TestCase):
         Install(
             install_number=1938,
             status=Install.InstallStatus.ACTIVE,
-            request_date=datetime.date(2015, 3, 15),
+            request_date=datetime.datetime(2015, 3, 15).astimezone(datetime.timezone.utc),
             node=grand_node2,
             member=member,
             building=grand_building2,
@@ -1385,7 +1385,7 @@ class TestViewsGetUnauthenticated(TestCase):
         Install(
             install_number=1934,
             status=Install.InstallStatus.ACTIVE,
-            request_date=datetime.date(2015, 3, 15),
+            request_date=datetime.datetime(2015, 3, 15).astimezone(datetime.timezone.utc),
             node=grand,
             member=member,
             building=grand_building,
@@ -1415,7 +1415,7 @@ class TestViewsGetUnauthenticated(TestCase):
         Install(
             install_number=1938,
             status=Install.InstallStatus.ACTIVE,
-            request_date=datetime.date(2015, 3, 15),
+            request_date=datetime.datetime(2015, 3, 15).astimezone(datetime.timezone.utc),
             node=grand_node2,
             member=member,
             building=grand_building2,
@@ -1453,7 +1453,7 @@ class TestViewsGetUnauthenticated(TestCase):
         Install(
             install_number=5,
             status=Install.InstallStatus.INACTIVE,
-            request_date=datetime.date(2015, 3, 15),
+            request_date=datetime.datetime(2015, 3, 15).astimezone(datetime.timezone.utc),
             node=node_1,
             member=member,
             building=fake_building,
@@ -1461,7 +1461,7 @@ class TestViewsGetUnauthenticated(TestCase):
         Install(
             install_number=6,
             status=Install.InstallStatus.CLOSED,
-            request_date=datetime.date(2015, 3, 15),
+            request_date=datetime.datetime(2015, 3, 15).astimezone(datetime.timezone.utc),
             node=node_1,
             member=member,
             building=fake_building,
@@ -1469,7 +1469,7 @@ class TestViewsGetUnauthenticated(TestCase):
         Install(
             install_number=7,
             status=Install.InstallStatus.ACTIVE,
-            request_date=datetime.date(2015, 3, 15),
+            request_date=datetime.datetime(2015, 3, 15).astimezone(datetime.timezone.utc),
             node=node_1,
             member=member,
             building=fake_building,
@@ -1485,7 +1485,7 @@ class TestViewsGetUnauthenticated(TestCase):
         Install(
             install_number=90,
             status=Install.InstallStatus.CLOSED,
-            request_date=datetime.date(2015, 3, 15),
+            request_date=datetime.datetime(2015, 3, 15).astimezone(datetime.timezone.utc),
             node=node_2,
             member=member,
             building=fake_building,
@@ -1493,7 +1493,7 @@ class TestViewsGetUnauthenticated(TestCase):
         Install(
             install_number=91,
             status=Install.InstallStatus.NN_REASSIGNED,
-            request_date=datetime.date(2015, 3, 15),
+            request_date=datetime.datetime(2015, 3, 15).astimezone(datetime.timezone.utc),
             node=node_2,
             member=member,
             building=fake_building,
@@ -1509,7 +1509,7 @@ class TestViewsGetUnauthenticated(TestCase):
         Install(
             install_number=104,
             status=Install.InstallStatus.PENDING,
-            request_date=datetime.date(2015, 3, 15),
+            request_date=datetime.datetime(2015, 3, 15).astimezone(datetime.timezone.utc),
             node=node_3,
             member=member,
             building=fake_building,
@@ -1517,7 +1517,7 @@ class TestViewsGetUnauthenticated(TestCase):
         Install(
             install_number=105,
             status=Install.InstallStatus.REQUEST_RECEIVED,
-            request_date=datetime.date(2015, 3, 15),
+            request_date=datetime.datetime(2015, 3, 15).astimezone(datetime.timezone.utc),
             node=node_3,
             member=member,
             building=fake_building,
@@ -1619,7 +1619,7 @@ class TestViewsGetUnauthenticated(TestCase):
             install_number=19452,
             node=node1,
             status=Install.InstallStatus.REQUEST_RECEIVED,
-            request_date=datetime.date(2024, 1, 27),
+            request_date=datetime.datetime(2024, 1, 27).astimezone(datetime.timezone.utc),
             roof_access=True,
             building=building1,
             member=member,
@@ -1653,7 +1653,7 @@ class TestViewsGetUnauthenticated(TestCase):
             install_number=19459,
             node=node2,
             status=Install.InstallStatus.REQUEST_RECEIVED,
-            request_date=datetime.date(2024, 1, 27),
+            request_date=datetime.datetime(2024, 1, 27).astimezone(datetime.timezone.utc),
             roof_access=True,
             building=building2,
             member=member,
@@ -1676,7 +1676,7 @@ class TestViewsGetUnauthenticated(TestCase):
         install3 = Install(
             install_number=19460,
             status=Install.InstallStatus.REQUEST_RECEIVED,
-            request_date=datetime.date(2024, 1, 27),
+            request_date=datetime.datetime(2024, 1, 27).astimezone(datetime.timezone.utc),
             roof_access=True,
             building=building3,
             member=member,
@@ -1763,3 +1763,44 @@ class TestKiosk(TestCase):
                 json.loads(response.content.decode("UTF8")),
                 {"detail": "Invalid response received from City of New York"},
             )
+
+
+class TestJavascriptDateSerializerField(TestCase):
+    def test_to_interal_value(self):
+        dt_serializer_field = JavascriptDatetimeField()
+        self.assertEqual(
+            dt_serializer_field.to_internal_value(None),
+            None,
+        )
+        self.assertEqual(
+            dt_serializer_field.to_internal_value(1706331600000),
+            datetime.datetime(2024, 1, 27).astimezone(tz=datetime.timezone.utc),
+        )
+
+        date_serializer_field = JavascriptDateField()
+        self.assertEqual(
+            date_serializer_field.to_internal_value(None),
+            None,
+        )
+        self.assertEqual(
+            date_serializer_field.to_internal_value(1706331600000),
+            datetime.date(2024, 1, 27),
+        )
+
+    def test_to_representation(self):
+        dt_serializer_field = JavascriptDatetimeField()
+        self.assertEqual(
+            dt_serializer_field.to_representation(None),
+            None,
+        )
+        self.assertEqual(
+            dt_serializer_field.to_representation(datetime.datetime(2024, 1, 27).astimezone(tz=datetime.timezone.utc)),
+            1706331600000,
+        )
+
+        date_serializer_field = JavascriptDateField()
+        self.assertEqual(
+            date_serializer_field.to_representation(None),
+            None,
+        )
+        self.assertEqual(date_serializer_field.to_representation(datetime.date(2024, 1, 27)), 1706331600000)

@@ -1,40 +1,17 @@
-import datetime
 import os
 from collections import OrderedDict
 from typing import List, Optional, Tuple
 from urllib.parse import urlparse
 
-from drf_spectacular.types import OpenApiTypes
-from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from meshapi.models import Device, Install, Link, Node, Sector
+from meshapi.serializers.javascript_date_field import JavascriptDateField, JavascriptDatetimeField
 
 EXCLUDED_INSTALL_STATUSES = {
     Install.InstallStatus.CLOSED,
     Install.InstallStatus.NN_REASSIGNED,
 }
-
-
-@extend_schema_field(OpenApiTypes.INT)
-class JavascriptDateField(serializers.Field):
-    def to_internal_value(self, date_int_val: Optional[int]) -> Optional[datetime.date]:
-        if date_int_val is None:
-            return None
-
-        return datetime.datetime.fromtimestamp(date_int_val / 1000).date()
-
-    def to_representation(self, date_val: datetime.date) -> Optional[int]:
-        if date_val is None:
-            return None
-
-        return int(
-            datetime.datetime.combine(
-                date_val,
-                datetime.datetime.min.time(),
-            ).timestamp()
-            * 1000
-        )
 
 
 class MapDataInstallSerializer(serializers.ModelSerializer):
@@ -56,7 +33,7 @@ class MapDataInstallSerializer(serializers.ModelSerializer):
     name = serializers.SerializerMethodField("get_node_name")
     status = serializers.SerializerMethodField("convert_status_to_spreadsheet_status")
     coordinates = serializers.SerializerMethodField("get_coordinates")
-    requestDate = JavascriptDateField(source="request_date")
+    requestDate = JavascriptDatetimeField(source="request_date")
     installDate = JavascriptDateField(source="install_date")
     roofAccess = serializers.BooleanField(source="roof_access")
     notes = serializers.SerializerMethodField("get_synthetic_notes")

@@ -1,6 +1,6 @@
 import logging
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from json import JSONDecodeError
 from typing import Any, Dict, List
 
@@ -141,7 +141,9 @@ class MapDataNodeList(generics.ListAPIView):
                     datetime.combine(
                         ap.install_date,
                         datetime.min.time(),
-                    ).timestamp()
+                    )
+                    .astimezone(timezone.utc)
+                    .timestamp()
                     * 1000
                 )
                 if ap.install_date
