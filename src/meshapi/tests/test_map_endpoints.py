@@ -6,7 +6,7 @@ import requests_mock
 from django.test import Client, TestCase
 
 from meshapi.models import LOS, AccessPoint, Building, Device, Install, Link, Member, Node, Sector
-from meshapi.serializers import MapDataLinkSerializer
+from meshapi.serializers import JavascriptDateField, JavascriptDatetimeField, MapDataLinkSerializer
 from meshapi.tests.sample_kiosk_data import SAMPLE_OPENDATA_NYC_LINKNYC_KIOSK_RESPONSE
 from meshapi.views import LINKNYC_KIOSK_DATA_URL
 
@@ -1763,3 +1763,44 @@ class TestKiosk(TestCase):
                 json.loads(response.content.decode("UTF8")),
                 {"detail": "Invalid response received from City of New York"},
             )
+
+
+class TestJavascriptDateSerializerField(TestCase):
+    def test_to_interal_value(self):
+        dt_serializer_field = JavascriptDatetimeField()
+        self.assertEqual(
+            dt_serializer_field.to_internal_value(None),
+            None,
+        )
+        self.assertEqual(
+            dt_serializer_field.to_internal_value(1706331600000),
+            datetime.datetime(2024, 1, 27).astimezone(tz=datetime.timezone.utc),
+        )
+
+        date_serializer_field = JavascriptDateField()
+        self.assertEqual(
+            date_serializer_field.to_internal_value(None),
+            None,
+        )
+        self.assertEqual(
+            date_serializer_field.to_internal_value(1706331600000),
+            datetime.date(2024, 1, 27),
+        )
+
+    def test_to_representation(self):
+        dt_serializer_field = JavascriptDatetimeField()
+        self.assertEqual(
+            dt_serializer_field.to_representation(None),
+            None,
+        )
+        self.assertEqual(
+            dt_serializer_field.to_representation(datetime.datetime(2024, 1, 27).astimezone(tz=datetime.timezone.utc)),
+            1706331600000,
+        )
+
+        date_serializer_field = JavascriptDateField()
+        self.assertEqual(
+            date_serializer_field.to_representation(None),
+            None,
+        )
+        self.assertEqual(date_serializer_field.to_representation(datetime.date(2024, 1, 27)), 1706331600000)
