@@ -11,7 +11,7 @@ from meshapi.tasks import reset_dev_database, run_database_backup, run_update_pa
 # to test the environment logic.
 class TestRunDatabaseBackupTask(TestCase):
     @mock.patch("django.core.management.call_command")
-    @mock.patch("meshapi.tasks.MESHDB_ENVIRONMENT", "prod")
+    @mock.patch("meshapi.tasks.MESHDB_ENVIRONMENT", "prod2")
     def test_run_database_backup(self, mock_call_command_func):
         os.environ["AWS_ACCESS_KEY_ID"] = "fake"
         os.environ["AWS_SECRET_ACCESS_KEY"] = "alsofake"
@@ -29,7 +29,7 @@ class TestRunDatabaseBackupTask(TestCase):
             run_database_backup()
 
     @mock.patch("django.core.management.call_command")
-    @mock.patch("meshapi.tasks.MESHDB_ENVIRONMENT", "prod")
+    @mock.patch("meshapi.tasks.MESHDB_ENVIRONMENT", "prod2")
     def test_run_database_backup_no_creds(self, mock_call_command_func):
         os.environ["AWS_ACCESS_KEY_ID"] = ""
         os.environ["AWS_SECRET_ACCESS_KEY"] = ""
@@ -51,7 +51,7 @@ class TestResetDevDatabaseTask(TestCase):
         )
 
     @mock.patch("django.core.management.call_command")
-    @mock.patch("meshapi.tasks.MESHDB_ENVIRONMENT", "prod")
+    @mock.patch("meshapi.tasks.MESHDB_ENVIRONMENT", "prod2")
     def test_run_reset_dev_database_not_dev(self, mock_call_command_func):
         os.environ["AWS_ACCESS_KEY_ID"] = "fake"
         os.environ["AWS_SECRET_ACCESS_KEY"] = "alsofake"
