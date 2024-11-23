@@ -1,6 +1,6 @@
-from datetime import datetime, timezone, date
 import json
 import uuid
+from datetime import date, datetime, timezone
 
 from django.contrib.auth.models import User
 from django.test import Client, TestCase
