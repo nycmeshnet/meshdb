@@ -173,7 +173,7 @@ class TestViewsGetAdmin(TestCaseWithFullData):
             "node": {"id": "5d554dca-2c9b-4d8e-a9fc-86bedcea92ea", "network_number": 101},
             "notes": "Referral: Read about it on the internet",
             "referral": "foo abc",
-            "request_date": "2022-02-27",
+            "request_date": "2022-02-27T00:00:00Z",
             "roof_access": True,
             "status": "Active",
             "ticket_number": "69",
@@ -437,7 +437,7 @@ class TestModelReferenceSerializer(TestCaseWithFullData):
                 "building": {"id": "fc016ea2-847d-42cb-9258-2668c2713229"},
                 "node": {"id": "5d554dca-2c9b-4d8e-a9fc-86bedcea92ea", "network_number": 101},
                 "install_number": 1,
-                "request_date": "2022-02-27",
+                "request_date": "2022-02-27T00:00:00Z",
                 "roof_access": True,
                 "status": "Active",
             }
@@ -457,7 +457,7 @@ class TestModelReferenceSerializer(TestCaseWithFullData):
                 "building": {"id": "fc016ea2-847d-42cb-9258-2668c2713229"},
                 "node": {"id": "5d554dca-2c9b-4d8e-a9fc-86bedcea92ea", "network_number": 101},
                 "install_number": 1,
-                "request_date": "2022-02-27",
+                "request_date": "2022-02-27T00:00:00Z",
                 "roof_access": True,
                 "status": "Active",
             }
@@ -477,7 +477,7 @@ class TestModelReferenceSerializer(TestCaseWithFullData):
                 "building": {"id": "fc016ea2-847d-42cb-9258-2668c2713229"},
                 "node": {"id": "5d554dca-2c9b-4d8e-a9fc-86bedcea92ea", "network_number": 101},
                 "install_number": 1,
-                "request_date": "2022-02-27",
+                "request_date": "2022-02-27T00:00:00Z",
                 "roof_access": True,
                 "status": "Active",
             }
@@ -500,7 +500,7 @@ class TestModelReferenceSerializer(TestCaseWithFullData):
                 "building": {"id": "fc016ea2-847d-42cb-9258-2668c2713229"},
                 "node": {"id": "5d554dca-2c9b-4d8e-a9fc-86bedcea92ea", "network_number": 101},
                 "install_number": 1,
-                "request_date": "2022-02-27",
+                "request_date": "2022-02-27T00:00:00Z",
                 "roof_access": True,
                 "status": "Active",
             }
@@ -520,7 +520,7 @@ class TestModelReferenceSerializer(TestCaseWithFullData):
                 "building": {"id": "fc016ea2-847d-42cb-9258-2668c2713229"},
                 "node": {"id": "5d554dca-2c9b-4d8e-a9fc-86bedcea92ea", "network_number": 102},  # NN doesn't match UUID
                 "install_number": 1,
-                "request_date": "2022-02-27",
+                "request_date": "2022-02-27T00:00:00Z",
                 "roof_access": True,
                 "status": "Active",
             }
@@ -540,7 +540,7 @@ class TestModelReferenceSerializer(TestCaseWithFullData):
                 "building": {"id": "fc016ea2-847d-42cb-9258-2668c2713229"},
                 "node": {"network_number": "not a NN"},  # invalid NN
                 "install_number": 1,
-                "request_date": "2022-02-27",
+                "request_date": "2022-02-27T00:00:00Z",
                 "roof_access": True,
                 "status": "Active",
             }
@@ -561,7 +561,7 @@ class TestModelReferenceSerializer(TestCaseWithFullData):
                 "building": {"id": "fc016ea2-847d-42cb-9258-2668c2713229"},
                 "node": None,  # this is allowed
                 "install_number": 1,
-                "request_date": "2022-02-27",
+                "request_date": "2022-02-27T00:00:00Z",
                 "roof_access": True,
                 "status": "Active",
             },
@@ -580,7 +580,7 @@ class TestModelReferenceSerializer(TestCaseWithFullData):
                 "building": {"id": "fc016ea2-847d-42cb-9258-2668c2713229"},
                 "node": {"id": None},  # this is not allowed
                 "install_number": 1,
-                "request_date": "2022-02-27",
+                "request_date": "2022-02-27T00:00:00Z",
                 "roof_access": True,
                 "status": "Active",
             }

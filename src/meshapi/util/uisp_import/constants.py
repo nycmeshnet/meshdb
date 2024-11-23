@@ -28,3 +28,7 @@ DEVICE_MODEL_TO_BEAM_WIDTH = {
 # Controls how long a device can be offline in UISP for before we mark
 # it as "Inactive" in meshdb
 UISP_OFFLINE_DURATION_BEFORE_MARKING_INACTIVE = datetime.timedelta(days=30)
+
+# Controls how long a device has to be "abandoned" for us to be worried that it is a different
+# device if it shows back up in UISP
+UISP_ABANDON_DATE_AGE_BEFORE_WARNING_ABOUT_REACTIVATION = datetime.timedelta(days=30)

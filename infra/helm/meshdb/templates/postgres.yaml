@@ -43,7 +43,9 @@ spec:
           livenessProbe:
             exec:
               command:
-                - pg_isready -U ${DB_USER}
+                - /bin/sh
+                - -c
+                - pg_isready -U {{ .Values.pg.user | quote }}
             periodSeconds: 5
             initialDelaySeconds: 5
             timeoutSeconds: 3

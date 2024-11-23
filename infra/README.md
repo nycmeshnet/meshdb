@@ -16,10 +16,7 @@ These instructions will set up a 4 node k3s cluster on proxmox.
 | `DJANGO_SECRET_KEY` | Django secret key |
 | `GH_TOKEN` | Github token for pulling down panoramas |
 | `NN_ASSIGN_PSK` | Legacy node number assign password |
-| `PGADMIN_EMAIL` | Default username for pgadmin |
-| `PGADMIN_PASSWORD` | Default password for pgadmin |
 | `PG_PASSWORD` | meshdb postgres database password |
-| `PROJECT_PATH`  |  Absolute file system path to the clone of meshdb, likely `/root/meshdb`  |
 | `QUERY_PSK` | Legacy query password |
 | `SSH_KNOWN_HOSTS`  |  Copy paste from `ssh-keyscan <mgr node IP>`  |
 | `SSH_PRIVATE_KEY`  | SSH key for the mgr node.   |

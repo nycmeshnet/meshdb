@@ -11,7 +11,7 @@ from meshapi.validation import NYCAddressInfo
 class TestValidationNYCAddressInfo(TestCase):
     def test_invalid_state(self):
         with self.assertRaises(ValueError):
-            NYCAddressInfo("151 Broome St", "New York", "ny", 10002)
+            NYCAddressInfo("151 Broome St", "New York", "ny", "10002")
 
     @patch("meshapi.validation.requests.get")
     def test_validate_address_geosearch_unexpected_responses(self, mock_requests):
@@ -29,12 +29,12 @@ class TestValidationNYCAddressInfo(TestCase):
         for test_case in test_cases:
             with self.assertRaises(test_case["exception"]):
                 mock_requests.return_value = test_case["mock"]
-                NYCAddressInfo("151 Broome St", "New York", "NY", 10002)
+                NYCAddressInfo("151 Broome St", "New York", "NY", "10002")
 
     @patch("meshapi.validation.requests.get", side_effect=Exception("Pretend this is a network issue"))
     def test_validate_address_geosearch_network(self, mock_requests):
         with self.assertRaises(AddressAPIError):
-            NYCAddressInfo("151 Broome St", "New York", "NY", 10002)
+            NYCAddressInfo("151 Broome St", "New York", "NY", "10002")
 
     @patch("meshapi.validation.requests.get")
     def test_validate_address_good(self, mock_requests):
@@ -49,13 +49,13 @@ class TestValidationNYCAddressInfo(TestCase):
 
         mock_requests.side_effect = [mock_1, mock_2, mock_3]
 
-        nyc_addr_info = NYCAddressInfo("151 Broome St", "New York", "NY", 10002)
+        nyc_addr_info = NYCAddressInfo("151 Broome St", "New York", "NY", "10002")
 
         assert nyc_addr_info is not None
         assert nyc_addr_info.street_address == "151 Broome St"
         assert nyc_addr_info.city == "New York"
         assert nyc_addr_info.state == "NY"
-        assert nyc_addr_info.zip == 10002
+        assert nyc_addr_info.zip == "10002"
         assert nyc_addr_info.longitude == -73.98492
         assert nyc_addr_info.latitude == 40.716245
         assert nyc_addr_info.altitude == 61.0
@@ -96,13 +96,13 @@ class TestValidationNYCAddressInfo(TestCase):
 
             mock_requests.side_effect = [mock_1, mock_2, mock_test_case]
 
-            nyc_addr_info = NYCAddressInfo("151 Broome St", "New York", "NY", 10002)
+            nyc_addr_info = NYCAddressInfo("151 Broome St", "New York", "NY", "10002")
 
             assert nyc_addr_info is not None
             assert nyc_addr_info.street_address == "151 Broome St"
             assert nyc_addr_info.city == "New York"
             assert nyc_addr_info.state == "NY"
-            assert nyc_addr_info.zip == 10002
+            assert nyc_addr_info.zip == "10002"
             assert nyc_addr_info.longitude == -73.98492
             assert nyc_addr_info.latitude == 40.716245
             assert nyc_addr_info.altitude is None

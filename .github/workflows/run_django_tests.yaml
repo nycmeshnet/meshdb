@@ -33,7 +33,6 @@ jobs:
         image: redis
         ports:
           - 6379:6379
-
     steps:
       - uses: actions/checkout@v3
       - name: Set up Python
@@ -55,9 +54,14 @@ jobs:
           PELIAS_ADDRESS_PARSER_URL: http://localhost:6800/parser/parse
           QUERY_PSK: localdev
           NN_ASSIGN_PSK: localdev
-          PANO_GITHUB_TOKEN: ${{ secrets.PANO_GITHUB_TOKEN }}
+          PANO_GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
           DB_USER_RO: meshdb_ro
           DB_PASSWORD_RO: readonly
+          JOIN_RECORD_BUCKET_NAME: meshdb-join-form-log
+          JOIN_RECORD_PREFIX: dev-join-form-submissions
+          AWS_ACCESS_KEY_ID: sampleaccesskey
+          AWS_SECRET_ACCESS_KEY: samplesecretkey
+          AWS_REGION: us-east-1
         run: coverage run src/manage.py test meshapi meshapi_hooks
       - name: Write coverage report to disk
         run: coverage html

@@ -273,10 +273,9 @@ class TestUISPImportUtils(TestCase):
         mock_notify.assert_called_once_with(
             [device],
             DeviceSerializer,
-            message="modified device based on information from UISP. The following changes were made:\n"
+            message="*modified device based on information from UISP*. The following changes were made:\n"
             " - Mock change 1\n"
-            " - Mock change 2\n"
-            "(to prevent this, make changes to these fields in UISP rather than directly in MeshDB)",
+            " - Mock change 2\n",
         )
 
     @patch("meshapi.util.uisp_import.utils.notify_administrators_of_data_issue")
@@ -304,7 +303,7 @@ class TestUISPImportUtils(TestCase):
         mock_notify.assert_called_once_with(
             [sector],
             SectorSerializer,
-            message="created sector based on information from UISP. The following items may require attention:\n"
+            message="*created sector based on information from UISP*. The following items may require attention:\n"
             " - Mock change 1\n"
             " - Mock change 2",
         )
@@ -316,7 +315,7 @@ class TestUISPImportUtils(TestCase):
         mock_notify.assert_called_once_with(
             [sector],
             SectorSerializer,
-            message="created sector based on information from UISP. The following items may require attention:\n"
+            message="*created sector based on information from UISP*. The following items may require attention:\n"
             " - Mock change 1\n"
             " - Mock change 2",
         )
@@ -348,7 +347,7 @@ class TestUISPImportUtils(TestCase):
         mock_notify.assert_called_once_with(
             [ap],
             AccessPointSerializer,
-            message="created access point based on information from UISP. The following items may require attention:\n"
+            message="*created access point based on information from UISP*. The following items may require attention:\n"
             " - Mock change 1\n"
             " - Mock change 2",
         )
@@ -409,6 +408,7 @@ class TestUISPImportUpdateObjects(TransactionTestCase):
             to_device=self.device2,
             status=Link.LinkStatus.ACTIVE,
             type=Link.LinkType.FIVE_GHZ,
+            uisp_id="fake-uisp-uuid",
         )
         self.link.save()
 
@@ -419,12 +419,14 @@ class TestUISPImportUpdateObjects(TransactionTestCase):
 
         change_messages = update_link_from_uisp_data(
             self.link,
+            uisp_link_id="fake-uisp-uuid2",
             uisp_from_device=self.device1,
             uisp_to_device=self.device3,
             uisp_status=Link.LinkStatus.INACTIVE,
         )
 
         self.link.refresh_from_db()
+        self.assertEqual(self.link.uisp_id, "fake-uisp-uuid2")
         self.assertEqual(self.link.from_device, self.device1)
         self.assertEqual(self.link.to_device, self.device3)
         self.assertEqual(self.link.status, Link.LinkStatus.INACTIVE)
@@ -435,7 +437,7 @@ class TestUISPImportUpdateObjects(TransactionTestCase):
             change_messages,
             [
                 "Changed connected device pair from [nycmesh-1234-dev1, nycmesh-5678-dev2] to [nycmesh-1234-dev1, nycmesh-9012-dev3]",
-                "Marked as Inactive due to being offline for more than 30 days",
+                "Marked as Inactive due to it being offline in UISP for more than 30 days",
             ],
         )
 
@@ -449,6 +451,7 @@ class TestUISPImportUpdateObjects(TransactionTestCase):
 
         change_messages = update_link_from_uisp_data(
             self.link,
+            uisp_link_id="fake-uisp-uuid",
             uisp_from_device=self.device1,
             uisp_to_device=self.device2,
             uisp_status=Link.LinkStatus.INACTIVE,
@@ -475,6 +478,7 @@ class TestUISPImportUpdateObjects(TransactionTestCase):
 
         change_messages = update_link_from_uisp_data(
             self.link,
+            uisp_link_id="fake-uisp-uuid",
             uisp_from_device=self.device1,
             uisp_to_device=self.device2,
             uisp_status=Link.LinkStatus.INACTIVE,
@@ -495,6 +499,7 @@ class TestUISPImportUpdateObjects(TransactionTestCase):
 
         change_messages = update_link_from_uisp_data(
             self.link,
+            uisp_link_id="fake-uisp-uuid",
             uisp_from_device=self.device1,
             uisp_to_device=self.device2,
             uisp_status=Link.LinkStatus.INACTIVE,
@@ -503,11 +508,11 @@ class TestUISPImportUpdateObjects(TransactionTestCase):
         self.link.refresh_from_db()
         self.assertEqual(self.link.from_device, self.device1)
         self.assertEqual(self.link.to_device, self.device2)
-        self.assertEqual(self.link.status, Link.LinkStatus.ACTIVE)
+        self.assertEqual(self.link.status, Link.LinkStatus.INACTIVE)
         self.assertEqual(self.link.type, Link.LinkType.FIVE_GHZ)
         self.assertEqual(self.link.abandon_date, None)
 
-        self.assertEqual(change_messages, [])
+        self.assertEqual(change_messages, ["Marked as Inactive due to it being offline in UISP"])
 
     @patch("meshapi.util.uisp_import.update_objects.get_uisp_link_last_seen")
     def test_update_link_reactivate_old_device(self, mock_get_last_seen):
@@ -520,6 +525,7 @@ class TestUISPImportUpdateObjects(TransactionTestCase):
 
         change_messages = update_link_from_uisp_data(
             self.link,
+            uisp_link_id="fake-uisp-uuid",
             uisp_from_device=self.device1,
             uisp_to_device=self.device2,
             uisp_status=Link.LinkStatus.ACTIVE,
@@ -534,11 +540,36 @@ class TestUISPImportUpdateObjects(TransactionTestCase):
 
         self.assertEqual(
             change_messages,
-            [
-                "Marked as Active due to coming back online in UISP. Warning: this link was "
-                "previously abandoned on 2018-11-14, if this link has been re-purposed, "
-                "please make sure the device names and network numbers are updated to reflect the new location"
-            ],
+            ["Marked as Active due to it coming back online in UISP"],
+        )
+
+    @patch("meshapi.util.uisp_import.update_objects.get_uisp_link_last_seen")
+    def test_update_link_reactivate_recent_device(self, mock_get_last_seen):
+        self.link.status = Link.LinkStatus.INACTIVE
+        self.link.abandon_date = datetime.date.today() - datetime.timedelta(days=2)
+        self.link.save()
+
+        last_seen_date = datetime.datetime.now(datetime.timezone.utc)
+        mock_get_last_seen.return_value = last_seen_date
+
+        change_messages = update_link_from_uisp_data(
+            self.link,
+            uisp_link_id="fake-uisp-uuid",
+            uisp_from_device=self.device1,
+            uisp_to_device=self.device2,
+            uisp_status=Link.LinkStatus.ACTIVE,
+        )
+
+        self.link.refresh_from_db()
+        self.assertEqual(self.link.from_device, self.device1)
+        self.assertEqual(self.link.to_device, self.device2)
+        self.assertEqual(self.link.status, Link.LinkStatus.ACTIVE)
+        self.assertEqual(self.link.type, Link.LinkType.FIVE_GHZ)
+        self.assertEqual(self.link.abandon_date, None)
+
+        self.assertEqual(
+            change_messages,
+            ["Marked as Active due to it coming back online in UISP"],
         )
 
     @patch("meshapi.util.uisp_import.update_objects.get_uisp_link_last_seen")
@@ -547,6 +578,7 @@ class TestUISPImportUpdateObjects(TransactionTestCase):
 
         change_messages = update_link_from_uisp_data(
             self.link,
+            uisp_link_id="fake-uisp-uuid",
             uisp_from_device=self.device1,
             uisp_to_device=self.device2,
             uisp_status=Link.LinkStatus.ACTIVE,
@@ -556,6 +588,7 @@ class TestUISPImportUpdateObjects(TransactionTestCase):
         # Swapping from/to should have no impact
         change_messages = update_link_from_uisp_data(
             self.link,
+            uisp_link_id="fake-uisp-uuid",
             uisp_from_device=self.device2,
             uisp_to_device=self.device1,
             uisp_status=Link.LinkStatus.ACTIVE,
@@ -590,7 +623,7 @@ class TestUISPImportUpdateObjects(TransactionTestCase):
             [
                 'Changed name from "nycmesh-1234-dev1" to "nycmesh-5678-dev1"',
                 "Changed network number from 1234 to 5678",
-                "Marked as Inactive due to being offline for more than 30 days",
+                "Marked as Inactive due to it being offline in UISP for more than 30 days",
             ],
         )
 
@@ -606,12 +639,14 @@ class TestUISPImportUpdateObjects(TransactionTestCase):
         self.device1.refresh_from_db()
         self.assertEqual(self.device1.name, "nycmesh-1234-dev1")
         self.assertEqual(self.device1.node, self.node1)
-        self.assertEqual(self.device1.status, Device.DeviceStatus.ACTIVE)
+        self.assertEqual(self.device1.status, Device.DeviceStatus.INACTIVE)
         self.assertEqual(self.device1.abandon_date, None)
 
         self.assertEqual(
             change_messages,
-            [],
+            [
+                "Marked as Inactive due to it being offline in UISP",
+            ],
         )
 
     def test_update_device_add_abandon_date(self):
@@ -663,11 +698,36 @@ class TestUISPImportUpdateObjects(TransactionTestCase):
         self.assertEqual(
             change_messages,
             [
-                "Marked as Active due to coming back online in UISP. Warning: this device was "
+                "Marked as Active due to it coming back online in UISP. Warning: this device was "
                 "previously abandoned on 2018-11-14, if this device has been re-purposed, "
                 "please make sure the device name and network number are updated to reflect the new location "
                 "and function"
             ],
+        )
+
+    def test_update_device_reactivate_recent_device(self):
+        self.device1.status = Device.DeviceStatus.INACTIVE
+        self.device1.abandon_date = datetime.date.today() - datetime.timedelta(days=2)
+        self.device1.save()
+
+        last_seen_date = datetime.datetime.now(datetime.timezone.utc)
+        change_messages = update_device_from_uisp_data(
+            self.device1,
+            uisp_node=self.node1,
+            uisp_name="nycmesh-1234-dev1",
+            uisp_status=Device.DeviceStatus.ACTIVE,
+            uisp_last_seen=last_seen_date,
+        )
+
+        self.device1.refresh_from_db()
+        self.assertEqual(self.device1.name, "nycmesh-1234-dev1")
+        self.assertEqual(self.device1.node, self.node1)
+        self.assertEqual(self.device1.status, Device.DeviceStatus.ACTIVE)
+        self.assertEqual(self.device1.abandon_date, None)
+
+        self.assertEqual(
+            change_messages,
+            ["Marked as Active due to it coming back online in UISP"],
         )
 
     def test_update_device_no_changes(self):
@@ -775,6 +835,22 @@ class TestUISPImportHandlers(TransactionTestCase):
         )
         self.device4.save()
 
+        self.device5 = Device(
+            node=self.node3,
+            status=Device.DeviceStatus.ACTIVE,
+            name="nycmesh-7890-dev5",
+            uisp_id="uisp-uuid-not-real-dont-match-me",
+        )
+        self.device5.save()
+
+        self.device6 = Device(
+            node=self.node3,
+            status=Device.DeviceStatus.ACTIVE,
+            name="nycmesh-7890-dev6",
+            uisp_id="uisp-uuid6",
+        )
+        self.device6.save()
+
         self.link1 = Link(
             from_device=self.device1,
             to_device=self.device2,
@@ -792,6 +868,60 @@ class TestUISPImportHandlers(TransactionTestCase):
             uisp_id="uisp-uuid2",
         )
         self.link2.save()
+
+        self.link3 = Link(
+            from_device=self.device2,
+            to_device=self.device3,
+            status=Link.LinkStatus.ACTIVE,
+            type=Link.LinkType.FIVE_GHZ,
+            uisp_id="uisp-uuid-not-real-dont-match-me",
+        )
+        self.link3.save()
+
+        self.link4 = Link(
+            from_device=self.device1,
+            to_device=self.device6,
+            status=Link.LinkStatus.ACTIVE,
+            type=Link.LinkType.ETHERNET,
+            uisp_id="uisp-uuid40a",
+        )
+        self.link4.save()
+
+        self.link5a = Link(
+            from_device=self.device2,
+            to_device=self.device6,
+            status=Link.LinkStatus.ACTIVE,
+            type=Link.LinkType.ETHERNET,
+            uisp_id="uisp-uuid50a",
+        )
+        self.link5a.save()
+
+        self.link5b = Link(
+            from_device=self.device2,
+            to_device=self.device6,
+            status=Link.LinkStatus.INACTIVE,
+            type=Link.LinkType.ETHERNET,
+            uisp_id="uisp-uuid50b",
+        )
+        self.link5b.save()
+
+        self.link6a = Link(
+            from_device=self.device3,
+            to_device=self.device6,
+            status=Link.LinkStatus.ACTIVE,
+            type=Link.LinkType.FIBER,
+            uisp_id="uisp-uuid60a",
+        )
+        self.link6a.save()
+
+        self.link6b = Link(
+            from_device=self.device3,
+            to_device=self.device6,
+            status=Link.LinkStatus.ACTIVE,
+            type=Link.LinkType.FIBER,
+            uisp_id="uisp-uuid60b",
+        )
+        self.link6b.save()
 
     @patch("meshapi.util.uisp_import.sync_handlers.notify_admins_of_changes")
     @patch("meshapi.util.uisp_import.sync_handlers.update_device_from_uisp_data")
@@ -934,6 +1064,9 @@ class TestUISPImportHandlers(TransactionTestCase):
 
         import_and_sync_uisp_devices(uisp_devices)
 
+        self.device5.refresh_from_db()
+        self.assertEqual(self.device5.status, Device.DeviceStatus.INACTIVE)
+
         created_sector1 = Sector.objects.get(uisp_id="uisp-uuid99")
         created_sector2 = Sector.objects.get(uisp_id="uisp-uuid999")
 
@@ -966,6 +1099,27 @@ class TestUISPImportHandlers(TransactionTestCase):
                         "Set default radius of 1 km. Please correct if this is not accurate",
                     ],
                     created=True,
+                ),
+                call(
+                    self.device4,
+                    [
+                        "Marked as inactive because there is no corresponding device in UISP, "
+                        "it was probably deleted there",
+                    ],
+                ),
+                call(
+                    self.device6,
+                    [
+                        "Marked as inactive because there is no corresponding device in UISP, "
+                        "it was probably deleted there",
+                    ],
+                ),
+                call(
+                    self.device5,
+                    [
+                        "Marked as inactive because there is no corresponding device in UISP, "
+                        "it was probably deleted there",
+                    ],
                 ),
             ]
         )
@@ -1063,10 +1217,16 @@ class TestUISPImportHandlers(TransactionTestCase):
     @patch("meshapi.util.uisp_import.sync_handlers.update_link_from_uisp_data")
     def test_import_and_sync_links(self, mock_update_link, mock_notify_admins, mock_get_uisp_session):
         mock_update_link.side_effect = [
-            [],
-            ["Mock update 2"],
+            [],  # self.link1
+            ["Mock update 2"],  # self.link2
         ]
         mock_get_uisp_session.return_value = "mock_uisp_session"
+
+        self.link4.delete()
+        self.link5a.delete()
+        self.link5b.delete()
+        self.link6a.delete()
+        self.link6b.delete()
 
         uisp_links = [
             {
@@ -1220,6 +1380,7 @@ class TestUISPImportHandlers(TransactionTestCase):
             [
                 call(
                     self.link1,
+                    "uisp-uuid1",
                     self.device1,
                     self.device2,
                     Link.LinkStatus.ACTIVE,
@@ -1227,6 +1388,7 @@ class TestUISPImportHandlers(TransactionTestCase):
                 ),
                 call(
                     self.link2,
+                    "uisp-uuid2",
                     self.device1,
                     self.device3,
                     Link.LinkStatus.INACTIVE,
@@ -1234,6 +1396,9 @@ class TestUISPImportHandlers(TransactionTestCase):
                 ),
             ]
         )
+
+        self.link3.refresh_from_db()
+        self.assertEqual(self.link3.status, Link.LinkStatus.INACTIVE)
 
         created_link3 = Link.objects.get(uisp_id="uisp-uuid3")
         created_link5 = Link.objects.get(uisp_id="uisp-uuid5")
@@ -1248,6 +1413,13 @@ class TestUISPImportHandlers(TransactionTestCase):
                         "case of VPN or Fiber links. Please provide a more accurate value if available"
                     ],
                     created=True,
+                ),
+                call(
+                    self.link3,
+                    [
+                        "Marked as inactive because there is no corresponding link in UISP, "
+                        "it was probably deleted there",
+                    ],
                 ),
             ]
         )
@@ -1271,6 +1443,149 @@ class TestUISPImportHandlers(TransactionTestCase):
         self.assertEqual(created_link5.abandon_date, None)
         self.assertEqual(created_link5.description, None)
         self.assertTrue(created_link5.notes.startswith("Automatically imported from UISP on"))
+
+    @patch("meshapi.util.uisp_import.sync_handlers.get_uisp_session")
+    @patch("meshapi.util.uisp_import.sync_handlers.notify_admins_of_changes")
+    @patch("meshapi.util.uisp_import.update_objects.get_uisp_link_last_seen")
+    def test_import_and_sync_links_uisp_mismatch_and_duplicate(
+        self, mock_get_uisp_last_seen, mock_notify_admins, mock_get_uisp_session
+    ):
+        mock_get_uisp_session.return_value = "mock_uisp_session"
+        mock_get_uisp_last_seen.return_value = datetime.datetime.now()
+
+        self.link1.delete()
+        self.link2.delete()
+        self.link3.delete()
+
+        uisp_links = [
+            {
+                "from": {
+                    "device": {
+                        "identification": {
+                            "id": "uisp-uuid1",
+                            "category": "wireless",
+                            "name": "nycmesh-1234-dev1",
+                        }
+                    }
+                },
+                "to": {
+                    "device": {
+                        "identification": {
+                            "id": "uisp-uuid6",
+                            "category": "wireless",
+                            "name": "nycmesh-7890-dev6",
+                        }
+                    }
+                },
+                "state": "active",
+                "id": "uisp-uuid40b",
+                "type": "ethernet",
+            },
+            {
+                "from": {
+                    "device": {
+                        "identification": {
+                            "id": "uisp-uuid2",
+                            "category": "wireless",
+                            "name": "nycmesh-5678-dev2",
+                        }
+                    }
+                },
+                "to": {
+                    "device": {
+                        "identification": {
+                            "id": "uisp-uuid6",
+                            "category": "wireless",
+                            "name": "nycmesh-7890-dev6",
+                        }
+                    }
+                },
+                "state": "active",
+                "id": "uisp-uuid50b",
+                "type": "ethernet",
+            },
+            {
+                "from": {
+                    "device": {
+                        "identification": {
+                            "id": "uisp-uuid3",
+                            "category": "wireless",
+                            "name": "nycmesh-9012-dev3",
+                        }
+                    }
+                },
+                "to": {
+                    "device": {
+                        "identification": {
+                            "id": "uisp-uuid6",
+                            "category": "wireless",
+                            "name": "nycmesh-7890-dev6",
+                        }
+                    }
+                },
+                "state": "active",
+                "id": "uisp-uuid60a",
+                "type": "ethernet",
+            },
+            {
+                "from": {
+                    "device": {
+                        "identification": {
+                            "id": "uisp-uuid3",
+                            "category": "wireless",
+                            "name": "nycmesh-9012-dev3",
+                        }
+                    }
+                },
+                "to": {
+                    "device": {
+                        "identification": {
+                            "id": "uisp-uuid6",
+                            "category": "wireless",
+                            "name": "nycmesh-7890-dev6",
+                        }
+                    }
+                },
+                "state": "active",
+                "id": "uisp-uuid60b",
+                "type": "ethernet",
+            },
+        ]
+
+        import_and_sync_uisp_links(uisp_links)
+
+        self.link4.refresh_from_db()
+        self.link5a.refresh_from_db()
+        self.link5b.refresh_from_db()
+        self.link6a.refresh_from_db()
+        self.link6b.refresh_from_db()
+
+        self.assertEqual(self.link4.status, Link.LinkStatus.ACTIVE)
+        self.assertEqual(self.link4.uisp_id, "uisp-uuid40b")
+
+        self.assertEqual(self.link5a.status, Link.LinkStatus.INACTIVE)
+        self.assertEqual(self.link5a.uisp_id, "uisp-uuid50a")
+        self.assertEqual(self.link5b.status, Link.LinkStatus.ACTIVE)
+        self.assertEqual(self.link5b.uisp_id, "uisp-uuid50b")
+
+        self.assertEqual(self.link6a.status, Link.LinkStatus.ACTIVE)
+        self.assertEqual(self.link6a.uisp_id, "uisp-uuid60a")
+        self.assertEqual(self.link6b.status, Link.LinkStatus.ACTIVE)
+        self.assertEqual(self.link6b.uisp_id, "uisp-uuid60b")
+
+        self.assertEqual(len(Link.objects.all()), 5)
+
+        mock_notify_admins.assert_has_calls(
+            [
+                call(self.link5b, ["Marked as Active due to it coming back online in UISP"]),
+                call(
+                    self.link5a,
+                    [
+                        "Marked as inactive because there is no corresponding link in UISP, it was probably deleted there"
+                    ],
+                ),
+            ]
+        )
 
     @patch("meshapi.util.uisp_import.sync_handlers.get_uisp_session")
     @patch("meshapi.util.uisp_import.sync_handlers.notify_admins_of_changes")
@@ -1462,7 +1777,7 @@ class TestUISPImportHandlers(TransactionTestCase):
         new_los = LOS.objects.get(from_building=self.building1, to_building=self.building3)
         self.assertEqual(new_los.source, LOS.LOSSource.EXISTING_LINK)
         self.assertEqual(new_los.analysis_date, datetime.date.today())
-        self.assertEqual(new_los.notes, f"Created automatically from Link ID {self.link2.id} (NN1234 → NN9012)\n\n")
+        self.assertEqual(new_los.notes, f"Created automatically from Link ID {self.link2.id} (NN1234 ↔ NN9012)\n\n")
 
     def test_sync_same_building_link_with_los(self):
         self.device3b = Device(
@@ -1475,6 +1790,7 @@ class TestUISPImportHandlers(TransactionTestCase):
         # Clear out the existing links so the only LOS is a building self-loop
         self.link1.delete()
         self.link2.delete()
+        self.link3.delete()
 
         link = Link(
             from_device=self.device3,
@@ -1502,8 +1818,9 @@ class TestUISPImportHandlers(TransactionTestCase):
         self.link1.type = Link.LinkType.FIBER
         self.link1.save()
         self.link2.type = Link.LinkType.ETHERNET
-
         self.link2.save()
+        self.link3.type = Link.LinkType.ETHERNET
+        self.link3.save()
 
         link3 = Link(
             from_device=self.device2,

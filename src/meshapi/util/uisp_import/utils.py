@@ -6,6 +6,7 @@ import dateutil.parser
 import requests
 from rest_framework.serializers import Serializer
 
+from meshapi.admin import downclass_device
 from meshapi.models import AccessPoint, Building, Device, Link, Node, Sector
 from meshapi.serializers import AccessPointSerializer, DeviceSerializer, LinkSerializer, SectorSerializer
 from meshapi.types.uisp_api.data_links import DataLink as USIPDataLink
@@ -84,45 +85,27 @@ def get_serializer(db_object: Union[Device, Link, Sector, AccessPoint]) -> Type[
     return serializer_lookup[type(db_object)]
 
 
-def downclass_device(device: Device) -> Union[Device, Sector, AccessPoint]:
-    """
-    Down-class this device, so that the logging messages make sense.
-    We hide the model inheritance from admins, so they'd be confused if
-    we called a Sector a "device" in a notification message
-    (also the admin UI link would be wrong from their perspective)
-    """
-    sector = Sector.objects.filter(device_ptr=device).first()
-    access_point = AccessPoint.objects.filter(device_ptr=device).first()
-
-    db_object = device
-    if sector:
-        db_object = sector
-    elif access_point:
-        db_object = access_point
-
-    return db_object
-
-
 def notify_admins_of_changes(
     db_object: Union[Device, Link, Sector, AccessPoint],
     change_list: List[str],
     created: bool = False,
 ) -> None:
     # Attempt to downclass if needed (so admin links and such make sense)
+    # We hide the model inheritance from admins, so they'd be confused if
+    # we called a Sector a "device" in a notification message
+    # (also the admin UI link would be wrong from their perspective)
     if type(db_object) is Device:
         db_object = downclass_device(db_object)
 
     if created:
         message = (
-            f"created {db_object._meta.verbose_name} based on information from UISP. "
+            f"*created {db_object._meta.verbose_name} based on information from UISP*. "
             f"The following items may require attention:\n" + "\n".join(" - " + change for change in change_list)
         )
     else:
         message = (
-            f"modified {db_object._meta.verbose_name} based on information from UISP. "
-            f"The following changes were made:\n"
-            + "\n".join(" - " + change for change in change_list)
-            + "\n(to prevent this, make changes to these fields in UISP rather than directly in MeshDB)"
+            f"*modified {db_object._meta.verbose_name} based on information from UISP*. "
+            f"The following changes were made:\n" + "\n".join(" - " + change for change in change_list) + "\n"
         )
 
     notify_administrators_of_data_issue(

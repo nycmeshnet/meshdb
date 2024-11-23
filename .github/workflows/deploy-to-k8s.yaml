@@ -57,9 +57,10 @@ jobs:
         --set meshweb.nn_assign_psk="${{ secrets.NN_ASSIGN_PSK }}" \
         --set meshweb.query_psk="${{ secrets.QUERY_PSK }}" \
         --set meshweb.pano_github_token="${{ secrets.GH_TOKEN }}" \
-        --set pgadmin.default_email="${{ secrets.PGADMIN_EMAIL }}" \
-        --set pgadmin.default_password="${{ secrets.PGADMIN_PASSWORD }}" \
-        --set global.pgadmin.fqdn="${{ vars.PGADMIN_FQDN }}" \
+        --set meshweb.recaptcha_disable="${{ vars.RECAPTCHA_DISABLE_VALIDATION }}" \
+        --set meshweb.recaptcha_v2_secret="${{ secrets.RECAPTCHA_SERVER_SECRET_KEY_V2 }}" \
+        --set meshweb.recaptcha_v3_secret="${{ secrets.RECAPTCHA_SERVER_SECRET_KEY_V3 }}" \
+        --set meshweb.recaptcha_score_threshold="${{ vars.RECAPTCHA_INVISIBLE_TOKEN_SCORE_THRESHOLD }}" \
         --set uisp.url="${{ secrets.UISP_URL }}" \
         --set uisp.user="${{ secrets.UISP_USER }}" \
         --set uisp.psk="${{ secrets.UISP_PSK }}" \
@@ -69,6 +70,9 @@ jobs:
         --set meshweb.forms_url="${{ vars.FORMS_URL }}" \
         --set meshdb.site_base_url="${{ vars.SITE_BASE_URL }}" \
         --set meshweb.slack_webhook="${{ secrets.SLACK_ADMIN_NOTIFICATIONS_WEBHOOK_URL }}" \
+        --set meshweb.slack_join_webhook="${{ secrets.SLACK_JOIN_REQUESTS_CHANNEL_WEBHOOK_URL }}" \
+        --set meshweb.osticket_api_token="${{ secrets.OSTICKET_API_TOKEN }}" \
+        --set meshweb.osticket_new_ticket_endpoint="${{ vars.OSTICKET_NEW_TICKET_ENDPOINT }}" \
         --set meshweb.environment="${{ inputs.environment }}" \
         --set ingress.hosts[0].host="${{ vars.INGRESS_HOST }}",ingress.hosts[0].paths[0].path=/,ingress.hosts[0].paths[0].pathType=Prefix \
         --set ingress.hosts[1].host="${{ vars.INGRESS_HOST_LEGACY }}",ingress.hosts[1].paths[0].path=/,ingress.hosts[1].paths[0].pathType=Prefix

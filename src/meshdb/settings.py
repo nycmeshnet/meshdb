@@ -13,10 +13,13 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 import logging
 import os
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, List
 
+from corsheaders.defaults import default_headers
 from django.http.request import HttpRequest
 from dotenv import load_dotenv
+
+from meshapi.util.constants import RECAPTCHA_CHECKBOX_TOKEN_HEADER, RECAPTCHA_INVISIBLE_TOKEN_HEADER
 
 load_dotenv()
 
@@ -46,13 +49,76 @@ PROFILING_ENABLED = DEBUG and not os.environ.get("DISABLE_PROFILING", "False") =
 FLAGS: Dict[str, Any] = {
     "MAINTENANCE_MODE": [],
     "EDIT_PANORAMAS": [],
+    "JOIN_FORM_FAIL_ALL_INVISIBLE_RECAPTCHAS": [],
+    "INTEGRATION_ENABLED_SEND_JOIN_REQUEST_SLACK_MESSAGES": [],
+    "INTEGRATION_ENABLED_CREATE_OSTICKET_TICKETS": [],
+    "TASK_ENABLED_RUN_DATABASE_BACKUP": [],
+    "TASK_ENABLED_RESET_DEV_DATABASE": [],
+    "TASK_ENABLED_UPDATE_PANORAMAS": [],
+    "TASK_ENABLED_SYNC_WITH_UISP": [],
 }
 
 USE_X_FORWARDED_HOST = True
 
+SECURE_HSTS_SECONDS = 31536000
+SECURE_HSTS_PRELOAD = False
+SECURE_HSTS_INCLUDE_SUBDOMAINS = False
+
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"
+
+CSP_REPORT_ONLY = True  # TODO: Set me to false https://github.com/nycmeshnet/meshdb/issues/644
+CSP_DEFAULT_SRC = [
+    "'self'",
+    "https://*.nycmesh.net",
+    "https://maps.googleapis.com",
+    "https://maps.gstatic.com",
+    "https://fonts.googleapis.com",
+    "https://fonts.gstatic.com",
+    "https://cdn.jsdelivr.net",
+    "https://cdn.redoc.ly",  # Redoc
+    "blob:",  # Redoc
+    "'unsafe-inline'",  # TODO: Remove me https://github.com/nycmeshnet/meshdb/issues/645
+    "*.browser-intake-us5-datadoghq.com",
+]
+CSP_IMG_SRC = [
+    "'self'",
+    "data:",
+    "https://maps.googleapis.com",
+    "https://maps.gstatic.com",
+    "https://cdn.jsdelivr.net",
+    "https://cdn.redoc.ly",  # Redoc
+    "https://node-db.netlify.app",  # Panorama images
+]
+CSP_REPORT_URI = [
+    "https://csp-report.browser-intake-us5-datadoghq.com/api/v2/logs"
+    "?dd-api-key=pubca00a94e49167539d2e291bea2b0f20f&dd-evp-origin=content-security-policy"
+    f"&ddsource=csp-report&ddtags=service%3Ameshdb%2Cenv%3A{MESHDB_ENVIRONMENT}"
+]
+
+# We don't use any of these advanced features, so be safe and disallow any scripts from
+# using them on our pages
+PERMISSIONS_POLICY: Dict[str, List[str]] = {
+    "accelerometer": [],
+    "ambient-light-sensor": [],
+    "autoplay": [],
+    "camera": [],
+    "display-capture": [],
+    "document-domain": [],
+    "encrypted-media": [],
+    "fullscreen": [],
+    "geolocation": [],
+    "gyroscope": [],
+    "interest-cohort": [],
+    "magnetometer": [],
+    "microphone": [],
+    "midi": [],
+    "payment": [],
+    "usb": [],
+}
+
 LOS_URL = os.environ.get("LOS_URL", "https://devlos.mesh.nycmesh.net")
 MAP_URL = os.environ.get("MAP_BASE_URL", "https://devmap.mesh.nycmesh.net")
-PG_ADMIN_URL = os.environ.get("PG_ADMIN_URL", "/pgadmin/")
 FORMS_URL = os.environ.get("FORMS_URL", "https://devforms.mesh.nycmesh.net")
 
 # SMTP Config for password reset emails
@@ -88,6 +154,13 @@ CORS_ALLOWED_ORIGINS = [
     "https://devdb.nycmesh.net",
 ]
 
+CORS_ALLOW_HEADERS = [
+    *default_headers,
+    RECAPTCHA_CHECKBOX_TOKEN_HEADER,
+    RECAPTCHA_INVISIBLE_TOKEN_HEADER,
+]
+
+
 CSRF_TRUSTED_ORIGINS = [
     "http://meshdb:8081",
     "http://nginx:8080",
@@ -115,6 +188,10 @@ if DEBUG:
     CSRF_TRUSTED_ORIGINS += [
         "http://127.0.0.1:8080",
         "http://127.0.0.1",
+    ]
+
+    CSP_DEFAULT_SRC += [
+        "*",
     ]
 
 # Application definition
@@ -147,6 +224,8 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "corsheaders.middleware.CorsMiddleware",
+    "django_permissions_policy.PermissionsPolicyMiddleware",
+    "csp.middleware.CSPMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -228,6 +307,28 @@ DBBACKUP_CONNECTORS = {
     }
 }
 DBBACKUP_DATABASES = ["default"]
+
+LOGGING = {
+    "version": 1,
+    "formatters": {
+        "verbose": {
+            "format": "[%(asctime)s] [%(process)d] [%(levelname)s] %(message)s",
+        },
+    },
+    "handlers": {
+        "console": {
+            "level": "INFO",
+            "class": "logging.StreamHandler",
+            "formatter": "verbose",
+        },
+    },
+    "loggers": {
+        "": {
+            "handlers": ["console"],
+            "level": "INFO",
+        },
+    },
+}
 
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
@@ -378,7 +479,7 @@ SPECTACULAR_SETTINGS = {
         {
             "name": "Sectors",
             "description": 'Special devices with antennas with broad coverage of a radial "slice" of land area. '
-            "See https://wiki.mesh.nycmesh.net/books/3-hardware-firmware/page/ubiquiti-liteap-sector#bkmrk-page-title",
+            "See https://wiki.nycmesh.net/books/3-hardware-firmware/page/ubiquiti-liteap-sector#bkmrk-page-title",
         },
         {
             "name": "Access Points",

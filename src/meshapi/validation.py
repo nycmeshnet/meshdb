@@ -1,5 +1,6 @@
 import json
 import logging
+import os
 import time
 from dataclasses import dataclass
 from typing import List, Optional
@@ -7,6 +8,7 @@ from typing import List, Optional
 import phonenumbers
 import requests
 from django.core.exceptions import ValidationError
+from flags.state import flag_state
 from validate_email import validate_email
 
 from meshapi.exceptions import AddressAPIError, AddressError, OpenDataAPIError
@@ -15,11 +17,20 @@ from meshapi.zips import NYCZipCodes
 from meshdb.utils.spreadsheet_import.building.constants import INVALID_BIN_NUMBERS
 from meshdb.utils.spreadsheet_import.building.pelias import humanify_street_address
 
+RECAPTCHA_SECRET_KEY_V2 = os.environ.get("RECAPTCHA_SERVER_SECRET_KEY_V2")
+RECAPTCHA_SECRET_KEY_V3 = os.environ.get("RECAPTCHA_SERVER_SECRET_KEY_V3")
+RECAPTCHA_INVISIBLE_TOKEN_SCORE_THRESHOLD = float(os.environ.get("RECAPTCHA_INVISIBLE_TOKEN_SCORE_THRESHOLD", 0.5))
+
 NYC_PLANNING_LABS_GEOCODE_URL = "https://geosearch.planninglabs.nyc/v2/search"
 DOB_BUILDING_HEIGHT_API_URL = "https://data.cityofnewyork.us/resource/qb5r-6dgf.json"
+RECAPTCHA_TOKEN_VALIDATION_URL = "https://www.google.com/recaptcha/api/siteverify"
 
 
-def validate_email_address(email_address: str) -> bool:
+# FIXME (wdn): When we can't reach the internet to get the email, this returns 400.
+# That's wrong. It should be 500 because it's our fault. I've seen this reject
+# valid emails because of this and it makes testing offline impossible unless you mock it.
+# https://github.com/nycmeshnet/meshdb/issues/692
+def validate_email_address(email_address: str) -> Optional[bool]:
     return validate_email(
         email_address=email_address,
         check_format=True,
@@ -56,15 +67,19 @@ class NYCAddressInfo:
     street_address: str
     city: str
     state: str
-    zip: int
+    zip: str
     longitude: float
     latitude: float
     altitude: float | None
     bin: int | None
 
-    def __init__(self, street_address: str, city: str, state: str, zip_code: int):
+    def __init__(self, street_address: str, city: str, state: str, zip_code: str):
         if state != "New York" and state != "NY":
             raise ValueError(f"(NYC) State '{state}' is not New York.")
+
+        # We only support the five boroughs of NYC at this time
+        if not NYCZipCodes.match_zip(zip_code):
+            raise ValueError(f"Non-NYC zip code detected: {zip_code}")
 
         self.address = f"{street_address}, {city}, {state} {zip_code}"
 
@@ -92,7 +107,8 @@ class NYCAddressInfo:
         # the closest matching street address it can find, so check that
         # the ZIP of what we entered matches what we got.
 
-        found_zip = int(nyc_planning_resp["features"][0]["properties"]["postalcode"])
+        # For some insane reason this is an integer, so we have to cast it to a string
+        found_zip = str(nyc_planning_resp["features"][0]["properties"]["postalcode"])
         if found_zip != zip_code:
             raise AddressError(
                 f"(NYC) Could not find address '{street_address}, {city}, {state} {zip_code}'. "
@@ -105,8 +121,14 @@ class NYCAddressInfo:
         self.street_address = humanify_street_address(f"{addr_props['housenumber']} {addr_props['street']}")
 
         self.city = addr_props["borough"].replace("Manhattan", "New York")
+
+        # Queens addresses are special and different, but it seems the neighborhood name
+        # that the city gives us is always a good value for "City"
+        if self.city == "Queens":
+            self.city = addr_props.get("neighbourhood", "Queens")
+
         self.state = addr_props["region_a"]
-        self.zip = int(addr_props["postalcode"])
+        self.zip = str(addr_props["postalcode"])
 
         if (
             not addr_props.get("addendum", {}).get("pad", {}).get("bin")
@@ -166,11 +188,7 @@ def validate_phone_number_field(phone_number: str) -> None:
         raise ValidationError(f"Invalid phone number: {phone_number}")
 
 
-def geocode_nyc_address(street_address: str, city: str, state: str, zip_code: int) -> Optional[NYCAddressInfo]:
-    # We only support the five boroughs of NYC at this time
-    if not NYCZipCodes.match_zip(zip_code):
-        raise ValueError(f"Non-NYC zip code detected: {zip_code}")
-
+def geocode_nyc_address(street_address: str, city: str, state: str, zip_code: str) -> Optional[NYCAddressInfo]:
     attempts_remaining = 2
     while attempts_remaining > 0:
         attempts_remaining -= 1
@@ -179,7 +197,7 @@ def geocode_nyc_address(street_address: str, city: str, state: str, zip_code: in
             return nyc_addr_info
         # If the user has given us an invalid address. Tell them to buzz
         # off.
-        except AddressError as e:
+        except (AddressError, ValueError) as e:
             logging.exception("AddressError when validating address")
             # Raise to next level
             raise e
@@ -193,3 +211,63 @@ def geocode_nyc_address(street_address: str, city: str, state: str, zip_code: in
     # If we run out of tries, bail.
     logging.warning(f"Could not parse address: {street_address}, {city}, {state}, {zip_code}")
     return None
+
+
+def check_recaptcha_token(token: Optional[str], server_secret: str, remote_ip: Optional[str]) -> float:
+    payload = {"secret": server_secret, "response": token}
+    if remote_ip:
+        payload["remoteip"] = remote_ip
+
+    captcha_response = requests.post(
+        RECAPTCHA_TOKEN_VALIDATION_URL,
+        payload,
+    )
+
+    captcha_response.raise_for_status()
+
+    response_json = captcha_response.json()
+
+    # If "success" is missing or false, throw an error that this is an invalid token
+    if not response_json.get("success"):
+        raise ValueError("Invalid recaptcha token")
+
+    # If there is no score in the response, we are dealing with a v2 token,
+    # which has no concept of score, only binary success/failure of the manual
+    # checkbox captcha. In this case, we can be confident this is a human since
+    # they have completed the checkbox captcha, so we return 1.0 (100% human score)
+    return response_json.get("score", 1.0)
+
+
+def validate_recaptcha_tokens(
+    recaptcha_invisible_token: Optional[str], recaptcha_checkbox_token: Optional[str], remote_ip: Optional[str]
+) -> None:
+    if not RECAPTCHA_SECRET_KEY_V3 or not RECAPTCHA_SECRET_KEY_V2:
+        raise EnvironmentError(
+            "Enviornment variables RECAPTCHA_SERVER_SECRET_KEY_V2 and RECAPTCHA_SERVER_SECRET_KEY_V3 must be "
+            "set in order to validate recaptcha tokens"
+        )
+
+    # If we have a checkbox token, just check that token is valid, and if it is, we are good, since
+    # completing the checkbox is a good indication of human-ness
+    if recaptcha_checkbox_token:
+        check_recaptcha_token(recaptcha_checkbox_token, RECAPTCHA_SECRET_KEY_V2, remote_ip)
+        # The above call will throw if the token is invalid, so if we reach this point we are done
+        # validating
+        return
+
+    # If we don't have a checkbox token, get the score associated with the "invisible" token
+    # and if it's too low, throw an exception so we 401 them
+    # (which will prompt them to submit a checkbox in the frontend)
+    invisible_token_score = check_recaptcha_token(recaptcha_invisible_token, RECAPTCHA_SECRET_KEY_V3, remote_ip)
+
+    if invisible_token_score < RECAPTCHA_INVISIBLE_TOKEN_SCORE_THRESHOLD:
+        raise ValueError(
+            f"Score of {invisible_token_score} is less than our threshold of "
+            f"{RECAPTCHA_INVISIBLE_TOKEN_SCORE_THRESHOLD}"
+        )
+
+    if flag_state("JOIN_FORM_FAIL_ALL_INVISIBLE_RECAPTCHAS"):
+        raise ValueError(
+            "Feature flag JOIN_FORM_FAIL_ALL_INVISIBLE_RECAPTCHAS enabled, failing validation "
+            "even though this request should have succeeded"
+        )

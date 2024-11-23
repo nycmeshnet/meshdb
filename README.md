@@ -15,7 +15,7 @@ Devices, and Links; Any info we need in order to get hardware on a rooftop near 
 
 This project aims to provide a convenient, stable, and sane interface for use with
 robots and humans. For more information, [check the
-wiki](https://wiki.mesh.nycmesh.net/books/6-services-software/chapter/meshdb)
+wiki](https://wiki.nycmesh.net/books/6-services-software/chapter/meshdb)
 
 ## Setup
 
@@ -43,6 +43,14 @@ If you would like to develop in a [Dev Container](https://code.visualstudio.com/
 3. [Open the repo folder in the container](https://code.visualstudio.com/docs/devcontainers/containers#_quick-start-open-an-existing-folder-in-a-container).
 4. In a different shell, outside of VS Code, start the other containers: `docker compose up -d postgres pelias redis` (as below).
 5. Continue on the VS Code terminal (where your project is opened) follow normal developer setup.
+
+##### Advanced - MinIO for Local Dev
+If you are going to use [minio](https://min.io/) for local S3 bucket emulation (not required for most tasks), also
+start the minio related containers with `docker compose up -d minio createbuckets`. To have your local DB instance 
+use Minio, you will also need to set `S3_ENDPOINT="http://127.0.0.1:9000"` in your `.env` file.
+
+> [!NOTE]
+> You only need `createbuckets` once. It will initialize the bucket that MinIO talks to
 
 #### Host
 
@@ -285,6 +293,10 @@ then edit the relevant `.env` variable to reflect the URL of the desired endpoin
 ```sh
 ADMIN_MAP_BASE_URL=http://localhost:3000
 ```
+
+## How to add environment variables
+
+Follow this PR: https://github.com/nycmeshnet/meshdb/pull/617/files
 
 ### Backups
 

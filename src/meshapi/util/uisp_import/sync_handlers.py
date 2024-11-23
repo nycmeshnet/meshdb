@@ -6,6 +6,7 @@ from typing import List
 from django.db import transaction
 from django.db.models import Q
 
+from meshapi.admin import downclass_device
 from meshapi.models import LOS, Device, Link, Node, Sector
 from meshapi.serializers import DeviceSerializer, LinkSerializer
 from meshapi.types.uisp_api.data_links import DataLink as UISPDataLink
@@ -23,7 +24,6 @@ from meshapi.util.uisp_import.constants import (
 from meshapi.util.uisp_import.fetch_uisp import get_uisp_session
 from meshapi.util.uisp_import.update_objects import update_device_from_uisp_data, update_link_from_uisp_data
 from meshapi.util.uisp_import.utils import (
-    downclass_device,
     get_building_from_network_number,
     get_link_type,
     guess_compass_heading_from_device_name,
@@ -164,9 +164,28 @@ def import_and_sync_uisp_devices(uisp_devices: List[UISPDevice]) -> None:
             device = Device(**device_fields)
             device.save()
 
+    with transaction.atomic():
+        for device in Device.objects.filter(uisp_id__isnull=False):
+            uisp_uuid_set = {uisp_device["identification"]["id"] for uisp_device in uisp_devices}
+
+            if device.uisp_id and device.uisp_id not in uisp_uuid_set and device.status != Device.DeviceStatus.INACTIVE:
+                # If this device has been removed from UISP, mark it as inactive
+                device.status = Device.DeviceStatus.INACTIVE
+                device.save()
+
+                notify_admins_of_changes(
+                    device,
+                    [
+                        "Marked as inactive because there is no corresponding device in UISP, "
+                        "it was probably deleted there",
+                    ],
+                )
+
 
 def import_and_sync_uisp_links(uisp_links: List[UISPDataLink]) -> None:
     uisp_session = get_uisp_session()
+    uisp_uuid_set = {uisp_link["id"] for uisp_link in uisp_links}
+
     for uisp_link in uisp_links:
         uisp_uuid = uisp_link["id"]
         if not uisp_link["from"]["device"]:
@@ -214,17 +233,50 @@ def import_and_sync_uisp_links(uisp_links: List[UISPDataLink]) -> None:
 
         with transaction.atomic():
             existing_links: List[Link] = list(Link.objects.filter(uisp_id=uisp_uuid).select_for_update())
-            if existing_links:
+
+            if len(existing_links) > 1:
+                notify_administrators_of_data_issue(
+                    existing_links,
+                    LinkSerializer,
+                    message=f"Possible duplicate objects detected, links share the same UISP ID ({uisp_uuid})",
+                )
+
+            if not existing_links:
+                # Under some circumstances, UISP randomly changes the internal ID it uses for
+                # ethernet link objects. We attempt to detect that here, by finding existing MeshDB
+                # links that connect the same devices as the seemingly "new" link
+                #
+                # This is trickier than it may seem, since there are valid situations where a pair
+                # of devices can have multiple links for redundancy and bandwidth (e.g. S16 <-> Core LACP)
+                # We exclude these cases by only looking for "lost" MeshDB link objects which think
+                # they have a corresponding UISP link but don't, since this indicates a high likelihood
+                # of an ID change
+                existing_links = list(
+                    Link.objects.filter(
+                        (
+                            Q(from_device=uisp_from_device, to_device=uisp_to_device)
+                            | Q(from_device=uisp_to_device, to_device=uisp_from_device)
+                        )
+                        & Q(uisp_id__isnull=False)
+                        & ~Q(uisp_id="")
+                        & ~Q(uisp_id__in=uisp_uuid_set)
+                    ).select_for_update()
+                )
+
                 if len(existing_links) > 1:
                     notify_administrators_of_data_issue(
                         existing_links,
                         LinkSerializer,
-                        message=f"Possible duplicate objects detected, links share the same UISP ID ({uisp_uuid})",
+                        message=f"Possible duplicate objects detected, links share the same device pair "
+                        f"({uisp_from_device.name} & {uisp_to_device.name}), but are orphaned from their UISP data, "
+                        f"so we cannot tell if they are actually redundant physical links",
                     )
 
+            if existing_links:
                 for existing_link in existing_links:
                     change_list = update_link_from_uisp_data(
                         existing_link,
+                        uisp_uuid,
                         uisp_from_device,
                         uisp_to_device,
                         uisp_status,
@@ -257,6 +309,21 @@ def import_and_sync_uisp_links(uisp_links: List[UISPDataLink]) -> None:
                 ],
                 created=True,
             )
+
+    with transaction.atomic():
+        for link in Link.objects.filter(uisp_id__isnull=False):
+            if link.uisp_id and link.uisp_id not in uisp_uuid_set and link.status == Link.LinkStatus.ACTIVE:
+                # If this link has been removed from UISP, mark it as inactive
+                link.status = Link.LinkStatus.INACTIVE
+                link.save()
+
+                notify_admins_of_changes(
+                    link,
+                    [
+                        "Marked as inactive because there is no corresponding link in UISP, "
+                        "it was probably deleted there",
+                    ],
+                )
 
 
 def sync_link_table_into_los_objects() -> None:
