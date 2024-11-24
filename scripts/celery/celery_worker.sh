@@ -1,3 +1,3 @@
 #!/bin/bash
 
-celery -A meshdb worker -l INFO --uid $(id -u celery)
+celery -A meshdb worker -l DEBUG --uid $(id -u celery)
