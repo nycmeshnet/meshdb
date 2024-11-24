@@ -17,6 +17,7 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       labels:
+        admission.datadoghq.com/enabled: "false"
         app: meshdb-redis-app
         {{- include "meshdb.labels" . | nindent 8 }}
         {{- with .Values.podLabels }}
