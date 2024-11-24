@@ -12,9 +12,3 @@
   {% include "admin/color_theme_toggle.html" %}
 {% endif %}
 {% endblock %}
-
-
-{% block nav-breadcrumbs %}
-    {{ block.super }}
-    {% include "admin/read_only_warning_box.html" %}
-{% endblock %}
