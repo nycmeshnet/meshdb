@@ -39,3 +39,5 @@ data:
 
   RECAPTCHA_DISABLE_VALIDATION: {{ .Values.meshweb.recaptcha_disable | quote }}
   RECAPTCHA_INVISIBLE_TOKEN_SCORE_THRESHOLD: {{ .Values.meshweb.recaptcha_score_threshold | quote }}
+
+  OSTICKET_NEW_TICKET_ENDPOINT: {{ .Values.meshweb.osticket_new_ticket_endpoint | quote }}
