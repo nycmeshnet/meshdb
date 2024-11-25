@@ -134,7 +134,7 @@ class TestSlackNotification(TestCase):
             request_payload["text"],
             "Encountered the following data issue which may require admin attention: *Things are broken &amp; "
             "really bad*. When processing the following links: "
-            "<http://localhost/admin/meshapi/link/6600c6a5-f3dc-47cd-b791-c65ebade1f0e/change/|NN101 &lt;-&rt; NN102>. "
+            "<http://localhost/admin/meshapi/link/6600c6a5-f3dc-47cd-b791-c65ebade1f0e/change/|NN101 &lt;-&gt; NN102>. "
             "Please open the database admin UI using the provided links to correct this.\n\n"
             "The current database state of these object(s) is: \n"
             "```\n"
