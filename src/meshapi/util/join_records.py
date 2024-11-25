@@ -115,6 +115,11 @@ class JoinRecordProcessor:
             if record.version >= 2:
                 post_join_records_dict[record.uuid] = record
 
+        replayed_join_records_dict = {}
+        for record in self.get_all(since, "pre"):
+            if record.version >= 2:
+                replayed_join_records_dict[record.uuid] = record
+
         for uuid, record in pre_join_records_dict.values():
             if post_join_records_dict.get(uuid):
                 continue
@@ -123,6 +128,11 @@ class JoinRecordProcessor:
                 f"Did not find a corresponding post-submission join record for pre-submission join record {key}. Will supplement post-submission records."
             )
             post_join_records_dict[uuid] = record
+
+        # Remove join records that have already been successfully replayed
+        for uuid, record in replayed_join_records_dict.values():
+            if post_join_records_dict.get(uuid):
+               post_join_records_dict.pop(uuid) 
 
         return post_join_records_dict
 

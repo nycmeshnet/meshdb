@@ -91,10 +91,11 @@ class Command(BaseCommand):
 
             print(f"{response.status_code} : {response.data}")
 
-            # Upload info to S3
-            submission_datetime = datetime.fromisoformat(record.submission_time)
-            key = submission_datetime.strftime(f"{JOIN_RECORD_PREFIX}/replayed/%Y/%m/%d/%H/%M/%S.json")
-            p.upload(record, key)
+            # Upload info to S3 if successful
+            if 200 <= response.status_code and response.status_code <= 200:
+                submission_datetime = datetime.fromisoformat(record.submission_time)
+                key = submission_datetime.strftime(f"{JOIN_RECORD_PREFIX}/replayed/%Y/%m/%d/%H/%M/%S.json")
+                p.upload(record, key)
 
     @staticmethod
     def past_week() -> datetime:
