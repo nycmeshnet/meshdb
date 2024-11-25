@@ -69,6 +69,7 @@ dev = [
     "beautifulsoup4==4.12.*",
     "freezegun==1.5.1",
     "moto[s3]==5.0.*",
+    "tblib==3.0.*",
 ]
 
 [project.scripts]
