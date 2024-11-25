@@ -15,6 +15,7 @@ class Command(BaseCommand):
     "Defaults to viewing. Pass --write to write the records to MeshDB."
 
     def add_arguments(self, parser: ArgumentParser) -> None:
+        pass
         parser.add_argument(
             "--noinput", action="store_true", help="Tells Django to NOT prompt the user for input of any kind."
         )
@@ -27,10 +28,11 @@ class Command(BaseCommand):
             help="After a confirmation dialogue, replay the records into the Join Form endpoint.",
         )
 
+        # TODO (wdn): Add a test to evoke failure in --help
         parser.add_argument(
             "--since",
             type=lambda s: datetime.fromisoformat(s + "Z"),  # Adding the Z makes this a tz-aware datetime
-            help="Show records submitted since this date and time (UTC, 24-Hour) (%Y-%m-%d %H:%M:%S)",
+            help="Show records submitted since this date and time (UTC, 24-Hour) (yyyy-mm-dd HH:MM:SS)",
         )
 
     def handle(self, *args: Any, **options: Any) -> None:
