@@ -7,7 +7,7 @@ from unittest.mock import ANY, patch
 import requests_mock
 from django.contrib.auth.models import User
 from django.db.models import Q
-from django.test import Client, TestCase, TransactionTestCase
+from django.test import Client, TestCase, TransactionTestCase, tag
 from parameterized import parameterized
 
 from meshapi.models import Building, Install, Member, Node
@@ -1127,6 +1127,7 @@ def slow_install_init(*args, **kwargs):
 
 
 @patch("meshapi.views.forms.DISABLE_RECAPTCHA_VALIDATION", True)
+@tag("skip_on_parallel")
 class TestJoinFormRaceCondition(TransactionTestCase):
     c = Client()
     admin_c = Client()
