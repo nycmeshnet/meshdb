@@ -12,8 +12,21 @@ spec:
       {{- include "meshdb.selectorLabels" . | nindent 6 }}
   template:
     metadata:
-      {{- with .Values.podAnnotations }}
       annotations:
+          ad.datadoghq.com/redis.checks: |
+            {
+              "redisdb": {
+                "init_config": {},
+                "instances": [
+                  {
+                    "host": "%%host%%",
+                    "port":"6379",
+                    "password":""
+                  }
+                ]
+              }
+            }  
+      {{- with .Values.podAnnotations }}
         {{- toYaml . | nindent 8 }}
       {{- end }}
       labels:
