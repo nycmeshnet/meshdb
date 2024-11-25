@@ -21,7 +21,7 @@ spec:
                   {
                     "host": "%%host%%",
                     "port":"6379",
-                    "password":""
+                    "password":"%%env_REDIS_PASSWORD%%"
                   }
                 ]
               }
