@@ -1,6 +1,7 @@
 from argparse import ArgumentParser
 from dataclasses import asdict, fields
 from datetime import datetime, timedelta, timezone
+import logging
 from typing import Any
 
 from django.core.management.base import BaseCommand
@@ -32,29 +33,34 @@ class Command(BaseCommand):
         parser.add_argument(
             "--since",
             type=lambda s: datetime.fromisoformat(s + "Z"),  # Adding the Z makes this a tz-aware datetime
-            help="Show records submitted since this date and time (UTC, 24-Hour) (yyyy-mm-dd HH:MM:SS)",
+            help="Show records submitted since this date and time (UTC, 24-Hour) (yyyy-mm-ddTHH:MM:SS)",
         )
 
     def handle(self, *args: Any, **options: Any) -> None:
+        logging.info("Fetching Join Records...")
+
         p = JoinRecordProcessor()
 
         # Default to getting join records from 1 week ago unless otherwise specified
         since = options["since"] or self.past_week()
 
-        join_records = p.get_all(since)
+        # Ensure that the join records in pre-submission match the ones in post-submission
+        # This method will get both sets of records and supplement the post-submission
+        # records if any are missing.
+        post_join_records_dict = p.ensure_pre_post_consistency(since)
 
         table = PrettyTable()
         table.padding_width = 0
 
         table.field_names = (key.name for key in fields(JoinRecord))
 
-        for entry in join_records:
-            if (not options["all"]) and entry.install_number:
+        for uuid, record in post_join_records_dict.items():
+            if (not options["all"]) and record.install_number:
                 # Ignore submissions that are known good
-                join_records.remove(entry)
+                post_join_records_dict.pop(uuid)
                 continue
 
-            table.add_row(asdict(entry).values())
+            table.add_row(asdict(record).values())
 
         if not options["all"]:
             print("The following Join Requests HAVE NOT been successfully submitted.")
@@ -72,7 +78,7 @@ class Command(BaseCommand):
 
         print("Replaying Join Records...")
 
-        for record in join_records:
+        for record in post_join_records_dict.values():
             # Make the request
             r = JoinFormRequest(
                 **{k: v for k, v in record.__dict__.items() if k in JoinFormRequest.__dataclass_fields__}
@@ -87,7 +93,7 @@ class Command(BaseCommand):
 
             # Upload info to S3
             submission_datetime = datetime.fromisoformat(record.submission_time)
-            key = submission_datetime.strftime(f"{JOIN_RECORD_PREFIX}/%Y/%m/%d/%H/%M/%S.json")
+            key = submission_datetime.strftime(f"{JOIN_RECORD_PREFIX}/replayed/%Y/%m/%d/%H/%M/%S.json")
             p.upload(record, key)
 
     @staticmethod

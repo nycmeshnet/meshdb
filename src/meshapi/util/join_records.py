@@ -20,6 +20,8 @@ JOIN_RECORD_PREFIX = os.environ.get("JOIN_RECORD_PREFIX", "sample-basename")
 
 @dataclass
 class JoinRecord(JoinFormRequest):
+    version: int
+    uuid: str  # XXX (wdn): Should we consider making this a UUID?
     submission_time: str
     code: str
     replayed: int
@@ -59,10 +61,10 @@ class JoinRecordProcessor:
         except ClientError as e:
             logging.error(e)
 
-    def get_all(self, since: Optional[datetime.datetime] = None) -> list[JoinRecord]:
+    def get_all(self, since: Optional[datetime.datetime] = None, submission_prefix: str = "post") -> list[JoinRecord]:
         response = self.s3_client.list_objects_v2(
             Bucket=JOIN_RECORD_BUCKET_NAME,
-            Prefix=JOIN_RECORD_PREFIX,
+            Prefix=f"{JOIN_RECORD_PREFIX}/{submission_prefix}",
             StartAfter=since.strftime(f"{JOIN_RECORD_PREFIX}/%Y/%m/%d/%H/%M/%S.json")
             if isinstance(since, datetime.datetime)
             else "",
@@ -98,3 +100,36 @@ class JoinRecordProcessor:
             print(f"Folder '{folder_path}' deleted from bucket '{JOIN_RECORD_BUCKET_NAME}'.")
         else:
             print(f"No objects found in folder '{folder_path}'.")
+
+    def ensure_pre_post_consistency(self, since: datetime.datetime):
+        # Get join records from both pre and post submissions so we can make sure
+        # there are no discrepancies
+        # Convert the lists to dictionaries to make them easier to search by UUID
+        pre_join_records_dict = {}
+        for record in self.get_all(since, "pre"):
+            if record.version >= 2:
+                pre_join_records_dict[record.uuid] = record
+
+        post_join_records_dict = {}
+        for record in self.get_all(since, "pre"):
+            if record.version >= 2:
+                post_join_records_dict[record.uuid] = record
+
+        for uuid, record in pre_join_records_dict.values():
+            if post_join_records_dict.get(uuid):
+                continue
+            key = self.get_key(record)
+            logging.warning(
+                f"Did not find a corresponding post-submission join record for pre-submission join record {key}. Will supplement post-submission records."
+            )
+            post_join_records_dict[uuid] = record
+
+        return post_join_records_dict
+
+
+    @staticmethod
+    def get_key(join_record: JoinRecord, pre: bool = False):
+        submission_time = datetime.datetime.fromisoformat(join_record.submission_time)
+        return submission_time.strftime(
+            f"{JOIN_RECORD_PREFIX}/{"pre" if pre else "post"}/{join_record.uuid.split(" - ")[1]}/%Y/%m/%d/%H/%M/%S.json"
+        )
