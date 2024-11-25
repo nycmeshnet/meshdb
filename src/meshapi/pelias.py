@@ -1,9 +1,9 @@
 import logging
+import os
 import re
 
 import inflect
 import requests
-from django.conf import os
 
 from meshapi.util.constants import DEFAULT_EXTERNAL_API_TIMEOUT_SECONDS
 
@@ -75,8 +75,7 @@ def humanify_street_address(dob_address_str: str) -> str:
             p = inflect.engine()
             for match in re.finditer(r"(\d+)\W", street_substr_title):
                 street_substr_ordinals += street_substr_title[last_touched_in_street : match.start(1)]
-                num = int(match[1])
-                street_substr_ordinals += p.ordinal(num)
+                street_substr_ordinals += p.ordinal(match[1])
                 last_touched_in_street = match.end(1)
 
             street_substr_ordinals += street_substr_title[last_touched_in_street:]
