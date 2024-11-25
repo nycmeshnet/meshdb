@@ -1,6 +1,10 @@
 
 
-let currentSplit = 60;
+let currentSplit = parseFloat(localStorage.getItem("MESHDB_MAP_SIZE"));
+if (isNaN(currentSplit)) {
+    currentSplit = 60;
+}
+
 
 // Taken from: https://stackoverflow.com/a/11381730
 const mobileCheck = function() {
@@ -399,6 +403,8 @@ function setMapProportions(leftWidth){
     currentSplit = leftWidth;
     leftDiv.style.width = `${leftWidth}%`;
     rightDiv.style.width = `${100 - leftWidth}%`;
+
+    localStorage.setItem("MESHDB_MAP_SIZE", leftWidth.toString());
 }
 
 
