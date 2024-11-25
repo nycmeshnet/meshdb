@@ -117,9 +117,9 @@ PERMISSIONS_POLICY: Dict[str, List[str]] = {
     "usb": [],
 }
 
-LOS_URL = os.environ.get("LOS_URL", "https://devlos.mesh.nycmesh.net")
-MAP_URL = os.environ.get("MAP_BASE_URL", "https://devmap.mesh.nycmesh.net")
-FORMS_URL = os.environ.get("FORMS_URL", "https://devforms.mesh.nycmesh.net")
+LOS_URL = os.environ.get("LOS_URL", "https://los.devdb.nycmesh.net")
+MAP_URL = os.environ.get("MAP_BASE_URL", "https://map.nycmesh.net")
+FORMS_URL = os.environ.get("FORMS_URL", "https://forms.devdb.nycmesh.net")
 
 # SMTP Config for password reset emails
 EMAIL_HOST = os.environ.get("SMTP_HOST")
@@ -129,26 +129,15 @@ EMAIL_HOST_PASSWORD = os.environ.get("SMTP_PASSWORD")
 EMAIL_USE_TLS = True
 
 ALLOWED_HOSTS = [
-    "db.mesh.nycmesh.net",
-    "db.mesh",
     "db.nycmesh.net",
     "meshdb",
     "nginx",
-    "devdb.mesh.nycmesh.net",
     "devdb.nycmesh.net",
 ]
 
 CORS_ALLOWED_ORIGINS = [
-    "https://forms.mesh.nycmesh.net",
-    "https://devforms.mesh.nycmesh.net",
     "https://forms.nycmesh.net",
     "https://forms.devdb.nycmesh.net",
-    "https://map.mesh.nycmesh.net",
-    "https://devmap.mesh.nycmesh.net",
-    "https://map.db.nycmesh.net",
-    "https://map.devdb.nycmesh.net",
-    "https://adminmap.mesh.nycmesh.net",
-    "https://devadminmap.mesh.nycmesh.net",
     "https://adminmap.db.nycmesh.net",
     "https://adminmap.devdb.nycmesh.net",
     "https://devdb.nycmesh.net",
@@ -166,10 +155,6 @@ CSRF_TRUSTED_ORIGINS = [
     "http://nginx:8080",
     "https://db.nycmesh.net",
     "https://devdb.nycmesh.net",
-    "http://devdb.mesh.nycmesh.net",
-    "https://devdb.mesh.nycmesh.net",
-    "http://db.mesh.nycmesh.net",
-    "https://db.mesh.nycmesh.net",
 ]
 
 if DEBUG:
