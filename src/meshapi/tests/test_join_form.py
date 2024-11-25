@@ -9,6 +9,7 @@ from django.contrib.auth.models import User
 from django.db.models import Q
 from django.test import Client, TestCase, TransactionTestCase
 from parameterized import parameterized
+from validate_email.exceptions import DNSTimeoutError, SMTPTemporaryError
 
 from meshapi.models import Building, Install, Member, Node
 from meshapi.views import JoinFormRequest
@@ -358,6 +359,32 @@ class TestJoinForm(TestCase):
 
         response = self.c.post("/api/v1/join/", request, content_type="application/json")
         code = 400
+        self.assertEqual(
+            code,
+            response.status_code,
+            f"status code incorrect for invalid email valid phone. Should be {code}, but got {response.status_code}.\n Response is: {response.content.decode('utf-8')}",
+        )
+
+    @patch("meshapi.validation.validate_email_or_fail")
+    def test_email_parsing_fails(self, mock_validate):
+        mock_validate.side_effect = DNSTimeoutError()
+        request, _ = pull_apart_join_form_submission(valid_join_form_submission)
+
+        response = self.c.post("/api/v1/join/", request, content_type="application/json")
+        code = 500
+        self.assertEqual(
+            code,
+            response.status_code,
+            f"status code incorrect for invalid email valid phone. Should be {code}, but got {response.status_code}.\n Response is: {response.content.decode('utf-8')}",
+        )
+
+    @patch("meshapi.validation.validate_email_or_fail")
+    def test_email_parsing_fails_temporary_issue(self, mock_validate):
+        mock_validate.side_effect = SMTPTemporaryError({"err": "temporary mock issue"})
+        request, _ = pull_apart_join_form_submission(valid_join_form_submission)
+
+        response = self.c.post("/api/v1/join/", request, content_type="application/json")
+        code = 201
         self.assertEqual(
             code,
             response.status_code,
