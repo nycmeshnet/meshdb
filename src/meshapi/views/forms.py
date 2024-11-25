@@ -17,7 +17,7 @@ from rest_framework.response import Response
 from rest_framework_dataclasses.serializers import DataclassSerializer
 
 from meshapi.exceptions import AddressError
-from meshapi.models import Building, Install, Member, Node
+from meshapi.models import AddressTruthSource, Building, Install, Member, Node
 from meshapi.permissions import HasNNAssignPermission, LegacyNNAssignmentPassword
 from meshapi.serializers import MemberSerializer
 from meshapi.util.admin_notifications import notify_administrators_of_data_issue
@@ -32,7 +32,6 @@ from meshapi.validation import (
     validate_phone_number,
     validate_recaptcha_tokens,
 )
-from meshdb.utils.spreadsheet_import.building.constants import AddressTruthSource
 
 logging.basicConfig()
 
