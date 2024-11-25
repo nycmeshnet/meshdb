@@ -62,7 +62,9 @@ jobs:
           AWS_ACCESS_KEY_ID: sampleaccesskey
           AWS_SECRET_ACCESS_KEY: samplesecretkey
           AWS_REGION: us-east-1
-        run: coverage run src/manage.py test meshapi meshapi_hooks
+        run: | 
+          coverage run src/manage.py test meshapi meshapi_hooks --tag skip_on_parallel &&
+          coverage run src/manage.py test meshapi meshapi_hooks --parallel 4 --exclude-tag skip_on_parallel
       - name: Write coverage report to disk
         run: coverage html
       - name: Upload coverage reports to Codecov
