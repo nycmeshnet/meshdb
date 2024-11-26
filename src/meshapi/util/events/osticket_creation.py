@@ -6,6 +6,7 @@ import requests
 from django.db.models.base import ModelBase
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+from flags.state import flag_enabled
 
 from meshapi.models import Install
 from meshapi.util.django_flag_decorator import skip_if_flag_disabled
@@ -71,11 +72,16 @@ def create_os_ticket_for_install(sender: ModelBase, instance: Install, created: 
         "phone": phone,
         "location": location,
         "rooftop": rooftop,
-        "existingNetworkNumber": str(install.network_number) if install.network_number else "",
         "ncl": ncl,
         "ip": "*.*.*.*",
         "locale": "en",
     }
+
+    if flag_enabled("INTEGRATION_OSTICKET_INCLUDE_EXISTING_NETWORK_NUMBER"):
+        if install.network_number:
+            data["existingNetworkNumber"] = str(install.network_number)
+        else:
+            data["existingNetworkNumber"] = ""
 
     attempts = 0
     while attempts < 4:
