@@ -71,6 +71,7 @@ def create_os_ticket_for_install(sender: ModelBase, instance: Install, created: 
         "phone": phone,
         "location": location,
         "rooftop": rooftop,
+        "existingNetworkNumber": str(install.network_number) if install.network_number else "",
         "ncl": ncl,
         "ip": "*.*.*.*",
         "locale": "en",
