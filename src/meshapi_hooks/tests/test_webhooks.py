@@ -9,7 +9,7 @@ from meshapi_hooks.hooks import CelerySerializerHook
 multiprocessing.set_start_method("fork")
 
 from celery.contrib.testing.worker import start_worker
-from django.test import TransactionTestCase
+from django.test import TransactionTestCase, tag
 
 from meshapi.models import Building, Install, Member
 from meshapi.tests.sample_data import sample_building, sample_install, sample_member
@@ -48,6 +48,7 @@ def dummy_webhook_listener(http_requests_queue, bad_requests_counter):
     flask_app.run(host="127.0.0.1", port=8091, debug=False)
 
 
+@tag("skip_on_parallel")
 class TestMeshAPIWebhooks(TransactionTestCase):
     @classmethod
     def setUpClass(cls):
