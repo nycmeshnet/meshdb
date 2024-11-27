@@ -71,6 +71,7 @@ def create_os_ticket_for_install(sender: ModelBase, instance: Install, created: 
         "message": message,
         "phone": phone,
         "location": location,
+        "apt": install.unit or "",
         "rooftop": rooftop,
         "ncl": ncl,
         "ip": "*.*.*.*",
