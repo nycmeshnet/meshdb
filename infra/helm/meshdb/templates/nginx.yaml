@@ -11,6 +11,7 @@ spec:
   selector:
     matchLabels:
       {{- include "meshdb.selectorLabels" . | nindent 6 }}
+  revisionHistoryLimit: {{ .Values.revisionHistoryLimit }}
   template:
     metadata:
       {{- with .Values.podAnnotations }}
