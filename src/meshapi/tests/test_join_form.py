@@ -264,6 +264,123 @@ class TestJoinForm(TestCase):
         )
         validate_successful_join_form_submission(self, "Valid Join Form", s, response)
 
+    def test_valid_join_form_use_original_with_results_from_geosearch(self):
+        submission = valid_join_form_submission
+        submission["street_address"] = "151 B Street"
+        submission["city"] = "NYC"
+        submission["phone_number"] = "1111111111"
+
+        self.requests_mocker.get(
+            NYC_PLANNING_LABS_GEOCODE_URL,
+            json=submission["dob_addr_response"],
+        )
+
+        request, s = pull_apart_join_form_submission(submission)
+        s.street_address = "151 B Street"
+        request["trust_me_bro"] = False
+
+        response = self.c.post("/api/v1/join/", request, content_type="application/json")
+        code = 409
+        self.assertEqual(
+            code,
+            response.status_code,
+            f"status code incorrect for Valid Join Form. Should be {code}, but got {response.status_code}.\n Response is: {response.content.decode('utf-8')}",
+        )
+
+        request["trust_me_bro"] = True
+
+        response = self.c.post("/api/v1/join/", request, content_type="application/json")
+        code = 201
+        self.assertEqual(
+            code,
+            response.status_code,
+            f"status code incorrect for Valid Join Form. Should be {code}, but got {response.status_code}.\n Response is: {response.content.decode('utf-8')}",
+        )
+
+        install = Install.objects.get(id=response.json()["install_id"])
+        self.assertEqual(install.building.street_address, "151 B Street")
+        self.assertEqual(install.building.city, "NYC")
+        self.assertEqual(install.member.phone_number, "+1 111 111 1111")
+
+        validate_successful_join_form_submission(self, "Valid Join Form", s, response)
+
+    def test_valid_join_form_use_original_without_results_from_geosearch(self):
+        submission = valid_join_form_submission
+        submission["street_address"] = "151 B Street"
+        submission["city"] = "NYC"
+        submission["phone_number"] = "1111111111"
+
+        self.requests_mocker.get(NYC_PLANNING_LABS_GEOCODE_URL, json={"features": []})
+
+        request, s = pull_apart_join_form_submission(submission)
+        s.street_address = "151 B Street"
+        request["trust_me_bro"] = False
+
+        response = self.c.post("/api/v1/join/", request, content_type="application/json")
+        code = 409
+        self.assertEqual(
+            code,
+            response.status_code,
+            f"status code incorrect for Valid Join Form. Should be {code}, but got {response.status_code}.\n Response is: {response.content.decode('utf-8')}",
+        )
+
+        request["trust_me_bro"] = True
+
+        response = self.c.post("/api/v1/join/", request, content_type="application/json")
+        code = 201
+        self.assertEqual(
+            code,
+            response.status_code,
+            f"status code incorrect for Valid Join Form. Should be {code}, but got {response.status_code}.\n Response is: {response.content.decode('utf-8')}",
+        )
+
+        install = Install.objects.get(id=response.json()["install_id"])
+        self.assertEqual(install.building.street_address, "151 B Street")
+        self.assertEqual(install.building.city, "NYC")
+        self.assertEqual(install.member.phone_number, "+1 111 111 1111")
+
+        validate_successful_join_form_submission(self, "Valid Join Form", s, response)
+
+    def test_valid_trust_me_bro_bad_zip(self):
+        submission = valid_join_form_submission
+        submission["zip_code"] = "00000"
+
+        self.requests_mocker.get(
+            NYC_PLANNING_LABS_GEOCODE_URL,
+            json=submission["dob_addr_response"],
+        )
+
+        request, s = pull_apart_join_form_submission(submission)
+        request["trust_me_bro"] = True
+
+        response = self.c.post("/api/v1/join/", request, content_type="application/json")
+        code = 400
+        self.assertEqual(
+            code,
+            response.status_code,
+            f"status code incorrect for Valid Join Form. Should be {code}, but got {response.status_code}.\n Response is: {response.content.decode('utf-8')}",
+        )
+
+    def test_valid_trust_me_bro_bad_state(self):
+        submission = valid_join_form_submission
+        submission["state"] = "CA"
+
+        self.requests_mocker.get(
+            NYC_PLANNING_LABS_GEOCODE_URL,
+            json=submission["dob_addr_response"],
+        )
+
+        request, s = pull_apart_join_form_submission(submission)
+        request["trust_me_bro"] = True
+
+        response = self.c.post("/api/v1/join/", request, content_type="application/json")
+        code = 400
+        self.assertEqual(
+            code,
+            response.status_code,
+            f"status code incorrect for Valid Join Form. Should be {code}, but got {response.status_code}.\n Response is: {response.content.decode('utf-8')}",
+        )
+
     def test_valid_join_form_aussie_intl_phone(self):
         request, s = pull_apart_join_form_submission(valid_join_form_submission)
 
