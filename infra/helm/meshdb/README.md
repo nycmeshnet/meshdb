@@ -14,7 +14,7 @@ A Helm chart for Kubernetes. Many meshweb variables are better described in the 
 | aws.secret_access_key | string | `"the_real_value"` | AWS secret access key for S3 |
 | fullnameOverride | string | `"meshdb"` | App name |
 | image.pullPolicy | string | `"Always"` | pullPolicy for all images, should be `Always` |
-| map.base_url | string | `"http://adminmap.mesh.nycmesh.net"` | Map url |
+| map.base_url | string | `"http://adminmap.db.nycmesh.net"` | Map url |
 | meshdb_app_namespace | string | `"meshdb"` | K8s namespace used for all resources |
 | meshweb.affinity | object | `{}` |  |
 | meshweb.backup_s3_base_folder | string | `"meshdb-backups/development/"` | Base folder for django postgres backups |
