@@ -15,7 +15,7 @@ SITE_BASE_URL = os.environ.get("SITE_BASE_URL")
 
 
 def escape_slack_text(text: str) -> str:
-    return text.replace("↔", "<->").replace("&", "&amp;").replace("<", "&lt;").replace(">", "&rt;")
+    return text.replace("↔", "<->").replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 
 
 def notify_administrators_of_data_issue(
