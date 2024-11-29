@@ -7,7 +7,7 @@ from typing import Any
 from django.core.management.base import BaseCommand
 from prettytable import PrettyTable
 
-from meshapi.util.join_records import JOIN_RECORD_PREFIX, JoinRecord, JoinRecordProcessor
+from meshapi.util.join_records import JOIN_RECORD_PREFIX, JoinRecord, JoinRecordProcessor, SubmissionStage
 from meshapi.views.forms import JoinFormRequest, process_join_form
 
 
@@ -29,7 +29,6 @@ class Command(BaseCommand):
             help="After a confirmation dialogue, replay the records into the Join Form endpoint.",
         )
 
-        # TODO (wdn): Add a test to evoke failure in --help
         parser.add_argument(
             "--since",
             type=lambda s: datetime.fromisoformat(s + "Z"),  # Adding the Z makes this a tz-aware datetime
@@ -57,6 +56,12 @@ class Command(BaseCommand):
         for uuid, record in post_join_records_dict.items():
             if (not options["all"]) and record.install_number:
                 # Ignore submissions that are known good
+                post_join_records_dict.pop(uuid)
+                continue
+
+            # TODO: Don't bother replaying 400's. All we care about are
+            # 500's and nulls
+            if (not options["all"]) and record.code and 400 <= int(record.code) and int(record.code) <= 499:
                 post_join_records_dict.pop(uuid)
                 continue
 
@@ -92,9 +97,8 @@ class Command(BaseCommand):
             print(f"{response.status_code} : {response.data}")
 
             # Upload info to S3 if successful
-            if 200 <= response.status_code and response.status_code <= 200:
-                submission_datetime = datetime.fromisoformat(record.submission_time)
-                key = submission_datetime.strftime(f"{JOIN_RECORD_PREFIX}/replayed/%Y/%m/%d/%H/%M/%S.json")
+            if record.install_number:
+                key = JoinRecordProcessor.get_key(record, SubmissionStage.REPLAYED)
                 p.upload(record, key)
 
     @staticmethod

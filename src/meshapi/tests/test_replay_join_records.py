@@ -7,7 +7,7 @@ from django.test import TestCase
 from moto import mock_aws
 
 from meshapi.models.install import Install
-from meshapi.tests.sample_join_records import MOCK_JOIN_RECORD_PREFIX, basic_sample_join_records
+from meshapi.tests.sample_join_records import MOCK_JOIN_RECORD_PREFIX, basic_sample_pre_submission_join_records, basic_sample_post_submission_join_records 
 from meshapi.util.join_records import (
     JOIN_RECORD_BUCKET_NAME,
     JoinRecord,
@@ -23,42 +23,53 @@ from meshapi.validation import NYCAddressInfo
 # somehow from Russia), and maybe mock a MeshDB 500 that just ends in us putting
 # the data back.
 @mock_aws
+@patch("meshapi.util.join_records.JOIN_RECORD_PREFIX", MOCK_JOIN_RECORD_PREFIX)
 class TestReplayJoinRecords(TestCase):
     p = JoinRecordProcessor()
 
     def setUp(self) -> None:
+        print(JOIN_RECORD_BUCKET_NAME)
         self.p.s3_client.create_bucket(Bucket=JOIN_RECORD_BUCKET_NAME)
         self.p.flush_test_data()
+
+        # Load the samples into S3
+        for key, record in basic_sample_pre_submission_join_records.items():
+            print(f"Uploading to {key}")
+            self.p.upload(record, key)
+
+        for key, record in basic_sample_post_submission_join_records.items():
+            self.p.upload(record, key)
 
     def tearDown(self) -> None:
         self.p.flush_test_data()
 
-    @patch("meshapi.util.join_records.JOIN_RECORD_PREFIX", MOCK_JOIN_RECORD_PREFIX)
-    def test_get_all_since(self):
-        # Load the samples into S3
-        for key, record in basic_sample_join_records.items():
-            self.p.upload(record, key)
+    # I broke the help menu once upon a time so I need to make sure this works.
+    def test_help_works(self):
+        management.call_command("replay_join_records", "--help")
 
+    def test_list_records(self):
+        management.call_command("replay_join_records")
+
+    def test_get_all_since(self):
         records_since = self.p.get_all(since=datetime.fromisoformat("2024-10-01 00:00:00"))
 
         self.assertEqual(len(records_since), 2)
 
         self.assertEqual(
-            basic_sample_join_records[f"{MOCK_JOIN_RECORD_PREFIX}/2024/10/28/12/34/56.json"], records_since[0]
+            basic_sample_post_submission_join_records[f"{MOCK_JOIN_RECORD_PREFIX}/v3/post/2024/10/28/12/34/56/ec7b.json"], records_since[0]
         )
         self.assertEqual(
-            basic_sample_join_records[f"{MOCK_JOIN_RECORD_PREFIX}/2024/10/30/12/34/57.json"], records_since[1]
+            basic_sample_post_submission_join_records[f"{MOCK_JOIN_RECORD_PREFIX}/v3/post/2024/10/30/12/34/57/0490.json"], records_since[1]
         )
 
         records_since = self.p.get_all(since=datetime.fromisoformat("2024-10-29 00:00:00"))
         self.assertEqual(len(records_since), 1)
 
         self.assertEqual(
-            basic_sample_join_records[f"{MOCK_JOIN_RECORD_PREFIX}/2024/10/30/12/34/57.json"], records_since[0]
+            basic_sample_post_submission_join_records[f"{MOCK_JOIN_RECORD_PREFIX}/v3/post/2024/10/30/12/34/57/0490.json"], records_since[0]
         )
 
     @patch("meshapi.management.commands.replay_join_records.Command.past_week")
-    @patch("meshapi.util.join_records.JOIN_RECORD_PREFIX", MOCK_JOIN_RECORD_PREFIX)
     @patch("meshapi.views.forms.geocode_nyc_address")
     def test_replay_basic_join_records(self, mock_geocode_func, past_week_function):
         halloween_minus_one_week = datetime(2024, 10, 31, 8, 0, 0, 0) - timedelta(days=7)
@@ -67,9 +78,6 @@ class TestReplayJoinRecords(TestCase):
             NYCAddressInfo("197 Prospect Place", "Brooklyn", "NY", "11238"),
             ValueError("NJ not allowed yet!"),
         ]
-        # Load the samples into S3
-        for key, record in basic_sample_join_records.items():
-            self.p.upload(record, key)
 
         # Replay the records (this should get from the last week (halloween -7 days))
         management.call_command("replay_join_records", "--noinput", "--write")
@@ -112,7 +120,7 @@ class TestReplayJoinRecords(TestCase):
 
     # This is just to make codecov happy
     def test_s3_content_to_join_record(self):
-        sample_key = "dev-join-form-submissions/2024/11/01/11/33/49.json"
+        sample_key = f"{MOCK_JOIN_RECORD_PREFIX}/v3/post/2024/11/01/11/33/49/0490.json"
 
         # We're converting this...
         sample_join_record_s3_content = json.dumps(
@@ -130,6 +138,8 @@ class TestReplayJoinRecords(TestCase):
                 "referral": "I googled it.",
                 "ncl": True,
                 "trust_me_bro": False,
+                "version": 3,
+                "uuid": "1a55b949-0490-4b78-a2e8-10aea41d6f1d",
                 "code": "201",
                 "replayed": 0,
                 "install_number": 1002,
@@ -151,6 +161,8 @@ class TestReplayJoinRecords(TestCase):
             referral="I googled it.",
             ncl=True,
             trust_me_bro=False,
+            version=3,
+            uuid="1a55b949-0490-4b78-a2e8-10aea41d6f1d",
             submission_time="2024-11-01T11:33:49",
             code="201",
             replayed=0,
