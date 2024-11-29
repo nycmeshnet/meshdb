@@ -6,6 +6,8 @@ from collections import defaultdict
 from enum import Enum
 from typing import Dict, List, Optional, Tuple
 
+import dateutil.tz
+
 
 class SpreadsheetStatus(Enum):
     installed = "Installed"
@@ -127,7 +129,9 @@ def get_spreadsheet_rows(
                 continue
 
             try:
-                request_date = datetime.datetime.strptime(row["Timestamp"], "%m/%d/%Y %H:%M:%S")
+                request_date = datetime.datetime.strptime(row["Timestamp"], "%m/%d/%Y %H:%M:%S").replace(
+                    tzinfo=dateutil.tz.tzoffset("EST", -5 * 60 * 60)
+                )
             except ValueError:
                 skipped_rows[node_id] = "Invalid timestamp"
                 continue
