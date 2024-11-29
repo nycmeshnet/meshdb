@@ -161,7 +161,7 @@ def process_join_form(r: JoinFormRequest, request: Optional[Request] = None) -> 
         return Response(
             {
                 "detail": "Non-NYC registrations are not supported at this time. Please double check your zip code, "
-                "try again later, or send an email to support@nycmesh.net"
+                "or send an email to support@nycmesh.net"
             },
             status=status.HTTP_400_BAD_REQUEST,
         )
