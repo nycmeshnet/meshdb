@@ -46,25 +46,26 @@ class Command(BaseCommand):
         # Ensure that the join records in pre-submission match the ones in post-submission
         # This method will get both sets of records and supplement the post-submission
         # records if any are missing.
-        post_join_records_dict = p.ensure_pre_post_consistency(since)
+        consistent_join_records_dict = p.ensure_pre_post_consistency(since)
 
         table = PrettyTable()
         table.padding_width = 0
 
         table.field_names = (key.name for key in fields(JoinRecord))
 
-        for uuid, record in post_join_records_dict.items():
+        join_records_to_replay = {}
+
+        for uuid, record in consistent_join_records_dict.items():
             if (not options["all"]) and record.install_number:
                 # Ignore submissions that are known good
-                post_join_records_dict.pop(uuid)
                 continue
 
             # TODO: Don't bother replaying 400's. All we care about are
             # 500's and nulls
             if (not options["all"]) and record.code and 400 <= int(record.code) and int(record.code) <= 499:
-                post_join_records_dict.pop(uuid)
                 continue
 
+            join_records_to_replay[uuid] = record
             table.add_row(asdict(record).values())
 
         if not options["all"]:
@@ -83,7 +84,7 @@ class Command(BaseCommand):
 
         print("Replaying Join Records...")
 
-        for record in post_join_records_dict.values():
+        for record in join_records_to_replay.values():
             # Make the request
             r = JoinFormRequest(
                 **{k: v for k, v in record.__dict__.items() if k in JoinFormRequest.__dataclass_fields__}
