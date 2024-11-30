@@ -83,55 +83,6 @@ class TestReplayJoinRecords(TestCase):
             records_since[0],
         )
 
-    @patch("meshapi.management.commands.replay_join_records.Command.past_week")
-    @patch("meshapi.views.forms.geocode_nyc_address")
-    def test_replay_basic_join_records(self, mock_geocode_func, past_week_function):
-        halloween_minus_one_week = datetime(2024, 10, 31, 8, 0, 0, 0) - timedelta(days=7)
-        past_week_function.return_value = halloween_minus_one_week
-        mock_geocode_func.side_effect = [
-            NYCAddressInfo("197 Prospect Place", "Brooklyn", "NY", "11238"),
-            ValueError("NJ not allowed yet!"),
-        ]
-
-        # Replay the records (this should get from the last week (halloween -7 days))
-        management.call_command("replay_join_records", "--noinput", "--write")
-
-        records = self.p.get_all(submission_prefix=SubmissionStage.REPLAYED)
-
-        self.assertEqual(2, len(records), "Got unexpected number of records in mocked S3 bucket.")
-
-        # The first record should have been fine and dandy
-        r = records[0]
-        expected_code = "201"
-        self.assertEqual(
-            expected_code,
-            r.code,
-            f"Did not find correct replay code in mocked S3 bucket. Expected: {expected_code}, Got: {r.code}",
-        )
-        self.assertEqual(1, r.replayed, "Did not get expected replay count.")
-
-        # XXX (wdn): Assert that replayed data was correctly replayed.
-        # It's probably good enough to do this with the install number,
-        # but it would be nice to have the UUIDs that get returned.
-        install = Install.objects.get(install_number=r.install_number)
-        self.assertEqual("Jon Smith", install.member.name, "Did not get expected name for submitted install.")
-        self.assertEqual(
-            "197 Prospect Place",
-            install.building.street_address,
-            "Did not get expected street address for submitted install.",
-        )
-
-        # The next record should have failed because it lives in NJ
-        r = records[1]
-        expected_code = "400"
-        self.assertEqual(
-            expected_code,
-            r.code,
-            f"Did not find correct replay code in mocked S3 bucket. Expected: {expected_code}, Got: {r.code}",
-        )
-        self.assertEqual(2, r.replayed, "Did not get expected replay count.")
-        self.assertEqual(None, r.install_number, "Install Number is not None.")
-
     # This is just to make codecov happy
     def test_s3_content_to_join_record(self):
         sample_key = f"{MOCK_JOIN_RECORD_PREFIX}/v3/post/2024/11/01/11/33/49/0490.json"
@@ -189,3 +140,54 @@ class TestReplayJoinRecords(TestCase):
             print(sample_join_record)
             print(join_record)
             raise e
+
+    @patch("meshapi.management.commands.replay_join_records.Command.past_week")
+    @patch("meshapi.views.forms.geocode_nyc_address")
+    def test_replay_basic_join_records(self, mock_geocode_func, past_week_function):
+        halloween_minus_one_week = datetime(2024, 10, 31, 8, 0, 0, 0) - timedelta(days=7)
+        past_week_function.return_value = halloween_minus_one_week
+        mock_geocode_func.side_effect = [
+            NYCAddressInfo("197 Prospect Place", "Brooklyn", "NY", "11238"),
+            ValueError("NJ not allowed yet!"),
+        ]
+
+        # Replay the records (this should get from the last week (halloween -7 days))
+        management.call_command("replay_join_records", "--noinput", "--write")
+
+        records = self.p.get_all(submission_prefix=SubmissionStage.POST)
+
+        # Ensure we still only have two records. The replay script should've
+        # only updated the ones that were already there.
+        self.assertEqual(2, len(records), "Got unexpected number of records in mocked S3 bucket.")
+
+        # The first record should have been fine and dandy
+        r = records[0]
+        expected_code = "201"
+        self.assertEqual(
+            expected_code,
+            r.code,
+            f"Did not find correct replay code in mocked S3 bucket. Expected: {expected_code}, Got: {r.code}",
+        )
+        self.assertEqual(1, r.replayed, "Did not get expected replay count.")
+
+        # XXX (wdn): Assert that replayed data was correctly replayed.
+        # It's probably good enough to do this with the install number,
+        # but it would be nice to have the UUIDs that get returned.
+        install = Install.objects.get(install_number=r.install_number)
+        self.assertEqual("Jon Smith", install.member.name, "Did not get expected name for submitted install.")
+        self.assertEqual(
+            "197 Prospect Place",
+            install.building.street_address,
+            "Did not get expected street address for submitted install.",
+        )
+
+        # The next record should have failed because it lives in NJ
+        r = records[1]
+        expected_code = "400"
+        self.assertEqual(
+            expected_code,
+            r.code,
+            f"Did not find correct replay code in mocked S3 bucket. Expected: {expected_code}, Got: {r.code}",
+        )
+        self.assertEqual(2, r.replayed, "Did not get expected replay count.")
+        self.assertEqual(None, r.install_number, "Install Number is not None.")

@@ -96,6 +96,10 @@ class Command(BaseCommand):
                 print("Operation cancelled.")
                 return
 
+        if not join_records_to_replay:
+            logging.warning("Found no join records to replay. Quitting")
+            return
+
         print("Replaying Join Records...")
 
         for record in join_records_to_replay.values():
@@ -111,8 +115,7 @@ class Command(BaseCommand):
 
             print(f"{response.status_code} : {response.data}")
 
-            # Upload info to S3 if successful
-            key = JoinRecordProcessor.get_key(record, SubmissionStage.REPLAYED)
+            key = JoinRecordProcessor.get_key(record, SubmissionStage.POST)
             p.upload(record, key)
 
     @staticmethod

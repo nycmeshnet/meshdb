@@ -22,7 +22,6 @@ JOIN_RECORD_PREFIX = os.environ.get("JOIN_RECORD_PREFIX", "sample-basename")
 class SubmissionStage(Enum):
     PRE = "pre"
     POST = "post"
-    REPLAYED = "replayed"
 
 
 @dataclass
@@ -142,11 +141,6 @@ class JoinRecordProcessor:
             if record.version >= 2:
                 post_join_records_dict[record.uuid] = record
 
-        replayed_join_records_dict: dict[str, JoinRecord] = {}
-        for record in self.get_all(since, SubmissionStage.REPLAYED):
-            if record.version >= 2:
-                replayed_join_records_dict[record.uuid] = record
-
         # For each pre-submission record, there should exist a post-submission
         # record. If the post-submission record is missing, log a warning and add
         # the pre-submission record to the post-submission dictionary so it is covered
@@ -160,11 +154,6 @@ class JoinRecordProcessor:
                 f"pre-submission join record {key}. Will supplement post-submission records."
             )
             post_join_records_dict[uuid] = record
-
-        # Remove join records that have already been successfully replayed
-        for uuid, record in replayed_join_records_dict.items():
-            if post_join_records_dict.get(uuid):
-                post_join_records_dict.pop(uuid)
 
         return post_join_records_dict
 
