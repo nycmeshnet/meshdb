@@ -1,3 +1,4 @@
+import logging
 from functools import wraps
 from typing import Any, Callable
 
@@ -16,6 +17,8 @@ def skip_if_flag_disabled(flag_name: str) -> Callable:
 
             if enabled:
                 return func(*args, **kwargs)
+            else:
+                logging.info(f"Skipping call to function {func.__name__} due to disabled flag {flag_name}")
 
         return wraps(func)(inner)
 
