@@ -149,12 +149,10 @@ class Command(BaseCommand):
                     print("Skipping...")
                     continue
 
-
             record.code = str(response.status_code)
             record.replayed += 1
             if response.data.get("install_number"):
                 record.install_number = response.data["install_number"]
-
 
             key = JoinRecordProcessor.get_key(record, SubmissionStage.POST)
             p.upload(record, key)
