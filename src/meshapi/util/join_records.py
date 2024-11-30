@@ -77,11 +77,10 @@ class JoinRecordProcessor:
             logging.error(e)
 
     def get_all(self, since: Optional[datetime.datetime] = None, submission_prefix: SubmissionStage = SubmissionStage.POST) -> list[JoinRecord]:
-        print(JOIN_RECORD_BUCKET_NAME)
         response = self.s3_client.list_objects_v2(
             Bucket=JOIN_RECORD_BUCKET_NAME,
             Prefix=f"{JOIN_RECORD_PREFIX}/v3/{submission_prefix.value}",
-            StartAfter=since.strftime(f"{JOIN_RECORD_PREFIX}/v3/{submission_prefix}/%Y/%m/%d/%H/%M/%S")
+            StartAfter=since.strftime(f"{JOIN_RECORD_PREFIX}/v3/{submission_prefix.value}/%Y/%m/%d/%H/%M/%S")
             if isinstance(since, datetime.datetime)
             else "",
         )
@@ -167,6 +166,7 @@ class JoinRecordProcessor:
     @staticmethod
     def get_key(join_record: JoinRecord, stage: SubmissionStage = SubmissionStage.POST):
         submission_time = datetime.datetime.fromisoformat(join_record.submission_time)
+        
         return submission_time.strftime(
-            f"{JOIN_RECORD_PREFIX}/v3/{stage}/%Y/%m/%d/%H/%M/%S/{join_record.uuid.split(" - ")[1]}.json"
+            f"{JOIN_RECORD_PREFIX}/v3/{stage.value}/%Y/%m/%d/%H/%M/%S/{join_record.uuid.split("-")[1]}.json"
         )

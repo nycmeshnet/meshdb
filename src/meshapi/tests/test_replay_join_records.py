@@ -12,6 +12,7 @@ from meshapi.util.join_records import (
     JOIN_RECORD_BUCKET_NAME,
     JoinRecord,
     JoinRecordProcessor,
+    SubmissionStage,
     s3_content_to_join_record,
 )
 from meshapi.validation import NYCAddressInfo
@@ -34,7 +35,6 @@ class TestReplayJoinRecords(TestCase):
 
         # Load the samples into S3
         for key, record in basic_sample_pre_submission_join_records.items():
-            print(f"Uploading to {key}")
             self.p.upload(record, key)
 
         for key, record in basic_sample_post_submission_join_records.items():
@@ -45,7 +45,8 @@ class TestReplayJoinRecords(TestCase):
 
     # I broke the help menu once upon a time so I need to make sure this works.
     def test_help_works(self):
-        management.call_command("replay_join_records", "--help")
+        with self.assertRaises(SystemExit):
+            management.call_command("replay_join_records", "--help")
 
     def test_list_records(self):
         management.call_command("replay_join_records")
@@ -82,7 +83,7 @@ class TestReplayJoinRecords(TestCase):
         # Replay the records (this should get from the last week (halloween -7 days))
         management.call_command("replay_join_records", "--noinput", "--write")
 
-        records = self.p.get_all()
+        records = self.p.get_all(submission_prefix=SubmissionStage.REPLAYED)
 
         self.assertEqual(2, len(records), "Got unexpected number of records in mocked S3 bucket.")
 

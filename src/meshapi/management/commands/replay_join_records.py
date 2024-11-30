@@ -14,9 +14,9 @@ from meshapi.views.forms import JoinFormRequest, process_join_form
 class Command(BaseCommand):
     help = "Replay join form submissions that we may not have accepted properly."
     "Defaults to viewing. Pass --write to write the records to MeshDB."
+    hidden_fields = ["version", "uuid", "replayed"]
 
     def add_arguments(self, parser: ArgumentParser) -> None:
-        pass
         parser.add_argument(
             "--noinput", action="store_true", help="Tells Django to NOT prompt the user for input of any kind."
         )
@@ -35,6 +35,12 @@ class Command(BaseCommand):
             help="Show records submitted since this date and time (UTC, 24-Hour) (yyyy-mm-ddTHH:MM:SS)",
         )
 
+        parser.add_argument(
+            "--all-columns",
+            action="store_true",
+            help=f"Display all information from the Join Record: {self.hidden_fields}"
+        )
+
     def handle(self, *args: Any, **options: Any) -> None:
         logging.info("Fetching Join Records...")
 
@@ -51,7 +57,12 @@ class Command(BaseCommand):
         table = PrettyTable()
         table.padding_width = 0
 
-        table.field_names = (key.name for key in fields(JoinRecord))
+        # These fields aren't really that relevant to human eyes.
+        if options["all_columns"]:
+            hidden_fields = []
+        else:
+            hidden_fields = self.hidden_fields
+        table.field_names = (key.name for key in fields(JoinRecord) if key.name not in hidden_fields)
 
         join_records_to_replay = {}
 
@@ -66,7 +77,10 @@ class Command(BaseCommand):
                 continue
 
             join_records_to_replay[uuid] = record
-            table.add_row(asdict(record).values())
+            record_as_dict = asdict(record)
+            for k in hidden_fields:
+                record_as_dict.pop(k)
+            table.add_row(record_as_dict.values())
 
         if not options["all"]:
             print("The following Join Requests HAVE NOT been successfully submitted.")
@@ -98,9 +112,8 @@ class Command(BaseCommand):
             print(f"{response.status_code} : {response.data}")
 
             # Upload info to S3 if successful
-            if record.install_number:
-                key = JoinRecordProcessor.get_key(record, SubmissionStage.REPLAYED)
-                p.upload(record, key)
+            key = JoinRecordProcessor.get_key(record, SubmissionStage.REPLAYED)
+            p.upload(record, key)
 
     @staticmethod
     def past_week() -> datetime:
