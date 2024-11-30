@@ -1,13 +1,13 @@
+import logging
 from argparse import ArgumentParser
 from dataclasses import asdict, fields
 from datetime import datetime, timedelta, timezone
-import logging
 from typing import Any
 
 from django.core.management.base import BaseCommand
 from prettytable import PrettyTable
 
-from meshapi.util.join_records import JOIN_RECORD_PREFIX, JoinRecord, JoinRecordProcessor, SubmissionStage
+from meshapi.util.join_records import JoinRecord, JoinRecordProcessor, SubmissionStage
 from meshapi.views.forms import JoinFormRequest, process_join_form
 
 
@@ -38,7 +38,7 @@ class Command(BaseCommand):
         parser.add_argument(
             "--all-columns",
             action="store_true",
-            help=f"Display all information from the Join Record: {self.hidden_fields}"
+            help=f"Display all information from the Join Record: {self.hidden_fields}",
         )
 
     def handle(self, *args: Any, **options: Any) -> None:

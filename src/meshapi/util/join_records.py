@@ -1,10 +1,10 @@
 import dataclasses
 import datetime
-from enum import Enum
 import json
 import logging
 import os
 from dataclasses import dataclass, fields
+from enum import Enum
 from typing import Optional
 
 import boto3
@@ -17,6 +17,7 @@ JOIN_RECORD_ENDPOINT = os.environ.get("S3_ENDPOINT", None)
 
 JOIN_RECORD_BUCKET_NAME = os.environ.get("JOIN_RECORD_BUCKET_NAME")
 JOIN_RECORD_PREFIX = os.environ.get("JOIN_RECORD_PREFIX", "sample-basename")
+
 
 class SubmissionStage(Enum):
     PRE = "pre"
@@ -33,14 +34,16 @@ class JoinRecord(JoinFormRequest):
     replayed: int
     install_number: Optional[int]
 
+
 # XXX (wdn): Not sure if im gonna use this
 @dataclass
-class JoinRecordV3Key():
-    prefix: str # Specifies if the record was submitted from dev3, prod2, etc 
-    version: int # Version of Join Record. V1, V2, and V3 (for now)
+class JoinRecordV3Key:
+    prefix: str  # Specifies if the record was submitted from dev3, prod2, etc
+    version: int  # Version of Join Record. V1, V2, and V3 (for now)
     submission_stage: SubmissionStage  # Pre, Post, Replayed
-    submission_time: datetime.datetime # When
-    uuid_snippet: str # First quartet (2nd group) of the UUID to ensure uniqueness
+    submission_time: datetime.datetime  # When
+    uuid_snippet: str  # First quartet (2nd group) of the UUID to ensure uniqueness
+
 
 # v3
 def s3_content_to_join_record(object_key: str, content: str) -> JoinRecord:
@@ -76,7 +79,9 @@ class JoinRecordProcessor:
         except ClientError as e:
             logging.error(e)
 
-    def get_all(self, since: Optional[datetime.datetime] = None, submission_prefix: SubmissionStage = SubmissionStage.POST) -> list[JoinRecord]:
+    def get_all(
+        self, since: Optional[datetime.datetime] = None, submission_prefix: SubmissionStage = SubmissionStage.POST
+    ) -> list[JoinRecord]:
         response = self.s3_client.list_objects_v2(
             Bucket=JOIN_RECORD_BUCKET_NAME,
             Prefix=f"{JOIN_RECORD_PREFIX}/v3/{submission_prefix.value}",
@@ -127,17 +132,17 @@ class JoinRecordProcessor:
 
         # Grab a copy of pre, post, and replayed submissions
         # Convert the lists to dictionaries to make them easier to search by UUID
-        pre_join_records_dict = {}
+        pre_join_records_dict: dict[str, JoinRecord] = {}
         for record in self.get_all(since, SubmissionStage.PRE):
             if record.version >= 2:
                 pre_join_records_dict[record.uuid] = record
 
-        post_join_records_dict = {}
+        post_join_records_dict: dict[str, JoinRecord] = {}
         for record in self.get_all(since, SubmissionStage.POST):
             if record.version >= 2:
                 post_join_records_dict[record.uuid] = record
 
-        replayed_join_records_dict = {}
+        replayed_join_records_dict: dict[str, JoinRecord] = {}
         for record in self.get_all(since, SubmissionStage.REPLAYED):
             if record.version >= 2:
                 replayed_join_records_dict[record.uuid] = record
@@ -146,27 +151,27 @@ class JoinRecordProcessor:
         # record. If the post-submission record is missing, log a warning and add
         # the pre-submission record to the post-submission dictionary so it is covered
         # by the command.
-        for uuid, record in pre_join_records_dict.values():
+        for uuid, record in pre_join_records_dict.items():
             if post_join_records_dict.get(uuid):
                 continue
             key = self.get_key(record)
             logging.warning(
-                f"Did not find a corresponding post-submission join record for pre-submission join record {key}. Will supplement post-submission records."
+                "Did not find a corresponding post-submission join record for"
+                f"pre-submission join record {key}. Will supplement post-submission records."
             )
             post_join_records_dict[uuid] = record
 
         # Remove join records that have already been successfully replayed
-        for uuid, record in replayed_join_records_dict.values():
+        for uuid, record in replayed_join_records_dict.items():
             if post_join_records_dict.get(uuid):
-               post_join_records_dict.pop(uuid) 
+                post_join_records_dict.pop(uuid)
 
         return post_join_records_dict
 
-
     @staticmethod
-    def get_key(join_record: JoinRecord, stage: SubmissionStage = SubmissionStage.POST):
+    def get_key(join_record: JoinRecord, stage: SubmissionStage = SubmissionStage.POST) -> str:
         submission_time = datetime.datetime.fromisoformat(join_record.submission_time)
-        
+
         return submission_time.strftime(
-            f"{JOIN_RECORD_PREFIX}/v3/{stage.value}/%Y/%m/%d/%H/%M/%S/{join_record.uuid.split("-")[1]}.json"
+            f"{JOIN_RECORD_PREFIX}/v3/{stage.value}/%Y/%m/%d/%H/%M/%S/{join_record.uuid.split(" - ")[1]}.json"
         )

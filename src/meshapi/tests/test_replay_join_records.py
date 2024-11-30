@@ -7,7 +7,11 @@ from django.test import TestCase
 from moto import mock_aws
 
 from meshapi.models.install import Install
-from meshapi.tests.sample_join_records import MOCK_JOIN_RECORD_PREFIX, basic_sample_pre_submission_join_records, basic_sample_post_submission_join_records 
+from meshapi.tests.sample_join_records import (
+    MOCK_JOIN_RECORD_PREFIX,
+    basic_sample_post_submission_join_records,
+    basic_sample_pre_submission_join_records,
+)
 from meshapi.util.join_records import (
     JOIN_RECORD_BUCKET_NAME,
     JoinRecord,
@@ -57,17 +61,26 @@ class TestReplayJoinRecords(TestCase):
         self.assertEqual(len(records_since), 2)
 
         self.assertEqual(
-            basic_sample_post_submission_join_records[f"{MOCK_JOIN_RECORD_PREFIX}/v3/post/2024/10/28/12/34/56/ec7b.json"], records_since[0]
+            basic_sample_post_submission_join_records[
+                f"{MOCK_JOIN_RECORD_PREFIX}/v3/post/2024/10/28/12/34/56/ec7b.json"
+            ],
+            records_since[0],
         )
         self.assertEqual(
-            basic_sample_post_submission_join_records[f"{MOCK_JOIN_RECORD_PREFIX}/v3/post/2024/10/30/12/34/57/0490.json"], records_since[1]
+            basic_sample_post_submission_join_records[
+                f"{MOCK_JOIN_RECORD_PREFIX}/v3/post/2024/10/30/12/34/57/0490.json"
+            ],
+            records_since[1],
         )
 
         records_since = self.p.get_all(since=datetime.fromisoformat("2024-10-29 00:00:00"))
         self.assertEqual(len(records_since), 1)
 
         self.assertEqual(
-            basic_sample_post_submission_join_records[f"{MOCK_JOIN_RECORD_PREFIX}/v3/post/2024/10/30/12/34/57/0490.json"], records_since[0]
+            basic_sample_post_submission_join_records[
+                f"{MOCK_JOIN_RECORD_PREFIX}/v3/post/2024/10/30/12/34/57/0490.json"
+            ],
+            records_since[0],
         )
 
     @patch("meshapi.management.commands.replay_join_records.Command.past_week")
