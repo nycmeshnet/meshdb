@@ -171,7 +171,6 @@ class JoinRecordProcessor:
     @staticmethod
     def get_key(join_record: JoinRecord, stage: SubmissionStage = SubmissionStage.POST) -> str:
         submission_time = datetime.datetime.fromisoformat(join_record.submission_time)
+        uuid_snippet = join_record.uuid.split("-")[1]
 
-        return submission_time.strftime(
-            f"{JOIN_RECORD_PREFIX}/v3/{stage.value}/%Y/%m/%d/%H/%M/%S/{join_record.uuid.split(" - ")[1]}.json"
-        )
+        return submission_time.strftime(f"{JOIN_RECORD_PREFIX}/v3/{stage.value}/%Y/%m/%d/%H/%M/%S/{uuid_snippet}.json")
