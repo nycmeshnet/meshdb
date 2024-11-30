@@ -92,7 +92,7 @@ class Command(BaseCommand):
 
         if not options["noinput"]:
             proceed_with_replay = input("Proceed with replay? (y/N): ")
-            if proceed_with_replay.lower() != "yes" and proceed_with_replay.lower() != "y":
+            if proceed_with_replay.lower() not in ["yes", "y"]:
                 print("Operation cancelled.")
                 return
 
@@ -108,12 +108,53 @@ class Command(BaseCommand):
                 **{k: v for k, v in record.__dict__.items() if k in JoinFormRequest.__dataclass_fields__}
             )
             response = process_join_form(r)
+
+            print(f"{response.status_code} : {response.data}")
+
+            if response.status_code == 409:
+                print("Please confirm some information:")
+                print("Changed Info:")
+
+                confirmation_table = PrettyTable()
+                confirmation_table.padding_width = 0
+                confirmation_table.field_names = ["Field", "Original", "Suggested"]
+
+                for field, value in response.data["changed_info"].items():
+                    original_value = r.__dict__[field]
+                    confirmation_table.add_row([field, original_value, value])
+
+                print(confirmation_table)
+
+                if not options["noinput"]:
+                    user_input = input("(A)ccept/(R)eject/(S)kip ?: ")
+                else:
+                    user_input = "accept"
+                    logging.warning("--no-input was specified, so auto-accepting")
+
+                if user_input.lower() in ["accept", "a"]:
+                    print("Re-submitting with accepted changes...")
+                    r.__dict__.update(response.data["changed_info"])
+
+                    # If this doesn't work, then uh, skill issue.
+                    response = process_join_form(r)
+
+                elif user_input.lower() in ["reject", "a"]:
+                    print("Rejecting changes and re-submitting...")
+                    r.__dict__.update({"trust_me_bro": True})
+
+                    # If this doesn't work, then uh, skill issue.
+                    response = process_join_form(r)
+
+                elif user_input.lower() in ["skip", "s"]:
+                    print("Skipping...")
+                    continue
+
+
             record.code = str(response.status_code)
             record.replayed += 1
             if response.data.get("install_number"):
                 record.install_number = response.data["install_number"]
 
-            print(f"{response.status_code} : {response.data}")
 
             key = JoinRecordProcessor.get_key(record, SubmissionStage.POST)
             p.upload(record, key)
