@@ -3,7 +3,7 @@ from meshapi.util.join_records import JoinRecord
 MOCK_JOIN_RECORD_PREFIX = "join-record-test"
 
 basic_sample_pre_submission_join_records: dict[str, JoinRecord] = {
-    f"{MOCK_JOIN_RECORD_PREFIX}/v3/post/2024/10/28/12/34/56/ec7b.json": JoinRecord(
+    f"{MOCK_JOIN_RECORD_PREFIX}/v3/pre/2024/10/28/12/34/56/ec7b.json": JoinRecord(
         first_name="Jane",
         last_name="Doe",
         email_address="js@gmail.com",
@@ -24,7 +24,7 @@ basic_sample_pre_submission_join_records: dict[str, JoinRecord] = {
         replayed=0,
         install_number=None,
     ),
-    f"{MOCK_JOIN_RECORD_PREFIX}/v3/post/2024/10/30/12/34/57/0490.json": JoinRecord(
+    f"{MOCK_JOIN_RECORD_PREFIX}/v3/pre/2024/10/30/12/34/57/0490.json": JoinRecord(
         first_name="Jon",
         last_name="Smith",
         email_address="js@gmail.com",
@@ -43,6 +43,28 @@ basic_sample_pre_submission_join_records: dict[str, JoinRecord] = {
         submission_time="2024-10-30T12:34:57",
         code="",
         replayed=1,
+        install_number=None,
+    ),
+    # To test that somehow we didn't get a post-join record we can still replay it.
+    f"{MOCK_JOIN_RECORD_PREFIX}/v3/pre/2024/10/30/12/34/58/e4f1.json": JoinRecord(
+        first_name="Benjamin",
+        last_name="Doe",
+        email_address="bd0190@gmail.com",
+        phone_number="+1 585-475-2411",
+        street_address="99 Kane Street",
+        city="Brooklyn",
+        state="NY",
+        zip_code="11231",
+        apartment="3R",
+        roof_access=True,
+        referral="mocked join record.",
+        ncl=True,
+        trust_me_bro=False,
+        version=3,
+        uuid="5f84cbee-e4f1-464d-9231-8330b1074d6d",
+        submission_time="2024-10-30T12:34:58",
+        code="",
+        replayed=0,
         install_number=None,
     ),
 }
@@ -70,9 +92,9 @@ basic_sample_post_submission_join_records: dict[str, JoinRecord] = {
         install_number=None,
     ),
     f"{MOCK_JOIN_RECORD_PREFIX}/v3/post/2024/10/30/12/34/57/0490.json": JoinRecord(
-        first_name="Jon",
+        first_name="Jane",
         last_name="Smith",
-        email_address="js@gmail.com",
+        email_address="jsmith2000@gmail.com",
         phone_number="+1 585-475-2411",
         street_address="711 Hudson Street",
         city="Hoboken",

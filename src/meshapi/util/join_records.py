@@ -148,17 +148,17 @@ class JoinRecordProcessor:
         for uuid, record in pre_join_records_dict.items():
             if post_join_records_dict.get(uuid):
                 continue
-            key = self.get_key(record)
+            key_for_warning = self.get_key(record, SubmissionStage.PRE)
             logging.warning(
-                "Did not find a corresponding post-submission join record for"
-                f"pre-submission join record {key}. Will supplement post-submission records."
+                "Did not find a corresponding post-submission join record for "
+                f"pre-submission join record {key_for_warning}. Will supplement post-submission records."
             )
             post_join_records_dict[uuid] = record
 
         return post_join_records_dict
 
     @staticmethod
-    def get_key(join_record: JoinRecord, stage: SubmissionStage = SubmissionStage.POST) -> str:
+    def get_key(join_record: JoinRecord, stage: SubmissionStage) -> str:
         submission_time = datetime.datetime.fromisoformat(join_record.submission_time)
         uuid_snippet = join_record.uuid.split("-")[1]
 

@@ -149,6 +149,7 @@ class TestReplayJoinRecords(TestCase):
         mock_geocode_func.side_effect = [
             NYCAddressInfo("197 Prospect Place", "Brooklyn", "NY", "11238"),
             ValueError("NJ not allowed yet!"),
+            NYCAddressInfo("99 Kane Street", "Brooklyn", "NY", "11231"),
         ]
 
         # Replay the records (this should get from the last week (halloween -7 days))
@@ -156,9 +157,10 @@ class TestReplayJoinRecords(TestCase):
 
         records = self.p.get_all(submission_prefix=SubmissionStage.POST)
 
-        # Ensure we still only have two records. The replay script should've
-        # only updated the ones that were already there.
-        self.assertEqual(2, len(records), "Got unexpected number of records in mocked S3 bucket.")
+        # Ensure we have three records. The replay script should've
+        # only updated the ones that were already there, and then inserted the
+        # "pre" submission one that was missing.
+        self.assertEqual(3, len(records), "Got unexpected number of records in mocked S3 bucket.")
 
         # The first record should have been fine and dandy
         r = records[0]
@@ -191,3 +193,21 @@ class TestReplayJoinRecords(TestCase):
         )
         self.assertEqual(2, r.replayed, "Did not get expected replay count.")
         self.assertEqual(None, r.install_number, "Install Number is not None.")
+
+        # Finally, the pre-submission with the missing post-submission. This one
+        # should also work fine
+        r = records[2]
+        expected_code = "201"
+        self.assertEqual(
+            expected_code,
+            r.code,
+            f"Did not find correct replay code in mocked S3 bucket. Expected: {expected_code}, Got: {r.code}",
+        )
+        self.assertEqual(1, r.replayed, "Did not get expected replay count.")
+        install = Install.objects.get(install_number=r.install_number)
+        self.assertEqual("Benjamin Doe", install.member.name, "Did not get expected name for submitted install.")
+        self.assertEqual(
+            "99 Kane Street",
+            install.building.street_address,
+            "Did not get expected street address for submitted install.",
+        )
