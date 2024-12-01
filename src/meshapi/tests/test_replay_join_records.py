@@ -11,6 +11,8 @@ from meshapi.tests.sample_join_records import (
     MOCK_JOIN_RECORD_PREFIX,
     basic_sample_post_submission_join_records,
     basic_sample_pre_submission_join_records,
+    sample_dont_replay_join_records_post,
+    sample_dont_replay_join_records_pre,
 )
 from meshapi.util.join_records import (
     JOIN_RECORD_BUCKET_NAME,
@@ -168,8 +170,11 @@ class TestReplayJoinRecords(TestCase):
     @patch("meshapi.management.commands.replay_join_records.Command.past_week")
     @patch("meshapi.views.forms.geocode_nyc_address")
     def test_replay_join_records_with_write(self, mock_geocode_func, past_week_function):
+        # Pretend that it's halloween
         halloween_minus_one_week = datetime(2024, 10, 31, 8, 0, 0, 0) - timedelta(days=7)
         past_week_function.return_value = halloween_minus_one_week
+
+        # Mock return variables from Geocode API
         mock_geocode_func.side_effect = [
             NYCAddressInfo("197 Prospect Place", "Brooklyn", "NY", "11238"),
             ValueError("NJ not allowed yet!"),
@@ -267,3 +272,87 @@ class TestReplayJoinRecords(TestCase):
             f"Did not find correct replay code in mocked S3 bucket. Expected: {expected_code}, Got: {r.code}",
         )
         self.assertEqual(0, r.replayed, "Did not get expected replay count.")
+
+
+# codecov moment
+@mock_aws
+@patch("meshapi.util.join_records.JOIN_RECORD_PREFIX", MOCK_JOIN_RECORD_PREFIX)
+class TestReplayNoJoinRecords(TestCase):
+    def test_replay_no_join_records(self):
+        management.call_command("replay_join_records", "--noinput", "--write")
+
+
+# Skipping or rejecting changes
+@mock_aws
+@patch("meshapi.util.join_records.JOIN_RECORD_PREFIX", MOCK_JOIN_RECORD_PREFIX)
+class TestDontReplayJoinRecords(TestCase):
+    p = JoinRecordProcessor()
+
+    def setUp(self) -> None:
+        print(JOIN_RECORD_BUCKET_NAME)
+        self.p.s3_client.create_bucket(Bucket=JOIN_RECORD_BUCKET_NAME)
+        self.p.flush_test_data()
+
+        # Load the samples into S3
+        for key, record in sample_dont_replay_join_records_pre.items():
+            self.p.upload(record, key)
+
+        for key, record in sample_dont_replay_join_records_post.items():
+            self.p.upload(record, key)
+
+    def tearDown(self) -> None:
+        self.p.flush_test_data()
+
+    @patch("meshapi.management.commands.replay_join_records.Command.past_week")
+    @patch("builtins.input")
+    def test_replay_join_records_skip(self, mocked_input, past_week_function):
+        halloween_minus_one_week = datetime(2024, 10, 31, 8, 0, 0, 0) - timedelta(days=7)
+        past_week_function.return_value = halloween_minus_one_week
+
+        # Force user input to skip
+        mocked_input.side_effect = ["yes", "skip"]
+
+        management.call_command("replay_join_records", "--noinput")
+
+        records = self.p.get_all(submission_prefix=SubmissionStage.POST)
+
+        self.assertEqual(1, len(records), "Got unexpected number of records in mocked S3 bucket.")
+
+        # If we skip it, we just won't touch it, so it should still be 503 and no
+        # replays
+        r = records[0]
+        expected_code = "503"
+        self.assertEqual(
+            expected_code,
+            r.code,
+            f"Did not find correct replay code in mocked S3 bucket. Expected: {expected_code}, Got: {r.code}",
+        )
+        self.assertEqual(0, r.replayed, "Did not get expected replay count.")
+
+    @patch("meshapi.management.commands.replay_join_records.Command.past_week")
+    @patch("builtins.input")
+    def test_replay_join_records_reject_changes(self, mocked_input, past_week_function):
+        halloween_minus_one_week = datetime(2024, 10, 31, 8, 0, 0, 0) - timedelta(days=7)
+        past_week_function.return_value = halloween_minus_one_week
+
+        # Force user input to skip
+        mocked_input.side_effect = ["yes", "reject"]
+
+        management.call_command("replay_join_records", "--write")
+
+        records = self.p.get_all(submission_prefix=SubmissionStage.POST)
+
+        self.assertEqual(1, len(records), "Got unexpected number of records in mocked S3 bucket.")
+
+        # Rejecting changes should still result in a 201
+        r = records[0]
+        expected_code = "201"
+        self.assertEqual(
+            expected_code,
+            r.code,
+            f"Did not find correct replay code in mocked S3 bucket. Expected: {expected_code}, Got: {r.code}",
+        )
+        self.assertEqual(1, r.replayed, "Did not get expected replay count.")
+        self.assertEqual(True, r.trust_me_bro, "Trust me bro should have been true.")
+        install = Install.objects.get(install_number=r.install_number)
+        self.assertEqual("Rachel Doe", install.member.name, "Did not get expected name for submitted install.")

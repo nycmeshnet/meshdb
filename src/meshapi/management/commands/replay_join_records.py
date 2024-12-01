@@ -136,7 +136,7 @@ class Command(BaseCommand):
                     logging.warning("--no-input was specified, so auto-accepting")
 
                 if user_input.lower() in ["accept", "a"]:
-                    print("Re-submitting with accepted changes...")
+                    logging.info("Re-submitting with accepted changes...")
                     r.__dict__.update(response.data["changed_info"])
 
                     # If this doesn't work, then uh, skill issue.
@@ -144,24 +144,26 @@ class Command(BaseCommand):
                     logging.info(f"Code: {response.status_code}")
 
                 elif user_input.lower() in ["reject", "r"]:
-                    print("Rejecting changes and re-submitting...")
+                    logging.info("Rejecting changes and re-submitting...")
                     r.__dict__.update({"trust_me_bro": True})
+                    record.trust_me_bro = True
 
                     # If this doesn't work, then uh, skill issue.
                     response = process_join_form(r)
                     logging.info(f"Code: {response.status_code}")
 
                 elif user_input.lower() in ["skip", "s"]:
-                    print("Skipping...")
+                    logging.info("Skipping...")
                     continue
 
             record.code = str(response.status_code)
             record.replayed += 1
             if response.data.get("install_number"):
                 record.install_number = response.data["install_number"]
+                logging.info("OK")
             else:
                 logging.error(
-                    "Replay unsuccessful! Did not get an install number for "
+                    "Replay failed! Did not get an install number for "
                     f"record: {JoinRecordProcessor.get_key(record, SubmissionStage.POST)}."
                 )
 

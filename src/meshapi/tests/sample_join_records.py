@@ -202,3 +202,51 @@ basic_sample_post_submission_join_records: dict[str, JoinRecord] = {
         install_number=100,
     ),
 }
+
+sample_dont_replay_join_records_pre: dict[str, JoinRecord] = {
+    f"{MOCK_JOIN_RECORD_PREFIX}/v3/pre/2024/10/30/12/34/59/7cd3.json": JoinRecord(
+        first_name="Rachel",
+        last_name="Doe",
+        email_address="rdoe2989@gmail.com",
+        phone_number="+1 585-475-2411",
+        street_address="99 Kane St",
+        city="Brooklyn",
+        state="NY",
+        zip_code="11231",
+        apartment="4R",
+        roof_access=True,
+        referral="mocked join record.",
+        ncl=True,
+        trust_me_bro=False,
+        version=3,
+        uuid="84e242be-7cd3-4e22-8ace-1fb393f5baad",
+        submission_time="2024-10-30T12:34:59",
+        code="",
+        replayed=0,
+        install_number=None,
+    ),
+}
+
+sample_dont_replay_join_records_post: dict[str, JoinRecord] = {
+    f"{MOCK_JOIN_RECORD_PREFIX}/v3/post/2024/10/30/12/34/59/7cd3.json": JoinRecord(
+        first_name="Rachel",
+        last_name="Doe",
+        email_address="rdoe2989@gmail.com",
+        phone_number="+1 585-475-2411",
+        street_address="99 Kane St",
+        city="Brooklyn",
+        state="NY",
+        zip_code="11231",
+        apartment="4R",
+        roof_access=True,
+        referral="mocked join record.",
+        ncl=True,
+        trust_me_bro=False,
+        version=3,
+        uuid="84e242be-7cd3-4e22-8ace-1fb393f5baad",
+        submission_time="2024-10-30T12:34:59",
+        code="503",
+        replayed=0,
+        install_number=None,
+    ),
+}
