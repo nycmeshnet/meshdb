@@ -162,6 +162,7 @@ if DEBUG:
     ALLOWED_HOSTS += [
         "127.0.0.1",
         "host.docker.internal",
+        "localhost",
     ]
 
     CORS_ALLOWED_ORIGINS += [
