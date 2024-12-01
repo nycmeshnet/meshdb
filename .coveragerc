@@ -10,3 +10,4 @@ omit =
     manage.py,
     venv/*
     .venv/*
+    integ-tests/*
