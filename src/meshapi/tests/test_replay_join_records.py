@@ -278,6 +278,15 @@ class TestReplayJoinRecords(TestCase):
 @mock_aws
 @patch("meshapi.util.join_records.JOIN_RECORD_PREFIX", MOCK_JOIN_RECORD_PREFIX)
 class TestReplayNoJoinRecords(TestCase):
+    p = JoinRecordProcessor()
+
+    def setUp(self) -> None:
+        self.p.s3_client.create_bucket(Bucket=JOIN_RECORD_BUCKET_NAME)
+        self.p.flush_test_data()
+
+    def tearDown(self) -> None:
+        self.p.flush_test_data()
+
     def test_replay_no_join_records(self):
         management.call_command("replay_join_records", "--noinput", "--write")
 
@@ -289,7 +298,6 @@ class TestDontReplayJoinRecords(TestCase):
     p = JoinRecordProcessor()
 
     def setUp(self) -> None:
-        print(JOIN_RECORD_BUCKET_NAME)
         self.p.s3_client.create_bucket(Bucket=JOIN_RECORD_BUCKET_NAME)
         self.p.flush_test_data()
 
