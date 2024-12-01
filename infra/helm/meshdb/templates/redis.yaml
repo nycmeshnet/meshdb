@@ -12,11 +12,25 @@ spec:
       {{- include "meshdb.selectorLabels" . | nindent 6 }}
   template:
     metadata:
-      {{- with .Values.podAnnotations }}
       annotations:
+          ad.datadoghq.com/redis.checks: |
+            {
+              "redisdb": {
+                "init_config": {},
+                "instances": [
+                  {
+                    "host": "%%host%%",
+                    "port":"6379",
+                    "password":"%%env_REDIS_PASSWORD%%"
+                  }
+                ]
+              }
+            }  
+      {{- with .Values.podAnnotations }}
         {{- toYaml . | nindent 8 }}
       {{- end }}
       labels:
+        admission.datadoghq.com/enabled: "false"
         app: meshdb-redis-app
         {{- include "meshdb.labels" . | nindent 8 }}
         {{- with .Values.podLabels }}
