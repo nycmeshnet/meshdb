@@ -117,7 +117,7 @@ class Building(models.Model):
         addr_components = []
         if self.street_address:
             addr_components.append(self.street_address)
-        if self.city or self.city:
+        if self.city or self.state:
             city_state = []
             if self.city:
                 city_state.append(self.city)
