@@ -58,7 +58,7 @@ class TestReplayJoinRecords(TestCase):
     def test_get_all_since(self):
         records_since = self.p.get_all(since=datetime.fromisoformat("2024-10-01 00:00:00"))
 
-        self.assertEqual(len(records_since), 3)
+        self.assertEqual(len(records_since), 4)
 
         self.assertEqual(
             basic_sample_post_submission_join_records[
@@ -78,9 +78,15 @@ class TestReplayJoinRecords(TestCase):
             ],
             records_since[2],
         )
+        self.assertEqual(
+            basic_sample_post_submission_join_records[
+                f"{MOCK_JOIN_RECORD_PREFIX}/v3/post/2024/10/30/12/35/00/0f84.json"
+            ],
+            records_since[3],
+        )
 
         records_since = self.p.get_all(since=datetime.fromisoformat("2024-10-29 00:00:00"))
-        self.assertEqual(len(records_since), 2)
+        self.assertEqual(len(records_since), 3)
 
         self.assertEqual(
             basic_sample_post_submission_join_records[
@@ -93,6 +99,12 @@ class TestReplayJoinRecords(TestCase):
                 f"{MOCK_JOIN_RECORD_PREFIX}/v3/post/2024/10/30/12/34/59/7cd3.json"
             ],
             records_since[1],
+        )
+        self.assertEqual(
+            basic_sample_post_submission_join_records[
+                f"{MOCK_JOIN_RECORD_PREFIX}/v3/post/2024/10/30/12/35/00/0f84.json"
+            ],
+            records_since[2],
         )
 
     # This is just to make codecov happy
