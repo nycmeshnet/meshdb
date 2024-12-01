@@ -80,3 +80,11 @@ jobs:
         # Rolling restart
         kubectl --kubeconfig ./config --server https://${{ secrets.SSH_TARGET_IP }}:6443 -n ${{ vars.APP_NAMESPACE }} rollout restart deploy
         kubectl --kubeconfig ./config --server https://${{ secrets.SSH_TARGET_IP }}:6443 -n ${{ vars.APP_NAMESPACE }} rollout restart statefulset
+        
+        # Wait for deploy to complete
+        kubectl --kubeconfig ./config --server https://${{ secrets.SSH_TARGET_IP }}:6443 -n ${{ vars.APP_NAMESPACE }} rollout status deployment --timeout 30m
+
+    - name: Run integration tests
+      run: |
+        # Run integ tests (only if we are not deploying to prod, since these tests can write data)
+        [[ "${{ inputs.environment }}" =~ "prod" ]] && pytest integ-test
