@@ -257,6 +257,26 @@ an existing file within that directory, depending on what it's doing, or you
 can add a whole new file. See the [django documentation](https://docs.djangoproject.com/en/4.2/topics/testing/overview/)
 for details on how to write a test, or check the directory for examples.
 
+## Integration Tests
+
+> [!WARNING]
+> Don't run the integration tests against the production copy of MeshDB. These tests make fake
+> objects and could pollute the real database.
+
+Integration tests are automatically run by the deployment pipeline to prevent issues
+from reaching our production stages. To run them locally, first edit the `.env` file to set the
+`SITE_BASE_URL` environment variable to the domain of the stage you want to run the tests against:
+ - `http://localhost:8000` to run them against a local copy of MeshDB (`manage.py runserver`)
+ - `https://devdb.nycmesh.net` to run them against the dev copy of MeshDB
+
+You will also need a MeshDB API token which is appropriate for the stage you are running against,
+set this via the `MESHDB_API_TOKEN` variable
+
+Finally, run the integration tests with
+```sh
+pytest integ-tests
+```
+
 ## Database
 
 If you ever need to get into the database directly, it's easy to do so.

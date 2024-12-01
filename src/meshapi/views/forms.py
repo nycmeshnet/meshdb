@@ -17,7 +17,7 @@ from rest_framework.response import Response
 from rest_framework_dataclasses.serializers import DataclassSerializer
 
 from meshapi.exceptions import AddressError
-from meshapi.models import Building, Install, Member, Node
+from meshapi.models import AddressTruthSource, Building, Install, Member, Node
 from meshapi.permissions import HasNNAssignPermission, LegacyNNAssignmentPassword
 from meshapi.serializers import MemberSerializer
 from meshapi.util.admin_notifications import notify_administrators_of_data_issue
@@ -32,7 +32,6 @@ from meshapi.validation import (
     validate_phone_number,
     validate_recaptcha_tokens,
 )
-from meshdb.utils.spreadsheet_import.building.constants import AddressTruthSource
 
 logging.basicConfig()
 
@@ -160,7 +159,7 @@ def process_join_form(r: JoinFormRequest, request: Optional[Request] = None) -> 
         logging.debug(r.street_address, r.city, r.state, r.zip_code)
         return Response(
             {
-                "detail": "Non-NYC registrations are not supported at this time. Check back later, "
+                "detail": "Non-NYC registrations are not supported at this time. Please double check your zip code, "
                 "or send an email to support@nycmesh.net"
             },
             status=status.HTTP_400_BAD_REQUEST,
