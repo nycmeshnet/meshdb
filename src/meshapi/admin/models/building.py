@@ -10,9 +10,8 @@ from django.http import HttpRequest
 from import_export.admin import ExportActionMixin, ImportExportMixin
 from simple_history.admin import SimpleHistoryAdmin
 
-from meshapi.models import Building
+from meshapi.models import AddressTruthSource, Building
 from meshapi.widgets import AutoPopulateLocationWidget, PanoramaViewer
-from meshdb.utils.spreadsheet_import.building.constants import AddressTruthSource
 
 from ..inlines import BuildingLOSInline, InstallInline
 from ..ranked_search import RankedSearchMixin

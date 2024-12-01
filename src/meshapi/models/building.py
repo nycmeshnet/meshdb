@@ -1,4 +1,5 @@
 import uuid
+from enum import Enum
 from typing import Any
 
 from django.contrib.postgres.fields import ArrayField
@@ -8,9 +9,16 @@ from django.db.models import ManyToManyField
 from django_jsonform.models.fields import ArrayField as JSONFormArrayField
 from simple_history.models import HistoricalRecords
 
-from meshdb.utils.spreadsheet_import.building.constants import AddressTruthSource
-
 from .node import Node
+
+
+class AddressTruthSource(Enum):
+    OSMNominatim = "OSMNominatim"
+    OSMNominatimZIPOnly = "OSMNominatimZIPOnly"
+    NYCPlanningLabs = "NYCPlanningLabs"
+    PeliasStringParsing = "PeliasStringParsing"
+    ReverseGeocodeFromCoordinates = "ReverseGeocodeFromCoordinates"
+    HumanEntry = "HumanEntry"
 
 
 class Building(models.Model):
