@@ -13,8 +13,9 @@
 {% endif %}
 {% endblock %}
 
-
-{% block nav-breadcrumbs %}
+{% block userlinks %}
     {{ block.super }}
-    {% include "admin/read_only_warning_box.html" %}
+    <a href="#" class="hidden" style="margin-left: 5px; vertical-align: middle; border: none;" id="show_map_button">
+        <img src="{% static '/admin/map/img/map.png' %}" height="16px" title="Show Map">
+    </a>
 {% endblock %}

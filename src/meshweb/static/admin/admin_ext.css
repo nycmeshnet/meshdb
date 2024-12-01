@@ -70,20 +70,22 @@
     display: flex;
     overflow: hidden;
     flex: 1 1 auto;
-    margin-bottom: 10px;
     flex-shrink: 1 !important;
 }
 #map-wrapper .main {
     display: flex;
-    flex: 1 0 auto;
     overflow-y: auto;
     flex-direction: row;
     min-width: 700px;
 }
 
+.flex {
+    flex: 1 0 auto;
+}
+
 #map {
+    position: relative;
     display: flex;
-    margin-right: 10px;
     flex: 1 1 auto;
 }
 
@@ -109,8 +111,6 @@
 .handle {
     width: 10px;
     height: 100%;
-    margin-left: 5px;
-    margin-right: 5px;
     cursor: ew-resize;
     background-color: var(--secondary);
     flex-grow: 0;
@@ -134,11 +134,17 @@
 .floating-button {
     z-index: 100;
     position: absolute;
-    margin-left: 30px;
-    margin-top: 10px;
-    width: 50px;
-    height: 50px;
-    padding: 5px;
+    top: 60px;
+    right: 10px;
+    padding: 0;
+}
+
+.floating-button-below {
+    z-index: 100;
+    position: absolute;
+    top: 105px;
+    right: 10px;
+    padding: 0;
 }
 
 
@@ -177,4 +183,8 @@ fieldset h2 {
 
 #nav-sidebar .module caption {
     border-radius: 0px 0px 0px 0px;
+}
+
+.hidden {
+    display: none;
 }

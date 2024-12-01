@@ -159,7 +159,7 @@ def process_join_form(r: JoinFormRequest, request: Optional[Request] = None) -> 
         logging.debug(r.street_address, r.city, r.state, r.zip_code)
         return Response(
             {
-                "detail": "Non-NYC registrations are not supported at this time. Check back later, "
+                "detail": "Non-NYC registrations are not supported at this time. Please double check your zip code, "
                 "or send an email to support@nycmesh.net"
             },
             status=status.HTTP_400_BAD_REQUEST,
@@ -276,7 +276,7 @@ def process_join_form(r: JoinFormRequest, request: Optional[Request] = None) -> 
             street_address=nyc_addr_info.street_address,
             city=nyc_addr_info.city,
             state=nyc_addr_info.state,
-            zip_code=int(nyc_addr_info.zip),
+            zip_code=nyc_addr_info.zip,
             latitude=nyc_addr_info.latitude,
             longitude=nyc_addr_info.longitude,
             altitude=nyc_addr_info.altitude,
