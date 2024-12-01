@@ -155,7 +155,7 @@ class TestReplayJoinRecords(TestCase):
 
     @patch("meshapi.management.commands.replay_join_records.Command.past_week")
     @patch("meshapi.views.forms.geocode_nyc_address")
-    def test_replay_basic_join_records(self, mock_geocode_func, past_week_function):
+    def test_replay_join_records_with_write(self, mock_geocode_func, past_week_function):
         halloween_minus_one_week = datetime(2024, 10, 31, 8, 0, 0, 0) - timedelta(days=7)
         past_week_function.return_value = halloween_minus_one_week
         mock_geocode_func.side_effect = [
@@ -172,10 +172,10 @@ class TestReplayJoinRecords(TestCase):
 
         records = self.p.get_all(submission_prefix=SubmissionStage.POST)
 
-        # Ensure we have three records. The replay script should've
-        # only updated the ones that were already there, and then inserted the
-        # "pre" submission one that was missing.
-        self.assertEqual(4, len(records), "Got unexpected number of records in mocked S3 bucket.")
+        # After replaying, ensure we have the right number of post-submission records.
+        # The replay script should've only updated the ones that were already there,
+        # inserted the "pre" submission one that was missing, and ignored the 201.
+        self.assertEqual(5, len(records), "Got unexpected number of records in mocked S3 bucket.")
 
         # The first record should have been fine and dandy
         r = records[0]
@@ -227,8 +227,8 @@ class TestReplayJoinRecords(TestCase):
             "Did not get expected street address for submitted install.",
         )
 
-        # 409'ed request
-        # TODO
+        # Request was submitted while MeshDB was hard down. Should've gotten a 409
+        # and then a 201
         r = records[3]
         expected_code = "201"
         self.assertEqual(
@@ -244,3 +244,14 @@ class TestReplayJoinRecords(TestCase):
             install.building.street_address,
             "Did not get expected street address for submitted install.",
         )
+
+        # Ensure we didn't touch the 201'ed request (Doesn't actually exist in the DB
+        # but ¯\_(ツ)_/¯)
+        r = records[4]
+        expected_code = "201"
+        self.assertEqual(
+            expected_code,
+            r.code,
+            f"Did not find correct replay code in mocked S3 bucket. Expected: {expected_code}, Got: {r.code}",
+        )
+        self.assertEqual(0, r.replayed, "Did not get expected replay count.")

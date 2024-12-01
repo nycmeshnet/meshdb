@@ -89,9 +89,31 @@ basic_sample_pre_submission_join_records: dict[str, JoinRecord] = {
         replayed=0,
         install_number=None,
     ),
+    f"{MOCK_JOIN_RECORD_PREFIX}/v3/pre/2024/10/30/12/35/00/0f84.json": JoinRecord(
+        first_name="Jeffrey",
+        last_name="Mahoney",
+        email_address="jm3489@gmail.com",
+        phone_number="+1 585-475-2411",
+        street_address="197 Prospect Place",
+        city="Brooklyn",
+        state="NY",
+        zip_code="11238",
+        apartment="8",
+        roof_access=True,
+        referral="mocked join record.",
+        ncl=True,
+        trust_me_bro=False,
+        version=3,
+        uuid="109ede4d-0f84-4044-a14c-090121f0c7d4",
+        submission_time="2024-10-30T12:35:00",
+        code="",
+        replayed=0,
+        install_number=None,
+    ),
 }
 
 basic_sample_post_submission_join_records: dict[str, JoinRecord] = {
+    # Submitted while MeshDB was throwing 500's
     f"{MOCK_JOIN_RECORD_PREFIX}/v3/post/2024/10/28/12/34/56/ec7b.json": JoinRecord(
         first_name="Jon",
         last_name="Smith",
@@ -113,6 +135,7 @@ basic_sample_post_submission_join_records: dict[str, JoinRecord] = {
         replayed=0,
         install_number=None,
     ),
+    # Submitted while MeshDB was hard down. Should fail b/c New Jersey
     f"{MOCK_JOIN_RECORD_PREFIX}/v3/post/2024/10/30/12/34/57/0490.json": JoinRecord(
         first_name="Jane",
         last_name="Smith",
@@ -134,7 +157,7 @@ basic_sample_post_submission_join_records: dict[str, JoinRecord] = {
         replayed=1,
         install_number=None,
     ),
-    # To test that we can handle 409's correctly
+    # Submitted while MeshDB was hard down. This will test that we can handle 409's correctly
     f"{MOCK_JOIN_RECORD_PREFIX}/v3/post/2024/10/30/12/34/59/7cd3.json": JoinRecord(
         first_name="Rachel",
         last_name="Doe",
@@ -155,5 +178,27 @@ basic_sample_post_submission_join_records: dict[str, JoinRecord] = {
         code="",
         replayed=0,
         install_number=None,
+    ),
+    # To test that we ignore successful requests
+    f"{MOCK_JOIN_RECORD_PREFIX}/v3/post/2024/10/30/12/35/00/0f84.json": JoinRecord(
+        first_name="Jeffrey",
+        last_name="Mahoney",
+        email_address="jm3489@gmail.com",
+        phone_number="+1 585-475-2411",
+        street_address="197 Prospect Place",
+        city="Brooklyn",
+        state="NY",
+        zip_code="11238",
+        apartment="8",
+        roof_access=True,
+        referral="mocked join record.",
+        ncl=True,
+        trust_me_bro=False,
+        version=3,
+        uuid="109ede4d-0f84-4044-a14c-090121f0c7d4",
+        submission_time="2024-10-30T12:35:00",
+        code="201",
+        replayed=0,
+        install_number=100,
     ),
 }

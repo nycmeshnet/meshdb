@@ -67,14 +67,14 @@ class Command(BaseCommand):
         join_records_to_replay = {}
 
         for uuid, record in consistent_join_records_dict.items():
-            if (not options["all"]) and record.install_number:
+            if (not options["all"]):
                 # Ignore submissions that are known good
-                continue
+                if record.install_number:
+                    continue
 
-            # TODO: Don't bother replaying 400's. All we care about are
-            # 500's and nulls
-            if (not options["all"]) and record.code and 400 <= int(record.code) and int(record.code) <= 499:
-                continue
+                # Don't bother replaying 400's. All we care about are 500's and nulls
+                if record.code and 400 <= int(record.code) and int(record.code) <= 499:
+                    continue
 
             join_records_to_replay[uuid] = record
             record_as_dict = asdict(record)
@@ -90,15 +90,15 @@ class Command(BaseCommand):
         if not options["write"]:
             return
 
+        if not join_records_to_replay:
+            logging.warning("Found no join records to replay. Quitting")
+            return
+
         if not options["noinput"]:
             proceed_with_replay = input("Proceed with replay? (y/N): ")
             if proceed_with_replay.lower() not in ["yes", "y"]:
                 print("Operation cancelled.")
                 return
-
-        if not join_records_to_replay:
-            logging.warning("Found no join records to replay. Quitting")
-            return
 
         print("Replaying Join Records...")
 
@@ -137,13 +137,15 @@ class Command(BaseCommand):
 
                     # If this doesn't work, then uh, skill issue.
                     response = process_join_form(r)
+                    logging.info(f"Code: {response.status_code}")
 
-                elif user_input.lower() in ["reject", "a"]:
+                elif user_input.lower() in ["reject", "r"]:
                     print("Rejecting changes and re-submitting...")
                     r.__dict__.update({"trust_me_bro": True})
 
                     # If this doesn't work, then uh, skill issue.
                     response = process_join_form(r)
+                    logging.info(f"Code: {response.status_code}")
 
                 elif user_input.lower() in ["skip", "s"]:
                     print("Skipping...")
@@ -153,6 +155,8 @@ class Command(BaseCommand):
             record.replayed += 1
             if response.data.get("install_number"):
                 record.install_number = response.data["install_number"]
+            else:
+                logging.error(f"Replay unsuccessful! Did not get an install number for record: {JoinRecordProcessor.get_key(record, SubmissionStage.POST)}.")
 
             key = JoinRecordProcessor.get_key(record, SubmissionStage.POST)
             p.upload(record, key)

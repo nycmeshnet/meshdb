@@ -155,6 +155,19 @@ class JoinRecordProcessor:
             )
             post_join_records_dict[uuid] = record
 
+        # This should never happen, but theoretically we could fail to submit the pre-submisison record,
+        # successfully(?) submit the join form, then successfully submit the post-submission record.
+        # If that happens, we'd like to know about it, but there's not much we can or should do since the
+        # post-submission records ought to be the source of truth.
+        for uuid, record in post_join_records_dict.items():
+            if pre_join_records_dict.get(uuid):
+                continue
+            key_for_warning = self.get_key(record, SubmissionStage.POST)
+            logging.warning(
+                "Did not find a corresponding pre-submission join record for "
+                f"pre-submission join record {key_for_warning}. THIS SHOULD NEVER HAPPEN."
+            )
+
         return post_join_records_dict
 
     @staticmethod
