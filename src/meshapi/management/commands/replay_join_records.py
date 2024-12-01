@@ -67,7 +67,7 @@ class Command(BaseCommand):
         join_records_to_replay = {}
 
         for uuid, record in consistent_join_records_dict.items():
-            if (not options["all"]):
+            if not options["all"]:
                 # Ignore submissions that are known good
                 if record.install_number:
                     continue
@@ -126,7 +126,11 @@ class Command(BaseCommand):
                 print(confirmation_table)
 
                 if not options["noinput"]:
-                    user_input = input("(A)ccept/(R)eject/(S)kip ?: ")
+                    # Trap the user until they make a valid choice
+                    while True:
+                        user_input = input("(A)ccept/(R)eject/(S)kip ?: ")
+                        if user_input in ["accept", "reject", "skip", "a", "r", "s"]:
+                            break
                 else:
                     user_input = "accept"
                     logging.warning("--no-input was specified, so auto-accepting")
@@ -156,7 +160,10 @@ class Command(BaseCommand):
             if response.data.get("install_number"):
                 record.install_number = response.data["install_number"]
             else:
-                logging.error(f"Replay unsuccessful! Did not get an install number for record: {JoinRecordProcessor.get_key(record, SubmissionStage.POST)}.")
+                logging.error(
+                    "Replay unsuccessful! Did not get an install number for "
+                    f"record: {JoinRecordProcessor.get_key(record, SubmissionStage.POST)}."
+                )
 
             key = JoinRecordProcessor.get_key(record, SubmissionStage.POST)
             p.upload(record, key)
