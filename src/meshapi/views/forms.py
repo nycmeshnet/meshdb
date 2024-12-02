@@ -144,6 +144,10 @@ def process_join_form(r: JoinFormRequest, request: Optional[Request] = None) -> 
         if r.email_address and not validate_email_address(r.email_address):
             return Response({"detail": f"{r.email_address} is not a valid email"}, status=status.HTTP_400_BAD_REQUEST)
     except EmailValidationError:
+        # DNSTimeoutError, SMTPCommunicationError, and TLSNegotiationError are all subclasses of EmailValidationError.
+        # Any other EmailValidationError will be caught inside validate_email_address() and trigger a return false,
+        # so we know that if validate_email_address() throws, EmailValidationError, it must be one of these
+        # and therefore our fault
         return Response(
             {"detail": "Could not validate email address due to an internal error"},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR,
