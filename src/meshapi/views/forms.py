@@ -310,6 +310,10 @@ def process_join_form(r: JoinFormRequest, request: Optional[Request] = None) -> 
         status=Install.InstallStatus.REQUEST_RECEIVED,
     ).first()
     if existing_install:
+        logging.warning(
+            f"Discarding join form submission because an install was found with exactly "
+            f"matching information: #{existing_install.install_number}"
+        )
         return Response(
             {
                 "detail": "Thanks! A volunteer will email you shortly",
