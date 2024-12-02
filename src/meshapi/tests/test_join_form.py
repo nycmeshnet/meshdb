@@ -1,6 +1,7 @@
 import copy
 import json
 import time
+import datetime
 from unittest import mock
 from unittest.mock import ANY, patch
 
@@ -8,8 +9,9 @@ import requests_mock
 from django.contrib.auth.models import User
 from django.db.models import Q
 from django.test import Client, TestCase, TransactionTestCase
-from django.utils.datetime_safe import datetime
+from flags.state import enable_flag
 from parameterized import parameterized
+from validate_email.exceptions import DNSTimeoutError, SMTPTemporaryError
 
 from meshapi.models import Building, Install, Member, Node
 from meshapi.views import JoinFormRequest
@@ -359,6 +361,49 @@ class TestJoinForm(TestCase):
 
         response = self.c.post("/api/v1/join/", request, content_type="application/json")
         code = 400
+        self.assertEqual(
+            code,
+            response.status_code,
+            f"status code incorrect for invalid email valid phone. Should be {code}, but got {response.status_code}.\n Response is: {response.content.decode('utf-8')}",
+        )
+
+    @patch("meshapi.validation.validate_email_or_fail")
+    def test_email_parsing_fails(self, mock_validate):
+        mock_validate.side_effect = DNSTimeoutError()
+        request, _ = pull_apart_join_form_submission(valid_join_form_submission)
+
+        response = self.c.post("/api/v1/join/", request, content_type="application/json")
+        code = 500
+        self.assertEqual(
+            code,
+            response.status_code,
+            f"status code incorrect for invalid email valid phone. Should be {code}, but got {response.status_code}.\n Response is: {response.content.decode('utf-8')}",
+        )
+
+    @patch("meshapi.validation.validate_email_or_fail")
+    def test_email_parsing_fails_temporary_issue(self, mock_validate):
+        mock_validate.side_effect = SMTPTemporaryError({"err": "temporary mock issue"})
+        request, _ = pull_apart_join_form_submission(valid_join_form_submission)
+
+        response = self.c.post("/api/v1/join/", request, content_type="application/json")
+        code = 201
+        self.assertEqual(
+            code,
+            response.status_code,
+            f"status code incorrect for invalid email valid phone. Should be {code}, but got {response.status_code}.\n Response is: {response.content.decode('utf-8')}",
+        )
+
+    @patch("meshapi.validation.validate_email_or_fail")
+    def test_email_parsing_fails_temporary_issue_bad_email(self, mock_validate):
+        """Check that an invalid email is given the benefit of the doubt when SMTPTemporaryError is thrown"""
+        mock_validate.side_effect = SMTPTemporaryError({"err": "temporary mock issue"})
+        submission = valid_join_form_submission.copy()
+
+        submission["email_address"] = "aljksdafljkasfjldsaf"
+        request, _ = pull_apart_join_form_submission(valid_join_form_submission)
+
+        response = self.c.post("/api/v1/join/", request, content_type="application/json")
+        code = 201
         self.assertEqual(
             code,
             response.status_code,
@@ -1208,6 +1253,58 @@ class TestJoinForm(TestCase):
 
         self.assertEqual(install.building.id, building.id)
         self.assertEqual(install.node.network_number, node.network_number)
+
+
+@patch("meshapi.views.forms.DISABLE_RECAPTCHA_VALIDATION", True)
+class TestJoinFormInstallEventHooks(TestCase):
+    def setUp(self):
+        self.requests_mocker = requests_mock.Mocker(real_http=True)
+        self.requests_mocker.start()
+
+        self.requests_mocker.get(DOB_BUILDING_HEIGHT_API_URL, json=[{"heightroof": 0, "groundelev": 0}])
+
+    def tearDown(self):
+        self.requests_mocker.stop()
+
+    @patch(
+        "meshapi.util.events.join_requests_slack_channel.SLACK_JOIN_REQUESTS_CHANNEL_WEBHOOK_URL",
+        "https://mock-slack-url",
+    )
+    @patch(
+        "meshapi.util.events.osticket_creation.OSTICKET_API_TOKEN",
+        "mock-token",
+    )
+    @patch(
+        "meshapi.util.events.osticket_creation.OSTICKET_NEW_TICKET_ENDPOINT",
+        "https://mock-osticket-url",
+    )
+    def test_valid_join_form(self):
+        enable_flag("INTEGRATION_ENABLED_SEND_JOIN_REQUEST_SLACK_MESSAGES")
+        enable_flag("INTEGRATION_ENABLED_CREATE_OSTICKET_TICKETS")
+
+        self.requests_mocker.get(
+            NYC_PLANNING_LABS_GEOCODE_URL,
+            json=valid_join_form_submission["dob_addr_response"],
+        )
+        self.requests_mocker.post(
+            "https://mock-slack-url",
+            json={},
+        )
+        self.requests_mocker.post(
+            "https://mock-osticket-url",
+            json={},
+        )
+
+        request, s = pull_apart_join_form_submission(valid_join_form_submission)
+
+        response = self.client.post("/api/v1/join/", request, content_type="application/json")
+        code = 201
+        self.assertEqual(
+            code,
+            response.status_code,
+            f"status code incorrect for Valid Join Form. Should be {code}, but got {response.status_code}.\n Response is: {response.content.decode('utf-8')}",
+        )
+        validate_successful_join_form_submission(self, "Valid Join Form", s, response)
 
 
 def slow_install_init(*args, **kwargs):

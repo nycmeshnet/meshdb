@@ -9,13 +9,20 @@ import phonenumbers
 import requests
 from django.core.exceptions import ValidationError
 from flags.state import flag_state
-from validate_email import validate_email
+from validate_email import validate_email_or_fail
+from validate_email.exceptions import (
+    DNSTimeoutError,
+    EmailValidationError,
+    SMTPCommunicationError,
+    SMTPTemporaryError,
+    TLSNegotiationError,
+)
 
 from meshapi.exceptions import AddressAPIError, AddressError, OpenDataAPIError
 from meshapi.util.constants import DEFAULT_EXTERNAL_API_TIMEOUT_SECONDS, INVALID_ALTITUDE
 from meshapi.zips import NYCZipCodes
-from meshdb.utils.spreadsheet_import.building.constants import INVALID_BIN_NUMBERS
-from meshdb.utils.spreadsheet_import.building.pelias import humanify_street_address
+
+from .pelias import humanify_street_address
 
 RECAPTCHA_SECRET_KEY_V2 = os.environ.get("RECAPTCHA_SERVER_SECRET_KEY_V2")
 RECAPTCHA_SECRET_KEY_V3 = os.environ.get("RECAPTCHA_SERVER_SECRET_KEY_V3")
@@ -26,19 +33,30 @@ DOB_BUILDING_HEIGHT_API_URL = "https://data.cityofnewyork.us/resource/qb5r-6dgf.
 RECAPTCHA_TOKEN_VALIDATION_URL = "https://www.google.com/recaptcha/api/siteverify"
 
 
-# FIXME (wdn): When we can't reach the internet to get the email, this returns 400.
-# That's wrong. It should be 500 because it's our fault. I've seen this reject
-# valid emails because of this and it makes testing offline impossible unless you mock it.
-# https://github.com/nycmeshnet/meshdb/issues/692
+INVALID_BIN_NUMBERS = [-2, -1, 0, 1000000, 2000000, 3000000, 4000000]
+
+
 def validate_email_address(email_address: str) -> Optional[bool]:
-    return validate_email(
-        email_address=email_address,
-        check_format=True,
-        check_blacklist=True,
-        check_dns=True,
-        dns_timeout=5,
-        check_smtp=False,
-    )
+    try:
+        return validate_email_or_fail(
+            email_address=email_address,
+            check_format=True,
+            check_blacklist=True,
+            check_dns=True,
+            dns_timeout=5,
+            check_smtp=False,
+        )
+    except SMTPTemporaryError:
+        # SMTPTemporaryError indicates address validity
+        # is ambiguous. We give the submitter the benefit of the doubt in this case
+        return True
+    except (DNSTimeoutError, SMTPCommunicationError, TLSNegotiationError) as error:
+        # These errors indicate a transient failure in our ability to validate the requested email,
+        # re-raise the exception to trigger a 500 at the top level handler
+        raise error
+    except EmailValidationError:
+        # Failures for any other reason indicate the email address is invalid, and we should 400 them
+        return False
 
 
 def normalize_phone_number(phone_number: str) -> str:

@@ -5,7 +5,7 @@ import requests_mock
 from django.test import TestCase
 from flags.state import disable_flag, enable_flag
 
-from meshapi.models import Building, Install, Member
+from meshapi.models import Building, Install, Member, Node
 from meshapi.tests.sample_data import sample_building, sample_install, sample_member
 
 
@@ -70,8 +70,18 @@ class TestInstallCreateSignals(TestCase):
 
         disable_flag("INTEGRATION_ENABLED_SEND_JOIN_REQUEST_SLACK_MESSAGES")
         enable_flag("INTEGRATION_ENABLED_CREATE_OSTICKET_TICKETS")
+        disable_flag("INTEGRATION_OSTICKET_INCLUDE_EXISTING_NETWORK_NUMBER")
+
+        node = Node(
+            network_number=44,
+            latitude=0,
+            longitude=0,
+            status=Node.NodeStatus.ACTIVE,
+        )
+        node.save()
 
         install = Install(**self.sample_install_copy)
+        install.node = node
         install.save()
 
         self.assertEqual(len(request_mocker.request_history), 1)
@@ -90,6 +100,7 @@ class TestInstallCreateSignals(TestCase):
                 "message": f"date: 2022-02-27\r\nnode: {install.install_number}\r\nname: John Smith\r\nemail: john.smith@example.com\r\nphone: +1 555-555-5555\r\nlocation: 3333 Chom St, Brooklyn NY, 11111\r\nrooftop: Rooftop install\r\nagree to ncl: True",
                 "phone": "+1 555-555-5555",
                 "location": "3333 Chom St, Brooklyn NY, 11111",
+                "apt": "3",
                 "rooftop": "Rooftop install",
                 "ncl": True,
                 "ip": "*.*.*.*",
@@ -99,6 +110,85 @@ class TestInstallCreateSignals(TestCase):
 
         install.refresh_from_db()
         self.assertEqual(install.ticket_number, "00123456")
+
+    @patch(
+        "meshapi.util.events.osticket_creation.OSTICKET_NEW_TICKET_ENDPOINT",
+        "http://example.com/test-url",
+    )
+    @patch(
+        "meshapi.util.events.osticket_creation.OSTICKET_API_TOKEN",
+        "mock-token",
+    )
+    @requests_mock.Mocker()
+    def test_constructing_install_triggers_osticket_for_existing_node(self, request_mocker):
+        request_mocker.post("http://example.com/test-url", text="00123456", status_code=201)
+
+        disable_flag("INTEGRATION_ENABLED_SEND_JOIN_REQUEST_SLACK_MESSAGES")
+        enable_flag("INTEGRATION_ENABLED_CREATE_OSTICKET_TICKETS")
+        enable_flag("INTEGRATION_OSTICKET_INCLUDE_EXISTING_NETWORK_NUMBER")
+
+        node = Node(
+            network_number=44,
+            latitude=0,
+            longitude=0,
+            status=Node.NodeStatus.ACTIVE,
+        )
+        node.save()
+
+        install = Install(**self.sample_install_copy)
+        install.node = node
+        install.save()
+
+        install2 = Install(**self.sample_install_copy)
+        install2.save()
+
+        self.assertEqual(len(request_mocker.request_history), 2)
+        self.assertEqual(
+            request_mocker.request_history[0].url,
+            "http://example.com/test-url",
+        )
+        self.assertEqual(
+            request_mocker.request_history[1].url,
+            "http://example.com/test-url",
+        )
+        self.assertEqual(
+            json.loads(request_mocker.request_history[0].text),
+            {
+                "node": install.install_number,
+                "userNode": install.install_number,
+                "email": "john.smith@example.com",
+                "name": "John Smith",
+                "subject": f"NYC Mesh {install.install_number} Rooftop Install",
+                "message": f"date: 2022-02-27\r\nnode: {install.install_number}\r\nname: John Smith\r\nemail: john.smith@example.com\r\nphone: +1 555-555-5555\r\nlocation: 3333 Chom St, Brooklyn NY, 11111\r\nrooftop: Rooftop install\r\nagree to ncl: True",
+                "phone": "+1 555-555-5555",
+                "location": "3333 Chom St, Brooklyn NY, 11111",
+                "apt": "3",
+                "rooftop": "Rooftop install",
+                "existingNetworkNumber": "44",
+                "ncl": True,
+                "ip": "*.*.*.*",
+                "locale": "en",
+            },
+        )
+        self.assertEqual(
+            json.loads(request_mocker.request_history[1].text),
+            {
+                "node": install2.install_number,
+                "userNode": install2.install_number,
+                "email": "john.smith@example.com",
+                "name": "John Smith",
+                "subject": f"NYC Mesh {install2.install_number} Rooftop Install",
+                "message": f"date: 2022-02-27\r\nnode: {install2.install_number}\r\nname: John Smith\r\nemail: john.smith@example.com\r\nphone: +1 555-555-5555\r\nlocation: 3333 Chom St, Brooklyn NY, 11111\r\nrooftop: Rooftop install\r\nagree to ncl: True",
+                "phone": "+1 555-555-5555",
+                "location": "3333 Chom St, Brooklyn NY, 11111",
+                "apt": "3",
+                "rooftop": "Rooftop install",
+                "existingNetworkNumber": "",
+                "ncl": True,
+                "ip": "*.*.*.*",
+                "locale": "en",
+            },
+        )
 
     @patch(
         "meshapi.util.events.join_requests_slack_channel.SLACK_JOIN_REQUESTS_CHANNEL_WEBHOOK_URL",

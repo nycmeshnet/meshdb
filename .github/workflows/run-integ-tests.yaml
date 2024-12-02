@@ -1,0 +1,39 @@
+name: Run Integration Tests
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        required: true
+        type: string
+
+permissions: read-all
+
+jobs:
+  run-integ-tests:
+    name: Run Integration Tests
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@65d7f2d534ac1bc67fcd62888c5f4f3d2cb2b236 # v4
+        with:
+          python-version: '3.11'
+      - name: "Upgrade pip"
+        run: "pip install --upgrade pip"
+      - name: "Install package"
+        run: pip install ".[dev]"
+      - name: Run Integration Tests
+        env:
+          SITE_BASE_URL: ${{ vars.SITE_BASE_URL }}
+          INTEG_TEST_MESHDB_API_TOKEN: ${{ secrets.INTEG_TEST_MESHDB_API_TOKEN }}
+        run: |
+          # Run integ tests (only if we are not deploying to prod, since these tests can write data)
+          if ! [[ "${{ inputs.environment }}" =~ "prod" ]]; then
+            pytest integ-tests
+          else 
+            echo "This action should not be run against prod, is something wrong with the workflow config?"
+            exit 1
+          fi
+

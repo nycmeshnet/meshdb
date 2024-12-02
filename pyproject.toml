@@ -21,7 +21,6 @@ dependencies = [
     "requests-mock==1.12.*",
     "geopy==2.4.*",
     "django-cors-headers==4.3.*",
-    "nameparser==1.1.*",
     "inflect==7.0.*",
     # FIXME: Update me to stable, once 1.0 is released officially
     #  https://github.com/nycmeshnet/meshdb/issues/525
