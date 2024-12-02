@@ -392,6 +392,23 @@ class TestJoinForm(TestCase):
             f"status code incorrect for invalid email valid phone. Should be {code}, but got {response.status_code}.\n Response is: {response.content.decode('utf-8')}",
         )
 
+    @patch("meshapi.validation.validate_email_or_fail")
+    def test_email_parsing_fails_temporary_issue_bad_email(self, mock_validate):
+        """Check that an invalid email is given the benefit of the doubt when SMTPTemporaryError is thrown"""
+        mock_validate.side_effect = SMTPTemporaryError({"err": "temporary mock issue"})
+        submission = valid_join_form_submission.copy()
+
+        submission["email_address"] = "aljksdafljkasfjldsaf"
+        request, _ = pull_apart_join_form_submission(valid_join_form_submission)
+
+        response = self.c.post("/api/v1/join/", request, content_type="application/json")
+        code = 201
+        self.assertEqual(
+            code,
+            response.status_code,
+            f"status code incorrect for invalid email valid phone. Should be {code}, but got {response.status_code}.\n Response is: {response.content.decode('utf-8')}",
+        )
+
     def test_non_nyc_join_form(self):
         self.requests_mocker.get(
             NYC_PLANNING_LABS_GEOCODE_URL,
