@@ -15,6 +15,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework_dataclasses.serializers import DataclassSerializer
+from validate_email.exceptions import EmailValidationError
 
 from meshapi.exceptions import AddressError
 from meshapi.models import AddressTruthSource, Building, Install, Member, Node
@@ -139,8 +140,18 @@ def process_join_form(r: JoinFormRequest, request: Optional[Request] = None) -> 
     if not r.email_address:
         return Response({"detail": "Must provide an email"}, status=status.HTTP_400_BAD_REQUEST)
 
-    if r.email_address and not validate_email_address(r.email_address):
-        return Response({"detail": f"{r.email_address} is not a valid email"}, status=status.HTTP_400_BAD_REQUEST)
+    try:
+        if r.email_address and not validate_email_address(r.email_address):
+            return Response({"detail": f"{r.email_address} is not a valid email"}, status=status.HTTP_400_BAD_REQUEST)
+    except EmailValidationError:
+        # DNSTimeoutError, SMTPCommunicationError, and TLSNegotiationError are all subclasses of EmailValidationError.
+        # Any other EmailValidationError will be caught inside validate_email_address() and trigger a return false,
+        # so we know that if validate_email_address() throws, EmailValidationError, it must be one of these
+        # and therefore our fault
+        return Response(
+            {"detail": "Could not validate email address due to an internal error"},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
 
     # Expects country code!!!!
     if r.phone_number and not validate_phone_number(r.phone_number):

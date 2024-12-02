@@ -21,3 +21,12 @@ class TestBuilding(TestCase):
             longitude=0,
         )
         self.assertEqual(limited_address_building.one_line_complete_address, "123 Chom Street")
+
+        full_address_building = Building(
+            street_address="123 Chom Street",
+            state="NY",
+            zip_code="12345",
+            latitude=0,
+            longitude=0,
+        )
+        self.assertEqual(full_address_building.one_line_complete_address, "123 Chom Street, NY, 12345")
