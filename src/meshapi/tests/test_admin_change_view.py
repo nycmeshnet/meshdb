@@ -8,9 +8,8 @@ from django.test import Client, TestCase
 from flags.state import disable_flag, enable_flag
 from rest_framework.authtoken.models import TokenProxy
 
-from meshapi.models import LOS, AccessPoint, Building, Device, Install, Link, Member, Node, Sector
+from meshapi.models import LOS, AccessPoint, AddressTruthSource, Building, Device, Install, Link, Member, Node, Sector
 from meshapi_hooks.hooks import CelerySerializerHook
-from meshdb.utils.spreadsheet_import.building.constants import AddressTruthSource
 
 from .sample_data import sample_building, sample_device, sample_install, sample_member, sample_node
 

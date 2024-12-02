@@ -21,8 +21,8 @@ from validate_email.exceptions import (
 from meshapi.exceptions import AddressAPIError, AddressError, OpenDataAPIError
 from meshapi.util.constants import DEFAULT_EXTERNAL_API_TIMEOUT_SECONDS, INVALID_ALTITUDE
 from meshapi.zips import NYCZipCodes
-from meshdb.utils.spreadsheet_import.building.constants import INVALID_BIN_NUMBERS
-from meshdb.utils.spreadsheet_import.building.pelias import humanify_street_address
+
+from .pelias import humanify_street_address
 
 RECAPTCHA_SECRET_KEY_V2 = os.environ.get("RECAPTCHA_SERVER_SECRET_KEY_V2")
 RECAPTCHA_SECRET_KEY_V3 = os.environ.get("RECAPTCHA_SERVER_SECRET_KEY_V3")
@@ -31,6 +31,9 @@ RECAPTCHA_INVISIBLE_TOKEN_SCORE_THRESHOLD = float(os.environ.get("RECAPTCHA_INVI
 NYC_PLANNING_LABS_GEOCODE_URL = "https://geosearch.planninglabs.nyc/v2/search"
 DOB_BUILDING_HEIGHT_API_URL = "https://data.cityofnewyork.us/resource/qb5r-6dgf.json"
 RECAPTCHA_TOKEN_VALIDATION_URL = "https://www.google.com/recaptcha/api/siteverify"
+
+
+INVALID_BIN_NUMBERS = [-2, -1, 0, 1000000, 2000000, 3000000, 4000000]
 
 
 def validate_email_address(email_address: str) -> Optional[bool]:
