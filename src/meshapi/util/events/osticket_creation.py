@@ -8,7 +8,7 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from flags.state import flag_enabled
 
-from meshapi.models import Install
+from meshapi.models import Install, Node
 from meshapi.util.django_flag_decorator import skip_if_flag_disabled
 
 OSTICKET_API_TOKEN = os.environ.get("OSTICKET_API_TOKEN")
@@ -79,7 +79,7 @@ def create_os_ticket_for_install(sender: ModelBase, instance: Install, created: 
     }
 
     if flag_enabled("INTEGRATION_OSTICKET_INCLUDE_EXISTING_NETWORK_NUMBER"):
-        if install.network_number:
+        if install.network_number and install.node.status == Node.NodeStatus.ACTIVE:
             data["existingNetworkNumber"] = str(install.network_number)
         else:
             data["existingNetworkNumber"] = ""
