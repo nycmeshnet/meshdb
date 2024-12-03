@@ -44,62 +44,9 @@ spec:
           envFrom:
             - configMapRef:
                 name: meshdbconfig
-          env:
-            - name: DB_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: meshdb-secrets
-                  key: postgres-password
-            - name: DB_PASSWORD_RO
-              valueFrom:
-                secretKeyRef:
-                  name: meshdb-secrets
-                  key: postgres-password-ro
-            - name: AWS_ACCESS_KEY_ID
-              valueFrom:
-                secretKeyRef:
-                  name: meshdb-secrets
-                  key: aws-access-key-id
-            - name: AWS_SECRET_ACCESS_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: meshdb-secrets
-                  key: aws-secret-access-key
-            - name: SMTP_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: meshdb-secrets
-                  key: smtp-password
-            - name: DJANGO_SECRET_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: meshdb-secrets
-                  key: django-secret-key
-            - name: NN_ASSIGN_PSK
-              valueFrom:
-                secretKeyRef:
-                  name: meshdb-secrets
-                  key: nn-assign-psk
-            - name: QUERY_PSK
-              valueFrom:
-                secretKeyRef:
-                  name: meshdb-secrets
-                  key: query-psk
-            - name: PANO_GITHUB_TOKEN
-              valueFrom:
-                secretKeyRef:
-                  name: meshdb-secrets
-                  key: pano-github-token
-            - name: UISP_PASS
-              valueFrom:
-                secretKeyRef:
-                  name: meshdb-secrets
-                  key: uisp-pass
-            - name: SLACK_ADMIN_NOTIFICATIONS_WEBHOOK_URL
-              valueFrom:
-                secretKeyRef:
-                  name: meshdb-secrets
-                  key: slack-webhook
+          envFrom:
+          - secretRef:
+              name: meshdb-secrets
           {{- if .livenessProbe }}
           livenessProbe:
             {{- toYaml .livenessProbe | nindent 12 }}
