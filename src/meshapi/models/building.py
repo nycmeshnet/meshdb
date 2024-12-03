@@ -18,7 +18,8 @@ class AddressTruthSource(Enum):
     NYCPlanningLabs = "NYCPlanningLabs"
     PeliasStringParsing = "PeliasStringParsing"
     ReverseGeocodeFromCoordinates = "ReverseGeocodeFromCoordinates"
-    HumanEntry = "HumanEntry"
+    HumanEntry = "HumanEntry"  # Volunteers
+    JoinFormEntry = "JoinFormEntry"  # Random Humans
 
 
 class Building(models.Model):
