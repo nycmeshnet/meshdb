@@ -79,7 +79,7 @@ def create_os_ticket_for_install(sender: ModelBase, instance: Install, created: 
     }
 
     if flag_enabled("INTEGRATION_OSTICKET_INCLUDE_EXISTING_NETWORK_NUMBER"):
-        if install.network_number and install.node.status == Node.NodeStatus.ACTIVE:
+        if install.node and install.node.network_number and install.node.status == Node.NodeStatus.ACTIVE:
             data["existingNetworkNumber"] = str(install.network_number)
         else:
             data["existingNetworkNumber"] = ""
