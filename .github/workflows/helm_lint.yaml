@@ -56,7 +56,7 @@ jobs:
 
       - name: Run yamllint
         run: |
-          yamllint -d "{extends: default, rules: {key-duplicates: {level: error}, indentation: {level: error}, line-length: {level: error}, trailing-spaces: {level: error}}}" infra/helm/meshdb/
+          yamllint -d "{extends: default, rules: {key-duplicates: {level: error}, trailing-spaces: {level: error}}}" infra/helm/meshdb/
 
       - name: Create kind cluster
         if: steps.list-changed.outputs.changed == 'true'
