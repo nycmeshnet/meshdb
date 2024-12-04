@@ -20,7 +20,7 @@ jobs:
 
       - name: Run yamllint
         run: |
-          yamllint -d "{extends: default, rules: {line-length: {level: warn}, braces: {level:warn}, key-duplicates: {level: error}, trailing-spaces: {level: error}}}" infra/helm/meshdb/
+          yamllint -d "{extends: default, rules: {line-length: {level: warning}, key-duplicates: {level: error}, trailing-spaces: {level: error}}}" infra/helm/meshdb/
 
   kubeconform:
     runs-on: ubuntu-latest
