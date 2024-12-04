@@ -40,9 +40,8 @@ spec:
           envFrom:
             - configMapRef:
                 name: meshdbconfig
-          envFrom:
-          - secretRef:
-              name: meshdb-secrets
+            - secretRef:
+                name: meshdb-secrets
           volumeMounts:
             - name: static-content-vol
               mountPath: /opt/meshdb/static
