@@ -185,10 +185,6 @@ def process_join_form(r: JoinFormRequest, request: Optional[Request] = None) -> 
 
     changed_info: dict[str, str | int] = {}
 
-    if formatted_phone_number and r.phone_number != formatted_phone_number:
-        logging.warning(f"Changed phone_number: {formatted_phone_number} != {r.phone_number}")
-        changed_info["phone_number"] = formatted_phone_number
-
     if r.street_address != nyc_addr_info.street_address:
         logging.warning(f"Changed street_address: {r.street_address} != {nyc_addr_info.street_address}")
         changed_info["street_address"] = nyc_addr_info.street_address
