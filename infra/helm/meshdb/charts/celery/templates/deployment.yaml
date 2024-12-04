@@ -44,9 +44,8 @@ spec:
           envFrom:
             - configMapRef:
                 name: meshdbconfig
-          envFrom:
-          - secretRef:
-              name: meshdb-secrets
+            - secretRef:
+                name: meshdb-secrets
           {{- if .livenessProbe }}
           livenessProbe:
             {{- toYaml .livenessProbe | nindent 12 }}
