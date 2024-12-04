@@ -39,8 +39,10 @@ jobs:
         run: ct lint --target-branch ${{ github.event.repository.default_branch }}
 
       - name: Validate Kubernetes manifests
-        run: |
-          find infra/helm/meshdb/ -name "*.yaml" | xargs docker run --rm -v $(pwd):/workspace ghcr.io/yannh/kubeconform:latest -strict -exit-on-error -summary
+        uses: docker://ghcr.io/yannh/kubeconform:latest
+        with:
+          entrypoint: '/kubeconform'
+          args: "-summary -output json infra/helm/meshdb/"
 
       - name: Create kind cluster
         if: steps.list-changed.outputs.changed == 'true'
