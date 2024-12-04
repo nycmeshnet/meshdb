@@ -67,7 +67,7 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: meshdb-secrets
-                  key: POSTGRES_PASSWORD
+                  key: DB_PASSWORD
             - name: PGDATA
               value: "/var/lib/postgresql/data/meshdb_data"
           volumeMounts:
