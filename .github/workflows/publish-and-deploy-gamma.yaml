@@ -6,6 +6,9 @@ on:
   workflow_dispatch:
     branches:
       - dev
+  pull_request:
+    branches:
+      - main
 
 permissions: read-all
 
