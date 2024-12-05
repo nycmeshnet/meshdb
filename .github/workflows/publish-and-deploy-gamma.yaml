@@ -1,5 +1,4 @@
-name: Publish and Deploy
-# Combined these two workflows for visbility
+name: Publish and Deploy Gamma
 
 on:
   push:
