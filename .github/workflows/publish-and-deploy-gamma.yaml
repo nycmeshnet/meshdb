@@ -6,9 +6,6 @@ on:
   workflow_dispatch:
     branches:
       - dev
-  pull_request:
-    branches:
-      - main
 
 permissions: read-all
 
@@ -33,7 +30,7 @@ jobs:
       environment: gamma1
       useTag: gamma1
     secrets: inherit
-    needs: push_to_registry
+    needs: push_to_registry_gamma
     if: github.ref == 'refs/heads/dev'
 
 
