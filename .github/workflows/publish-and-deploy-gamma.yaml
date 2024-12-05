@@ -1,0 +1,37 @@
+name: Publish and Deploy
+# Combined these two workflows for visbility
+
+on:
+  push:
+    branches: [ dev ]
+  workflow_dispatch:
+    branches:
+      - dev
+
+permissions: read-all
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  push_to_registry_gamma:
+    name: Push to gamma1
+    uses: ./.github/workflows/build-push-image.yaml
+    with:
+      environment: gamma1
+      image_tag: willnilges/meshdb:gamma1
+    secrets: inherit
+    if: github.ref == 'refs/heads/dev'
+
+  deploy_to_gamma1:
+    name: Deploy to gamma1
+    uses: ./.github/workflows/deploy-to-k8s.yaml
+    with:
+      environment: gamma1
+      useTag: gamma1
+    secrets: inherit
+    needs: push_to_registry
+    if: github.ref == 'refs/heads/dev'
+
+
