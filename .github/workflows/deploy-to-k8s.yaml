@@ -7,6 +7,9 @@ on:
       environment:
         required: true
         type: string
+      useTag:
+        required: false
+        type: string
 
 jobs:
   deploy_to_k8s:
@@ -75,7 +78,8 @@ jobs:
         --set meshweb.osticket_new_ticket_endpoint="${{ vars.OSTICKET_NEW_TICKET_ENDPOINT }}" \
         --set meshweb.environment="${{ inputs.environment }}" \
         --set ingress.hosts[0].host="${{ vars.INGRESS_HOST }}",ingress.hosts[0].paths[0].path=/,ingress.hosts[0].paths[0].pathType=Prefix \
-        --set ingress.hosts[1].host="${{ vars.INGRESS_HOST_LEGACY }}",ingress.hosts[1].paths[0].path=/,ingress.hosts[1].paths[0].pathType=Prefix
+        --set ingress.hosts[1].host="${{ vars.INGRESS_HOST_LEGACY }}",ingress.hosts[1].paths[0].path=/,ingress.hosts[1].paths[0].pathType=Prefix \
+        --set image.tag="${{ inputs.useTag || 'main' }}"
 
         # Rolling restart
         kubectl --kubeconfig ./config --server https://${{ secrets.SSH_TARGET_IP }}:6443 -n ${{ vars.APP_NAMESPACE }} rollout restart deploy

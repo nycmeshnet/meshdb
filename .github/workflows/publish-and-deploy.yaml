@@ -44,6 +44,15 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
 
+  deploy_to_gamma1:
+    name: Deploy to gamma1
+    uses: ./.github/workflows/deploy-to-k8s.yaml
+    with:
+      environment: gamma1
+    secrets: inherit
+    needs: push_to_registry
+    if: github.ref == 'refs/heads/main'
+
   deploy_to_dev3:
     name: Deploy to dev 3
     uses: ./.github/workflows/deploy-to-k8s.yaml
