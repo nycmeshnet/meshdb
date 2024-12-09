@@ -44,6 +44,7 @@ dependencies = [
     "prettytable==3.11.*",
     "matplotlib==3.9.*",
     "django-ipware==7.0.1",
+    "ddtrace==2.17.*",
 ]
 
 [project.optional-dependencies]
