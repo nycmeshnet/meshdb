@@ -2,9 +2,10 @@ from typing import Any, List, Optional
 
 from django.contrib import admin
 from django.http import HttpRequest
+from admin_site_search.views import AdminSiteSearchView
 
 
-class MeshDBAdminSite(admin.AdminSite):
+class MeshDBAdminSite(AdminSiteSearchView, admin.AdminSite):
     def get_app_list(self, request: HttpRequest, app_label: Optional[str] = None) -> List[Any]:
         """Reorder the apps in the admin site.
 

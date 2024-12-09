@@ -206,6 +206,7 @@ INSTALLED_APPS = [
     "flags",
     "explorer",
     "simple_history",
+    "admin_site_search",
 ]
 
 MIDDLEWARE = [
