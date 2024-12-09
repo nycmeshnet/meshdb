@@ -1,11 +1,13 @@
-from typing import Any, List, Optional
+from typing import Any, List, Literal, Optional
 
+from admin_site_search.views import AdminSiteSearchView
 from django.contrib import admin
 from django.http import HttpRequest
-from admin_site_search.views import AdminSiteSearchView
 
 
 class MeshDBAdminSite(AdminSiteSearchView, admin.AdminSite):
+    site_search_method: Literal["model_char_fields", "admin_search_fields"] = "admin_search_fields"
+
     def get_app_list(self, request: HttpRequest, app_label: Optional[str] = None) -> List[Any]:
         """Reorder the apps in the admin site.
 
