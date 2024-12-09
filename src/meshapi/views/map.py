@@ -4,6 +4,8 @@ from datetime import datetime, timezone
 from json import JSONDecodeError
 from typing import Any, Dict, List
 
+from ddtrace import tracer
+
 import requests
 from django.db.models import Count, Exists, F, OuterRef, Prefetch, Q, Subquery
 from drf_spectacular.utils import OpenApiResponse, extend_schema, extend_schema_view, inline_serializer
@@ -49,6 +51,7 @@ class MapDataNodeList(generics.ListAPIView):
     serializer_class = MapDataInstallSerializer
     pagination_class = None
 
+    @tracer.wrap()
     def get_queryset(self) -> List[Install]:  # type: ignore[override]
         all_installs = []
 
@@ -131,6 +134,7 @@ class MapDataNodeList(generics.ListAPIView):
         all_installs.sort(key=lambda i: i.install_number)
         return all_installs
 
+    @tracer.wrap()
     def list(self, request: Request, *args: List[Any], **kwargs: Dict[str, Any]) -> Response:
         response = super().list(request, args, kwargs)
 
@@ -219,6 +223,7 @@ class MapDataLinkList(generics.ListAPIView):
         # .exclude(to_device__status=Device.DeviceStatus.INACTIVE)
     )
 
+    @tracer.wrap()
     def list(self, request: Request, *args: List[Any], **kwargs: Dict[str, Any]) -> Response:
         response = super().list(request, *args, **kwargs)
 
@@ -431,6 +436,7 @@ class MapDataSectorList(generics.ListAPIView):
 class KioskListWrapper(APIView):
     permission_classes = [permissions.AllowAny]
 
+    @tracer.wrap()
     def get(self, request: Request) -> Response:
         try:
             response = requests.get(LINKNYC_KIOSK_DATA_URL)
