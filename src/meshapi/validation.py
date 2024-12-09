@@ -9,6 +9,8 @@ import phonenumbers
 import requests
 from django.core.exceptions import ValidationError
 from flags.state import flag_state
+from geopy import Nominatim
+from geopy.exc import GeocoderUnavailable
 from validate_email import validate_email_or_fail
 from validate_email.exceptions import (
     DNSTimeoutError,
@@ -76,12 +78,8 @@ def validate_phone_number(phone_number: str) -> Optional[phonenumbers.PhoneNumbe
         return None
 
 
-# Used to obtain info about addresses within NYC. Uses a pair of APIs
-# hosted by the city with all kinds of good info. Unfortunately, there's
-# not a solid way to check if an address is actually _within_ NYC, so this
-# is gated by OSMAddressInfo.
 @dataclass
-class NYCAddressInfo:
+class AddressInfo:
     street_address: str
     city: str
     state: str
@@ -89,7 +87,6 @@ class NYCAddressInfo:
     longitude: float
     latitude: float
     altitude: float | None
-    bin: int | None
 
     def __init__(self, street_address: str, city: str, state: str, zip_code: str):
         if state != "New York" and state != "NY":
@@ -98,6 +95,43 @@ class NYCAddressInfo:
         # We only support the five boroughs of NYC at this time
         if not NYCZipCodes.match_zip(zip_code):
             raise ValueError(f"Non-NYC zip code detected: {zip_code}")
+
+        self.street_address = street_address
+        self.city = city
+        self.state = state.replace("New York", "NY")
+        self.zip = zip_code
+
+
+@dataclass
+class OSMAddressInfo(AddressInfo):
+    def __init__(self, street_address: str, city: str, state: str, zip_code: str):
+        super().__init__(street_address, city, state, zip_code)
+
+        address_str = f"{street_address}, {city}, {state}, {zip_code}"
+        try:
+            geolocator = Nominatim(user_agent="andrew@nycmesh.net")
+            osm_geolocation = geolocator.geocode(
+                address_str,
+            )
+            self.latitude = osm_geolocation.latitude
+            self.longitude = osm_geolocation.longitude
+            self.altitude = INVALID_ALTITUDE
+        except GeocoderUnavailable as e:
+            # We don't need a retry loop here because the geocode() function has built-in retries
+            logging.error(f"Couldn't connect to OSM API while querying for '{address_str}'. Did we get throttled?")
+            raise e
+
+
+# Used to obtain info about addresses within NYC. Uses a pair of APIs
+# hosted by the city with all kinds of good info. Unfortunately, there's
+# not a solid way to check if an address is actually _within_ NYC, so this
+# is gated by OSMAddressInfo.
+@dataclass
+class NYCAddressInfo(AddressInfo):
+    bin: int | None
+
+    def __init__(self, street_address: str, city: str, state: str, zip_code: str):
+        super().__init__(street_address, city, state, zip_code)
 
         self.address = f"{street_address}, {city}, {state} {zip_code}"
 

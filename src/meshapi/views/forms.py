@@ -26,6 +26,7 @@ from meshapi.util.constants import RECAPTCHA_CHECKBOX_TOKEN_HEADER, RECAPTCHA_IN
 from meshapi.util.django_pglocks import advisory_lock
 from meshapi.util.network_number import NETWORK_NUMBER_MAX, NETWORK_NUMBER_MIN, get_next_available_network_number
 from meshapi.validation import (
+    AddressInfo,
     NYCAddressInfo,
     geocode_nyc_address,
     normalize_phone_number,
@@ -159,14 +160,11 @@ def process_join_form(r: JoinFormRequest, request: Optional[Request] = None) -> 
 
     formatted_phone_number = normalize_phone_number(r.phone_number) if r.phone_number else None
 
+    addr_info: Optional[AddressInfo] = None
     try:
-        try:
-            nyc_addr_info: Optional[NYCAddressInfo] = geocode_nyc_address(r.street_address, r.city, r.state, r.zip_code)
-        except Exception as e:
-            # Ensure this gets logged
-            logging.exception(e)
-            raise e
-    except ValueError:
+        addr_info = geocode_nyc_address(r.street_address, r.city, r.state, r.zip_code)
+    except ValueError as e:
+        logging.exception("Non NYC Registration")
         logging.debug(r.street_address, r.city, r.state, r.zip_code)
         return Response(
             {
@@ -176,18 +174,18 @@ def process_join_form(r: JoinFormRequest, request: Optional[Request] = None) -> 
             status=status.HTTP_400_BAD_REQUEST,
         )
     except AddressError as e:
+        logging.exception("??")
         return Response({"detail": e.args[0]}, status=status.HTTP_400_BAD_REQUEST)
+    except Exception as e:
+        logging.exception("Bad error")
+        return Response({"detail": e.args[0]}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-    if not nyc_addr_info:
+    if not addr_info:
         return Response(
             {"detail": "Your address could not be validated."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
 
     changed_info: dict[str, str | int] = {}
-
-    if formatted_phone_number and r.phone_number != formatted_phone_number:
-        logging.warning(f"Changed phone_number: {formatted_phone_number} != {r.phone_number}")
-        changed_info["phone_number"] = formatted_phone_number
 
     if r.street_address != nyc_addr_info.street_address:
         logging.warning(f"Changed street_address: {r.street_address} != {nyc_addr_info.street_address}")
@@ -208,6 +206,7 @@ def process_join_form(r: JoinFormRequest, request: Optional[Request] = None) -> 
                 f"(email: {r.email_address}, changed_info: {changed_info}). "
                 "Proceeding with install request submission."
             )
+            nyc_addr_info = None
         else:
             logging.warning("Please confirm a few details")
             return Response(
@@ -254,9 +253,17 @@ def process_join_form(r: JoinFormRequest, request: Optional[Request] = None) -> 
     if formatted_phone_number not in join_form_member.all_phone_numbers:
         join_form_member.additional_phone_numbers.append(formatted_phone_number)
 
-    # Try to map this address to an existing Building or group of buildings
-    all_existing_buildings_for_structure = Building.objects.filter(bin=nyc_addr_info.bin)
-    existing_exact_buildings = all_existing_buildings_for_structure.filter(street_address=nyc_addr_info.street_address)
+    # Try to map this address to an existing Building or group of buildings,
+    # but only if we are not in "trust me bro" mode, since in this mode the NYC addr
+    # info is unavailable
+    if nyc_addr_info:
+        all_existing_buildings_for_structure = Building.objects.filter(bin=nyc_addr_info.bin)
+        existing_exact_buildings = all_existing_buildings_for_structure.filter(
+            street_address=nyc_addr_info.street_address
+        )
+    else:
+        all_existing_buildings_for_structure = Building.objects.none()
+        existing_exact_buildings = Building.objects.none()
 
     existing_primary_nodes_for_structure = list(
         {building.primary_node for building in all_existing_buildings_for_structure}
@@ -279,21 +286,33 @@ def process_join_form(r: JoinFormRequest, request: Optional[Request] = None) -> 
             f"these should be consolidated"
         )
 
-    join_form_building = (
-        existing_exact_buildings[0]
-        if len(existing_exact_buildings) > 0
-        else Building(
-            bin=nyc_addr_info.bin if nyc_addr_info is not None else None,
-            street_address=nyc_addr_info.street_address,
-            city=nyc_addr_info.city,
-            state=nyc_addr_info.state,
-            zip_code=nyc_addr_info.zip,
-            latitude=nyc_addr_info.latitude,
-            longitude=nyc_addr_info.longitude,
-            altitude=nyc_addr_info.altitude,
-            address_truth_sources=[AddressTruthSource.NYCPlanningLabs],
-        )
-    )
+    if len(existing_exact_buildings) > 0:
+        join_form_building = existing_exact_buildings[0]
+    else:
+        if nyc_addr_info:
+            join_form_building = Building(
+                bin=nyc_addr_info.bin,
+                street_address=nyc_addr_info.street_address,
+                city=nyc_addr_info.city,
+                state=nyc_addr_info.state,
+                zip_code=nyc_addr_info.zip,
+                latitude=nyc_addr_info.latitude,
+                longitude=nyc_addr_info.longitude,
+                altitude=nyc_addr_info.altitude,
+                address_truth_sources=[AddressTruthSource.NYCPlanningLabs],
+            )
+        else:
+            join_form_building = Building(
+                bin=None,
+                street_address=r.street_address,
+                city=r.city,
+                state=r.state,
+                zip_code=r.zip_code,
+                latitude=None,
+                longitude=None,
+                altitude=None,
+                address_truth_sources=[AddressTruthSource.JoinFormEntry],
+            )
 
     if not join_form_building.primary_node:
         join_form_building.primary_node = (
@@ -316,40 +335,15 @@ def process_join_form(r: JoinFormRequest, request: Optional[Request] = None) -> 
     )
 
     try:
-        join_form_member.save()
+        with transaction.atomic():
+            join_form_member.save()
+            join_form_building.save()
+            join_form_install.save()
     except IntegrityError:
-        logging.exception("Error saving member from join form")
+        logging.exception("Error saving object from join form")
         return Response(
-            {"detail": "There was a problem saving your Member information"},
+            {"detail": "There was a problem saving your information"},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        )
-
-    try:
-        join_form_building.save()
-
-        # If this building is a new building in a shared structure of buildings with
-        # existing node(s), update the node-building relation to reflect the new building's
-        # association with the existing nodes
-        for node in existing_nodes_for_structure:
-            join_form_building.nodes.add(node)
-    except IntegrityError:
-        logging.exception("Error saving building from join form")
-        # Delete the member and bail
-        join_form_member.delete()
-        return Response(
-            {"detail": "There was a problem saving your Building information"}, status=status.HTTP_400_BAD_REQUEST
-        )
-
-    try:
-        join_form_install.save()
-    except IntegrityError:
-        logging.exception("Error saving install from join form")
-        # Delete the member, building (if we just created it), and bail
-        join_form_member.delete()
-        if len(existing_exact_buildings) == 0:
-            join_form_building.delete()
-        return Response(
-            {"detail": "There was a problem saving your Install information"}, status=status.HTTP_400_BAD_REQUEST
         )
 
     if existing_members:
