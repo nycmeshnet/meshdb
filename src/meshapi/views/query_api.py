@@ -25,9 +25,7 @@ class QueryMemberFilter(filters.FilterSet):
     phone_number = filters.CharFilter(method="filter_on_all_phone_numbers")
 
     def filter_on_member_name(self, queryset: QuerySet[Member], field_name: str, value: str) -> QuerySet[Member]:
-        return queryset.filter(
-            Q(member__name__icontains=value)
-        )
+        return queryset.filter(Q(member__name__icontains=value))
 
     def filter_on_all_emails(self, queryset: QuerySet[Member], field_name: str, value: str) -> QuerySet[Member]:
         return queryset.filter(
