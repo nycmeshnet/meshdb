@@ -135,6 +135,14 @@ class TestInstallCreateSignals(TestCase):
         )
         node.save()
 
+        inactive_node = Node(
+            network_number=77,
+            latitude=0,
+            longitude=0,
+            status=Node.NodeStatus.INACTIVE,
+        )
+        inactive_node.save()
+
         install = Install(**self.sample_install_copy)
         install.node = node
         install.save()
@@ -142,7 +150,11 @@ class TestInstallCreateSignals(TestCase):
         install2 = Install(**self.sample_install_copy)
         install2.save()
 
-        self.assertEqual(len(request_mocker.request_history), 2)
+        install3 = Install(**self.sample_install_copy)
+        install3.node = inactive_node
+        install3.save()
+
+        self.assertEqual(len(request_mocker.request_history), 3)
         self.assertEqual(
             request_mocker.request_history[0].url,
             "http://example.com/test-url",
@@ -179,6 +191,25 @@ class TestInstallCreateSignals(TestCase):
                 "name": "John Smith",
                 "subject": f"NYC Mesh {install2.install_number} Rooftop Install",
                 "message": f"date: 2022-02-27\r\nnode: {install2.install_number}\r\nname: John Smith\r\nemail: john.smith@example.com\r\nphone: +1 555-555-5555\r\nlocation: 3333 Chom St, Brooklyn NY, 11111\r\nrooftop: Rooftop install\r\nagree to ncl: True",
+                "phone": "+1 555-555-5555",
+                "location": "3333 Chom St, Brooklyn NY, 11111",
+                "apt": "3",
+                "rooftop": "Rooftop install",
+                "existingNetworkNumber": "",
+                "ncl": True,
+                "ip": "*.*.*.*",
+                "locale": "en",
+            },
+        )
+        self.assertEqual(
+            json.loads(request_mocker.request_history[2].text),
+            {
+                "node": install3.install_number,
+                "userNode": install3.install_number,
+                "email": "john.smith@example.com",
+                "name": "John Smith",
+                "subject": f"NYC Mesh {install3.install_number} Rooftop Install",
+                "message": f"date: 2022-02-27\r\nnode: {install3.install_number}\r\nname: John Smith\r\nemail: john.smith@example.com\r\nphone: +1 555-555-5555\r\nlocation: 3333 Chom St, Brooklyn NY, 11111\r\nrooftop: Rooftop install\r\nagree to ncl: True",
                 "phone": "+1 555-555-5555",
                 "location": "3333 Chom St, Brooklyn NY, 11111",
                 "apt": "3",
