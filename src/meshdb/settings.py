@@ -404,6 +404,7 @@ HOOK_EVENTS = {
     "link.updated": "meshapi.Link.updated+",
     "los.updated": "meshapi.LOS.updated+",
     "device.updated": "meshapi.Device.updated+",
+    "device.uisp-deactivated": "meshapi.Device.uisp-deactivated+",
     "sector.updated": "meshapi.Sector.updated+",
     "access_point.updated": "meshapi.AccessPoint.updated+",
     "building.deleted": "meshapi.Building.deleted+",
