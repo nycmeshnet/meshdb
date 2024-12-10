@@ -47,6 +47,7 @@ urlpatterns = [
     path("query/members/", views.QueryMember.as_view(), name="meshapi-v1-query-member"),
     path("query/installs/", views.QueryInstall.as_view(), name="meshapi-v1-query-install"),
     path("mapdata/nodes/", views.MapDataNodeList.as_view(), name="meshapi-v1-map-data-installs"),
+    path("mapdata/raw_nodes/", views.raw_map_data_node_list, name="meshapi-v1-raw-map-data-installs"),
     path("mapdata/links/", views.MapDataLinkList.as_view(), name="meshapi-v1-map-data-links"),
     path("mapdata/sectors/", views.MapDataSectorList.as_view(), name="meshapi-v1-map-data-sectors"),
     path("mapdata/kiosks/", views.KioskListWrapper.as_view(), name="meshapi-v1-map-data-kiosks"),

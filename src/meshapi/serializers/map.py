@@ -45,7 +45,8 @@ class MapDataInstallSerializer(serializers.ModelSerializer):
         else:
             return install.building.longitude, install.building.latitude, install.building.altitude
 
-    def _is_node_dot(self, install: Install) -> bool:
+    @staticmethod
+    def _is_node_dot(install: Install) -> bool:
         # Check if this is an old-school "node as install" situation to prevent showing multiple
         # "node" map dots. For the NN != install number
         # case we add extra fake install objects with install_number = NN so that we can still
@@ -75,7 +76,8 @@ class MapDataInstallSerializer(serializers.ModelSerializer):
 
         return install.node.name
 
-    def get_synthetic_notes(self, install: Install) -> Optional[str]:
+    @staticmethod
+    def get_synthetic_notes(install: Install) -> Optional[str]:
         if not install.node:
             return None
 
@@ -85,7 +87,7 @@ class MapDataInstallSerializer(serializers.ModelSerializer):
         # In the case of multiple dots per node, we only want to
         # make the one that actually corresponds to the NN the big dot (the "fake" install)
         # for the real install numbers that don't match the network number, leave them as red dots
-        if install.node.type != Node.NodeType.STANDARD and self._is_node_dot(install):
+        if install.node.type != Node.NodeType.STANDARD and MapDataInstallSerializer._is_node_dot(install):
             synthetic_notes.append(install.node.type)
 
         # Supplement with "Omni" if this node has an omni attached
