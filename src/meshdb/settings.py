@@ -80,7 +80,7 @@ CSP_DEFAULT_SRC = [
     "https://cdn.redoc.ly",  # Redoc
     "blob:",  # Redoc
     "'unsafe-inline'",  # TODO: Remove me https://github.com/nycmeshnet/meshdb/issues/645
-    "*.browser-intake-us5-datadoghq.com",
+    "browser-intake-us5-datadoghq.com",
 ]
 CSP_IMG_SRC = [
     "'self'",
