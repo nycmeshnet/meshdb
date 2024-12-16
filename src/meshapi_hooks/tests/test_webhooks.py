@@ -1,9 +1,12 @@
 import multiprocessing
 import queue
+from datetime import timezone
 
 from django.contrib.auth.models import Permission, User
+from django.utils.datetime_safe import datetime
 from flask import Flask, Response, request
 
+from meshapi.util.uisp_import.update_objects import update_device_from_uisp_data
 from meshapi_hooks.hooks import CelerySerializerHook
 
 multiprocessing.set_start_method("fork")
@@ -11,8 +14,8 @@ multiprocessing.set_start_method("fork")
 from celery.contrib.testing.worker import start_worker
 from django.test import TransactionTestCase
 
-from meshapi.models import Building, Install, Member
-from meshapi.tests.sample_data import sample_building, sample_install, sample_member
+from meshapi.models import Building, Device, Install, Member, Node
+from meshapi.tests.sample_data import sample_building, sample_device, sample_install, sample_member, sample_node
 from meshdb.celery import app as celery_app
 
 HTTP_CALL_WAITING_TIME = 2  # Seconds
@@ -78,11 +81,12 @@ class TestMeshAPIWebhooks(TransactionTestCase):
         )
         self.app_process.start()
 
-        hook_user = User.objects.create_user(
+        self.hook_user = User.objects.create_user(
             username="hook_client_application", password="test_pw", email="client@example.com"
         )
-        hook_user.user_permissions.add(Permission.objects.get(codename="view_member"))
-        hook_user.user_permissions.add(Permission.objects.get(codename="view_install"))
+        self.hook_user.user_permissions.add(Permission.objects.get(codename="view_member"))
+        self.hook_user.user_permissions.add(Permission.objects.get(codename="view_install"))
+        self.hook_user.user_permissions.add(Permission.objects.get(codename="view_device"))
 
         # For testing, just so that we don't have to wait around for a large number of failures
         CelerySerializerHook.MAX_CONSECUTIVE_FAILURES_BEFORE_DISABLE = 1
@@ -90,13 +94,13 @@ class TestMeshAPIWebhooks(TransactionTestCase):
         # Create the webhooks in Django
         # (this would be done by an admin via the UI in prod)
         member_webhook = CelerySerializerHook(
-            user=hook_user,
+            user=self.hook_user,
             target="http://localhost:8091/webhook",
             event="member.created",
         )
         member_webhook.save()
         install_webhook = CelerySerializerHook(
-            user=hook_user,
+            user=self.hook_user,
             target="http://localhost:8091/webhook",
             event="install.created",
         )
@@ -104,7 +108,7 @@ class TestMeshAPIWebhooks(TransactionTestCase):
 
         building_webhook = CelerySerializerHook(
             enabled=False,
-            user=hook_user,
+            user=self.hook_user,
             target="http://localhost:8091/webhook",
             event="install.created",
         )
@@ -245,3 +249,48 @@ class TestMeshAPIWebhooks(TransactionTestCase):
             assert False, "HTTP server shouldn't have been called"
         except queue.Empty:
             pass
+
+    def test_uisp_update_event(self):
+        # UISP update triggers custom webhook
+        device_webhook = CelerySerializerHook(
+            enabled=True,
+            user=self.hook_user,
+            target="http://localhost:8091/webhook",
+            event="device.uisp-deactivated",
+        )
+        device_webhook.save()
+
+        uisp_node = Node(**sample_node)
+        uisp_node.save()
+
+        existing_device = Device(**sample_device)
+        existing_device.node = uisp_node
+        existing_device.save()
+
+        uisp_name = "test"
+        uisp_status = Device.DeviceStatus.INACTIVE
+
+        uisp_last_seen = datetime(1970, 1, 1, 1, 1, 1, tzinfo=timezone.utc)
+
+        update_device_from_uisp_data(
+            existing_device,
+            uisp_node,
+            uisp_name,
+            uisp_status,
+            uisp_last_seen,
+        )
+
+        try:
+            flask_request = self.http_requests_queue.get(timeout=HTTP_CALL_WAITING_TIME)
+        except queue.Empty as e:
+            raise RuntimeError("HTTP server not called...") from e
+
+        assert flask_request["data"]["id"] == str(existing_device.id)
+        assert flask_request["data"]["status"] == "Inactive"
+        assert flask_request["data"]["abandon_date"] == "1970-01-01"
+        assert flask_request["data"]["node"]["id"] == str(uisp_node.id)
+        assert flask_request["data"]["node"]["network_number"] == uisp_node.network_number
+
+        assert flask_request["hook"]["event"] == "device.uisp-deactivated"
+        assert flask_request["hook"]["target"] == "http://localhost:8091/webhook"
+        assert flask_request["hook"]["id"]
