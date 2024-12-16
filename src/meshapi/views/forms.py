@@ -300,6 +300,33 @@ def process_join_form(r: JoinFormRequest, request: Optional[Request] = None) -> 
             existing_primary_nodes_for_structure[0] if existing_primary_nodes_for_structure else None
         )
 
+    existing_install = Install.objects.filter(
+        building=join_form_building,
+        member=join_form_member,
+        unit__exact=r.apartment,
+        # We only recycle install objects if nothing special has happened to them,
+        # if they're not REQUEST_RECEIVED, that dramatically increases the chance that
+        # a new identifier is warranted. e.g. NN_REASSIGNED indicates that's an absolute must
+        status=Install.InstallStatus.REQUEST_RECEIVED,
+    ).first()
+    if existing_install:
+        logging.warning(
+            f"Discarding join form submission because an install was found with exactly "
+            f"matching information: #{existing_install.install_number}"
+        )
+        return Response(
+            {
+                "detail": "Thanks! A volunteer will email you shortly",
+                "building_id": join_form_building.id,
+                "member_id": join_form_member.id,
+                "install_id": existing_install.id,
+                "install_number": existing_install.install_number,
+                "member_exists": True,
+                "changed_info": {},
+            },
+            status=status.HTTP_200_OK,
+        )
+
     join_form_install = Install(
         status=Install.InstallStatus.REQUEST_RECEIVED,
         ticket_number=None,
