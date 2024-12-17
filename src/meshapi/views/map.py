@@ -112,6 +112,15 @@ class MapDataNodeList(generics.ListAPIView):
                         altitude=node.altitude,
                     )
 
+                request_date = datetime.fromtimestamp(0)
+                if representative_install:
+                    request_date = representative_install.request_date
+                elif node.install_date:
+                    request_date = datetime.combine(
+                        node.install_date,
+                        datetime.min.time(),
+                    )
+
                 all_installs.append(
                     Install(
                         install_number=node.network_number,
@@ -120,9 +129,7 @@ class MapDataNodeList(generics.ListAPIView):
                         if node.status == node.NodeStatus.ACTIVE
                         else Install.InstallStatus.REQUEST_RECEIVED,
                         building=building,
-                        request_date=representative_install.request_date
-                        if representative_install
-                        else node.install_date,
+                        request_date=request_date,
                         roof_access=representative_install.roof_access if representative_install else True,
                     ),
                 )
