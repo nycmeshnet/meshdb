@@ -125,9 +125,11 @@ class MapDataNodeList(generics.ListAPIView):
                     Install(
                         install_number=node.network_number,
                         node=node,
-                        status=Install.InstallStatus.NN_REASSIGNED
-                        if node.status == node.NodeStatus.ACTIVE
-                        else Install.InstallStatus.REQUEST_RECEIVED,
+                        status=(
+                            Install.InstallStatus.NN_REASSIGNED
+                            if node.status == node.NodeStatus.ACTIVE
+                            else Install.InstallStatus.REQUEST_RECEIVED
+                        ),
                         building=building,
                         request_date=request_date,
                         roof_access=representative_install.roof_access if representative_install else True,

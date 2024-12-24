@@ -112,9 +112,9 @@ def import_and_sync_uisp_devices(uisp_devices: List[UISPDevice]) -> None:
             "uisp_id": uisp_uuid,
             "status": uisp_status,
             "install_date": parse_uisp_datetime(uisp_device["overview"]["createdAt"]).date(),
-            "abandon_date": uisp_last_seen.date()
-            if uisp_last_seen and uisp_status == Device.DeviceStatus.INACTIVE
-            else None,
+            "abandon_date": (
+                uisp_last_seen.date() if uisp_last_seen and uisp_status == Device.DeviceStatus.INACTIVE else None
+            ),
             "notes": f"Automatically imported from UISP on {datetime.date.today().isoformat()}\n\n",
         }
 
