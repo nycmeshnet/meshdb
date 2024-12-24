@@ -10,6 +10,10 @@ on:
 
 permissions: read-all
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   push_to_registry:
     name: Push Docker Image to Docker Hub

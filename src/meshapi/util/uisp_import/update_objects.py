@@ -3,6 +3,7 @@ import logging
 from typing import List, Optional
 
 import requests
+from drf_hooks.signals import hook_event
 
 from meshapi.models import Device, Link, Node
 from meshapi.util.uisp_import.constants import (
@@ -31,6 +32,7 @@ def update_device_from_uisp_data(
         )
         existing_device.node = uisp_node
 
+    fire_device_deactivated_hook = False
     if existing_device.status != uisp_status:
         if uisp_status == Device.DeviceStatus.INACTIVE:
             # We wait 30 days to make sure this device is actually inactive,
@@ -46,6 +48,7 @@ def update_device_from_uisp_data(
                         " for more than "
                         f"{int(UISP_OFFLINE_DURATION_BEFORE_MARKING_INACTIVE.total_seconds() / 60 / 60 / 24)} days"
                     )
+                fire_device_deactivated_hook = True
 
                 existing_device.status = Device.DeviceStatus.INACTIVE
                 change_messages.append(change_message)
@@ -78,6 +81,14 @@ def update_device_from_uisp_data(
         change_messages.append(f"Added missing abandon date of {existing_device.abandon_date} based on UISP last-seen")
 
     existing_device.save()
+
+    if fire_device_deactivated_hook:
+        hook_event.send(
+            sender=existing_device.__class__,
+            action="uisp-deactivated",
+            instance=existing_device,
+        )
+
     return change_messages
 
 

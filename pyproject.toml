@@ -44,6 +44,7 @@ dependencies = [
     "prettytable==3.11.*",
     "matplotlib==3.9.*",
     "django-ipware==7.0.1",
+    "django-admin-site-search==1.1.*",
 ]
 
 [project.optional-dependencies]
@@ -52,7 +53,7 @@ dev = [
     "pytest == 7.4.*",
     "parameterized == 0.9.*",
     "flake8 == 6.1.*",
-    "black == 23.7.*",
+    "black == 24.10.*",
     "isort == 5.12.*",
     "coverage == 7.3.*",
     "mypy == 1.10.0",

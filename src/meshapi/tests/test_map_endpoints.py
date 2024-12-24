@@ -444,7 +444,7 @@ class TestViewsGetUnauthenticated(TestCase):
                     "coordinates": [-73.987881, 40.724868, None],
                     "id": 9820,
                     "panoramas": [],
-                    "requestDate": None,
+                    "requestDate": 0,
                     "roofAccess": True,
                     "status": "NN assigned",
                 },
@@ -452,7 +452,7 @@ class TestViewsGetUnauthenticated(TestCase):
                     "coordinates": [-73.987881, 40.724868, None],
                     "id": 9821,
                     "panoramas": [],
-                    "requestDate": None,
+                    "requestDate": 0,
                     "roofAccess": True,
                     "status": "NN assigned",
                 },
@@ -1763,6 +1763,53 @@ class TestKiosk(TestCase):
                 json.loads(response.content.decode("UTF8")),
                 {"detail": "Invalid response received from City of New York"},
             )
+
+
+class TestNodeWithoutInstallDoesntCrash(TestCase):
+    def test_node_without_install(self):
+        node = Node(
+            network_number=123,
+            latitude=40.724868,
+            longitude=-73.987881,
+            altitude=37.0,
+            status=Node.NodeStatus.ACTIVE,
+            install_date=datetime.date(2024, 12, 1),
+        )
+        node.save()
+
+        node2 = Node(
+            network_number=124,
+            latitude=40.724868,
+            longitude=-73.987881,
+            altitude=37.0,
+            status=Node.NodeStatus.PLANNED,
+            install_date=None,
+        )
+        node2.save()
+
+        self.maxDiff = None
+        response = self.client.get("/api/v1/mapdata/nodes/")
+
+        self.assertEqual(
+            json.loads(response.content.decode("UTF8")),
+            [
+                {
+                    "id": 123,
+                    "status": "NN assigned",
+                    "coordinates": [-73.987881, 40.724868, 37.0],
+                    "requestDate": 1733029200000,
+                    "roofAccess": True,
+                    "panoramas": [],
+                },
+                {
+                    "id": 124,
+                    "coordinates": [-73.987881, 40.724868, 37.0],
+                    "requestDate": 0,
+                    "roofAccess": True,
+                    "panoramas": [],
+                },
+            ],
+        )
 
 
 class TestJavascriptDateSerializerField(TestCase):
