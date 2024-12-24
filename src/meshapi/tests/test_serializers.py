@@ -335,6 +335,7 @@ class TestViewsGetAdmin(TestCaseWithFullData):
                 "from_device": {"id": "a5ea27de-a335-40cf-a5be-2c5ab5e2d407"},
                 "id": "ae61100b-4a0c-43e7-8957-6502d53d3f1c",
                 "install_date": "2016-01-02",
+                "map_display_override": None,
                 "notes": "abc def ghi",
                 "status": "Active",
                 "to_device": {"id": "2f32a651-4ea9-4126-96b6-2f323ca28b76"},
