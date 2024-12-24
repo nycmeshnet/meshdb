@@ -942,7 +942,7 @@ class TestJoinForm(TestCase):
         member.save()
 
         original_install = Install(
-            request_date=datetime(2013, 1, 1, 1, 1, 1),
+            request_date=datetime.datetime(2013, 1, 1, 1, 1, 1),
             building=building,
             member=member,
             status=Install.InstallStatus.NN_REASSIGNED,
