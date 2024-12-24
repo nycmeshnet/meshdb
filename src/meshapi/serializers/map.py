@@ -80,7 +80,7 @@ class MapDataInstallSerializer(serializers.ModelSerializer):
             return None
 
         # Start the notes with the map display type
-        synthetic_notes = []
+        synthetic_notes: List[str] = []
 
         # In the case of multiple dots per node, we only want to
         # make the one that actually corresponds to the NN the big dot (the "fake" install)
