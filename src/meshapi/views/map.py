@@ -192,9 +192,14 @@ class MapDataLinkList(generics.ListAPIView):
     serializer_class = MapDataLinkSerializer
     pagination_class = None
     queryset = (
-        Link.objects.exclude(status__in=[Link.LinkStatus.INACTIVE])
-        .exclude(to_device__node__status=Node.NodeStatus.INACTIVE)
-        .exclude(from_device__node__status=Node.NodeStatus.INACTIVE)
+        Link.objects.exclude(
+            (
+                Q(status__in=[Link.LinkStatus.INACTIVE])
+                | Q(to_device__node__status=Node.NodeStatus.INACTIVE)
+                | Q(from_device__node__status=Node.NodeStatus.INACTIVE)
+            )
+            & Q(map_display_override__isnull=True)
+        )
         .exclude(from_device__node__network_number=F("to_device__node__network_number"))
         .prefetch_related("to_device__node")
         .prefetch_related("from_device__node")

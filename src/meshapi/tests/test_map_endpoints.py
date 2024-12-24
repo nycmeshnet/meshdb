@@ -1174,6 +1174,400 @@ class TestViewsGetUnauthenticated(TestCase):
             ],
         )
 
+    def test_link_data_overrides(self):
+        links = []
+
+        member = Member(
+            id=uuid.UUID("f0128b91-dbc6-466b-a030-298e39eb4733"),
+            name="Fake Name",
+        )
+        member.save()
+
+        grand = Node(
+            id=uuid.UUID("ffa22d49-d99d-480f-a872-569f3bb8b5fb"),
+            network_number=1934,
+            status=Node.NodeStatus.ACTIVE,
+            latitude=0,
+            longitude=0,
+        )
+        grand.save()
+        grand_omni = Device(
+            id=uuid.UUID("e8b87c95-fe52-4ee6-8ea6-682d4f838861"),
+            node=grand,
+            status=Device.DeviceStatus.ACTIVE,
+        )
+        grand_omni.save()
+
+        sn1 = Node(
+            id=uuid.UUID("23d4acb4-43fc-4832-9ddd-219c12bdbc28"),
+            network_number=227,
+            status=Node.NodeStatus.ACTIVE,
+            latitude=0,
+            longitude=0,
+        )
+        sn1.save()
+
+        sn1_building = Building(
+            id=uuid.UUID("2ea7d857-3ade-42c6-92f1-18e30cd7c934"),
+            address_truth_sources=[],
+            latitude=0,
+            longitude=0,
+            primary_node=sn1,
+        )
+        sn1_building.save()
+
+        sn1_install = Install(
+            id=uuid.UUID("1fc94b13-6eaa-46a8-898b-44894bbd70dd"),
+            member=member,
+            install_number=227,
+            building=sn1_building,
+            node=sn1,
+            status=Install.InstallStatus.ACTIVE,
+            request_date=datetime.datetime(2015, 3, 15).astimezone(datetime.timezone.utc),
+        )
+        sn1_install.save()
+
+        sn1_omni = Device(
+            id=uuid.UUID("116368d5-2437-4cfb-9d25-540533c8bfec"),
+            node=sn1,
+            status=Device.DeviceStatus.ACTIVE,
+        )
+        sn1_omni.save()
+
+        sn10 = Node(
+            id=uuid.UUID("e3919c3e-2a96-46f6-8941-b29875c8664c"),
+            network_number=10,
+            status=Node.NodeStatus.ACTIVE,
+            latitude=0,
+            longitude=0,
+        )
+        sn10.save()
+        sn10_omni = Device(
+            id=uuid.UUID("0f1259af-1cd0-471d-9294-7dbfac9cb6a9"),
+            node=sn10,
+            status=Device.DeviceStatus.ACTIVE,
+        )
+        sn10_omni.save()
+
+        sn3 = Node(
+            id=uuid.UUID("75e771be-d4cc-4ea2-bb48-4c8c83720822"),
+            network_number=713,
+            latitude=0,
+            longitude=0,
+            status=Node.NodeStatus.ACTIVE,
+        )
+        sn3.save()
+        sn3_omni = Device(
+            id=uuid.UUID("e8ce0468-e6c2-467c-92a4-97e1759ce35a"),
+            node=sn3,
+            status=Device.DeviceStatus.ACTIVE,
+        )
+        sn3_omni.save()
+
+        sn3_building = Building(
+            id=uuid.UUID("fd768f67-75a0-444f-a18d-c4faa09359b6"),
+            address_truth_sources=[],
+            latitude=0,
+            longitude=0,
+            primary_node=sn3,
+        )
+        sn3_building.save()
+
+        sn3_install = Install(
+            id=uuid.UUID("6b45c3a4-d9e2-4919-b415-0b1a6f6d27e5"),
+            member=member,
+            install_number=713,
+            building=sn3_building,
+            node=sn3,
+            status=Install.InstallStatus.ACTIVE,
+            request_date=datetime.datetime(2015, 3, 15).astimezone(datetime.timezone.utc),
+        )
+        sn3_install.save()
+
+        brian = Node(
+            id=uuid.UUID("e7e3432e-eaee-403d-b400-5ddd8bd2e75b"),
+            network_number=3,
+            latitude=0,
+            longitude=0,
+            status=Node.NodeStatus.ACTIVE,
+        )
+        brian.save()
+        brian_omni = Device(
+            id=uuid.UUID("cc3ee525-d32b-4fa6-8b40-abc5babfd342"),
+            node=brian,
+            status=Device.DeviceStatus.ACTIVE,
+        )
+        brian_omni.save()
+
+        random = Node(
+            id=uuid.UUID("efe899b4-6a0c-4e28-8b1b-2d28669463cd"),
+            network_number=123,
+            latitude=0,
+            longitude=0,
+            status=Node.NodeStatus.ACTIVE,
+        )
+        random.save()
+        random_building = Building(
+            id=uuid.UUID("9b5ae47b-4525-4b0f-92b5-637b20341e0b"),
+            latitude=0,
+            longitude=0,
+            address_truth_sources=[],
+            primary_node=random,
+        )
+        random_building.save()
+        random_install = Install(
+            id=uuid.UUID("89b821a4-9aee-40d3-bfbf-a61785e1530a"),
+            install_number=123,
+            building=random_building,
+            node=random,
+            status=Install.InstallStatus.ACTIVE,
+            request_date=datetime.datetime(2015, 3, 15).astimezone(datetime.timezone.utc),
+            member=member,
+        )
+        random_install.save()
+        random.save()
+        random_omni = Device(
+            id=uuid.UUID("a6106205-8d04-4a52-b3af-f0ffc1b84fcc"),
+            node=random,
+            status=Device.DeviceStatus.ACTIVE,
+        )
+        random_omni.save()
+
+        random_addl_building = Building(
+            id=uuid.UUID("adf61d61-5f69-42e6-b625-c7c6485fed80"),
+            latitude=0,
+            longitude=0,
+            address_truth_sources=[],
+            primary_node=random,
+        )
+        random_addl_building.save()
+
+        random_addl_install = Install(
+            id=uuid.UUID("f7f95143-e8f9-418e-9210-0b9718dfe884"),
+            install_number=56789,
+            building=random_addl_building,
+            node=random,
+            status=Install.InstallStatus.ACTIVE,
+            request_date=datetime.datetime(2015, 3, 15).astimezone(datetime.timezone.utc),
+            member=member,
+        )
+        random_addl_install.save()
+
+        random_addl_install_2 = Install(
+            id=uuid.UUID("05b1bce9-8c9d-4366-9eab-700073ba5f69"),
+            install_number=56790,
+            building=random_addl_building,
+            node=random,
+            status=Install.InstallStatus.ACTIVE,
+            request_date=datetime.datetime(2015, 3, 15).astimezone(datetime.timezone.utc),
+            member=member,
+        )
+        random_addl_install_2.save()
+
+        random_addl_building_inactive = Building(
+            id=uuid.UUID("f139a043-da80-46d4-a50d-03e200730b42"),
+            latitude=0,
+            longitude=0,
+            address_truth_sources=[],
+            primary_node=random,
+        )
+        random_addl_building_inactive.save()
+
+        random_addl_install_inactive = Install(
+            id=uuid.UUID("3522b840-8d20-4fd2-86e1-0d20db8a38f8"),
+            install_number=56791,
+            building=random_addl_building_inactive,
+            node=random,
+            status=Install.InstallStatus.INACTIVE,
+            request_date=datetime.datetime(2015, 3, 15).astimezone(datetime.timezone.utc),
+            member=member,
+        )
+        random_addl_install_inactive.save()
+
+        inactive = Node(
+            id=uuid.UUID("97c3fb73-e3f0-4eee-b1aa-d7a5bacd6122"),
+            network_number=123456,
+            latitude=0,
+            longitude=0,
+            status=Node.NodeStatus.INACTIVE,
+        )
+        inactive.save()
+        inactive_omni = Device(
+            id=uuid.UUID("3d33ef96-35fc-4703-8562-b154d701dbe6"),
+            node=inactive,
+            status=Device.DeviceStatus.ACTIVE,
+        )
+        inactive_omni.save()
+
+        access_point_1 = AccessPoint(
+            id=uuid.UUID("3caca726-f072-4faf-93c9-95e0b305393b"),
+            node=grand,
+            status=Device.DeviceStatus.ACTIVE,
+            latitude=0,
+            longitude=0,
+            altitude=0,
+        )
+        access_point_1.save()
+
+        access_point_2 = AccessPoint(
+            id=uuid.UUID("efe0b029-084e-427e-abb2-ac24c207a68c"),
+            node=grand,
+            status=Device.DeviceStatus.ACTIVE,
+            latitude=0,
+            longitude=0,
+            altitude=0,
+        )
+        access_point_2.save()
+
+        links.append(
+            Link(
+                id=uuid.UUID("a8bf7b1f-99c8-4c41-8123-59eb12faaff3"),
+                from_device=grand_omni,
+                to_device=access_point_1,
+                status=Link.LinkStatus.ACTIVE,
+                map_display_override=Link.MapDisplayOverride.PURPLE,
+                type=Link.LinkType.SIXTY_GHZ,
+                install_date=datetime.date(2024, 1, 26),
+            )
+        )
+
+        links.append(
+            Link(
+                id=uuid.UUID("0d1e7aaa-ada3-461d-b69d-fac439eb1778"),
+                from_device=access_point_1,
+                to_device=access_point_2,
+                status=Link.LinkStatus.ACTIVE,
+                map_display_override=Link.MapDisplayOverride.DARK_BLUE,
+                type=Link.LinkType.SIXTY_GHZ,
+                install_date=datetime.date(2024, 1, 26),
+            )
+        )
+
+        links.append(
+            Link(
+                id=uuid.UUID("d36b2c85-72fc-4f7f-a1f3-e642a6fefae1"),
+                from_device=sn1_omni,
+                to_device=sn3_omni,
+                status=Link.LinkStatus.ACTIVE,
+                map_display_override=Link.MapDisplayOverride.YELLOW,
+                type=Link.LinkType.VPN,
+                install_date=datetime.date(2022, 1, 26),
+            )
+        )
+
+        links.append(
+            Link(
+                id=uuid.UUID("2cd0c189-1b7d-4c2b-9530-f7eec74f28af"),
+                from_device=sn1_omni,
+                to_device=grand_omni,
+                status=Link.LinkStatus.ACTIVE,
+                map_display_override=Link.MapDisplayOverride.PLANNED,
+                type=Link.LinkType.SIXTY_GHZ,
+            )
+        )
+
+        links.append(
+            Link(
+                id=uuid.UUID("d08c32d3-0909-4d62-8138-a1f7ce96d552"),
+                from_device=sn1_omni,
+                to_device=brian_omni,
+                status=Link.LinkStatus.ACTIVE,
+                map_display_override=Link.MapDisplayOverride.LIGHT_BLUE,
+                type=Link.LinkType.FIVE_GHZ,
+            )
+        )
+
+        links.append(
+            Link(
+                id=uuid.UUID("56d45e5a-f880-4b97-893a-fa87189f23ab"),
+                from_device=grand_omni,
+                to_device=sn10_omni,
+                status=Link.LinkStatus.ACTIVE,
+                map_display_override=Link.MapDisplayOverride.HIDDEN,
+                type=Link.LinkType.FIBER,
+            )
+        )
+
+        links.append(
+            Link(
+                id=uuid.UUID("d85058c9-44d5-4e7b-9eff-062ead6b5869"),
+                from_device=grand_omni,
+                to_device=random_omni,
+                status=Link.LinkStatus.PLANNED,
+                map_display_override=Link.MapDisplayOverride.YELLOW,
+                type=Link.LinkType.FIVE_GHZ,
+            )
+        )
+
+        links.append(
+            Link(
+                id=uuid.UUID("33986527-28a9-4146-bcd3-fee73034c45f"),
+                from_device=sn1_omni,
+                to_device=random_omni,
+                status=Link.LinkStatus.INACTIVE,
+                map_display_override=Link.MapDisplayOverride.LIGHT_BLUE,
+                type=Link.LinkType.FIVE_GHZ,
+            )
+        )
+
+        for link in links:
+            link.save()
+
+        self.maxDiff = None
+        response = self.c.get("/api/v1/mapdata/links/")
+
+        self.assertEqual(
+            json.loads(response.content.decode("UTF8")),
+            [
+                {
+                    "from": 227,
+                    "to": 3,
+                    "status": "60GHz",
+                },
+                {
+                    "from": 227,
+                    "to": 123,
+                    "status": "60GHz",
+                },
+                {
+                    "from": 227,
+                    "to": 713,
+                    "status": "fiber",
+                    "installDate": 1643173200000,
+                },
+                {
+                    "from": 227,
+                    "to": 1934,
+                    "status": "planned",
+                },
+                {
+                    "from": 1934,
+                    "to": 10,
+                    "status": "dead",
+                },
+                {
+                    "from": 1934,
+                    "to": 123,
+                    "status": "fiber",
+                },
+                {
+                    "from": 56789,
+                    "to": 123,
+                    "status": "active",
+                },
+                {
+                    "from": 1706171,
+                    "status": "active",
+                    "to": 1150732,
+                },
+                {
+                    "from": 1934,
+                    "status": "vpn",
+                    "to": 1706171,
+                },
+            ],
+        )
+
     def test_link_serializer_inactive_link(self):
         sn1 = Node(
             id=uuid.UUID("23d4acb4-43fc-4832-9ddd-219c12bdbc28"),

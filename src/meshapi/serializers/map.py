@@ -1,6 +1,6 @@
 import os
 from collections import OrderedDict
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Dict
 from urllib.parse import urlparse
 
 from rest_framework import serializers
@@ -153,6 +153,17 @@ class MapDataLinkSerializer(serializers.ModelSerializer):
     installDate = JavascriptDateField(source="install_date")
 
     def convert_status_to_spreadsheet_status(self, link: Link) -> str:
+        if link.map_display_override:
+            map_override_to_spreadsheet_status: Dict[str, str] = {
+                Link.MapDisplayOverride.HIDDEN: "dead",
+                Link.MapDisplayOverride.PLANNED: "planned",
+                Link.MapDisplayOverride.YELLOW: "fiber",
+                Link.MapDisplayOverride.LIGHT_BLUE: "60GHz",
+                Link.MapDisplayOverride.DARK_BLUE: "active",
+                Link.MapDisplayOverride.PURPLE: "vpn",
+            }
+            return map_override_to_spreadsheet_status[link.map_display_override]
+
         if link.status == Link.LinkStatus.PLANNED:
             return str(link.status).lower()
 
