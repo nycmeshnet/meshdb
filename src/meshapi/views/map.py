@@ -195,6 +195,7 @@ class MapDataLinkList(generics.ListAPIView):
         Link.objects.exclude(status__in=[Link.LinkStatus.INACTIVE])
         .exclude(to_device__node__status=Node.NodeStatus.INACTIVE)
         .exclude(from_device__node__status=Node.NodeStatus.INACTIVE)
+        .exclude(from_device__node__network_number=F("to_device__node__network_number"))
         .prefetch_related("to_device__node")
         .prefetch_related("from_device__node")
         .filter(

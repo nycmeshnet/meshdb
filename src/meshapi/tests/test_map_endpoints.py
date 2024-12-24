@@ -1123,12 +1123,6 @@ class TestViewsGetUnauthenticated(TestCase):
                     "status": "planned",
                 },
                 {
-                    "from": 1934,
-                    "installDate": 1706245200000,
-                    "status": "60GHz",
-                    "to": 1934,
-                },
-                {
                     "from": 56789,
                     "to": 123,
                     "status": "active",
