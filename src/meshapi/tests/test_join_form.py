@@ -265,6 +265,29 @@ class TestJoinForm(TestCase):
         )
         validate_successful_join_form_submission(self, "Valid Join Form", s, response)
 
+    def test_phone_number_is_silently_corrected(self):
+        self.requests_mocker.get(
+            NYC_PLANNING_LABS_GEOCODE_URL,
+            json=valid_join_form_submission["dob_addr_response"],
+        )
+
+        request, s = pull_apart_join_form_submission(valid_join_form_submission)
+
+        request["phone_number"] = "+1 585-75  8-3425"
+        request["trust_me_bro"] = False
+
+        response = self.c.post("/api/v1/join/", request, content_type="application/json")
+        code = 201
+        self.assertEqual(
+            code,
+            response.status_code,
+            f"status code incorrect for Valid Join Form. Should be {code}, but got {response.status_code}.\n Response is: {response.content.decode('utf-8')}",
+        )
+        validate_successful_join_form_submission(self, "Valid Join Form", s, response)
+
+        member = Member.objects.get(installs__install_number=response.json()["install_number"])
+        self.assertEqual(member.phone_number, "+1 585-758-3425")
+
     def test_valid_join_form_aussie_intl_phone(self):
         request, s = pull_apart_join_form_submission(valid_join_form_submission)
 
