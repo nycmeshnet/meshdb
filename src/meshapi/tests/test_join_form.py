@@ -1,4 +1,5 @@
 import copy
+import datetime
 import json
 import time
 from unittest import mock
@@ -886,6 +887,95 @@ class TestJoinForm(TestCase):
         )
         self.assertEqual(member.phone_number, "+1 585-758-3425")
         self.assertEqual(member.additional_phone_numbers, ["+1 212-555-5555"])
+
+    def test_member_filled_out_the_join_twice(self):
+        # If someone submits the join form with identical information, there's no need to create
+        # duplicate Install object
+        submission = valid_join_form_submission.copy()
+        submission["apartment"] = "22"
+
+        self.requests_mocker.get(
+            NYC_PLANNING_LABS_GEOCODE_URL,
+            json=submission["dob_addr_response"],
+        )
+
+        request, s = pull_apart_join_form_submission(submission)
+
+        response = self.c.post("/api/v1/join/", request, content_type="application/json")
+        code = 201
+        self.assertEqual(
+            code,
+            response.status_code,
+            f"status code incorrect for Valid Join Form. Should be {code}, but got {response.status_code}.\n Response is: {response.content.decode('utf-8')}",
+        )
+        validate_successful_join_form_submission(self, "Member filled out long ago", s, response)
+
+        response2 = self.c.post("/api/v1/join/", request, content_type="application/json")
+        self.assertEqual(
+            200,
+            response2.status_code,
+        )
+        validate_successful_join_form_submission(self, "Member filled out long ago", s, response2)
+
+        self.assertEqual(1, Building.objects.count())
+        self.assertEqual(1, Member.objects.count())
+        self.assertEqual(1, Install.objects.count())
+
+    def test_member_filled_out_the_join_form_long_ago_and_we_recycled_their_install_number(self):
+        building = Building(
+            street_address="151 Broome Street",
+            city="New York",
+            state="NY",
+            zip_code="10002",
+            bin=1077609,
+            latitude=0,
+            longitude=0,
+            address_truth_sources=[],
+        )
+        building.save()
+
+        member = Member(
+            name="John Smith",
+            primary_email_address="jsmith@gmail.com",
+            phone_number="+1 585-758-3425",
+        )
+        member.save()
+
+        original_install = Install(
+            request_date=datetime.datetime(2013, 1, 1, 1, 1, 1),
+            building=building,
+            member=member,
+            status=Install.InstallStatus.NN_REASSIGNED,
+            unit="22",
+        )
+        original_install.save()
+
+        submission = valid_join_form_submission.copy()
+        submission["apartment"] = "22"
+
+        self.requests_mocker.get(
+            NYC_PLANNING_LABS_GEOCODE_URL,
+            json=submission["dob_addr_response"],
+        )
+
+        request, s = pull_apart_join_form_submission(submission)
+
+        response = self.c.post("/api/v1/join/", request, content_type="application/json")
+        code = 201
+        self.assertEqual(
+            code,
+            response.status_code,
+            f"status code incorrect for Valid Join Form. Should be {code}, but got {response.status_code}.\n Response is: {response.content.decode('utf-8')}",
+        )
+
+        response_json = response.json()
+
+        self.assertNotEqual(response_json["install_id"], str(original_install.id))
+        self.assertEqual(response_json["member_id"], str(member.id))
+        self.assertEqual(response_json["building_id"], str(building.id))
+        self.assertEqual(response_json["member_exists"], True)
+
+        validate_successful_join_form_submission(self, "Member filled out long ago", s, response)
 
     def test_no_email_join_form(self):
         no_email_submission = valid_join_form_submission.copy()
