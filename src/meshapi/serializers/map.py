@@ -86,7 +86,11 @@ class MapDataInstallSerializer(serializers.ModelSerializer):
         # make the one that actually corresponds to the NN the big dot (the "fake" install)
         # for the real install numbers that don't match the network number, leave them as red dots
         if install.node.type != Node.NodeType.STANDARD and self._is_node_dot(install):
-            synthetic_notes.append(install.node.type)
+            if install.node.type == Node.NodeType.FIBER_HUB:
+                # Draw fiber-connected hubs with the big blue "supernode" dot
+                synthetic_notes.append(Node.NodeType.SUPERNODE)
+            else:
+                synthetic_notes.append(install.node.type)
 
         # Supplement with "Omni" if this node has an omni attached
         for device in install.node.devices.all():

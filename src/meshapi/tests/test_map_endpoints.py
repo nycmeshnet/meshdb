@@ -374,6 +374,16 @@ class TestViewsGetUnauthenticated(TestCase):
             )
         )
 
+        nodes.append(
+            Node(
+                network_number=4592,
+                status=Node.NodeStatus.ACTIVE,
+                type=Node.NodeType.FIBER_HUB,
+                latitude=40.724868,
+                longitude=-73.987881,
+            )
+        )
+
         for node in nodes:
             node.save()
 
@@ -439,6 +449,15 @@ class TestViewsGetUnauthenticated(TestCase):
                     "requestDate": 1706331600000,
                     "roofAccess": True,
                     "panoramas": [],
+                },
+                {
+                    "coordinates": [-73.987881, 40.724868, None],
+                    "id": 4592,
+                    "panoramas": [],
+                    "requestDate": 0,
+                    "roofAccess": True,
+                    "notes": "Supernode",
+                    "status": "NN assigned",
                 },
                 {
                     "coordinates": [-73.987881, 40.724868, None],
