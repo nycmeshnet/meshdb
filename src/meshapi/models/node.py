@@ -37,6 +37,7 @@ class Node(models.Model):
     class NodeType(models.TextChoices):
         STANDARD = "Standard"
         HUB = "Hub"
+        FIBER_HUB = "Fiber Connected Hub"
         SUPERNODE = "Supernode"
         POP = "POP"
         AP = "AP"

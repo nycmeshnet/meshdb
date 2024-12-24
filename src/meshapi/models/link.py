@@ -25,6 +25,14 @@ class Link(models.Model):
         FIBER = "Fiber"
         ETHERNET = "Ethernet"
 
+    class MapDisplayOverride(models.TextChoices):
+        HIDDEN = "Hidden"
+        PLANNED = "Planned"
+        YELLOW = "Yellow"
+        LIGHT_BLUE = "Light Blue"
+        DARK_BLUE = "Dark Blue"
+        PURPLE = "Purple"
+
     class Meta:
         ordering = ["id"]
 
@@ -50,6 +58,15 @@ class Link(models.Model):
         blank=True,
         null=True,
         help_text="The technology used for this link 5Ghz, 60Ghz, fiber, etc.",
+    )
+
+    map_display_override = models.CharField(
+        choices=MapDisplayOverride.choices,
+        default=None,
+        blank=True,
+        null=True,
+        help_text="Optional configuration to force specific map display for this link, regardless of "
+        "the actual type/status. This should not be used for most links",
     )
 
     install_date = models.DateField(default=None, blank=True, null=True, help_text="The date this link was created")

@@ -143,6 +143,7 @@ class TestSlackNotification(TestCase):
             '    "id": "6600c6a5-f3dc-47cd-b791-c65ebade1f0e",\n'
             '    "status": "Active",\n'
             '    "type": null,\n'
+            '    "map_display_override": null,\n'
             '    "install_date": null,\n'
             '    "abandon_date": null,\n'
             '    "description": null,\n'
