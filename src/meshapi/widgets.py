@@ -9,6 +9,8 @@ from django.utils.safestring import SafeString, mark_safe
 from django_jsonform.widgets import JSONFormWidget
 from flags.state import flag_enabled
 
+from meshapi.models import Install, Node
+
 
 class PanoramaViewer(JSONFormWidget):
     pano_template_name = "widgets/panorama_viewer.html"
@@ -91,6 +93,22 @@ class DeviceIPAddressWidget(widgets.TextInput):
 
 class UISPHyperlinkWidget(widgets.TextInput):
     template_name = "widgets/uisp_link.html"
+
+
+class InstallStatusWidget(widgets.Select):
+    template_name = "widgets/install_status.html"
+    form_instance: "InstallAdminForm"
+
+    def get_context(self, name: str, value: str, attrs: Optional[dict] = None) -> dict:
+        context = super().get_context(name, value, attrs)
+        if self.form_instance:
+            install = self.form_instance.instance
+            if install and install.status == Install.InstallStatus.NN_REASSIGNED:
+                recycled_as_node = Node.objects.filter(network_number=install.install_number).first()
+                if recycled_as_node:
+                    context["reassigned_node_id"] = str(recycled_as_node.id)
+
+        return context
 
 
 class AutoPopulateLocationWidget(forms.Widget):

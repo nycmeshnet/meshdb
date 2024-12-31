@@ -12,7 +12,7 @@ from import_export.admin import ExportActionMixin, ImportExportMixin
 from simple_history.admin import SimpleHistoryAdmin
 
 from meshapi.models import Install
-from meshapi.widgets import ExternalHyperlinkWidget
+from meshapi.widgets import ExternalHyperlinkWidget, InstallStatusWidget
 
 from ..ranked_search import RankedSearchMixin
 
@@ -40,7 +40,12 @@ class InstallAdminForm(forms.ModelForm):
                 lambda ticket_number: f"{OSTICKET_URL}/scp/tickets.php?number={ticket_number}",
                 title="View in OSTicket",
             ),
+            "status": InstallStatusWidget(),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["status"].widget.form_instance = self
 
 
 @admin.register(Install)
