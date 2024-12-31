@@ -311,17 +311,22 @@ async function nodeSelectedOnMap(selectedNodes) {
     const nodeResponse = await fetch(`/api/v1/nodes/${selectedNodes}/`);
     if (installResponse.ok){
         const installJson = await installResponse.json();
-        if (installJson.node && installJson.node.network_number)  {
-            await updateAdminContent(new URL(`/admin/meshapi/node/${installJson.node.id}/change`, document.location).href);
-            updateMapForLocation(installJson.node.network_number.toString());
-        } else {
+        if (installJson.status !== "NN Reassigned") {
+            if (installJson.node && installJson.node.network_number) {
+                await updateAdminContent(new URL(`/admin/meshapi/node/${installJson.node.id}/change`, document.location).href);
+                updateMapForLocation(installJson.node.network_number.toString());
+                return;
+            }
+
             updateAdminContent(new URL(`/admin/meshapi/install/${installJson.id}/change`, document.location).href);
+            return;
         }
-    } else {
-        if (nodeResponse.ok)  {
-            const nodeJson = await nodeResponse.json();
-            updateAdminContent(new URL(`/admin/meshapi/node/${nodeJson.id}/change`, document.location).href);
-        }
+    }
+
+    if (nodeResponse.ok)  {
+        const nodeJson = await nodeResponse.json();
+        updateAdminContent(new URL(`/admin/meshapi/node/${nodeJson.id}/change`, document.location).href);
+        return;
     }
 
 }
