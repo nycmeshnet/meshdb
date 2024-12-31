@@ -311,7 +311,7 @@ async function nodeSelectedOnMap(selectedNodes) {
     const nodeResponse = await fetch(`/api/v1/nodes/${selectedNodes}/`);
     if (installResponse.ok){
         const installJson = await installResponse.json();
-        if (installJson.status !== "NN Reassigned") {
+        if (installJson.status !== "NN Reassigned" && installJson.status !== "Closed") {
             if (installJson.node && installJson.node.network_number) {
                 await updateAdminContent(new URL(`/admin/meshapi/node/${installJson.node.id}/change`, document.location).href);
                 updateMapForLocation(installJson.node.network_number.toString());
