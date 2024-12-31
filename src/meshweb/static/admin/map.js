@@ -308,8 +308,10 @@ async function nodeSelectedOnMap(selectedNodes) {
     }
 
     const [installResponse, nodeResponse] = await Promise.all(
-        fetch(`/api/v1/installs/${selectedNodes}/`),
-        fetch(`/api/v1/nodes/${selectedNodes}/`)
+        [
+            fetch(`/api/v1/installs/${selectedNodes}/`),
+            fetch(`/api/v1/nodes/${selectedNodes}/`)
+        ]
     );
     if (installResponse.ok){
         const installJson = await installResponse.json();
