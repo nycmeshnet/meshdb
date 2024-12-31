@@ -307,8 +307,10 @@ async function nodeSelectedOnMap(selectedNodes) {
         return;
     }
 
-    const installResponse = await fetch(`/api/v1/installs/${selectedNodes}/`);
-    const nodeResponse = await fetch(`/api/v1/nodes/${selectedNodes}/`);
+    const [installResponse, nodeResponse] = await Promise.all(
+        fetch(`/api/v1/installs/${selectedNodes}/`),
+        fetch(`/api/v1/nodes/${selectedNodes}/`)
+    );
     if (installResponse.ok){
         const installJson = await installResponse.json();
         if (installJson.status !== "NN Reassigned" && installJson.status !== "Closed") {
