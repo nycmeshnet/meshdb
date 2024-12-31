@@ -43,7 +43,7 @@ class InstallAdminForm(forms.ModelForm):
             "status": InstallStatusWidget(),
         }
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self.fields["status"].widget.form_instance = self
 

@@ -129,3 +129,7 @@ class AutoPopulateLocationWidget(forms.Widget):
         context["auto_populate_source"] = self.source
         context["auto_populate_url"] = self.source
         return context
+
+
+# Down here to resolve circular imports
+from meshapi.admin.models.install import InstallAdminForm  # noqa: E402
