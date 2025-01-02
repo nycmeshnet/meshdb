@@ -659,7 +659,7 @@ class TestAdminChangeView(TestCase):
         form_soup = bs4.BeautifulSoup(response.content.decode()).find(id="install_form")
         link_tag = form_soup.find("select", {"id": "id_status"}).parent.find("a")
         self.assertEqual(link_tag.attrs["href"], f"/admin/meshapi/node/{new_node.id}")
-        self.assertEqual(link_tag.attrs["title"], f"Show the node that got this install's number")
+        self.assertEqual(link_tag.attrs["title"], "Show the node that got this install's number")
 
 
 class TestAdminAddView(TestCase):
