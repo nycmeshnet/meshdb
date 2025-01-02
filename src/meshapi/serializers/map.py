@@ -1,6 +1,6 @@
 import os
 from collections import OrderedDict
-from typing import List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 from urllib.parse import urlparse
 
 from rest_framework import serializers
@@ -80,13 +80,17 @@ class MapDataInstallSerializer(serializers.ModelSerializer):
             return None
 
         # Start the notes with the map display type
-        synthetic_notes = []
+        synthetic_notes: List[str] = []
 
         # In the case of multiple dots per node, we only want to
         # make the one that actually corresponds to the NN the big dot (the "fake" install)
         # for the real install numbers that don't match the network number, leave them as red dots
         if install.node.type != Node.NodeType.STANDARD and self._is_node_dot(install):
-            synthetic_notes.append(install.node.type)
+            if install.node.type == Node.NodeType.FIBER_HUB:
+                # Draw fiber-connected hubs with the big blue "supernode" dot
+                synthetic_notes.append(Node.NodeType.SUPERNODE)
+            else:
+                synthetic_notes.append(install.node.type)
 
         # Supplement with "Omni" if this node has an omni attached
         for device in install.node.devices.all():
@@ -149,6 +153,17 @@ class MapDataLinkSerializer(serializers.ModelSerializer):
     installDate = JavascriptDateField(source="install_date")
 
     def convert_status_to_spreadsheet_status(self, link: Link) -> str:
+        if link.map_display_override:
+            map_override_to_spreadsheet_status: Dict[str, str] = {
+                Link.MapDisplayOverride.HIDDEN: "dead",
+                Link.MapDisplayOverride.PLANNED: "planned",
+                Link.MapDisplayOverride.YELLOW: "fiber",
+                Link.MapDisplayOverride.LIGHT_BLUE: "60GHz",
+                Link.MapDisplayOverride.DARK_BLUE: "active",
+                Link.MapDisplayOverride.PURPLE: "vpn",
+            }
+            return map_override_to_spreadsheet_status[link.map_display_override]
+
         if link.status == Link.LinkStatus.PLANNED:
             return str(link.status).lower()
 
