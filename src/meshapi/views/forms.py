@@ -17,7 +17,7 @@ from rest_framework.response import Response
 from rest_framework_dataclasses.serializers import DataclassSerializer
 from validate_email.exceptions import EmailValidationError
 
-from meshapi.exceptions import AddressError
+from meshapi.exceptions import AddressError, AddressAPIError
 from meshapi.models import AddressTruthSource, Building, Install, Member, Node
 from meshapi.permissions import HasNNAssignPermission, LegacyNNAssignmentPassword
 from meshapi.serializers import MemberSerializer
@@ -32,6 +32,7 @@ from meshapi.validation import (
     validate_email_address,
     validate_phone_number,
     validate_recaptcha_tokens,
+    OSMAddressInfo,
 )
 
 logging.basicConfig()
@@ -254,44 +255,71 @@ def process_join_form(r: JoinFormRequest, request: Optional[Request] = None) -> 
     if formatted_phone_number not in join_form_member.all_phone_numbers:
         join_form_member.additional_phone_numbers.append(formatted_phone_number)
 
-    # Try to map this address to an existing Building or group of buildings
-    all_existing_buildings_for_structure = Building.objects.filter(bin=nyc_addr_info.bin)
-    existing_exact_buildings = all_existing_buildings_for_structure.filter(street_address=nyc_addr_info.street_address)
+    existing_exact_buildings = []
+    if "street_address" not in changed_info and "city" not in changed_info:
+        addr_info = nyc_addr_info
 
-    existing_primary_nodes_for_structure = list(
-        {building.primary_node for building in all_existing_buildings_for_structure}
-    )
-    existing_nodes_for_structure = {
-        node for building in all_existing_buildings_for_structure for node in building.nodes.all()
-    }
+        # Try to map this address to an existing Building or group of buildings
+        all_existing_buildings_for_structure = Building.objects.filter(bin=addr_info.bin)
+        existing_exact_buildings = all_existing_buildings_for_structure.filter(street_address=addr_info.street_address)
 
-    if len(existing_exact_buildings) > 1:
-        logging.warning(
-            f"Found multiple buildings with BIN {nyc_addr_info.bin} and "
-            f"address {nyc_addr_info.street_address} this should not happen, "
-            f"and these should be consolidated"
+        existing_primary_nodes_for_structure = list(
+            {building.primary_node for building in all_existing_buildings_for_structure}
         )
+        existing_nodes_for_structure = {
+            node for building in all_existing_buildings_for_structure for node in building.nodes.all()
+        }
 
-    if len(existing_primary_nodes_for_structure) > 1:
-        logging.warning(
-            f"Found multiple primary nodes for the cluster of nodes {existing_nodes_for_structure} "
-            f"at address {nyc_addr_info.street_address}. This should not happen, "
-            f"these should be consolidated"
-        )
+        if len(existing_exact_buildings) > 1:
+            logging.warning(
+                f"Found multiple buildings with BIN {addr_info.bin} and "
+                f"address {addr_info.street_address} this should not happen, "
+                f"and these should be consolidated"
+            )
+
+        if len(existing_primary_nodes_for_structure) > 1:
+            logging.warning(
+                f"Found multiple primary nodes for the cluster of nodes {existing_nodes_for_structure} "
+                f"at address {addr_info.street_address}. This should not happen, "
+                f"these should be consolidated"
+            )
+    else:
+        # If the user indicated "trust me bro" for city or street address, we can't trust the
+        # NYC DOB building APIs and we are forced to fall back to OSM to get the lat/lon.
+        # For now, we also don't do any building de-duplication, we will need to start storing OSM
+        # identifiers on the Building object in order to do that
+        try:
+            addr_info = OSMAddressInfo(r.street_address, r.city, r.state, r.zip_code)
+        except AddressAPIError:
+            logging.exception("Could not validate address via OSM")
+            return Response(
+                {"detail": "Your address could not be validated."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+        except AddressError:
+            logging.exception("Could not find address in OSM database")
+            return Response(
+                {"detail": "Your address could not be validated."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
 
     join_form_building = (
         existing_exact_buildings[0]
         if len(existing_exact_buildings) > 0
         else Building(
-            bin=nyc_addr_info.bin if nyc_addr_info is not None else None,
-            street_address=nyc_addr_info.street_address,
-            city=nyc_addr_info.city,
-            state=nyc_addr_info.state,
-            zip_code=nyc_addr_info.zip,
-            latitude=nyc_addr_info.latitude,
-            longitude=nyc_addr_info.longitude,
-            altitude=nyc_addr_info.altitude,
-            address_truth_sources=[AddressTruthSource.NYCPlanningLabs],
+            bin=addr_info.bin if addr_info is not None and isinstance(addr_info, NYCAddressInfo) else None,
+            street_address=addr_info.street_address,
+            city=addr_info.city,
+            state=addr_info.state,
+            zip_code=addr_info.zip,
+            latitude=addr_info.latitude,
+            longitude=addr_info.longitude,
+            altitude=addr_info.altitude,
+            address_truth_sources=(
+                [AddressTruthSource.NYCPlanningLabs]
+                if isinstance(addr_info, NYCAddressInfo)
+                else [AddressTruthSource.OSMNominatim]
+            ),
         )
     )
 

@@ -3,12 +3,13 @@ import logging
 import os
 import time
 from dataclasses import dataclass
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 import phonenumbers
 import requests
 from django.core.exceptions import ValidationError
 from flags.state import flag_state
+from geopy import Nominatim
 from validate_email import validate_email_or_fail
 from validate_email.exceptions import (
     DNSTimeoutError,
@@ -34,6 +35,24 @@ RECAPTCHA_TOKEN_VALIDATION_URL = "https://www.google.com/recaptcha/api/siteverif
 
 
 INVALID_BIN_NUMBERS = [-2, -1, 0, 1000000, 2000000, 3000000, 4000000]
+
+
+NYC_COUNTIES = [
+    "New York County",
+    "Kings County",
+    "Queens County",
+    "Bronx County",
+    "Richmond County",
+]
+OSM_CITY_SUBSTITUTIONS = {
+    "Queens County": "Queens",
+    "Kings County": "Brooklyn",
+    "Richmond County": "Staten Island",
+    "Bronx County": "Bronx",
+    "The Bronx": "Bronx",
+    "New York County": "New York",
+    "Manhattan": "New York",
+}
 
 
 def validate_email_address(email_address: str) -> Optional[bool]:
@@ -76,12 +95,8 @@ def validate_phone_number(phone_number: str) -> Optional[phonenumbers.PhoneNumbe
         return None
 
 
-# Used to obtain info about addresses within NYC. Uses a pair of APIs
-# hosted by the city with all kinds of good info. Unfortunately, there's
-# not a solid way to check if an address is actually _within_ NYC, so this
-# is gated by OSMAddressInfo.
 @dataclass
-class NYCAddressInfo:
+class AddressInfo:
     street_address: str
     city: str
     state: str
@@ -89,7 +104,14 @@ class NYCAddressInfo:
     longitude: float
     latitude: float
     altitude: float | None
-    bin: int | None
+
+    def __new__(cls, *args, **kwargs):
+        if cls is AddressInfo:
+            raise TypeError(
+                "Cannot instantiate AddressInfo directly, since we need a method to determine lat/lon. "
+                "Did you mean to use OSMAddressInfo or NYCAddressInfo?"
+            )
+        return super().__new__(cls)
 
     def __init__(self, street_address: str, city: str, state: str, zip_code: str):
         if state != "New York" and state != "NY":
@@ -98,6 +120,91 @@ class NYCAddressInfo:
         # We only support the five boroughs of NYC at this time
         if not NYCZipCodes.match_zip(zip_code):
             raise ValueError(f"Non-NYC zip code detected: {zip_code}")
+
+        self.street_address = street_address
+        self.city = city
+        self.state = state.replace("New York", "NY")
+        self.zip = zip_code
+
+
+@dataclass
+class OSMAddressInfo(AddressInfo):
+    def __init__(self, street_address: str, city: str, state: str, zip_code: str):
+        super().__init__(street_address, city, state, zip_code)
+
+        address_str = f"{street_address}, {city}, {state}, {zip_code}"
+        try:
+            geolocator = Nominatim(user_agent="support@nycmesh.net")
+            osm_geolocation = geolocator.geocode(address_str, addressdetails=True)
+            if not osm_geolocation:
+                raise AddressError(f"Address not found when searching OSM Nominatim: {address_str}")
+
+            # This does very basic string-case normalization, we don't want to do more than this
+            # right now because we are only using OSMAddressInfo for fallback "trust me bro"
+            # situations, and we don't want to surprise the user with a silent change
+            self.street_address = humanify_street_address(street_address)
+            self.city = city.title()
+
+            # TODO: Enable this for full address normalization
+            # self.street_address = (
+            #     osm_geolocation.raw["address"]["house_number"] + " " + osm_geolocation.raw["address"]["road"]
+            # )
+            # self.city, self.state = self._convert_osm_city_village_suburb_nonsense(osm_geolocation.raw["address"])
+            # self.zip = osm_geolocation.raw["address"]["postcode"]
+
+            self.osm_id = osm_geolocation.raw["osm_id"]
+            self.osm_place_id = osm_geolocation.raw["place_id"]
+            self.latitude = osm_geolocation.latitude
+            self.longitude = osm_geolocation.longitude
+            self.altitude = INVALID_ALTITUDE
+        except AddressError as e:
+            raise e
+        except Exception as e:
+            # We don't need a retry loop here because the geocode() function has built-in retries
+            logging.error(f"Couldn't connect to OSM API while querying for '{address_str}'. Did we get throttled?")
+            raise AddressAPIError from e
+
+    @staticmethod
+    def _osm_location_is_in_nyc(osm_raw_addr: dict) -> bool:
+        return osm_raw_addr["country_code"] == "us" and (
+            ("city" in osm_raw_addr and osm_raw_addr["city"] == "City of New York")
+            or ("county" in osm_raw_addr and any(borough in osm_raw_addr["county"] for borough in NYC_COUNTIES))
+        )
+
+    @staticmethod
+    def _convert_osm_city_village_suburb_nonsense(osm_raw_addr: dict) -> Tuple[str, str]:
+        # TODO: Validate that this logic does queens addresses correctly
+        #   i.e. we need to make sure that we end up with "Ridgewood" instead of "Queens"
+        if OSMAddressInfo._osm_location_is_in_nyc(osm_raw_addr):
+            city = osm_raw_addr["suburb"]
+            for old_val, new_val in OSM_CITY_SUBSTITUTIONS.items():
+                city = city.replace(old_val, new_val)
+            return (
+                city,
+                osm_raw_addr["ISO3166-2-lvl4"].split("-")[1] if "ISO3166-2-lvl4" in osm_raw_addr else None,
+            )
+        return (
+            (
+                osm_raw_addr["city"]
+                if "city" in osm_raw_addr
+                else (
+                    osm_raw_addr["town"]
+                    if "town" in osm_raw_addr
+                    else osm_raw_addr["village"] if "village" in osm_raw_addr else None
+                )
+            ),
+            osm_raw_addr["ISO3166-2-lvl4"].split("-")[1] if "ISO3166-2-lvl4" in osm_raw_addr else None,
+        )
+
+
+# Used to obtain info about addresses within NYC. Uses a pair of APIs
+# hosted by the city with all kinds of good info
+@dataclass
+class NYCAddressInfo(AddressInfo):
+    bin: int | None
+
+    def __init__(self, street_address: str, city: str, state: str, zip_code: str):
+        super().__init__(street_address, city, state, zip_code)
 
         self.address = f"{street_address}, {city}, {state} {zip_code}"
 
@@ -215,11 +322,12 @@ def geocode_nyc_address(street_address: str, city: str, state: str, zip_code: st
             return nyc_addr_info
         # If the user has given us an invalid address. Tell them to buzz
         # off.
-        except (AddressError, ValueError) as e:
+        except ValueError as e:
             logging.exception("AddressError when validating address")
             # Raise to next level
             raise e
-
+        except AddressError:
+            return None
         # If we get any other error, then there was probably an issue
         # using the API, and we should wait a bit and re-try
         except (AddressAPIError, Exception):
