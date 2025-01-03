@@ -6,7 +6,7 @@ from django.test import TestCase
 from meshapi.exceptions import AddressAPIError, AddressError
 from meshapi.tests.sample_data import sample_address_response, sample_osm_address_response
 from meshapi.util.constants import INVALID_ALTITUDE
-from meshapi.validation import NYCAddressInfo, AddressInfo, OSMAddressInfo
+from meshapi.validation import AddressInfo, NYCAddressInfo, OSMAddressInfo
 
 
 class TestValidationNYCAddressInfo(TestCase):

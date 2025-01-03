@@ -17,7 +17,7 @@ from rest_framework.response import Response
 from rest_framework_dataclasses.serializers import DataclassSerializer
 from validate_email.exceptions import EmailValidationError
 
-from meshapi.exceptions import AddressError, AddressAPIError
+from meshapi.exceptions import AddressAPIError, AddressError
 from meshapi.models import AddressTruthSource, Building, Install, Member, Node
 from meshapi.permissions import HasNNAssignPermission, LegacyNNAssignmentPassword
 from meshapi.serializers import MemberSerializer
@@ -26,13 +26,14 @@ from meshapi.util.constants import RECAPTCHA_CHECKBOX_TOKEN_HEADER, RECAPTCHA_IN
 from meshapi.util.django_pglocks import advisory_lock
 from meshapi.util.network_number import NETWORK_NUMBER_MAX, NETWORK_NUMBER_MIN, get_next_available_network_number
 from meshapi.validation import (
+    AddressInfo,
     NYCAddressInfo,
+    OSMAddressInfo,
     geocode_nyc_address,
     normalize_phone_number,
     validate_email_address,
     validate_phone_number,
     validate_recaptcha_tokens,
-    OSMAddressInfo,
 )
 
 logging.basicConfig()
@@ -256,12 +257,15 @@ def process_join_form(r: JoinFormRequest, request: Optional[Request] = None) -> 
         join_form_member.additional_phone_numbers.append(formatted_phone_number)
 
     existing_exact_buildings = []
+    addr_info: AddressInfo = nyc_addr_info
     if "street_address" not in changed_info and "city" not in changed_info:
         addr_info = nyc_addr_info
 
         # Try to map this address to an existing Building or group of buildings
         all_existing_buildings_for_structure = Building.objects.filter(bin=addr_info.bin)
-        existing_exact_buildings = all_existing_buildings_for_structure.filter(street_address=addr_info.street_address)
+        existing_exact_buildings = list(
+            all_existing_buildings_for_structure.filter(street_address=addr_info.street_address)
+        )
 
         existing_primary_nodes_for_structure = list(
             {building.primary_node for building in all_existing_buildings_for_structure}

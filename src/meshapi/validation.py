@@ -3,7 +3,7 @@ import logging
 import os
 import time
 from dataclasses import dataclass
-from typing import List, Optional, Tuple
+from typing import Any, List, Optional, Tuple
 
 import phonenumbers
 import requests
@@ -105,13 +105,13 @@ class AddressInfo:
     latitude: float
     altitude: float | None
 
-    def __new__(cls, *args, **kwargs):
+    def __new__(cls, *args: Any, **kwargs: Any) -> "AddressInfo":
         if cls is AddressInfo:
             raise TypeError(
                 "Cannot instantiate AddressInfo directly, since we need a method to determine lat/lon. "
                 "Did you mean to use OSMAddressInfo or NYCAddressInfo?"
             )
-        return super().__new__(cls)
+        return super().__new__(cls, *args, **kwargs)
 
     def __init__(self, street_address: str, city: str, state: str, zip_code: str):
         if state != "New York" and state != "NY":
