@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Embedded Page</title>
+  </head>
+  <body>
+    <h2>Embedded</h2>
+    <textarea cols="30" rows="10" disabled id="output">waiting</textarea>
+    <input type="text" id="field" />
+    <button id="send">Send</button>
+    <script>
+      // set up references to DOM nodes
+      const output = document.getElementById("output");
+      const button = document.getElementById("send");
+      const field = document.getElementById("field");
+
+      // create a variable for the parent window. We will assign it once we get the first message.
+      let parent = null;
+
+      // add an event listener to send messages when the button is clicked
+      button.addEventListener("click", () => {
+        // don't do anything if there is no parent reference yet
+        if (parent === null) {
+          return;
+        }
+
+        // otherwise get the field text, and send it to the parent
+        const text = field.value;
+        parent.postMessage(text);
+      });
+
+      // add an event listener to run when a message is received
+      window.addEventListener("message", ({ data, source }) => {
+        console.log("Got message.");
+        // if we don't have a reference to the parent window yet, set it now
+        if (parent === null) {
+          parent = source;
+        }
+
+        // now we can do whatever we want with the message data.
+        // in this case, displaying it, and then sending it back
+        // wrapped in an object
+        output.textContent = JSON.stringify(data);
+        const response = {
+          success: true,
+          request: { data },
+        };
+        parent.postMessage(response);
+      });
+    </script>
+  </body>
+</html>
+

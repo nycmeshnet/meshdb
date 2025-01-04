@@ -130,43 +130,19 @@ async function getNewSelectedNodes(url){
 async function adminPanelLoaded() {
   const iframe_panel_url = document.getElementById("iframe_panel").contentWindow.location.href;
 
-  /*
-  const objectUUIDs = extractUUIDs(iframe_panel_url);
-  const objectModel = extractModel(iframe_panel_url);
-  */
   const selectedNodes = await getNewSelectedNodes(iframe_panel_url);
 
   document.getElementById("iframe_url").innerHTML = `${iframe_panel_url} ---> Selected Nodes: ${selectedNodes}`;
-
-  /*
-  // Guard against looking up an empty UUID
-  if (objectUUIDs.length == 0) {
-    console.log("No UUID")
-  }*/
 
   if (selectedNodes === null) {
     console.log("No node");
     return;
   }
 
-  /*
-  // This is a dev token
-  const token = "";
+  console.log(`Got node: ${selectedNodes}`);
 
-  let rqHeaders = new Headers();
-  rqHeaders.append("Content-Type", "application/json");
-  rqHeaders.append("Authorization", `Bearer ${token}`);
-
-  const objectInfo = await fetch(`http://127.0.0.1:8000/api/v1/${objectModel}s/${objectUUIDs[0]}/`, {
-    headers: rqHeaders 
-  });
-
-  const objectInfoJson = await objectInfo.json();
-  console.log(objectInfoJson);
-  */
-
-  const selectedEvent = new Event("setMapNode");//, {detail: {selectedNodes: selectedNodes}});
-  selectedEvent.selectedNodes = selectedNodes;
-  document.getElementById("map_panel").contentWindow.top.postMessage(JSON.parse(JSON.stringify(selectedEvent)), "*");
+  //const selectedEvent = new Event("setMapNode");//, {detail: {selectedNodes: selectedNodes}});
+  //selectedEvent.selectedNodes = selectedNodes;
+  document.getElementById("map_panel").contentWindow.postMessage(selectedNodes, "http://127.0.0.1:3001");
 }
 
