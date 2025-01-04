@@ -1,76 +1,31 @@
+{% load static %}
 <!DOCTYPE html>
-<style>
-iframe:focus {
-  outline: none;
-}
+<html>
+  <head>
+    <script src="{% static '/admin/iframed.js' %}"></script>
+    <style>
+      iframe:focus {
+        outline: none;
+      }
 
-iframe {
-  display: flex;
-  flex-grow: 1; border: none; margin: 0; padding: 0; 
-}
+      iframe {
+        display: flex;
+        flex-grow: 1; border: none; margin: 0; padding: 0; 
+      }
 
-body, html {width: 100%; height: 100%; margin: 0; padding: 0}
-.row-container {display: flex; width: 100%; height: 100%; flex-direction: column; background-color: blue; overflow: hidden;}
-.first-row {background-color: lime; }
-.second-row { flex-grow: 1; border: none; margin: 0; padding: 0; }
-
-
-</style>
-
-<div class="row-container">
-  <div class="first-row">
-    <p>Panel Location:</p>
-    <p id="iframe_url"></p>
+      body, html {width: 100%; height: 100%; margin: 0; padding: 0}
+      .row-container {display: flex; width: 100%; height: 100%; flex-direction: column; background-color: blue; overflow: hidden;}
+      .first-row {background-color: lime; }
+      .second-row { flex-grow: 1; border: none; margin: 0; padding: 0; }
+    </style>
+  </head>
+  <body>
+  <div class="row-container">
+    <div class="first-row">
+      <p>Panel Location:</p>
+      <p id="iframe_url"></p>
+    </div>
+    <iframe src="panel" id="iframe_panel" class="second-row" onLoad="adminPanelLoaded();"></iframe>
   </div>
-  <iframe src="panel" id="iframe_panel" class="second-row" onLoad="adminPanelLoaded();"></iframe>
-</div>
-
-
-<script>
-function extractUUIDs(inputString) {
-    // Regular expression to match UUIDs
-    const uuidRegex = /\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/g;
-    // Find all matches in the input string
-    const matches = inputString.match(uuidRegex);
-    // Return the matches or an empty array if none found
-    return matches || [];
-}
-
-function extractModel(inputString) {
-  const relevantModels = ["member", "building", "install", "node", "device", "sector"];
-  return relevantModels.find(element => inputString.includes(element));
-}
-
-
-// FIXME: Refreshes reset your location. Need to make sure that the iframe gets the refresh/forward/backward stuff. Check andrew's code.
-// FIXME: Also need to make sure that admin/members/uuid directs you to this iframe setup properly
-async function adminPanelLoaded() {
-  const iframe_panel_url = document.getElementById("iframe_panel").contentWindow.location.href;
-
-  const objectUUIDs = extractUUIDs(iframe_panel_url)
-  const objectModel = extractModel(iframe_panel_url)
-
-  document.getElementById("iframe_url").innerHTML = iframe_panel_url + " ---> " + objectModel + " || " + objectUUIDs;
-
-  // Guard against looking up an empty UUID
-  if (objectUUIDs.length == 0) {
-    console.log("No UUID");
-    return;
-  }
-
-  console.log(objectUUIDs[0]);
-  const token = "";
-
-  let rqHeaders = new Headers();
-  rqHeaders.append("Content-Type", "application/json");
-  rqHeaders.append("Authorization", `Bearer ${token}`);
-
-  const objectInfo = await fetch(`http://127.0.0.1:8000/api/v1/${objectModel}s/${objectUUIDs[0]}/`, {
-    headers: rqHeaders 
-  });
-
-  const objectInfoJson = await objectInfo.json();
-  console.log(objectInfoJson);
-}
-</script>
+  </body>
 </html>
