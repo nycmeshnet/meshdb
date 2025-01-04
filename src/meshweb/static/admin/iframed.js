@@ -8,7 +8,7 @@ function extractUUIDs(inputString) {
 }
 
 function extractModel(inputString) {
-  const relevantModels = ["member", "building", "install", "node", "device", "sector"];
+  const relevantModels = ["member", "building", "install", "node", "device", "sector", "link"];
   return relevantModels.find(element => inputString.includes(element));
 }
 
@@ -146,3 +146,42 @@ async function adminPanelLoaded() {
     document.getElementById("map_panel").contentWindow.postMessage({selectedNodes: selectedNodes}, "http://127.0.0.1:3001");
 }
 
+async function updateAdminPanelLocation(selectedNodes) {
+    if (!selectedNodes) return;
+    if (selectedNodes.indexOf("-") !== -1) return;
+
+    let selectedNodeInt = parseInt(selectedNodes);
+    if (selectedNodeInt >= 1000000) {
+        /* Hack for APs to not break things. We unfortantely can't do a lot better than this without much pain*/
+        return;
+    }
+    const installResponse = await fetch(`/api/v1/installs/${selectedNodes}/`);
+    const nodeResponse = await fetch(`/api/v1/nodes/${selectedNodes}/`);
+    if (installResponse.ok){
+        const installJson = await installResponse.json();
+        if (installJson.node && installJson.node.network_number)  {
+            const newAdminPanelURL = new URL(`/admin/panel/meshapi/node/${installJson.node.id}/change`, document.location);
+            document.getElementById("iframe_panel").src = `panel/meshapi/node/${installJson.node.id}/change`;
+            //updateMapForLocation(installJson.node.network_number.toString());
+        } else {
+            const newAdminPanelURL = new URL(`/admin/panel/meshapi/install/${installJson.id}/change`, document.location);
+            document.getElementById("iframe_panel").src = `panel/meshapi/install/${installJson.id}/change`;
+        }
+    } else {
+        if (nodeResponse.ok)  {
+            const nodeJson = await nodeResponse.json();
+            const newAdminPanelURL = new URL(`/admin/panel/meshapi/node/${nodeJson.id}/change`, document.location);
+            document.getElementById("iframe_panel").src = `panel/meshapi/node/${nodeJson.id}/change`;
+        }
+    }
+}
+
+window.addEventListener("message", ({ data, source }) => {
+        console.log(`Admin Panel got event: ${JSON.stringify(data)}`);
+        // Check if we have the correct data
+        // look up the id of the node
+        // replace admin panel window location
+        //this.updateSelected.bind(this)(data.selectedNodes, false);
+        updateAdminPanelLocation(data.selectedNodes);
+    }
+);
