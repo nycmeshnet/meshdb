@@ -143,6 +143,6 @@ async function adminPanelLoaded() {
 
   //const selectedEvent = new Event("setMapNode");//, {detail: {selectedNodes: selectedNodes}});
   //selectedEvent.selectedNodes = selectedNodes;
-  document.getElementById("map_panel").contentWindow.postMessage(selectedNodes, "http://127.0.0.1:3001");
+    document.getElementById("map_panel").contentWindow.postMessage({selectedNodes: selectedNodes}, "http://127.0.0.1:3001");
 }
 
