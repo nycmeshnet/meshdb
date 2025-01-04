@@ -380,7 +380,7 @@ def process_join_form(r: JoinFormRequest, request: Optional[Request] = None) -> 
         )
 
     if existing_members:
-        if join_form_member.name != join_form_full_name:
+        if join_form_member.name.lower() != join_form_full_name.lower():
             name_change_note = (
                 f"Dropped name change: {join_form_full_name} (install request #{join_form_install.install_number})"
             )
