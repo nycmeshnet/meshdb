@@ -1,0 +1,29 @@
+body, html {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0
+}
+
+iframe {
+    display: flex;
+    flex-grow: 1; border: none; margin: 0; padding: 0; 
+}
+
+iframe:focus {
+    outline: none;
+}
+
+.adminContainer {
+    display: flex;
+    width: 100%;
+    height: 100%;
+    flex-direction: row;
+    overflow: hidden;
+}
+.frameGrow {
+    flex-grow: 1;
+    border: none;
+    margin: 0;
+    padding: 0;
+}
