@@ -5,11 +5,32 @@ iframe:focus {
 }
 
 iframe {
-  display: block;
-  width:50%;
-  height:500px;
+  display: flex;
+  flex-grow: 1; border: none; margin: 0; padding: 0; 
 }
+
+body, html {width: 100%; height: 100%; margin: 0; padding: 0}
+.row-container {display: flex; width: 100%; height: 100%; flex-direction: column; background-color: blue; overflow: hidden;}
+.first-row {background-color: lime; }
+.second-row { flex-grow: 1; border: none; margin: 0; padding: 0; }
+
+
 </style>
 
-<iframe src="panel"></iframe>
+<div class="row-container">
+  <div class="first-row">
+    <p>Panel Location:</p>
+    <p id="iframe_url"></p>
+  </div>
+  <iframe src="panel" id="iframe_panel" class="second-row" onLoad="adminPanelLoaded();"></iframe>
+</div>
+
+
+<script>
+// FIXME: Refreshes reset your location. Need to make sure that the iframe gets the refresh/forward/backward stuff. Check andrew's code.
+function adminPanelLoaded() {
+  iframe_panel_url = document.getElementById("iframe_panel").contentWindow.location.href;
+  document.getElementById("iframe_url").innerHTML = iframe_panel_url;
+}
+</script>
 </html>
