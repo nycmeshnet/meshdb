@@ -137,7 +137,8 @@ async function adminPanelLoaded() {
     return;
   }
 
-  document.getElementById("map_panel").contentWindow.postMessage({selectedNodes: selectedNodes}, "http://127.0.0.1:3001");
+  // MAP_BASE_URL comes from iframed.html
+  document.getElementById("map_panel").contentWindow.postMessage({selectedNodes: selectedNodes}, MAP_BASE_URL);
 }
 
 async function updateAdminPanelLocation(selectedNodes) {

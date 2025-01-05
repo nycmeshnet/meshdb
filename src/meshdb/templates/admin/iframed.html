@@ -2,13 +2,14 @@
 <!DOCTYPE html>
 <html>
   <head>
+    <script>let MAP_BASE_URL = "{% get_env_var 'ADMIN_MAP_BASE_URL' %}";</script>
     <script src="{% static '/admin/iframed.js' %}"></script>
     <link rel="stylesheet" href="{% static '/admin/iframed.css'%}"/> 
   </head>
   <body>
   <div class="adminContainer">
     <iframe src="panel" id="iframe_panel" class="frameGrow" onLoad="adminPanelLoaded();"></iframe>
-    <iframe src="http://127.0.0.1:3001" id="map_panel" class="frameGrow"></iframe>
+    <iframe src="{% get_env_var 'ADMIN_MAP_BASE_URL' %}" id="map_panel" class="frameGrow"></iframe>
   </div>
   </body>
 </html>
