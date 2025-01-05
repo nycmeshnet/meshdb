@@ -132,18 +132,12 @@ async function adminPanelLoaded() {
 
   const selectedNodes = await getNewSelectedNodes(iframe_panel_url);
 
-  document.getElementById("iframe_url").innerHTML = `${iframe_panel_url} ---> Selected Nodes: ${selectedNodes}`;
-
   if (selectedNodes === null) {
     console.log("No node");
     return;
   }
 
-  console.log(`Got node: ${selectedNodes}`);
-
-  //const selectedEvent = new Event("setMapNode");//, {detail: {selectedNodes: selectedNodes}});
-  //selectedEvent.selectedNodes = selectedNodes;
-    document.getElementById("map_panel").contentWindow.postMessage({selectedNodes: selectedNodes}, "http://127.0.0.1:3001");
+  document.getElementById("map_panel").contentWindow.postMessage({selectedNodes: selectedNodes}, "http://127.0.0.1:3001");
 }
 
 async function updateAdminPanelLocation(selectedNodes) {
@@ -177,11 +171,5 @@ async function updateAdminPanelLocation(selectedNodes) {
 }
 
 window.addEventListener("message", ({ data, source }) => {
-        console.log(`Admin Panel got event: ${JSON.stringify(data)}`);
-        // Check if we have the correct data
-        // look up the id of the node
-        // replace admin panel window location
-        //this.updateSelected.bind(this)(data.selectedNodes, false);
-        updateAdminPanelLocation(data.selectedNodes);
-    }
-);
+  updateAdminPanelLocation(data.selectedNodes);
+});
