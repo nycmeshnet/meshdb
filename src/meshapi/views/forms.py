@@ -476,6 +476,7 @@ nn_form_success_schema = inline_serializer(
             ),
             "403": OpenApiResponse(form_err_response_schema, description="Incorrect or missing password"),
             "404": OpenApiResponse(form_err_response_schema, description="Requested install number could not be found"),
+            "409": OpenApiResponse(form_err_response_schema, description="Requested install is in an invalid state"),
             "500": OpenApiResponse(form_err_response_schema, description="Unexpected internal error"),
         },
     ),
