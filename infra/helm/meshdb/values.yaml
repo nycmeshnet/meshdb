@@ -37,7 +37,7 @@ meshweb:
   disable_pano_edits: "True"
   static_pvc_name: "meshdb-static-pvc"
   static_pvc_size: "1Gi"
-  liveness_probe: "true"
+  liveness_probe: "false"
   readiness_probe: "false"
   image:
     repository: willnilges/meshdb
