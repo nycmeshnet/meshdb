@@ -41,6 +41,9 @@ def validate_network_number_unused_and_claim_install_if_needed(
     # inline imports prevent cycles
     from meshapi.models import Install, Node
 
+    if network_number_candidate < NETWORK_NUMBER_MIN or network_number_candidate > NETWORK_NUMBER_MAX:
+        raise ValueError(f"Network number is invalid, must be between {NETWORK_NUMBER_MIN} and {NETWORK_NUMBER_MAX}")
+
     pre_existing_node_with_nn = Node.objects.filter(network_number=network_number_candidate).first()
     if pre_existing_node_with_nn is not None and pre_existing_node_with_nn.id != pre_existing_node_id:
         raise ValueError("Network number already in use by another node")
