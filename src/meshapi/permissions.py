@@ -42,6 +42,10 @@ class HasNNAssignPermission(HasDjangoPermission):
     django_permission = "meshapi.assign_nn"
 
 
+class HasDisambiguateNumberPermission(HasDjangoPermission):
+    django_permission = "meshapi.disambiguate_number"
+
+
 class HasMaintenanceModePermission(HasDjangoPermission):
     django_permission = "meshapi.maintenance_mode"
 
