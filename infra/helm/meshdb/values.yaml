@@ -38,7 +38,7 @@ meshweb:
   static_pvc_name: "meshdb-static-pvc"
   static_pvc_size: "1Gi"
   liveness_probe: "true"
-  readiness_probe: "false"
+  readiness_probe: "true"
   image:
     repository: willnilges/meshdb
     tag: main
