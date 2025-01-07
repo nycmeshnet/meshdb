@@ -10,7 +10,6 @@ pg:
   pvc_name: "meshdb-postgres-encyrpted-pvc"
   pvc_size: "20Gi"
   liveness_probe: "true"
-  readiness_probe: "true"
   podSecurityContext: {}
   # fsGroup: 2000
   securityContext: {}
@@ -39,6 +38,7 @@ meshweb:
   static_pvc_name: "meshdb-static-pvc"
   static_pvc_size: "1Gi"
   liveness_probe: "true"
+  readiness_probe: "true"
   image:
     repository: willnilges/meshdb
     tag: main
