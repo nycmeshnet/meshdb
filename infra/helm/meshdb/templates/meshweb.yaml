@@ -47,18 +47,30 @@ spec:
               mountPath: /opt/meshdb/static
           {{ if eq .Values.meshweb.liveness_probe "true" }}
           livenessProbe:
-           exec:
-             command:
-               - curl
-               - http://127.0.0.1:{{ .Values.meshweb.port }}/api/v1
-           periodSeconds: 3
-           initialDelaySeconds: 4
-           timeoutSeconds: 3
-           {{ end }}
-          livenessProbe:
-            {{- toYaml .Values.livenessProbe | nindent 12 }}
+            httpGet:
+              path: /api/v1
+              port: {{ .Values.meshweb.port }}
+              scheme: http
+              httpHeaders:
+                - name: host
+                  value: 127.0.0.1
+            periodSeconds: 3
+            initialDelaySeconds: 4
+            timeoutSeconds: 3
+          {{ end }}
+          {{ if eq .Values.meshweb.readiness_probe "true" }} 
           readinessProbe:
-            {{- toYaml .Values.readinessProbe | nindent 12 }}
+            httpGet:
+              path: /api/v1
+              port: {{ .Values.meshweb.port }}
+              scheme: http
+              httpHeaders:
+                - name: host
+                  value: 127.0.0.1
+            periodSeconds: 3
+            initialDelaySeconds: 4
+            timeoutSeconds: 3
+          {{ end }}
           resources:
             {{- toYaml .Values.meshweb.resources | nindent 12 }}
       volumes:

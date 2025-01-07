@@ -3,7 +3,7 @@ name: Publish and Deploy
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, james/readinessProbe ]
   workflow_dispatch:
     branches:
       - main
@@ -51,7 +51,7 @@ jobs:
       environment: dev3
     secrets: inherit
     needs: push_to_registry
-    if: github.ref == 'refs/heads/main'
+    #if: github.ref == 'refs/heads/main'
 
   integration_test_dev3:
     name: Integration test dev 3
