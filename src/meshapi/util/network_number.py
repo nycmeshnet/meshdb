@@ -87,7 +87,7 @@ def get_next_available_network_number() -> int:
     ).union(set(Node.objects.values_list("network_number", flat=True)))
 
     # Find the first valid NN that isn't in use
-    free_nn = next(i for i in range(NETWORK_NUMBER_AUTOGEN_MIN, NETWORK_NUMBER_MAX) if i not in defined_nns)
+    free_nn = next(i for i in range(NETWORK_NUMBER_AUTOGEN_MIN, NETWORK_NUMBER_MAX + 1) if i not in defined_nns)
 
     # At testing time this turns into a time.sleep() call to help expose race conditions
     no_op()
