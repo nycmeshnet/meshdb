@@ -24,11 +24,7 @@ from meshapi.serializers import MemberSerializer
 from meshapi.util.admin_notifications import notify_administrators_of_data_issue
 from meshapi.util.constants import RECAPTCHA_CHECKBOX_TOKEN_HEADER, RECAPTCHA_INVISIBLE_TOKEN_HEADER
 from meshapi.util.django_pglocks import advisory_lock
-from meshapi.util.network_number import (
-    NETWORK_NUMBER_ASSIGN_MIN,
-    NETWORK_NUMBER_MAX,
-    get_next_available_network_number,
-)
+from meshapi.util.network_number import NETWORK_NUMBER_ASSIGN_MIN, NETWORK_NUMBER_MAX, get_next_available_network_number
 from meshapi.validation import (
     NYCAddressInfo,
     geocode_nyc_address,
