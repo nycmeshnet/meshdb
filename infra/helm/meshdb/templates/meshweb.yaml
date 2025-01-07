@@ -51,9 +51,6 @@ spec:
               path: /api/v1
               port: {{ .Values.meshweb.port }}
               scheme: HTTP
-              httpHeaders:
-                - name: host
-                  value: 127.0.0.1
             periodSeconds: 3
             initialDelaySeconds: 4
             timeoutSeconds: 3
@@ -64,11 +61,8 @@ spec:
               path: /api/v1
               port: {{ .Values.meshweb.port }}
               scheme: HTTP
-              httpHeaders:
-                - name: host
-                  value: 127.0.0.1
             periodSeconds: 3
-            initialDelaySeconds: 4
+            initialDelaySeconds: 20
             timeoutSeconds: 3
           {{ end }}
           resources:
