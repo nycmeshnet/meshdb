@@ -170,7 +170,7 @@ class TestUISPImportUtils(TestCase):
         node2.save()
 
         node3 = Node(
-            network_number=9012,
+            network_number=7012,
             status=Node.NodeStatus.ACTIVE,
             type=Node.NodeType.STANDARD,
             latitude=0,
@@ -374,7 +374,7 @@ class TestUISPImportUpdateObjects(TransactionTestCase):
         self.node2.save()
 
         self.node3 = Node(
-            network_number=9012,
+            network_number=7012,
             status=Node.NodeStatus.ACTIVE,
             type=Node.NodeType.STANDARD,
             latitude=0,
@@ -399,7 +399,7 @@ class TestUISPImportUpdateObjects(TransactionTestCase):
         self.device3 = Device(
             node=self.node3,
             status=Device.DeviceStatus.ACTIVE,
-            name="nycmesh-9012-dev3",
+            name="nycmesh-7012-dev3",
         )
         self.device3.save()
 
@@ -436,7 +436,7 @@ class TestUISPImportUpdateObjects(TransactionTestCase):
         self.assertEqual(
             change_messages,
             [
-                "Changed connected device pair from [nycmesh-1234-dev1, nycmesh-5678-dev2] to [nycmesh-1234-dev1, nycmesh-9012-dev3]",
+                "Changed connected device pair from [nycmesh-1234-dev1, nycmesh-5678-dev2] to [nycmesh-1234-dev1, nycmesh-7012-dev3]",
                 "Marked as Inactive due to it being offline in UISP for more than 30 days",
             ],
         )
@@ -770,7 +770,7 @@ class TestUISPImportHandlers(TransactionTestCase):
         self.node2.save()
 
         self.node3 = Node(
-            network_number=9012,
+            network_number=7012,
             status=Node.NodeStatus.ACTIVE,
             type=Node.NodeType.STANDARD,
             latitude=0,
@@ -822,7 +822,7 @@ class TestUISPImportHandlers(TransactionTestCase):
         self.device3 = Device(
             node=self.node3,
             status=Device.DeviceStatus.ACTIVE,
-            name="nycmesh-9012-dev3",
+            name="nycmesh-7012-dev3",
             uisp_id="uisp-uuid3",
         )
         self.device3.save()
@@ -970,7 +970,7 @@ class TestUISPImportHandlers(TransactionTestCase):
                 },
                 "identification": {
                     "id": "uisp-uuid3",
-                    "name": "nycmesh-9012-dev3",
+                    "name": "nycmesh-7012-dev3",
                     "category": "wireless",
                     "type": "airMax",
                 },
@@ -1075,7 +1075,7 @@ class TestUISPImportHandlers(TransactionTestCase):
             [
                 call(self.device1, self.node1, "nycmesh-1234-dev1", Device.DeviceStatus.ACTIVE, last_seen_date),
                 call(self.device2, self.node2, "nycmesh-5678-dev2", Device.DeviceStatus.ACTIVE, last_seen_date),
-                call(self.device3, self.node3, "nycmesh-9012-dev3", Device.DeviceStatus.INACTIVE, last_seen_date),
+                call(self.device3, self.node3, "nycmesh-7012-dev3", Device.DeviceStatus.INACTIVE, last_seen_date),
             ]
         )
 
@@ -1268,7 +1268,7 @@ class TestUISPImportHandlers(TransactionTestCase):
                         "identification": {
                             "id": "uisp-uuid3",
                             "category": "wireless",
-                            "name": "nycmesh-9012-dev3",
+                            "name": "nycmesh-7012-dev3",
                         }
                     }
                 },
@@ -1340,7 +1340,7 @@ class TestUISPImportHandlers(TransactionTestCase):
                         "identification": {
                             "id": "uisp-uuid3",
                             "category": "wireless",
-                            "name": "nycmesh-9012-dev3",
+                            "name": "nycmesh-7012-dev3",
                         }
                     }
                 },
@@ -1510,7 +1510,7 @@ class TestUISPImportHandlers(TransactionTestCase):
                         "identification": {
                             "id": "uisp-uuid3",
                             "category": "wireless",
-                            "name": "nycmesh-9012-dev3",
+                            "name": "nycmesh-7012-dev3",
                         }
                     }
                 },
@@ -1533,7 +1533,7 @@ class TestUISPImportHandlers(TransactionTestCase):
                         "identification": {
                             "id": "uisp-uuid3",
                             "category": "wireless",
-                            "name": "nycmesh-9012-dev3",
+                            "name": "nycmesh-7012-dev3",
                         }
                     }
                 },
@@ -1777,13 +1777,13 @@ class TestUISPImportHandlers(TransactionTestCase):
         new_los = LOS.objects.get(from_building=self.building1, to_building=self.building3)
         self.assertEqual(new_los.source, LOS.LOSSource.EXISTING_LINK)
         self.assertEqual(new_los.analysis_date, datetime.date.today())
-        self.assertEqual(new_los.notes, f"Created automatically from Link ID {self.link2.id} (NN1234 ↔ NN9012)\n\n")
+        self.assertEqual(new_los.notes, f"Created automatically from Link ID {self.link2.id} (NN1234 ↔ NN7012)\n\n")
 
     def test_sync_same_building_link_with_los(self):
         self.device3b = Device(
             node=self.node3,
             status=Device.DeviceStatus.ACTIVE,
-            name="nycmesh-9012-dev3b",
+            name="nycmesh-7012-dev3b",
         )
         self.device3b.save()
 
