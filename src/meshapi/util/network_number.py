@@ -4,7 +4,7 @@ from typing import Optional
 from django.apps import apps
 
 NETWORK_NUMBER_MIN = 1
-NETWORK_NUMBER_AUTOGEN_MIN = 101
+NETWORK_NUMBER_ASSIGN_MIN = 101
 NETWORK_NUMBER_MAX = 8000
 
 
@@ -87,14 +87,14 @@ def get_next_available_network_number() -> int:
     ).union(set(Node.objects.values_list("network_number", flat=True)))
 
     # Find the first valid NN that isn't in use
-    free_nn = next(i for i in range(NETWORK_NUMBER_AUTOGEN_MIN, NETWORK_NUMBER_MAX + 1) if i not in defined_nns)
+    free_nn = next(i for i in range(NETWORK_NUMBER_ASSIGN_MIN, NETWORK_NUMBER_MAX + 1) if i not in defined_nns)
 
     # At testing time this turns into a time.sleep() call to help expose race conditions
     no_op()
 
     # Sanity check to make sure we don't assign something crazy. This is done by the query above,
     # but we want to be super sure we don't violate these constraints so we check it here
-    if free_nn < NETWORK_NUMBER_AUTOGEN_MIN or free_nn > NETWORK_NUMBER_MAX:
+    if free_nn < NETWORK_NUMBER_ASSIGN_MIN or free_nn > NETWORK_NUMBER_MAX:
         raise ValueError(f"Invalid NN: {free_nn}")
 
     # The number we are about to assign should not be connected to any existing installs as
