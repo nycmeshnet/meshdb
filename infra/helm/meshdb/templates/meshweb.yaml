@@ -52,7 +52,7 @@ spec:
                 - curl
                 - http://127.0.0.1:{{ .Values.meshweb.port }}/api/v1
                 - --connect-timeout
-                - 2
+                - "2"
                 - -s
             periodSeconds: 3
             initialDelaySeconds: 4
@@ -65,7 +65,7 @@ spec:
                 - curl
                 - http://127.0.0.1:{{ .Values.meshweb.port }}/api/v1
                 - --connect-timeout
-                - 2
+                - "2"
                 - -s
             periodSeconds: 3
             initialDelaySeconds: 20
