@@ -49,20 +49,20 @@ spec:
           livenessProbe:
             exec:
               command:
-                - curl
-                - http://127.0.0.1:{{ .Values.meshweb.port }}/api/v1
-                - -s
+                - bash
+                - -c
+                - 'curl http://127.0.0.1:{{ .Values.meshweb.port }}/api/v1/ -H "Host: db.nycmesh.net" -s | grep meshin'
             periodSeconds: 3
-            initialDelaySeconds: 15
+            initialDelaySeconds: 30
             timeoutSeconds: 3
           {{ end }}
           {{ if eq .Values.meshweb.readiness_probe "true" }} 
           readinessProbe:
             exec:
               command:
-                - curl
-                - http://127.0.0.1:{{ .Values.meshweb.port }}/api/v1
-                - -s
+                - bash
+                - -c
+                - 'curl http://127.0.0.1:{{ .Values.meshweb.port }}/api/v1/ -H "Host: db.nycmesh.net" -s | grep meshin'
             periodSeconds: 3
             initialDelaySeconds: 20
             timeoutSeconds: 3
