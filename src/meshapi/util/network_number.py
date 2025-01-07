@@ -4,7 +4,7 @@ from typing import Optional
 from django.apps import apps
 
 NETWORK_NUMBER_MIN = 101
-NETWORK_NUMBER_MAX = 8192
+NETWORK_NUMBER_MAX = 8000
 
 
 def no_op() -> None:
