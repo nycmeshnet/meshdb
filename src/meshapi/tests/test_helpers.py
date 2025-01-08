@@ -1,8 +1,8 @@
 from django.contrib.auth.models import User
 from django.test import TestCase
 
-from meshapi.models import Install, Building, Member, Node
-from meshapi.tests.sample_data import sample_install, sample_building, sample_member, sample_node
+from meshapi.models import Building, Install, Member, Node
+from meshapi.tests.sample_data import sample_building, sample_install, sample_member, sample_node
 
 
 class TestDisambiguate(TestCase):

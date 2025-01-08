@@ -1,13 +1,5 @@
-import copy
-
 from drf_spectacular.types import OpenApiTypes
-from drf_spectacular.utils import (
-    extend_schema,
-    OpenApiResponse,
-    inline_serializer,
-    OpenApiParameter,
-    extend_schema_field,
-)
+from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema, inline_serializer
 from rest_framework import serializers, status
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -16,14 +8,11 @@ from rest_framework.views import APIView
 from meshapi.models import Install, Node
 from meshapi.permissions import HasDisambiguateNumberPermission
 from meshapi.serializers import NestedKeyObjectRelatedField
+from meshapi.serializers.nested_object_references import InstallNestedRefSerializer
 
 helper_err_response_schema = inline_serializer("ErrorResponse", fields={"detail": serializers.CharField()})
 
-install_serializer_field = NestedKeyObjectRelatedField(
-    queryset=Install.objects.all(),
-    additional_keys=("install_number",),
-)
-
+install_serializer_field = InstallNestedRefSerializer()
 node_serializer_field = NestedKeyObjectRelatedField(
     queryset=Node.objects.all(),
     additional_keys=("network_number",),
@@ -52,13 +41,33 @@ class DisambiguateInstallOrNetworkNumber(APIView):
                 inline_serializer(
                     "DisambiguateNumberSuccessResponse",
                     fields={
-                        "resolved_node": node_serializer_field,
+                        "resolved_node": NestedKeyObjectRelatedField(
+                            queryset=Node.objects.all(),
+                            additional_keys=("network_number",),
+                            help_text="The node that we guess this number represents. This is an exact NN match "
+                            "if that node exists, otherwise we treat the input number as an install number "
+                            "and return the related node",
+                        ),
                         "supporting_data": inline_serializer(
                             "DisambiguateNumberSupportingData",
                             fields={
-                                "exact_match_recycled_install": install_serializer_field,
-                                "exact_match_node": node_serializer_field,
-                                "exact_match_nonrecycled_install": copy.copy(install_serializer_field),
+                                "exact_match_recycled_install": InstallNestedRefSerializer(
+                                    help_text="An install with the install number exactly matching the requested "
+                                    "number, if that install HAS had its install number recycled (or null "
+                                    "if none exists). When this field is non-null, exact_match_node will "
+                                    "also be populated with that node"
+                                ),
+                                "exact_match_node": NestedKeyObjectRelatedField(
+                                    queryset=Node.objects.all(),
+                                    additional_keys=("network_number",),
+                                    help_text="A Node with the network number exactly matching the requested number, "
+                                    "if it exists",
+                                ),
+                                "exact_match_nonrecycled_install": InstallNestedRefSerializer(
+                                    help_text="An install  with the install number exactly matching the requested "
+                                    "number, if that install has NOT had its install number recycled (or null if "
+                                    "none exists)"
+                                ),
                             },
                         ),
                     },
@@ -115,14 +124,5 @@ class DisambiguateInstallOrNetworkNumber(APIView):
                 "exact_match_node": node_serializer_field.to_representation(node_object) if node_object else None,
             },
         }
-
-        if output["supporting_data"]["exact_match_nonrecycled_install"]:
-            output["supporting_data"]["exact_match_nonrecycled_install"]["node"] = (
-                node_serializer_field.to_representation(install_object.node) if install_object.node else None
-            )
-        if output["supporting_data"]["exact_match_recycled_install"]:
-            output["supporting_data"]["exact_match_recycled_install"]["node"] = (
-                node_serializer_field.to_representation(install_object.node) if install_object.node else None
-            )
 
         return Response(data=output, status=status.HTTP_200_OK)
