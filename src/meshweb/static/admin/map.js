@@ -217,6 +217,7 @@ function shouldNotIntercept(target) {
 
 function interceptLinks() {
     // Link clicks
+    /*
     interceptClicks(function(event, el) {
         // Exit early if this navigation shouldn't be intercepted,
         // e.g. if the navigation is cross-origin, or a download request
@@ -229,18 +230,24 @@ function interceptLinks() {
         // console.log("Intercepting " + el.href)
         event.preventDefault()
     });
+    */
 
     // Browser back
     window.addEventListener('popstate', function(event) {
          async function handler() {
+            document.getElementById("admin_panel_iframe").src = location.href;
+
+            /*
             await updateAdminContent(location.href, {}, false);
             updateMapForLocation();
+            */
         }
         handler()
         // console.log(location.href);
         event.preventDefault()
-    }, false)
+    }, false);
 
+    /*
     // Form submissions
     window.addEventListener("submit", function (event) {
         const form = event.target;
@@ -269,9 +276,10 @@ function interceptLinks() {
         handler()
         event.preventDefault();
     })
+    */
 }
 
-async function nodeSelectedOnMap(selectedNodes) {
+async function updateAdminPanelLocation(selectedNodes) {
     if (!selectedNodes) return;
     if (selectedNodes.indexOf("-") !== -1) return;
 
@@ -280,33 +288,23 @@ async function nodeSelectedOnMap(selectedNodes) {
         /* Hack for APs to not break things. We unfortantely can't do a lot better than this without much pain*/
         return;
     }
-
-    const [installResponse, nodeResponse] = await Promise.all(
-        [
-            fetch(`/api/v1/installs/${selectedNodes}/`),
-            fetch(`/api/v1/nodes/${selectedNodes}/`)
-        ]
-    );
+    const installResponse = await fetch(`/api/v1/installs/${selectedNodes}/`);
+    const nodeResponse = await fetch(`/api/v1/nodes/${selectedNodes}/`);
     if (installResponse.ok){
         const installJson = await installResponse.json();
-        if (installJson.status !== "NN Reassigned" && installJson.status !== "Closed") {
-            if (installJson.node && installJson.node.network_number) {
-                await updateAdminContent(new URL(`/admin/meshapi/node/${installJson.node.id}/change`, document.location).href);
-                updateMapForLocation(installJson.node.network_number.toString());
-                return;
-            }
-
-            updateAdminContent(new URL(`/admin/meshapi/install/${installJson.id}/change`, document.location).href);
-            return;
+        if (installJson.node && installJson.node.network_number)  {
+            document.getElementById("admin_panel_iframe").src = `panel/meshapi/node/${installJson.node.id}/change`;
+        } else {
+            document.getElementById("admin_panel_iframe").src = `panel/meshapi/install/${installJson.id}/change`;
+        }
+    } else {
+        if (nodeResponse.ok)  {
+            const nodeJson = await nodeResponse.json();
+            document.getElementById("admin_panel_iframe").src = `panel/meshapi/node/${nodeJson.id}/change`;
         }
     }
 
-    if (nodeResponse.ok)  {
-        const nodeJson = await nodeResponse.json();
-        updateAdminContent(new URL(`/admin/meshapi/node/${nodeJson.id}/change`, document.location).href);
-        return;
-    }
-
+    //updateDebugURLBars();
 }
 
 function listenForRecenterClick() {
@@ -488,11 +486,11 @@ function extractModel(inputString) {
 }
 
 function updateDebugURLBars() {
-  const iframe_panel_url = document.getElementById("iframe_panel").contentWindow.location.href;
+  const admin_panel_iframe_url = document.getElementById("admin_panel_iframe").contentWindow.location.href;
   const map_panel_url = document.getElementById("map_panel").src;//contentWindow.location.href;
   
   // Update the URL
-  document.getElementById("admin_panel_url_bar").innerHTML = `${iframe_panel_url}`;
+  document.getElementById("admin_panel_url_bar").innerHTML = `${admin_panel_iframe_url}`;
   document.getElementById("map_url_bar").innerHTML = `${map_panel_url}`;
   console.log("Updated urls");
 }
@@ -502,9 +500,9 @@ function updateDebugURLBars() {
 // FIXME: Also need to make sure that admin/members/uuid directs you to this
 // iframe setup properly
 async function updateMapLocation() {
-  const iframe_panel_url = document.getElementById("iframe_panel").contentWindow.location.href;
+  const admin_panel_iframe_url = document.getElementById("admin_panel_iframe").contentWindow.location.href;
 
-  const selectedNodes = await getNewSelectedNodes(iframe_panel_url);
+  const selectedNodes = await getNewSelectedNodes(admin_panel_iframe_url);
 
   if (selectedNodes === null) {
     console.log("No node");
@@ -517,34 +515,6 @@ async function updateMapLocation() {
   //updateDebugURLBars();
 }
 
-async function updateAdminPanelLocation(selectedNodes) {
-    if (!selectedNodes) return;
-    if (selectedNodes.indexOf("-") !== -1) return;
-
-    let selectedNodeInt = parseInt(selectedNodes);
-    if (selectedNodeInt >= 1000000) {
-        /* Hack for APs to not break things. We unfortantely can't do a lot better than this without much pain*/
-        return;
-    }
-    const installResponse = await fetch(`/api/v1/installs/${selectedNodes}/`);
-    const nodeResponse = await fetch(`/api/v1/nodes/${selectedNodes}/`);
-    if (installResponse.ok){
-        const installJson = await installResponse.json();
-        if (installJson.node && installJson.node.network_number)  {
-            document.getElementById("iframe_panel").src = `panel/meshapi/node/${installJson.node.id}/change`;
-        } else {
-            document.getElementById("iframe_panel").src = `panel/meshapi/install/${installJson.id}/change`;
-        }
-    } else {
-        if (nodeResponse.ok)  {
-            const nodeJson = await nodeResponse.json();
-            document.getElementById("iframe_panel").src = `panel/meshapi/node/${nodeJson.id}/change`;
-        }
-    }
-
-    //updateDebugURLBars();
-}
-
 async function listenForMapClick() {
     window.addEventListener("message", ({ data, source }) => {
       updateAdminPanelLocation(data.selectedNodes);
@@ -552,6 +522,7 @@ async function listenForMapClick() {
 }
 
 function start() {
+    interceptLinks();
     listenForMapClick();
 }
 

@@ -15,7 +15,7 @@
     <p id="map_url_bar"></p>
     -->
     <div class="adminContainer">
-      <iframe src="panel" id="iframe_panel" class="frameGrow" onLoad="updateMapLocation();"></iframe>
+      <iframe src="panel" id="admin_panel_iframe" class="frameGrow" onLoad="updateMapLocation();"></iframe>
       <iframe src="{% get_env_var 'ADMIN_MAP_BASE_URL' %}" id="map_panel" class="frameGrow"></iframe>
     </div>
   </body>
