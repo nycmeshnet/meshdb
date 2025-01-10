@@ -21,8 +21,16 @@ function getCurrentTarget(){
     return [type, id, action];
 }
 
-async function getNewSelectedNodes(){
-    const [type, id, action] = getCurrentTarget();
+async function getNewSelectedNodes(url){
+    const objectUUIDs = extractUUIDs(url);
+    const type = extractModel(url);
+
+    // Guard against looking up an empty UUID
+    if (objectUUIDs.length == 0) {
+      console.log("Found no UUID")
+      return null;
+    }
+    const id = objectUUIDs[0];
 
     let nodeId = null;
 
@@ -196,81 +204,6 @@ async function loadScripts(scripts, destination) {
     }
 }
 
-async function updateAdminContent(newUrl, options, updateHistory = true) {
-    let response = null;
-    try {
-        response = await fetch(newUrl, options);
-        if (!response.ok) {
-            throw new Error("Error loading new contents for page: " + response.status + " " + response.statusText);
-        }
-    } catch (e) {
-        console.error(`Error during page nav to %s`, newUrl, e)
-        const mapWrapper = document.getElementById("map-wrapper");
-
-        const pageLink = document.createElement("a");
-        pageLink.className = "capture-exclude";
-        pageLink.href = newUrl;
-        pageLink.textContent = newUrl;
-
-        const errorNotice = document.createElement("p");
-        errorNotice.className = "error-box";
-        errorNotice.innerHTML = `<b>Error loading page</b>: ${pageLink.outerHTML}<br>${e}`
-
-        mapWrapper.parentNode.insertBefore(
-            errorNotice,
-            mapWrapper
-        );
-        return;
-    }
-
-    if (updateHistory) {
-        if (response.redirected) {
-            window.history.pushState(null, '', response.url)
-        } else {
-            window.history.pushState(null, '', newUrl);
-        }
-    }
-
-    const current_map = document.getElementById("map");
-
-    const text = await response.text();
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(text, "text/html");
-
-    doc.getElementById("map").replaceWith(current_map);
-
-    // Keep the elements Google Maps injected in the header, otherwise the map breaks
-    const headerElementsToKeep = [];
-    for (const el of document.getElementsByTagName("head")[0].getElementsByTagName("script")){
-        if (el.src && el.src.startsWith("https://maps.googleapis.com/")) headerElementsToKeep.push(el);
-    }
-    for (const el of document.getElementsByTagName("head")[0].getElementsByTagName("style")){
-        if (el.textContent.indexOf(".gm") !== -1) headerElementsToKeep.push(el);
-    }
-
-    for (const el of headerElementsToKeep){
-        doc.getElementsByTagName("head")[0].appendChild(el);
-    }
-
-    // Replace the whole page with the new one
-    const newHTML = doc.getElementsByTagName("html")[0];
-    document.getElementsByTagName("html")[0].replaceWith(newHTML);
-
-    setMapProportions(currentSplit);
-
-    // Re-run other javascript to make page happy
-    if (window.DateTimeShortcuts) window.removeEventListener('load', window.DateTimeShortcuts.init);
-
-    const scriptsToReload = [];
-    for (const script of document.head.querySelectorAll('script')){
-        if (!script.src || !script.src.startsWith("https://maps.googleapis.com/")) scriptsToReload.push(script);
-    }
-    await loadScripts(scriptsToReload, document.head);
-
-    dispatchEvent(new Event('load'));
-}
-
-
 function shouldNotIntercept(target) {
     const isForm = target.tagName === "FORM";
     let url = ""
@@ -382,12 +315,6 @@ async function nodeSelectedOnMap(selectedNodes) {
         return;
     }
 
-}
-
-function listenForMapNavigation() {
-    window.addEventListener("nodeSelectedOnMap", (event) => {
-        nodeSelectedOnMap(event.selectedNodes);
-    })
 }
 
 function listenForRecenterClick() {
@@ -535,6 +462,7 @@ function hideMapIfAppropriate() {
     return mapDisabled;
 }
 
+/*
 async function start() {
     if (hideMapIfAppropriate()) {
         return;
@@ -545,6 +473,79 @@ async function start() {
     interceptLinks();
     listenForMapNavigation();
     listenForRecenterClick();
+}
+
+start();
+*/
+
+// --- New iframe based navigation ---
+
+function extractUUIDs(inputString) {
+    // Regular expression to match UUIDs
+    const uuidRegex = /\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/g;
+    // Find all matches in the input string
+    const matches = inputString.match(uuidRegex);
+    // Return the matches or an empty array if none found
+    return matches || [];
+}
+
+function extractModel(inputString) {
+  const relevantModels = ["member", "building", "install", "node", "device", "sector", "link"];
+  return relevantModels.find(element => inputString.includes(element));
+}
+
+// FIXME: Refreshes reset your location. Need to make sure that the iframe gets
+// the refresh/forward/backward stuff. Check andrew's code.
+// FIXME: Also need to make sure that admin/members/uuid directs you to this
+// iframe setup properly
+async function adminPanelLoaded() {
+  const iframe_panel_url = document.getElementById("iframe_panel").contentWindow.location.href;
+
+  const selectedNodes = await getNewSelectedNodes(iframe_panel_url);
+
+  if (selectedNodes === null) {
+    console.log("No node");
+    return;
+  }
+
+  // MAP_BASE_URL comes from iframed.html
+  document.getElementById("map_panel").contentWindow.postMessage({selectedNodes: selectedNodes}, MAP_BASE_URL);
+}
+
+async function updateAdminPanelLocation(selectedNodes) {
+    if (!selectedNodes) return;
+    if (selectedNodes.indexOf("-") !== -1) return;
+
+    let selectedNodeInt = parseInt(selectedNodes);
+    if (selectedNodeInt >= 1000000) {
+        /* Hack for APs to not break things. We unfortantely can't do a lot better than this without much pain*/
+        return;
+    }
+    const installResponse = await fetch(`/api/v1/installs/${selectedNodes}/`);
+    const nodeResponse = await fetch(`/api/v1/nodes/${selectedNodes}/`);
+    if (installResponse.ok){
+        const installJson = await installResponse.json();
+        if (installJson.node && installJson.node.network_number)  {
+            document.getElementById("iframe_panel").src = `panel/meshapi/node/${installJson.node.id}/change`;
+        } else {
+            document.getElementById("iframe_panel").src = `panel/meshapi/install/${installJson.id}/change`;
+        }
+    } else {
+        if (nodeResponse.ok)  {
+            const nodeJson = await nodeResponse.json();
+            document.getElementById("iframe_panel").src = `panel/meshapi/node/${nodeJson.id}/change`;
+        }
+    }
+}
+
+async function listenForMapClick() {
+    window.addEventListener("message", ({ data, source }) => {
+      updateAdminPanelLocation(data.selectedNodes);
+    });
+}
+
+function start() {
+    listenForMapClick();
 }
 
 start();
