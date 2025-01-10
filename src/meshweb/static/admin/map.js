@@ -13,14 +13,6 @@ const mobileCheck = function() {
   return check;
 };
 
-function getCurrentTarget(){
-    let path = location.pathname.replace(/^\/admin\/meshapi\//, "");
-    path = path.replace(/\/$/, "");
-
-    const [type, id, action] = path.split("/");
-    return [type, id, action];
-}
-
 async function getNewSelectedNodes(url){
     const objectUUIDs = extractUUIDs(url);
     const type = extractModel(url);
@@ -328,7 +320,7 @@ function listenForRecenterClick() {
 
     recenterButton.addEventListener("click", onRecenterClick, false);
 }
-
+/*
 async function load_map() {
     const map_host = MAP_BASE_URL;
 
@@ -379,6 +371,7 @@ async function load_map() {
 
     await loadScripts(remote_map_doc.querySelectorAll('script'), map_scripts_div);
 }
+*/
 
 function setMapProportions(leftWidth){
     // Apply new widths to left and right divs
@@ -495,11 +488,13 @@ function extractModel(inputString) {
 }
 
 function updateDebugURLBars() {
-  const map_panel_url = document.getElementById("map_panel").contentWindow.location.href;
+  const iframe_panel_url = document.getElementById("iframe_panel").contentWindow.location.href;
+  const map_panel_url = document.getElementById("map_panel").src;//contentWindow.location.href;
   
   // Update the URL
   document.getElementById("admin_panel_url_bar").innerHTML = `${iframe_panel_url}`;
   document.getElementById("map_url_bar").innerHTML = `${map_panel_url}`;
+  console.log("Updated urls");
 }
 
 // FIXME: Refreshes reset your location. Need to make sure that the iframe gets
@@ -519,7 +514,7 @@ async function updateMapLocation() {
   // MAP_BASE_URL comes from iframed.html
   document.getElementById("map_panel").contentWindow.postMessage({selectedNodes: selectedNodes}, MAP_BASE_URL);
 
-  updateDebugURLBars();
+  //updateDebugURLBars();
 }
 
 async function updateAdminPanelLocation(selectedNodes) {
@@ -547,7 +542,7 @@ async function updateAdminPanelLocation(selectedNodes) {
         }
     }
 
-    updateDebugURLBars();
+    //updateDebugURLBars();
 }
 
 async function listenForMapClick() {

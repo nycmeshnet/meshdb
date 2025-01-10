@@ -10,8 +10,10 @@
     <link rel="stylesheet" href="{% static '/admin/iframed.css'%}"/> 
   </head>
   <body>
+    <!--
     <p id="admin_panel_url_bar"></p>
     <p id="map_url_bar"></p>
+    -->
     <div class="adminContainer">
       <iframe src="panel" id="iframe_panel" class="frameGrow" onLoad="updateMapLocation();"></iframe>
       <iframe src="{% get_env_var 'ADMIN_MAP_BASE_URL' %}" id="map_panel" class="frameGrow"></iframe>
