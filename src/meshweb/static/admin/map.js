@@ -494,11 +494,19 @@ function extractModel(inputString) {
   return relevantModels.find(element => inputString.includes(element));
 }
 
+function updateDebugURLBars() {
+  const map_panel_url = document.getElementById("map_panel").contentWindow.location.href;
+  
+  // Update the URL
+  document.getElementById("admin_panel_url_bar").innerHTML = `${iframe_panel_url}`;
+  document.getElementById("map_url_bar").innerHTML = `${map_panel_url}`;
+}
+
 // FIXME: Refreshes reset your location. Need to make sure that the iframe gets
 // the refresh/forward/backward stuff. Check andrew's code.
 // FIXME: Also need to make sure that admin/members/uuid directs you to this
 // iframe setup properly
-async function adminPanelLoaded() {
+async function updateMapLocation() {
   const iframe_panel_url = document.getElementById("iframe_panel").contentWindow.location.href;
 
   const selectedNodes = await getNewSelectedNodes(iframe_panel_url);
@@ -510,6 +518,8 @@ async function adminPanelLoaded() {
 
   // MAP_BASE_URL comes from iframed.html
   document.getElementById("map_panel").contentWindow.postMessage({selectedNodes: selectedNodes}, MAP_BASE_URL);
+
+  updateDebugURLBars();
 }
 
 async function updateAdminPanelLocation(selectedNodes) {
@@ -536,6 +546,8 @@ async function updateAdminPanelLocation(selectedNodes) {
             document.getElementById("iframe_panel").src = `panel/meshapi/node/${nodeJson.id}/change`;
         }
     }
+
+    updateDebugURLBars();
 }
 
 async function listenForMapClick() {
