@@ -12,7 +12,7 @@ from import_export.admin import ExportActionMixin, ImportExportModelAdmin
 from simple_history.admin import SimpleHistoryAdmin
 
 from meshapi.models import Building, Node
-from meshapi.widgets import AutoPopulateLocationWidget
+from meshapi.widgets import AutoPopulateLocationWidget, WarnAboutDatesWidget
 
 from ..inlines import (
     AccessPointInline,
@@ -39,6 +39,11 @@ class NodeImportExportResource(resources.ModelResource):
 
 
 class NodeAdminForm(forms.ModelForm):
+    validate_install_abandon_date_set_widget = forms.Field(
+        required=False,
+        widget=WarnAboutDatesWidget(),
+    )
+
     auto_populate_location_field = forms.Field(
         required=False,
         widget=AutoPopulateLocationWidget("Building"),

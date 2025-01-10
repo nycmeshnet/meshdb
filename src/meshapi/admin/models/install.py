@@ -12,7 +12,7 @@ from import_export.admin import ExportActionMixin, ImportExportMixin
 from simple_history.admin import SimpleHistoryAdmin
 
 from meshapi.models import Install
-from meshapi.widgets import ExternalHyperlinkWidget
+from meshapi.widgets import ExternalHyperlinkWidget, WarnAboutDatesWidget
 
 from ..ranked_search import RankedSearchMixin
 
@@ -31,6 +31,11 @@ class InstallImportExportResource(resources.ModelResource):
 
 
 class InstallAdminForm(forms.ModelForm):
+    validate_install_abandon_date_set_widget = forms.Field(
+        required=False,
+        widget=WarnAboutDatesWidget(),
+    )
+
     class Meta:
         model = Install
         fields = "__all__"

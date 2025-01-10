@@ -111,3 +111,8 @@ class AutoPopulateLocationWidget(forms.Widget):
         context["auto_populate_source"] = self.source
         context["auto_populate_url"] = self.source
         return context
+
+
+class WarnAboutDatesWidget(forms.Widget):
+    class Media:
+        js = ["widgets/warn_about_date.js"]
