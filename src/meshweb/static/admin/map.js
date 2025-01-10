@@ -216,67 +216,15 @@ function shouldNotIntercept(target) {
 }
 
 function interceptLinks() {
-    // Link clicks
-    /*
-    interceptClicks(function(event, el) {
-        // Exit early if this navigation shouldn't be intercepted,
-        // e.g. if the navigation is cross-origin, or a download request
-        if (shouldNotIntercept(el)) return;
-        async function handler() {
-            await updateAdminContent(el.href);
-            updateMapForLocation();
-        }
-        handler()
-        // console.log("Intercepting " + el.href)
-        event.preventDefault()
-    });
-    */
-
     // Browser back
     window.addEventListener('popstate', function(event) {
-         async function handler() {
+        async function handler() {
             document.getElementById("admin_panel_iframe").src = location.href;
-
-            /*
-            await updateAdminContent(location.href, {}, false);
-            updateMapForLocation();
-            */
         }
         handler()
         // console.log(location.href);
         event.preventDefault()
     }, false);
-
-    /*
-    // Form submissions
-    window.addEventListener("submit", function (event) {
-        const form = event.target;
-        // Exit early if this navigation shouldn't be intercepted
-        if (shouldNotIntercept(form)) return;
-
-        async function handler() {
-            const formData = new FormData(form);
-            const method = form.method;
-
-            if (method.toUpperCase() === "POST") {
-                const submitButton = event.submitter;
-                if (submitButton.getAttribute('name')) {
-                    formData.append(submitButton.getAttribute('name'), submitButton.getAttribute('value'));
-                }
-                await updateAdminContent(form.action, {method: "POST", body: formData});
-            } else if (method.toUpperCase() === "GET") {
-                const params = new URLSearchParams(formData).toString();
-                const actionWithoutParams = new URL(form.action);
-                actionWithoutParams.search = "";
-                await updateAdminContent(`${actionWithoutParams.href}?${params}`);
-            }
-
-            updateMapForLocation();
-        }
-        handler()
-        event.preventDefault();
-    })
-    */
 }
 
 async function updateAdminPanelLocation(selectedNodes) {
@@ -318,58 +266,6 @@ function listenForRecenterClick() {
 
     recenterButton.addEventListener("click", onRecenterClick, false);
 }
-/*
-async function load_map() {
-    const map_host = MAP_BASE_URL;
-
-    if (!map_host) {
-        document.getElementById("map-inner").innerHTML = "Cannot load map due to missing environment " +
-            "variable ADMIN_MAP_BASE_URL. Make sure this is set in your .env file and reload the django server";
-        document.getElementById("map-inner").style = "text-align: center; align-items: center;"
-        return;
-    }
-
-
-    const map_url = `${map_host}/index.html`;
-    let response;
-    try {
-        response = await fetch(map_url);
-    } catch (e) {
-        document.getElementById("map-inner").innerHTML = `<p>Error loading map from <a href="${map_url}">${map_url}</a>. ` +
-            "Is this host up, and serving CORS headers that allow a request from this domain?</p>";
-        document.getElementById("map-inner").style = "text-align: center; align-items: center;"
-        return;
-    }
-
-    const parser = new DOMParser();
-    const text = await response.text();
-    const remote_map_doc = parser.parseFromString(text, "text/html");
-
-    const map_scripts_div = document.getElementById("map-scripts");
-
-    for (const el of remote_map_doc.querySelectorAll('script')){
-        let src = el.getAttribute("src") ?? "";
-        if (src) {
-            if (!src.match(/https?:\/\//)){
-                el.src = map_host + src;
-            }
-        }
-    }
-
-    for (const el of remote_map_doc.querySelectorAll('link')){
-        let href = el.getAttribute("href") ?? "";
-        if (!href.match(/https?:\/\//)){
-            el.href = map_host + href
-        }
-    }
-
-    for (const el of remote_map_doc.querySelectorAll('link')){
-        map_scripts_div.appendChild(el);
-    }
-
-    await loadScripts(remote_map_doc.querySelectorAll('script'), map_scripts_div);
-}
-*/
 
 function setMapProportions(leftWidth){
     // Apply new widths to left and right divs
