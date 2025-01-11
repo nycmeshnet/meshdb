@@ -269,8 +269,8 @@ function listenForRecenterClick() {
 
 function setMapProportions(leftWidth){
     // Apply new widths to left and right divs
-    const leftDiv = document.getElementById('main');
-    const rightDiv = document.getElementById('map');
+    const leftDiv = document.getElementById('admin_panel_div');
+    const rightDiv = document.getElementById('map_panel_div');
 
     currentSplit = leftWidth;
     leftDiv.style.width = `${leftWidth}%`;
@@ -279,6 +279,24 @@ function setMapProportions(leftWidth){
     localStorage.setItem("MESHDB_MAP_SIZE", leftWidth.toString());
 }
 
+function toggleIframeInteractivity() {
+    /*
+    adminPanelIframe = document.getElementById("admin_panel_div");
+    mapIframe = document.getElementById("map_panel_div");
+
+    adminPanelIframe.classList.toggle("noInterference");
+    mapIframe.classList.toggle("noInterference");
+    */
+
+    const handle = document.getElementById('handle');
+    handle.classList.toggle("bigBar");
+
+    const handlebar = document.getElementById('handlebar');
+    handlebar.classList.toggle("hiddenDuringResize");
+
+    const substituteHandle = document.getElementById('substituteHandle');
+    substituteHandle.classList.toggle("hiddenDuringResize");
+}
 
 function allowMapResize() {
     // Event listener for mouse down on handle
@@ -287,12 +305,13 @@ function allowMapResize() {
         e.preventDefault();
         window.addEventListener('mousemove', resize);
         window.addEventListener('mouseup', stopResize);
+        toggleIframeInteractivity();
     });
 
     // Function to resize divs
     function resize(e) {
         // Get elements
-        const container = document.getElementById('map-wrapper');
+        const container = document.getElementById('page_container');
 
         const rect = container.getBoundingClientRect();
         const containerLeft = rect.left;
@@ -310,6 +329,8 @@ function allowMapResize() {
     // Event listener for mouse up to stop resizing
     function stopResize() {
         window.removeEventListener('mousemove', resize);
+        window.removeEventListener('mouseup', stopResize);
+        toggleIframeInteractivity();
     }
 
     setMapProportions(currentSplit);
@@ -418,6 +439,7 @@ async function listenForMapClick() {
 }
 
 function start() {
+    allowMapResize();
     interceptLinks();
     listenForMapClick();
 }

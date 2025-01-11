@@ -131,6 +131,33 @@
     margin-left: -4px; /* IDK why this is needed CSS is voodoo */
 }
 
+/* Invisible full-screen div */
+.fullscreenInvis {
+    position: fixed; /* Makes the div stay in place even when scrolling */
+    top: 0;         /* Position the top of the div at the top of the screen */
+    left: 0;        /* Position the left of the div at the left edge of the screen */
+    width: 100vw;   /* Full width of the viewport */
+    height: 100vh;  /* Full height of the viewport */
+    background: transparent; /* No visible background */
+    pointer-events: none;    /* Makes it non-interactive */
+    z-index: 9999;  /* Ensure it appears on top of other elements if needed */
+}
+
+
+/* Hidden state */
+.hiddenDuringResize {
+    display: none; /* Completely hides the element */
+}
+
+.bigBar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: transparent;
+}
+
 .floating-button {
     z-index: 100;
     position: absolute;

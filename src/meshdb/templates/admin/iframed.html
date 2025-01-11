@@ -6,7 +6,6 @@
 <html>
   <head>
     <script>let MAP_BASE_URL = "{% get_env_var 'ADMIN_MAP_BASE_URL' %}";</script>
-    <script src="{% static '/admin/map.js' %}"></script>
     <link rel="stylesheet" href="{% static '/admin/iframed.css'%}"/> 
     
     <link rel="stylesheet" href="{% block stylesheet %}{% static "admin/css/base.css" %}{% endblock %}">
@@ -23,13 +22,20 @@
     <p id="map_url_bar"></p>
     -->
 
-      <div class="ct">
-
-      <div class="wrap">
-        <div class="pull-tab"></div>
+    <div id="page_container">
+      <div id="admin_panel_div" class="frameGrow">
         <iframe src="panel" id="admin_panel_iframe" class="frameGrow" onLoad="updateMapLocation();"></iframe>
       </div>
-      <div class="frameGrow">
+      <div class="handle" id="handle">
+        <span class="vert-align-helper"></span>
+        <img class="handlebar" id="handlebar" src="{% static '/admin/map/img/handlebar.svg' %}" height="60px"/>
+      </div>
+      <!-- Only shows up during resizes -->
+      <div class="handle hiddenDuringResize" id="substituteHandle">
+        <span class="vert-align-helper"></span>
+        <img class="handlebar" id="substituteHandlebar" src="{% static '/admin/map/img/handlebar.svg' %}" height="60px"/>
+      </div>
+      <div id="map_panel_div">
       <iframe src="{% get_env_var 'ADMIN_MAP_BASE_URL' %}" id="map_panel"></iframe>
       </div>
     </div>
@@ -45,5 +51,7 @@
       <iframe src="{% get_env_var 'ADMIN_MAP_BASE_URL' %}" id="map_panel" class="frameGrow"></iframe>
     </div>
 -->
+
+  <script src="{% static '/admin/map.js' %}"></script>
   </body>
 </html>
