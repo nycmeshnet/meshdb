@@ -1,5 +1,5 @@
 
-const admin_panel_iframe = document.getElementById("admin_panel_iframe")
+const admin_panel_iframe = document.getElementById("admin_panel_iframe");
 
 let currentSplit = parseFloat(localStorage.getItem("MESHDB_MAP_SIZE"));
 if (isNaN(currentSplit)) {
@@ -230,7 +230,7 @@ function interceptLinks() {
 
 async function updateAdminPanelLocation(selectedNodes) {
     if (!selectedNodes) return;
-    console.log(`Updating admin panel location: ${selectedNodes}`);
+    console.log(`[Admin Panel] Updating admin panel location: ${selectedNodes}`);
     if (selectedNodes.indexOf("-") !== -1) return;
 
     let selectedNodeInt = parseInt(selectedNodes);
@@ -242,7 +242,7 @@ async function updateAdminPanelLocation(selectedNodes) {
     const nodeResponse = await fetch(`/api/v1/nodes/${selectedNodes}/`);
 
     // Disable onLoad for Admin Panel while we navigate to a new page
-    //dontListenForAdminPanelLoad();
+    dontListenForAdminPanelLoad();
 
     if (installResponse.ok){
         const installJson = await installResponse.json();
@@ -258,9 +258,8 @@ async function updateAdminPanelLocation(selectedNodes) {
         }
     }
 
-    //listenForAdminPanelLoad();
-
-    //updateDebugURLBars();
+    // Restore the listener
+    listenForAdminPanelLoad();
 }
 
 function listenForRecenterClick() {
@@ -268,7 +267,7 @@ function listenForRecenterClick() {
 
     function onRecenterClick(event) {
         console.log("recenterclick");
-        updateMapForLocation();
+        updateMapLocation();
         event.preventDefault();
     }
 
@@ -341,8 +340,9 @@ function hideMapIfAppropriate() {
 
     const mapDisabled = localStorage.getItem("MESHDB_MAP_DISABLED") === "true" || isMobile;
     if (mapDisabled) {
-        document.getElementById('map').classList.add("hidden");
-        document.getElementById('main').classList.remove("flex");
+        document.getElementById('map_panel_div').classList.add("hidden");
+        document.getElementById('map_controls').classList.add("hidden");
+        //document.getElementById('main').classList.remove("flex");
 
         if (!isMobile) {
             const showMapButton = document.getElementById('show_map_button');
@@ -426,17 +426,14 @@ async function updateMapLocation() {
     return;
   }
 
-  console.log(`Updating map location: ${selectedNodes}`);
+  console.log(`[Admin Panel] Updating map location: ${selectedNodes}`);
 
   // MAP_BASE_URL comes from iframed.html
   document.getElementById("map_panel").contentWindow.postMessage({selectedNodes: selectedNodes}, MAP_BASE_URL);
-
-  //updateDebugURLBars();
 }
 
 async function listenForMapClick() {
     window.addEventListener("message", ({ data, source }) => {
-      //console.log(`Got message from map:${JSON.stringify(data)}`);
       updateAdminPanelLocation(data.selectedNodes);
     });
 }
@@ -450,10 +447,14 @@ async function dontListenForAdminPanelLoad() {
 }
 
 function start() {
+    if (hideMapIfAppropriate()) {
+        return;
+    }
     allowMapResize();
     interceptLinks();
     listenForAdminPanelLoad();
     listenForMapClick();
+    listenForRecenterClick();
 }
 
 start();
