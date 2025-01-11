@@ -418,6 +418,7 @@ function updateDebugURLBars() {
 // iframe setup properly
 async function updateMapLocation() {
   const admin_panel_iframe_url = document.getElementById("admin_panel_iframe").contentWindow.location.href;
+  localStorage.setItem("MESHDB_LAST_PAGE_VISITED", admin_panel_iframe_url);
 
   const selectedNodes = await getNewSelectedNodes(admin_panel_iframe_url);
 
@@ -446,6 +447,14 @@ async function dontListenForAdminPanelLoad() {
     admin_panel_iframe.removeEventListener("load", updateMapLocation);
 }
 
+function adminPanelRestoreLastVisited() {
+  const lastVisitedUrl = localStorage.getItem("MESHDB_LAST_PAGE_VISITED");
+
+  if (lastVisitedUrl) {
+    document.getElementById("admin_panel_iframe").src = lastVisitedUrl;
+  }
+}
+
 function start() {
     if (hideMapIfAppropriate()) {
         return;
@@ -455,6 +464,8 @@ function start() {
     listenForAdminPanelLoad();
     listenForMapClick();
     listenForRecenterClick();
+
+    adminPanelRestoreLastVisited();
 }
 
 start();
