@@ -1,4 +1,5 @@
 
+const admin_panel_iframe = document.getElementById("admin_panel_iframe")
 
 let currentSplit = parseFloat(localStorage.getItem("MESHDB_MAP_SIZE"));
 if (isNaN(currentSplit)) {
@@ -229,6 +230,7 @@ function interceptLinks() {
 
 async function updateAdminPanelLocation(selectedNodes) {
     if (!selectedNodes) return;
+    console.log(`Updating admin panel location: ${selectedNodes}`);
     if (selectedNodes.indexOf("-") !== -1) return;
 
     let selectedNodeInt = parseInt(selectedNodes);
@@ -238,6 +240,10 @@ async function updateAdminPanelLocation(selectedNodes) {
     }
     const installResponse = await fetch(`/api/v1/installs/${selectedNodes}/`);
     const nodeResponse = await fetch(`/api/v1/nodes/${selectedNodes}/`);
+
+    // Disable onLoad for Admin Panel while we navigate to a new page
+    //dontListenForAdminPanelLoad();
+
     if (installResponse.ok){
         const installJson = await installResponse.json();
         if (installJson.node && installJson.node.network_number)  {
@@ -251,6 +257,8 @@ async function updateAdminPanelLocation(selectedNodes) {
             document.getElementById("admin_panel_iframe").src = `panel/meshapi/node/${nodeJson.id}/change`;
         }
     }
+
+    //listenForAdminPanelLoad();
 
     //updateDebugURLBars();
 }
@@ -418,6 +426,8 @@ async function updateMapLocation() {
     return;
   }
 
+  console.log(`Updating map location: ${selectedNodes}`);
+
   // MAP_BASE_URL comes from iframed.html
   document.getElementById("map_panel").contentWindow.postMessage({selectedNodes: selectedNodes}, MAP_BASE_URL);
 
@@ -426,13 +436,23 @@ async function updateMapLocation() {
 
 async function listenForMapClick() {
     window.addEventListener("message", ({ data, source }) => {
+      //console.log(`Got message from map:${JSON.stringify(data)}`);
       updateAdminPanelLocation(data.selectedNodes);
     });
+}
+
+async function listenForAdminPanelLoad() {
+    admin_panel_iframe.addEventListener("load", updateMapLocation);
+}
+
+async function dontListenForAdminPanelLoad() {
+    admin_panel_iframe.removeEventListener("load", updateMapLocation);
 }
 
 function start() {
     allowMapResize();
     interceptLinks();
+    listenForAdminPanelLoad();
     listenForMapClick();
 }
 
