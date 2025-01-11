@@ -8,15 +8,42 @@
     <script>let MAP_BASE_URL = "{% get_env_var 'ADMIN_MAP_BASE_URL' %}";</script>
     <script src="{% static '/admin/map.js' %}"></script>
     <link rel="stylesheet" href="{% static '/admin/iframed.css'%}"/> 
+    
+    <link rel="stylesheet" href="{% block stylesheet %}{% static "admin/css/base.css" %}{% endblock %}">
+    {% block dark-mode-vars %}
+      <link rel="stylesheet" href="{% static "admin/css/dark_mode.css" %}">
+      <script src="{% static "admin/js/theme.js" %}" defer></script>
+    {% endblock %}
+    <link rel="stylesheet" href="{% static "/admin/admin_ext.css" %}">
+
   </head>
   <body>
     <!--
     <p id="admin_panel_url_bar"></p>
     <p id="map_url_bar"></p>
     -->
+
+      <div class="ct">
+
+      <div class="wrap">
+        <div class="pull-tab"></div>
+        <iframe src="panel" id="admin_panel_iframe" class="frameGrow" onLoad="updateMapLocation();"></iframe>
+      </div>
+      <div class="frameGrow">
+      <iframe src="{% get_env_var 'ADMIN_MAP_BASE_URL' %}" id="map_panel"></iframe>
+      </div>
+    </div>
+
+      <!--
     <div class="adminContainer">
-      <iframe src="panel" id="admin_panel_iframe" class="frameGrow" onLoad="updateMapLocation();"></iframe>
+
+      <div class="handle" id="handle">
+          <span class="vert-align-helper"></span>
+          <img class="handlebar" src="{% static '/admin/map/img/handlebar.svg' %}" height="60px"/>
+      </div>
+
       <iframe src="{% get_env_var 'ADMIN_MAP_BASE_URL' %}" id="map_panel" class="frameGrow"></iframe>
     </div>
+-->
   </body>
 </html>
