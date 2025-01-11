@@ -280,14 +280,6 @@ function setMapProportions(leftWidth){
 }
 
 function toggleIframeInteractivity() {
-    /*
-    adminPanelIframe = document.getElementById("admin_panel_div");
-    mapIframe = document.getElementById("map_panel_div");
-
-    adminPanelIframe.classList.toggle("noInterference");
-    mapIframe.classList.toggle("noInterference");
-    */
-
     const handle = document.getElementById('handle');
     handle.classList.toggle("bigBar");
 
