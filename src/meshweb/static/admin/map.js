@@ -7,7 +7,6 @@ if (isNaN(currentSplit)) {
     currentSplit = 60;
 }
 
-
 // Taken from: https://stackoverflow.com/a/11381730
 const mobileCheck = function() {
   let check = false;
@@ -15,6 +14,26 @@ const mobileCheck = function() {
   return check;
 };
 
+// Navigation Stuff
+
+// Gets the UUID of the object the Admin Panel is currently viewing
+function extractUUIDs(url) {
+    // Regular expression to match UUIDs
+    const uuidRegex = /\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/g;
+    // Find all matches in the input string
+    const matches = url.match(uuidRegex);
+    // Return the matches or an empty array if none found
+    return matches || [];
+}
+
+// Checks what model the Admin Panel is looking at
+function extractModel(url) {
+  const relevantModels = ["member", "building", "install", "node", "device", "sector", "link"];
+  return relevantModels.find(element => url.includes(element));
+}
+
+// Based on the current URL of the Admin Panel, figures out what node the map
+// should focus on
 async function getNewSelectedNodes(url){
     const objectUUIDs = extractUUIDs(url);
     const type = extractModel(url);
@@ -164,17 +183,6 @@ async function getNewSelectedNodes(url){
     return nodeId ? `${nodeId}` : null;
 }
 
-function interceptLinks() {
-    // Browser back
-    window.addEventListener('popstate', function(event) {
-        async function handler() {
-            admin_panel_iframe.src = location.href;
-        }
-        handler()
-        // console.log(location.href);
-        event.preventDefault()
-    }, false);
-}
 
 async function updateAdminPanelLocation(selectedNodes) {
     if (!selectedNodes) return;
@@ -212,140 +220,6 @@ async function updateAdminPanelLocation(selectedNodes) {
     listenForAdminPanelLoad();
 }
 
-function listenForRecenterClick() {
-    const recenterButton = document.querySelector("#map_recenter_button");
-
-    function onRecenterClick(event) {
-        console.log("recenterclick");
-        updateMapLocation();
-        event.preventDefault();
-    }
-
-    recenterButton.addEventListener("click", onRecenterClick, false);
-}
-
-function setMapProportions(leftWidth){
-    // Apply new widths to left and right divs
-    const leftDiv = document.getElementById('admin_panel_div');
-    const rightDiv = document.getElementById('map_panel_div');
-
-    currentSplit = leftWidth;
-    leftDiv.style.width = `${leftWidth}%`;
-    rightDiv.style.width = `${100 - leftWidth}%`;
-
-    localStorage.setItem("MESHDB_MAP_SIZE", leftWidth.toString());
-}
-
-function toggleIframeInteractivity() {
-    const handle = document.getElementById('handle');
-    handle.classList.toggle("bigBar");
-
-    const handlebar = document.getElementById('handlebar');
-    handlebar.classList.toggle("hiddenDuringResize");
-
-    const substituteHandle = document.getElementById('substituteHandle');
-    substituteHandle.classList.toggle("hiddenDuringResize");
-}
-
-function allowMapResize() {
-    // Event listener for mouse down on handle
-    const handle = document.getElementById('handle');
-    handle.addEventListener('mousedown', function(e) {
-        e.preventDefault();
-        window.addEventListener('mousemove', resize);
-        window.addEventListener('mouseup', stopResize);
-        toggleIframeInteractivity();
-    });
-
-    // Function to resize divs
-    function resize(e) {
-        // Get elements
-        const container = document.getElementById('page_container');
-
-        const rect = container.getBoundingClientRect();
-        const containerLeft = rect.left;
-        const containerWidth = rect.width;
-
-        // Calculate new width of left div
-        let leftWidth = ((e.clientX - containerLeft) / containerWidth) * 100;
-
-        // Ensure left div doesn't become too small or too large
-        leftWidth = Math.min(Math.max(leftWidth, 10), 90);
-
-        setMapProportions(leftWidth);
-    }
-
-    // Event listener for mouse up to stop resizing
-    function stopResize() {
-        window.removeEventListener('mousemove', resize);
-        window.removeEventListener('mouseup', stopResize);
-        toggleIframeInteractivity();
-    }
-
-    setMapProportions(currentSplit);
-}
-
-function hideMapIfAppropriate() {
-    const isMobile = mobileCheck();
-
-    const mapDisabled = localStorage.getItem("MESHDB_MAP_DISABLED") === "true" || isMobile;
-    if (mapDisabled) {
-        document.getElementById('map_panel_div').classList.add("hidden");
-        document.getElementById('map_controls').classList.add("hidden");
-        //document.getElementById('main').classList.remove("flex");
-
-        if (!isMobile) {
-            const showMapButton = document.getElementById('show_map_button');
-            function onShowMapClick(event) {
-                localStorage.setItem("MESHDB_MAP_DISABLED", "false");
-                window.location.reload(); // Unpleasant but this action should be very infrequent
-                event.preventDefault();
-            }
-
-            showMapButton.classList.remove("hidden");
-            showMapButton.addEventListener("click", onShowMapClick, false);
-        }
-    } else {
-        const hideMapButton = document.getElementById("map_hide_button");
-
-        function onHideMapClick(event) {
-            localStorage.setItem("MESHDB_MAP_DISABLED", "true");
-            window.location.reload(); // Unpleasant but this action should be very infrequent
-            event.preventDefault();
-        }
-
-        hideMapButton.addEventListener("click", onHideMapClick, false);
-    }
-
-    return mapDisabled;
-}
-
-// --- New iframe based navigation ---
-
-function extractUUIDs(inputString) {
-    // Regular expression to match UUIDs
-    const uuidRegex = /\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/g;
-    // Find all matches in the input string
-    const matches = inputString.match(uuidRegex);
-    // Return the matches or an empty array if none found
-    return matches || [];
-}
-
-function extractModel(inputString) {
-  const relevantModels = ["member", "building", "install", "node", "device", "sector", "link"];
-  return relevantModels.find(element => inputString.includes(element));
-}
-
-function updateDebugURLBars() {
-  const admin_panel_iframe_url = document.getElementById("admin_panel_iframe").contentWindow.location.href;
-  const map_panel_url = document.getElementById("map_panel").src;//contentWindow.location.href;
-  
-  // Update the URL
-  document.getElementById("admin_panel_url_bar").innerHTML = `${admin_panel_iframe_url}`;
-  document.getElementById("map_url_bar").innerHTML = `${map_panel_url}`;
-  console.log("Updated urls");
-}
-
 // Configures the listener that updates the admin panel based on map activity
 async function listenForMapClick() {
     window.addEventListener("message", ({ data, source }) => {
@@ -353,7 +227,7 @@ async function listenForMapClick() {
     });
 }
 
-// Posts a message to prompt the map to change its view to focus on whatever
+// Prompts the map to change its view to focus on whatever
 // node the admin panel is currently viewing.
 async function updateMapLocation(url) {
   const selectedNodes = await getNewSelectedNodes(url);
@@ -433,6 +307,129 @@ async function adminPanelRestoreLastVisited() {
     }
 
     admin_panel_iframe.src = lastVisitedUrl;
+}
+
+// Interface Stuff 
+
+function listenForRecenterClick() {
+    const recenterButton = document.querySelector("#map_recenter_button");
+
+    function onRecenterClick(event) {
+        console.log("recenterclick");
+        updateMapLocation();
+        event.preventDefault();
+    }
+
+    recenterButton.addEventListener("click", onRecenterClick, false);
+}
+
+function interceptLinks() {
+    // Browser back
+    window.addEventListener('popstate', function(event) {
+        async function handler() {
+            admin_panel_iframe.src = location.href;
+        }
+        handler()
+        // console.log(location.href);
+        event.preventDefault()
+    }, false);
+}
+
+function setMapProportions(leftWidth){
+    // Apply new widths to left and right divs
+    const leftDiv = document.getElementById('admin_panel_div');
+    const rightDiv = document.getElementById('map_panel_div');
+
+    currentSplit = leftWidth;
+    leftDiv.style.width = `${leftWidth}%`;
+    rightDiv.style.width = `${100 - leftWidth}%`;
+
+    localStorage.setItem("MESHDB_MAP_SIZE", leftWidth.toString());
+}
+
+function toggleIframeInteractivity() {
+    const handle = document.getElementById('handle');
+    handle.classList.toggle("bigBar");
+
+    const handlebar = document.getElementById('handlebar');
+    handlebar.classList.toggle("hiddenDuringResize");
+
+    const substituteHandle = document.getElementById('substituteHandle');
+    substituteHandle.classList.toggle("hiddenDuringResize");
+}
+
+function allowMapResize() {
+    // Event listener for mouse down on handle
+    const handle = document.getElementById('handle');
+    handle.addEventListener('mousedown', function(e) {
+        e.preventDefault();
+        window.addEventListener('mousemove', resize);
+        window.addEventListener('mouseup', stopResize);
+        toggleIframeInteractivity();
+    });
+
+    // Function to resize divs
+    function resize(e) {
+        // Get elements
+        const container = document.getElementById('page_container');
+
+        const rect = container.getBoundingClientRect();
+        const containerLeft = rect.left;
+        const containerWidth = rect.width;
+
+        // Calculate new width of left div
+        let leftWidth = ((e.clientX - containerLeft) / containerWidth) * 100;
+
+        // Ensure left div doesn't become too small or too large
+        leftWidth = Math.min(Math.max(leftWidth, 10), 90);
+
+        setMapProportions(leftWidth);
+    }
+
+    // Event listener for mouse up to stop resizing
+    function stopResize() {
+        window.removeEventListener('mousemove', resize);
+        window.removeEventListener('mouseup', stopResize);
+        toggleIframeInteractivity();
+    }
+
+    setMapProportions(currentSplit);
+}
+
+// Checks for mobile/manual map hiding and configures the admin panel interface as appropriate
+function hideMapIfAppropriate() {
+    const isMobile = mobileCheck();
+
+    const mapDisabled = localStorage.getItem("MESHDB_MAP_DISABLED") === "true" || isMobile;
+    if (mapDisabled) {
+        document.getElementById('map_panel_div').classList.add("hidden");
+        document.getElementById('map_controls').classList.add("hidden");
+        //document.getElementById('main').classList.remove("flex");
+
+        if (!isMobile) {
+            const showMapButton = document.getElementById('show_map_button');
+            function onShowMapClick(event) {
+                localStorage.setItem("MESHDB_MAP_DISABLED", "false");
+                window.location.reload(); // Unpleasant but this action should be very infrequent
+                event.preventDefault();
+            }
+
+            showMapButton.classList.remove("hidden");
+            showMapButton.addEventListener("click", onShowMapClick, false);
+        }
+    } else {
+        const hideMapButton = document.getElementById("map_hide_button");
+
+        function onHideMapClick(event) {
+            localStorage.setItem("MESHDB_MAP_DISABLED", "true");
+            window.location.reload(); // Unpleasant but this action should be very infrequent
+            event.preventDefault();
+        }
+
+        hideMapButton.addEventListener("click", onHideMapClick, false);
+    }
+
+    return mapDisabled;
 }
 
 function start() {
