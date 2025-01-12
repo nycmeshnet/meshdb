@@ -1,4 +1,5 @@
-
+const ADMIN_PANEL_HOME = "panel/"
+const MESHDB_LAST_PAGE_VISITED = "MESHDB_LAST_PAGE_VISITED"
 const admin_panel_iframe = document.getElementById("admin_panel_iframe");
 
 let currentSplit = parseFloat(localStorage.getItem("MESHDB_MAP_SIZE"));
@@ -228,16 +229,18 @@ async function updateAdminPanelLocation(selectedNodes) {
     if (installResponse.ok){
         const installJson = await installResponse.json();
         if (installJson.node && installJson.node.network_number)  {
-            document.getElementById("admin_panel_iframe").src = `panel/meshapi/node/${installJson.node.id}/change`;
+            admin_panel_iframe.src = `/admin/panel/meshapi/node/${installJson.node.id}/change`;
         } else {
-            document.getElementById("admin_panel_iframe").src = `panel/meshapi/install/${installJson.id}/change`;
+            admin_panel_iframe.src = `/admin/panel/meshapi/install/${installJson.id}/change`;
         }
     } else {
         if (nodeResponse.ok)  {
             const nodeJson = await nodeResponse.json();
-            document.getElementById("admin_panel_iframe").src = `panel/meshapi/node/${nodeJson.id}/change`;
+            admin_panel_iframe.src = `/admin/panel/meshapi/node/${nodeJson.id}/change`;
         }
     }
+
+    console.log(`Admin Panel src set to: ${admin_panel_iframe.src}`);
 
     // Restore the listener
     listenForAdminPanelLoad();
@@ -398,15 +401,17 @@ function updateDebugURLBars() {
 // FIXME: Also need to make sure that admin/members/uuid directs you to this
 // iframe setup properly
 async function updateMapLocation() {
-  const admin_panel_iframe_url = document.getElementById("admin_panel_iframe").contentWindow.location.href;
+  const admin_panel_iframe_url = admin_panel_iframe.contentWindow.location.href;
+
+    // TODO: Try disabling the LASTPAGEVISITED STUFF
 
   // Save the new admin location. We do this here because it means that the admin panel has
   // recently reloaded
   const meshdbLastPageVisited = new URL(admin_panel_iframe_url).pathname;
-  localStorage.setItem("MESHDB_LAST_PAGE_VISITED", meshdbLastPageVisited);
+  localStorage.setItem(MESHDB_LAST_PAGE_VISITED, meshdbLastPageVisited);
 
   // Update the URL bar in the browser for viz
-  //window.history.pushState("MeshDB Admin Panel", "", meshdbLastPageVisited.replace("/panel", ""));
+  window.history.pushState("MeshDB Admin Panel", "", meshdbLastPageVisited.replace("/panel", ""));
 
   const selectedNodes = await getNewSelectedNodes(admin_panel_iframe_url);
 
@@ -435,31 +440,45 @@ async function dontListenForAdminPanelLoad() {
     admin_panel_iframe.removeEventListener("load", updateMapLocation);
 }
 
-function adminPanelRestoreLastVisited() {
-  // If the window's URL has more than just /admin/, then we wanna
-  // override our stored page and replace it with that.
-  const entryPath = new URL(window.location.href).pathname;
-  console.log(`Entry Path: ${entryPath}`);
+async function adminPanelRestoreLastVisited() {
+    // If the window's URL has more than just /admin/, then we wanna
+    // override our stored page and replace it with that.
+    const entryPath = new URL(window.location.href).pathname;
+    console.log(`Entry Path: ${entryPath}`);
+    const entrypointRegex = /^(\/?admin\/?)$/;
+    if (!entryPath.match(entrypointRegex)) {
+      const newEntryPath = entryPath.replace("admin", "admin/panel");
+      document.getElementById("admin_panel_iframe").src = newEntryPath;
+      localStorage.setItem(MESHDB_LAST_PAGE_VISITED, newEntryPath);
+      return;
+    }
 
-  /*
-  if (entryPath !== "/admin/") {
-    const newEntryPath = entryPath.replace("/admin/", "/admin/panel/");
-    document.getElementById("admin_panel_iframe").src = newEntryPath;
-    return;
-  }
-  */
+    let lastVisitedUrl = localStorage.getItem(MESHDB_LAST_PAGE_VISITED);
+    console.log(`Last Visited: ${lastVisitedUrl}`);
 
-  const lastVisitedUrl = localStorage.getItem("MESHDB_LAST_PAGE_VISITED");
-  console.log(`Last Visited: ${lastVisitedUrl}`);
+    // Check for corruption
 
-  if (lastVisitedUrl !== "") {
+    // If the URL doesn't contain "panel," then something broke, and the safest
+    // thing is to just default back home
+    if (!lastVisitedUrl.startsWith("/admin/panel/")) {
+        localStorage.setItem(MESHDB_LAST_PAGE_VISITED, ADMIN_PANEL_HOME);
+        lastVisitedUrl = ADMIN_PANEL_HOME;
+        console.error("MESHDB_LAST_PAGE_VISITED was somehow corrupted. It's probably @willard's fault.");
+    }
+
+    // Make sure it loads. If it doesn't, reset.
+    const isGoodLastVisited = await fetch(lastVisitedUrl);
+    if (!isGoodLastVisited.ok) {
+        localStorage.setItem(MESHDB_LAST_PAGE_VISITED, ADMIN_PANEL_HOME);
+        lastVisitedUrl = ADMIN_PANEL_HOME;
+        console.error("MESHDB_LAST_PAGE_VISITED was somehow corrupted. It's probably @willard's fault.")
+    }
+
     admin_panel_iframe.src = lastVisitedUrl;
-  } else {
-    admin_panel_iframe.src = "panel/";
-  }
 }
 
 function start() {
+    adminPanelRestoreLastVisited();
     if (hideMapIfAppropriate()) {
         return;
     }
@@ -469,7 +488,6 @@ function start() {
     listenForMapClick();
     listenForRecenterClick();
 
-    adminPanelRestoreLastVisited();
 }
 
 start();

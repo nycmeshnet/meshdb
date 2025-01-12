@@ -18,5 +18,5 @@ urlpatterns = [
     path("panel/", admin.site.urls),
     #path("", admin_iframe_view),
     path("minimal_example/", minimal_example_view),
-    re_path(r'^(?P<path>.*)$', admin_iframe_view),  # Match any other /admin/* URL
+    re_path(r'^.*$', admin_iframe_view),  # Match any other /admin/* URL
 ]

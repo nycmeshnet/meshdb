@@ -3,8 +3,7 @@ from django.shortcuts import render
 
 
 @staff_member_required
-def admin_iframe_view(request, path):
-    print(path)
+def admin_iframe_view(request):
     return render(request, "admin/iframed.html")
 
 
