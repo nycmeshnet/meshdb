@@ -418,7 +418,13 @@ function updateDebugURLBars() {
 // iframe setup properly
 async function updateMapLocation() {
   const admin_panel_iframe_url = document.getElementById("admin_panel_iframe").contentWindow.location.href;
-  localStorage.setItem("MESHDB_LAST_PAGE_VISITED", admin_panel_iframe_url);
+
+  // Save the new admin location
+  localStorage.setItem("MESHDB_LAST_PAGE_VISITED", new URL(admin_panel_iframe_url).pathname);
+
+  // Update the path of the window so the user can use it
+  //window.history.pushState("MeshDB Admin Panel", "", new URL(admin_panel_iframe_url).pathname.replace("/panel", ""));
+  //window.location.pathname = new URL(admin_panel_iframe_url).pathname;
 
   const selectedNodes = await getNewSelectedNodes(admin_panel_iframe_url);
 
@@ -448,6 +454,7 @@ async function dontListenForAdminPanelLoad() {
 }
 
 function adminPanelRestoreLastVisited() {
+/*
   // If the window's URL has more than just /admin/, then we wanna
   // override our stored page and replace it with that.
   const entryPath = new URL(window.location.href).pathname;
@@ -458,8 +465,10 @@ function adminPanelRestoreLastVisited() {
     document.getElementById("admin_panel_iframe").src = newEntryPath;
     return;
   }
+  */
 
   const lastVisitedUrl = localStorage.getItem("MESHDB_LAST_PAGE_VISITED");
+  console.log(lastVisitedUrl);
 
   if (lastVisitedUrl) {
     document.getElementById("admin_panel_iframe").src = lastVisitedUrl;

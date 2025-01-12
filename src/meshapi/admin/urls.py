@@ -8,7 +8,7 @@ from meshapi.admin.password_reset import (
     AdminPasswordResetDoneView,
     AdminPasswordResetView,
 )
-from meshdb.views import admin_iframe_view, minimal_example_view, redirect_admin
+from meshdb.views import admin_iframe_view, minimal_example_view
 
 urlpatterns = [
     path("password_reset/", AdminPasswordResetView.as_view(), name="admin_password_reset"),
