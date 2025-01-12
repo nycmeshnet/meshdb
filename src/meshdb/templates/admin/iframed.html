@@ -5,16 +5,29 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <script>let MAP_BASE_URL = "{% get_env_var 'ADMIN_MAP_BASE_URL' %}";</script>
-    <link rel="stylesheet" href="{% static '/admin/iframed.css'%}"/> 
-    
+    <title>{% block title %}{% endblock %}</title>
     <link rel="stylesheet" href="{% block stylesheet %}{% static "admin/css/base.css" %}{% endblock %}">
     {% block dark-mode-vars %}
       <link rel="stylesheet" href="{% static "admin/css/dark_mode.css" %}">
       <script src="{% static "admin/js/theme.js" %}" defer></script>
     {% endblock %}
-    <link rel="stylesheet" href="{% static "/admin/admin_ext.css" %}">
+    {% if not is_popup and is_nav_sidebar_enabled %}
+      <link rel="stylesheet" href="{% static "admin/css/nav_sidebar.css" %}">
+      <script src="{% static 'admin/js/nav_sidebar.js' %}" defer></script>
+    {% endif %}
+    {% block extrastyle %}{% endblock %}
+    <link rel="stylesheet" href="{% static "admin/admin_ext.css" %}">
+    {% if LANGUAGE_BIDI %}<link rel="stylesheet" href="{% block stylesheet_rtl %}{% static "admin/css/rtl.css" %}{% endblock %}">{% endif %}
+    {% block extrahead %}{% endblock %}
+    {% block responsive %}
+        <meta name="viewport" content="user-scalable=no, width=device-width, initial-scale=1.0, maximum-scale=1.0">
+        <link rel="stylesheet" href="{% static "admin/css/responsive.css" %}">
+        {% if LANGUAGE_BIDI %}<link rel="stylesheet" href="{% static "admin/css/responsive_rtl.css" %}">{% endif %}
+    {% endblock %}
+    {% block blockbots %}<meta name="robots" content="NONE,NOARCHIVE">{% endblock %}
 
+    <script>let MAP_BASE_URL = "{% get_env_var 'ADMIN_MAP_BASE_URL' %}";</script>
+    <link rel="stylesheet" href="{% static '/admin/iframed.css'%}"/> 
   </head>
   <body>
     <div id="page_container">
@@ -36,7 +49,7 @@
           <img class="handlebar" id="handlebar" src="{% static '/admin/map/img/handlebar.svg' %}" height="60px"/>
         </div>
         <!-- Only shows up during resizes -->
-        <div class="handle hiddenDuringResize" id="substituteHandle">
+        <div class="handle hidden" id="substituteHandle">
           <span class="vert-align-helper"></span>
           <img class="handlebar" id="substituteHandlebar" src="{% static '/admin/map/img/handlebar.svg' %}" height="60px"/>
         </div>

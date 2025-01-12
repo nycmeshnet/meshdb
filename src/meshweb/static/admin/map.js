@@ -352,10 +352,10 @@ function toggleIframeInteractivity() {
     handle.classList.toggle("bigBar");
 
     const handlebar = document.getElementById('handlebar');
-    handlebar.classList.toggle("hiddenDuringResize");
+    handlebar.classList.toggle("hidden");
 
     const substituteHandle = document.getElementById('substituteHandle');
-    substituteHandle.classList.toggle("hiddenDuringResize");
+    substituteHandle.classList.toggle("hidden");
 }
 
 function allowMapResize() {
