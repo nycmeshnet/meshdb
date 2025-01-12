@@ -164,40 +164,6 @@ async function getNewSelectedNodes(url){
     return nodeId ? `${nodeId}` : null;
 }
 
-async function updateMapForLocation(selectedNodes) {
-    const selectedEvent = new Event("setMapNode");//, {detail: {selectedNodes: selectedNodes}});
-    if (!selectedNodes) selectedNodes = await getNewSelectedNodes()
-    selectedEvent.selectedNodes = selectedNodes;
-    window.dispatchEvent(selectedEvent);
-}
-
-async function loadScripts(scripts, destination) {
-    const scriptsArray = [];
-    for (const script of scripts){
-        scriptsArray.push(script);
-    }
-
-    for (const script of scriptsArray) {
-        const scriptLoadPromise = new Promise((resolve, reject) => {
-            const scriptElement = document.createElement('script');
-            if (script.src) {
-                scriptElement.src = script.src;
-            } else {
-                scriptElement.innerText = script.innerText;
-            }
-            scriptElement.onload = resolve;
-            scriptElement.onerror = reject;
-            destination.appendChild(scriptElement);
-            script.remove();
-
-            // onload will never fire for in-lined scripts since they don't fetch(), so resolve the
-            // promise right away
-            if (!script.src) resolve();
-        });
-        await scriptLoadPromise;
-    }
-}
-
 function interceptLinks() {
     // Browser back
     window.addEventListener('popstate', function(event) {
@@ -354,22 +320,6 @@ function hideMapIfAppropriate() {
     return mapDisabled;
 }
 
-/*
-async function start() {
-    if (hideMapIfAppropriate()) {
-        return;
-    }
-    allowMapResize();
-    await load_map();
-    updateMapForLocation();
-    interceptLinks();
-    listenForMapNavigation();
-    listenForRecenterClick();
-}
-
-start();
-*/
-
 // --- New iframe based navigation ---
 
 function extractUUIDs(inputString) {
@@ -396,50 +346,58 @@ function updateDebugURLBars() {
   console.log("Updated urls");
 }
 
-// FIXME: Refreshes reset your location. Need to make sure that the iframe gets
-// the refresh/forward/backward stuff. Check andrew's code.
-// FIXME: Also need to make sure that admin/members/uuid directs you to this
-// iframe setup properly
-async function updateMapLocation() {
-  const admin_panel_iframe_url = admin_panel_iframe.contentWindow.location.href;
-
-    // TODO: Try disabling the LASTPAGEVISITED STUFF
-
-  // Save the new admin location. We do this here because it means that the admin panel has
-  // recently reloaded
-  const meshdbLastPageVisited = new URL(admin_panel_iframe_url).pathname;
-  localStorage.setItem(MESHDB_LAST_PAGE_VISITED, meshdbLastPageVisited);
-
-  // Update the URL bar in the browser for viz
-  window.history.pushState("MeshDB Admin Panel", "", meshdbLastPageVisited.replace("/panel", ""));
-
-  const selectedNodes = await getNewSelectedNodes(admin_panel_iframe_url);
-
-  if (selectedNodes === null) {
-    console.log("No node");
-    return;
-  }
-
-  console.log(`[Admin Panel] Updating map location: ${selectedNodes}`);
-
-  // MAP_BASE_URL comes from iframed.html
-  document.getElementById("map_panel").contentWindow.postMessage({selectedNodes: selectedNodes}, MAP_BASE_URL);
-}
-
+// Configures the listener that updates the admin panel based on map activity
 async function listenForMapClick() {
     window.addEventListener("message", ({ data, source }) => {
       updateAdminPanelLocation(data.selectedNodes);
     });
 }
 
+// Posts a message to prompt the map to change its view to focus on whatever
+// node the admin panel is currently viewing.
+async function updateMapLocation(url) {
+  const selectedNodes = await getNewSelectedNodes(url);
+
+  if (selectedNodes === null) {
+    console.log("[Admin Panel] No node is selected.");
+    return;
+  }
+
+  console.debug(`[Admin Panel] Updating map location: ${selectedNodes}`);
+
+  // MAP_BASE_URL comes from iframed.html
+  document.getElementById("map_panel").contentWindow.postMessage({selectedNodes: selectedNodes}, MAP_BASE_URL);
+}
+
+// Helper function to wrap everything that needs to happen when the admin panel
+// loads
+async function onAdminPanelLoad() {
+    const adminPanelIframeUrl = admin_panel_iframe.contentWindow.location.href;
+
+    // Save the new admin location. We do this here because it means that the admin panel has
+    // recently reloaded.
+    const meshdbLastPageVisited = new URL(adminPanelIframeUrl).pathname;
+    localStorage.setItem(MESHDB_LAST_PAGE_VISITED, meshdbLastPageVisited);
+
+    // Update the URL bar in the browser for viz
+    window.history.pushState("MeshDB Admin Panel", "", meshdbLastPageVisited.replace("/panel", ""));
+
+    // Finally, update the map view
+    updateMapLocation(adminPanelIframeUrl);
+}
+
+// Configures the listener that updates the map based on admin panel activity
 async function listenForAdminPanelLoad() {
-    admin_panel_iframe.addEventListener("load", updateMapLocation);
+    admin_panel_iframe.addEventListener("load", onAdminPanelLoad);
 }
 
+// See above
 async function dontListenForAdminPanelLoad() {
-    admin_panel_iframe.removeEventListener("load", updateMapLocation);
+    admin_panel_iframe.removeEventListener("load", onAdminPanelLoad);
 }
 
+// Checks local storage for the last page the user navigated to, and directs them
+// there
 async function adminPanelRestoreLastVisited() {
     // If the window's URL has more than just /admin/, then we wanna
     // override our stored page and replace it with that.
@@ -456,7 +414,7 @@ async function adminPanelRestoreLastVisited() {
     let lastVisitedUrl = localStorage.getItem(MESHDB_LAST_PAGE_VISITED);
     console.log(`Last Visited: ${lastVisitedUrl}`);
 
-    // Check for corruption
+    // Check for corruption in lastVisited
 
     // If the URL doesn't contain "panel," then something broke, and the safest
     // thing is to just default back home
