@@ -29,6 +29,12 @@
     color: black;
 }
 
+.disabled-button {
+    background-color: #afafaf !important;
+    opacity: 20%;
+    cursor: unset !important;
+}
+
 @media screen and (max-width: 600px) {
     .warning-box {
         display: none;
