@@ -114,5 +114,10 @@ class AutoPopulateLocationWidget(forms.Widget):
 
 
 class WarnAboutDatesWidget(forms.Widget):
+    template_name = "widgets/warn_about_date.html"
+
     class Media:
+        css = {
+            "all": ("widgets/warn_about_date.css",),
+        }
         js = ["widgets/warn_about_date.js"]

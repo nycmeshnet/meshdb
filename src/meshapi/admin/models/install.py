@@ -144,6 +144,7 @@ class InstallAdmin(RankedSearchMixin, ImportExportMixin, ExportActionMixin, Simp
                     "diy",
                     "referral",
                     "notes",
+                    "validate_install_abandon_date_set_widget",  # Hidden by widget CSS
                 ]
             },
         ),

@@ -32,41 +32,28 @@ $(document).ready(function($) {
     }
 
     function showWarning(dateField, statusField, saveAction, dateType){
-      const saveCurrentDateButton = document.createElement("a");
-        saveCurrentDateButton.className = "button";
-        saveCurrentDateButton.onclick = function () {
+        const errorNotice = $("#dateMissingWarningTemplate").clone();
+        errorNotice.prop("id", "dateMissingWarning");
+
+        errorNotice.find("#saveCurrentDateButton").on("click", () => {
             dateField.val(getCurrentISODate())
             submitAdminForm(saveAction);
             return false;
-        }
-        saveCurrentDateButton.style = "padding: 10px 15px; display: inline-block; text-decoration: none;";
-        saveCurrentDateButton.href = "#";
-        saveCurrentDateButton.innerText = "Use today's date";
+        });
 
-        const saveNoDateButton = document.createElement("a");
-        saveNoDateButton.className = "button";
-        saveNoDateButton.onclick = function () {
+        errorNotice.find("#saveNoDateButton").on("click", () => {
             submitAdminForm(saveAction);
             return false;
-        }
-        saveNoDateButton.style = "padding: 10px 15px; display: inline-block; margin-left: 10px; text-decoration: none;";
-        saveNoDateButton.href = "#";
-        saveNoDateButton.innerText = "Continue without setting date";
+        });
 
-        const errorNotice = document.createElement("div");
-        errorNotice.id = "dateMissingWarning";
-        errorNotice.className = "warning-box";
-        errorNotice.innerHTML = `
-            <p><b>Warning</b>: Status set to "${statusField.val()}" without setting ${dateType} Date</p>
-        `;
-        errorNotice.appendChild(saveCurrentDateButton);
-        errorNotice.appendChild(saveNoDateButton);
+        errorNotice.find("#statusText").text(statusField.val());
+        errorNotice.find("#dateTypeText").text(dateType);
 
         saveButtons.each((i, button) => {
             $(button).addClass("disabled-button");
         })
 
-        $(errorNotice).insertBefore($('.submit-row').first())
+        errorNotice.insertBefore($('.submit-row').first())
     }
 
     $('#id_install_date').on("input", (e) => {
