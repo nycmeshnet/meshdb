@@ -448,6 +448,17 @@ async function dontListenForAdminPanelLoad() {
 }
 
 function adminPanelRestoreLastVisited() {
+  // If the window's URL has more than just /admin/, then we wanna
+  // override our stored page and replace it with that.
+  const entryPath = new URL(window.location.href).pathname;
+  console.log(entryPath);
+
+  if (entryPath !== "/admin/") {
+    const newEntryPath = entryPath.replace("/admin/", "/admin/panel/");
+    document.getElementById("admin_panel_iframe").src = newEntryPath;
+    return;
+  }
+
   const lastVisitedUrl = localStorage.getItem("MESHDB_LAST_PAGE_VISITED");
 
   if (lastVisitedUrl) {
