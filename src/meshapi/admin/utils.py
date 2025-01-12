@@ -18,7 +18,7 @@ def get_admin_url(model: Model, site_base_url: str) -> str:
         reverse(
             f"admin:{content_type.app_label}_{content_type.model}_change",
             args=(model.pk,),
-        ),
+        ).replace("panel/", ""), # Strip "panel" out of admin URL. "Panel" views are meant to be shown inside the admin panel iframe, and likely the user does not want that
     )
 
 
