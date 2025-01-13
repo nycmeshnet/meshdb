@@ -1,4 +1,4 @@
-const ADMIN_PANEL_HOME = "panel/"
+const ADMIN_PANEL_HOME = "/admin/"
 const MESHDB_LAST_PAGE_VISITED = "MESHDB_LAST_PAGE_VISITED"
 const admin_panel_iframe = document.getElementById("admin_panel_iframe");
 
@@ -203,14 +203,14 @@ async function updateAdminPanelLocation(selectedNodes) {
     if (installResponse.ok){
         const installJson = await installResponse.json();
         if (installJson.node && installJson.node.network_number)  {
-            admin_panel_iframe.src = `/admin/panel/meshapi/node/${installJson.node.id}/change`;
+            admin_panel_iframe.src = `/admin/meshapi/node/${installJson.node.id}/change`;
         } else {
-            admin_panel_iframe.src = `/admin/panel/meshapi/install/${installJson.id}/change`;
+            admin_panel_iframe.src = `/admin/meshapi/install/${installJson.id}/change`;
         }
     } else {
         if (nodeResponse.ok)  {
             const nodeJson = await nodeResponse.json();
-            admin_panel_iframe.src = `/admin/panel/meshapi/node/${nodeJson.id}/change`;
+            admin_panel_iframe.src = `/admin/meshapi/node/${nodeJson.id}/change`;
         }
     }
 
@@ -250,11 +250,11 @@ async function onAdminPanelLoad() {
 
     // Save the new admin location. We do this here because it means that the admin panel has
     // recently reloaded.
-    const meshdbLastPageVisited = new URL(adminPanelIframeUrl).pathname;
-    localStorage.setItem(MESHDB_LAST_PAGE_VISITED, meshdbLastPageVisited);
+    const adminPanelIframeLastPageVisited = new URL(adminPanelIframeUrl).pathname;
+    localStorage.setItem(MESHDB_LAST_PAGE_VISITED, adminPanelIframeLastPageVisited);
 
     // Update the URL bar in the browser for viz
-    window.history.pushState("MeshDB Admin Panel", "", meshdbLastPageVisited.replace("/panel", ""));
+    window.history.pushState("MeshDB Admin Panel", "", adminPanelIframeLastPageVisited.replace("/admin", "/admin/panel"));
 
     // Finally, update the map view
     updateMapLocation(adminPanelIframeUrl);
@@ -277,9 +277,9 @@ async function adminPanelRestoreLastVisited() {
     // override our stored page and replace it with that.
     const entryPath = new URL(window.location.href).pathname;
     console.log(`Entry Path: ${entryPath}`);
-    const entrypointRegex = /^(\/?admin\/?)$/;
+    const entrypointRegex = /^(\/?admin\/panel\/?)$/;
     if (!entryPath.match(entrypointRegex)) {
-      const newEntryPath = entryPath.replace("admin", "admin/panel");
+      const newEntryPath = entryPath.replace("admin/panel", "admin");
       document.getElementById("admin_panel_iframe").src = newEntryPath;
       localStorage.setItem(MESHDB_LAST_PAGE_VISITED, newEntryPath);
       return;
