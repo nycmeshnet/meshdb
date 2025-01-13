@@ -103,43 +103,43 @@ class TestAdminSearchView(TestCase):
         return response
 
     def test_search_building(self):
-        response = self._call("/admin/panel/meshapi/building/?q=8888", 200)
+        response = self._call("/admin/meshapi/building/?q=8888", 200)
         self.assertEqual(2, get_admin_results_count(response.content.decode()))
 
     def test_search_member(self):
-        response = self._call("/admin/panel/meshapi/member/?q=1", 200)
+        response = self._call("/admin/meshapi/member/?q=1", 200)
         self.assertEqual(1, get_admin_results_count(response.content.decode()))
 
     def test_search_install(self):
-        response = self._call(f"/admin/panel/meshapi/install/?q={self.install.install_number}", 200)
+        response = self._call(f"/admin/meshapi/install/?q={self.install.install_number}", 200)
         self.assertEqual(1, get_admin_results_count(response.content.decode()))
 
     def test_search_link(self):
-        response = self._call("/admin/panel/meshapi/link/?q=101", 200)
+        response = self._call("/admin/meshapi/link/?q=101", 200)
         self.assertEqual(1, get_admin_results_count(response.content.decode()))
 
     def test_search_los(self):
-        response = self._call("/admin/panel/meshapi/los/?q=101", 200)
+        response = self._call("/admin/meshapi/los/?q=101", 200)
         self.assertEqual(1, get_admin_results_count(response.content.decode()))
 
     def test_search_sector(self):
-        response = self._call("/admin/panel/meshapi/sector/?q=1", 200)
+        response = self._call("/admin/meshapi/sector/?q=1", 200)
         self.assertEqual(1, get_admin_results_count(response.content.decode()))
 
     def test_search_access_point(self):
-        response = self._call("/admin/panel/meshapi/accesspoint/?q=1", 200)
+        response = self._call("/admin/meshapi/accesspoint/?q=1", 200)
         self.assertEqual(1, get_admin_results_count(response.content.decode()))
 
     def test_search_device(self):
-        response = self._call("/admin/panel/meshapi/device/?q=1", 200)
+        response = self._call("/admin/meshapi/device/?q=1", 200)
         self.assertEqual(1, get_admin_results_count(response.content.decode()))
 
     def test_search_node(self):
-        response = self._call("/admin/panel/meshapi/node/?q=101", 200)
+        response = self._call("/admin/meshapi/node/?q=101", 200)
         self.assertEqual(1, get_admin_results_count(response.content.decode()))
 
     def test_search_install_by_nn(self):
-        response = self._call("/admin/panel/meshapi/install/?q=101", 200)
+        response = self._call("/admin/meshapi/install/?q=101", 200)
         self.assertEqual(1, get_admin_results_count(response.content.decode()))
 
     def test_search_install_by_nn_exact(self):
@@ -152,17 +152,17 @@ class TestAdminSearchView(TestCase):
         install2.notes = "NN101"
         install2.save()
 
-        response = self._call("/admin/panel/meshapi/install/?q=NN101", 200)
+        response = self._call("/admin/meshapi/install/?q=NN101", 200)
         self.assertEqual(2, get_admin_results_count(response.content.decode()))
 
     def test_search_install_just_nn(self):
-        response = self._call("/admin/panel/meshapi/install/?q=nN", 200)
+        response = self._call("/admin/meshapi/install/?q=nN", 200)
         self.assertEqual(0, get_admin_results_count(response.content.decode()))
 
     def test_search_install_empty(self):
-        response = self._call("/admin/panel/meshapi/install/?q=", 200)
+        response = self._call("/admin/meshapi/install/?q=", 200)
         self.assertEqual(1, get_admin_results_count(response.content.decode()))
 
     def test_search_install_referral(self):
-        response = self._call("/admin/panel/meshapi/install/?q=reddit", 200)
+        response = self._call("/admin/meshapi/install/?q=reddit", 200)
         self.assertEqual(1, get_admin_results_count(response.content.decode()))
