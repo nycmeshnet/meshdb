@@ -18,4 +18,4 @@ def get_admin_results_count(html_string: str):
     if not result_list:
         return 0
 
-    return sum(1 for tr in result_list.find("tbody").find_all("tr") if tr.find_all("td")
+    return sum(1 for tr in result_list.find("tbody").find_all("tr") if tr.find_all("td"))

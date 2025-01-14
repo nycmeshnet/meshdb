@@ -1,4 +1,5 @@
 import datetime
+
 from bs4 import BeautifulSoup
 from django.contrib.auth.models import Group, User
 from django.test import Client, TestCase
@@ -7,6 +8,7 @@ from rest_framework.authtoken.models import TokenProxy
 from meshapi.models import LOS, AccessPoint, Building, Device, Install, Link, Member, Node, Sector
 from meshapi.tests.sample_data import sample_building, sample_device, sample_install, sample_member, sample_node
 from meshapi_hooks.hooks import CelerySerializerHook
+
 
 class TestAdminPanel(TestCase):
     c = Client()
@@ -99,8 +101,7 @@ class TestAdminPanel(TestCase):
         iframe_response = self.c.get(iframe_src)
         self.assertEqual(code, iframe_response.status_code, f"Could not view {route} in the admin panel.")
 
-
     # TODO (wdn): Add more tests checking if navigating to xyz page works
     # Unfortunately, because that is a lot of javascript, it's tricky to test.
     # It may be possible to run selenium integration tests or something to validate
-    # that functionality 
+    # that functionality
