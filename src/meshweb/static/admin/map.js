@@ -418,6 +418,10 @@ function hideMapIfAppropriate() {
             showMapButton.addEventListener("click", onShowMapClick, false);
         }
     } else {
+        // Hide the show map button
+        const showMapButton = document.getElementById('show_map_button');
+        showMapButton.classList.toggle("hidden");
+
         const hideMapButton = document.getElementById("map_hide_button");
 
         function onHideMapClick(event) {

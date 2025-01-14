@@ -140,6 +140,14 @@
     background: transparent;
 }
 
+.floating-button-above {
+    z-index: 100;
+    position: absolute;
+    top: 15px;
+    right: 10px;
+    padding: 0;
+}
+
 .floating-button {
     z-index: 100;
     position: absolute;
