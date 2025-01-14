@@ -1,4 +1,5 @@
 import datetime
+from bs4 import BeautifulSoup
 from django.contrib.auth.models import Group, User
 from django.test import Client, TestCase
 from rest_framework.authtoken.models import TokenProxy
@@ -84,15 +85,22 @@ class TestAdminPanel(TestCase):
             user=self.admin_user, target="http://example.com", event="building.created", headers=""
         )
 
-    # TODO (wdn): Add more tests checking if navigating to xyz page works
     def test_iframe_loads(self):
         route = "/admin/panel/"
         code = 200
         response = self.c.get(route)
         self.assertEqual(code, response.status_code, f"Could not view {route} in the admin panel.")
 
-    def test_iframe_loads_with_node(self):
-        route = f"/admin/panel/node/{self.node1.id}/change/"
-        code = 200
-        response = self.c.get(route)
-        self.assertEqual(code, response.status_code, f"Could not view {route} in the admin panel.")
+        decoded_panel = response.content.decode()
+        soup = BeautifulSoup(decoded_panel, "html.parser")
+        iframe = soup.find(id="admin_panel_iframe")
+        iframe_src = iframe.attrs["src"]
+        self.assertEqual("/admin/", iframe_src)
+        iframe_response = self.c.get(iframe_src)
+        self.assertEqual(code, iframe_response.status_code, f"Could not view {route} in the admin panel.")
+
+
+    # TODO (wdn): Add more tests checking if navigating to xyz page works
+    # Unfortunately, because that is a lot of javascript, it's tricky to test.
+    # It may be possible to run selenium integration tests or something to validate
+    # that functionality 
