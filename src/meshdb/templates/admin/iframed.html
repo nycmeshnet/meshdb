@@ -5,6 +5,9 @@
 <!DOCTYPE html>
 <html>
   <head>
+    <!--We don't want people navigating to this URL, so we're gonna redirect them
+    if they find themselves here-->
+    <script src="{% static 'admin/panel_url_check.js' %}"></script>
     <title>{% block title %}{% endblock %}</title>
     <link rel="stylesheet" href="{% block stylesheet %}{% static "admin/css/base.css" %}{% endblock %}">
     {% block dark-mode-vars %}
