@@ -254,7 +254,7 @@ async function onAdminPanelLoad() {
     localStorage.setItem(MESHDB_LAST_PAGE_VISITED, adminPanelIframeLastPageVisited);
 
     // Update the URL bar in the browser for viz
-    window.history.pushState("MeshDB Admin Panel", "", adminPanelIframeLastPageVisited.replace("/admin", "/admin/panel"));
+    window.history.pushState("MeshDB Admin Panel", "", adminPanelIframeLastPageVisited);
 
     // Finally, update the map view
     updateMapLocation(adminPanelIframeUrl);
@@ -277,7 +277,7 @@ async function adminPanelRestoreLastVisited() {
     // override our stored page and replace it with that.
     const entryPath = new URL(window.location.href).pathname;
     console.log(`Entry Path: ${entryPath}`);
-    const entrypointRegex = /^(\/?admin\/panel\/?)$/;
+    const entrypointRegex = /^(\/?admin\/?)$/;
     if (!entryPath.match(entrypointRegex)) {
       const newEntryPath = entryPath.replace("admin/panel", "admin");
       document.getElementById("admin_panel_iframe").src = newEntryPath;

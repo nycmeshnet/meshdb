@@ -18,11 +18,15 @@
 {% block userlinks %}
     {{ block.super }}
     <!--This will let people "show" the map by offering to navigate them to /admin/panel if they have found themselves at /admin-->
+    <!--
     <a href="#" class="hidden" style="margin-left: 5px; vertical-align: middle; border: none;" id="navigate_to_panel_view">
         <img src="{% static '/admin/map/img/map.png' %}" height="16px" title="Show Map">
     </a>
+    -->
     <!--Script to quietly update the panel view link-->
+    <!--
     <script src="{% static '/admin/panel_view_nav.js' %}"></script>
+    -->
 {% endblock %}
 
 {% block footer %}
