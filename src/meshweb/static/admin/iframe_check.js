@@ -1,4 +1,3 @@
-const PANEL_URL = "/admin/panel/";
 
 async function checkIframed() {
   // Check if we're in an iframe

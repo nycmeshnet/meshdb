@@ -5,9 +5,16 @@
 <!DOCTYPE html>
 <html>
   <head>
+    <script>
+      const MAP_BASE_URL = "{% get_env_var 'ADMIN_MAP_BASE_URL' %}";
+      const PANEL_URL = "/admin/panel/";
+    </script>
     <!--We don't want people navigating to this URL, so we're gonna redirect them
     if they find themselves here-->
     <script src="{% static 'admin/panel_url_check.js' %}"></script>
+    <!--Script that powers this iframed view and communicates between the admin panel
+    and the map-->
+    <script src="{% static '/admin/map.js' %}" defer></script>
     <title>{% block title %}{% endblock %}</title>
     <link rel="stylesheet" href="{% block stylesheet %}{% static "admin/css/base.css" %}{% endblock %}">
     {% block dark-mode-vars %}
@@ -28,8 +35,6 @@
         {% if LANGUAGE_BIDI %}<link rel="stylesheet" href="{% static "admin/css/responsive_rtl.css" %}">{% endif %}
     {% endblock %}
     {% block blockbots %}<meta name="robots" content="NONE,NOARCHIVE">{% endblock %}
-
-    <script>let MAP_BASE_URL = "{% get_env_var 'ADMIN_MAP_BASE_URL' %}";</script>
     <link rel="stylesheet" href="{% static '/admin/iframed.css'%}"/> 
   </head>
   <body>
@@ -72,6 +77,5 @@
       <iframe src="{% get_env_var 'ADMIN_MAP_BASE_URL' %}" id="map_panel"></iframe>
       </div>
     </div>
-  <script src="{% static '/admin/map.js' %}"></script>
   </body>
 </html>

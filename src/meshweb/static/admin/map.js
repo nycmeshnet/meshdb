@@ -279,7 +279,7 @@ async function adminPanelRestoreLastVisited() {
     console.log(`Entry Path: ${entryPath}`);
     const entrypointRegex = /^(\/?admin\/?)$/;
     if (!entryPath.match(entrypointRegex)) {
-      const newEntryPath = entryPath.replace("admin/panel", "admin");
+      const newEntryPath = entryPath.replace(PANEL_URL, "admin");
       document.getElementById("admin_panel_iframe").src = newEntryPath;
       localStorage.setItem(MESHDB_LAST_PAGE_VISITED, newEntryPath);
       return;
@@ -292,7 +292,7 @@ async function adminPanelRestoreLastVisited() {
 
     // If the URL doesn't contain "panel," then something broke, and the safest
     // thing is to just default back home
-    if (!lastVisitedUrl.startsWith("/admin/panel/")) {
+    if (!lastVisitedUrl.startsWith(ADMIN_PANEL_HOME)) {
         localStorage.setItem(MESHDB_LAST_PAGE_VISITED, ADMIN_PANEL_HOME);
         lastVisitedUrl = ADMIN_PANEL_HOME;
         console.error("MESHDB_LAST_PAGE_VISITED was somehow corrupted. It's probably @willard's fault.");
