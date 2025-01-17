@@ -1,5 +1,5 @@
 from django.contrib import admin
-from django.urls import path, re_path
+from django.urls import path 
 
 from meshapi.admin.password_reset import (
     AdminPasswordResetCompleteView,
@@ -14,6 +14,6 @@ urlpatterns = [
     path("password_reset/done/", AdminPasswordResetDoneView.as_view(), name="password_reset_done"),
     path("password_reset/<uidb64>/<token>/", AdminPasswordResetConfirmView.as_view(), name="password_reset_confirm"),
     path("password_reset/done/", AdminPasswordResetCompleteView.as_view(), name="password_reset_complete"),
-    re_path(r"^panel/.*$", admin_iframe_view),  # Match any other /admin/* URL
+    path("iframe_wrapper/", admin_iframe_view),  # Match any other /admin/* URL
     path("", admin.site.urls),
 ]

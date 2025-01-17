@@ -88,7 +88,7 @@ class TestAdminPanel(TestCase):
         )
 
     def test_iframe_loads(self):
-        route = "/admin/panel/"
+        route = "/admin/iframe_wrapper/"
         code = 200
         response = self.c.get(route)
         self.assertEqual(code, response.status_code, f"Could not view {route} in the admin panel.")
