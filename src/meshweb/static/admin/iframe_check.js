@@ -1,4 +1,3 @@
-
 async function checkIframed() {
   // Check if we're in an iframe
   const inIframe = window.self !== window.top;
@@ -8,6 +7,15 @@ async function checkIframed() {
     return;
   }
 
+  // Also do nothing if we're not in the admin panel proper (eg not logged in)
+  const escURLs = ["login", "password_reset"]
+  const currentURL = window.location.href;
+
+  var shouldEscape = escURLs.some(url => currentURL.includes(url));
+  if (shouldEscape) {
+    return;
+  }
+  
   // If we're not in an iframe, then we'll want to swap the user to the iframed 
   // view
   try {
@@ -37,7 +45,9 @@ async function checkIframed() {
     return;
   }
   
-  document.open();
+  // FIXME (wdn): This might not totally clear the state after all, since the variables
+  // from /admin are still hanging around
+  document.open(); // Clears the screen
   document.write(await response.text());
   document.close();
 }

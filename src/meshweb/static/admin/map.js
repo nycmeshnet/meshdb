@@ -272,7 +272,7 @@ async function dontListenForAdminPanelLoad() {
 
 // Checks local storage for the last page the user navigated to, and directs them
 // there
-async function adminPanelRestoreLastVisited() {
+async function readURLBar() {
     // If the window's URL has more than just /admin/, then we wanna
     // override our stored page and replace it with that.
     const entryPath = new URL(window.location.href).pathname;
@@ -282,31 +282,7 @@ async function adminPanelRestoreLastVisited() {
       const newEntryPath = entryPath.replace(PANEL_URL, "admin");
       document.getElementById("admin_panel_iframe").src = newEntryPath;
       localStorage.setItem(MESHDB_LAST_PAGE_VISITED, newEntryPath);
-      return;
     }
-
-    let lastVisitedUrl = localStorage.getItem(MESHDB_LAST_PAGE_VISITED);
-    console.log(`Last Visited: ${lastVisitedUrl}`);
-
-    // Check for corruption in lastVisited
-
-    // If the URL doesn't contain "panel," then something broke, and the safest
-    // thing is to just default back home
-    if (!lastVisitedUrl.startsWith(ADMIN_PANEL_HOME)) {
-        localStorage.setItem(MESHDB_LAST_PAGE_VISITED, ADMIN_PANEL_HOME);
-        lastVisitedUrl = ADMIN_PANEL_HOME;
-        console.error("MESHDB_LAST_PAGE_VISITED was somehow corrupted. It's probably @willard's fault.");
-    }
-
-    // Make sure it loads. If it doesn't, reset.
-    const isGoodLastVisited = await fetch(lastVisitedUrl);
-    if (!isGoodLastVisited.ok) {
-        localStorage.setItem(MESHDB_LAST_PAGE_VISITED, ADMIN_PANEL_HOME);
-        lastVisitedUrl = ADMIN_PANEL_HOME;
-        console.error("MESHDB_LAST_PAGE_VISITED was somehow corrupted. It's probably @willard's fault.")
-    }
-
-    admin_panel_iframe.src = lastVisitedUrl;
 }
 
 // Interface Stuff 
@@ -437,7 +413,7 @@ function hideMapIfAppropriate() {
 }
 
 function start() {
-    adminPanelRestoreLastVisited();
+    readURLBar();
     if (hideMapIfAppropriate()) {
         return;
     }

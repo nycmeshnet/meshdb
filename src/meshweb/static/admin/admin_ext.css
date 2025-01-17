@@ -46,10 +46,6 @@
     height: auto;
 }
 
-.login #content {
-    width: 37em !important;
-}
-
 /* This is an override of the styles at admin/css/login.css in the admin site */
 .login #main {
     width: 28em;
