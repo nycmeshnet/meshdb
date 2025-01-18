@@ -49,6 +49,16 @@ class HasMaintenanceModePermission(HasDjangoPermission):
 class HasExplorerAccessPermission(HasDjangoPermission):
     django_permission = "meshapi.explorer_access"
 
+# Janky
+class LegacyNNAssignmentPassword(permissions.BasePermission):
+    def has_permission(self, request: Request, view: Any) -> bool:
+        request_json = json.loads(request.body)
+        if "password" in request_json and request_json["password"] == os.environ.get("NN_ASSIGN_PSK"):
+            return True
+
+        raise PermissionDenied("Authentication Failed.")
+
+
 def check_has_model_view_permission(user: Optional[User], model: Model) -> bool:
     if not user:
         # Unauthenticated requests do not have permission by default

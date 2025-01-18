@@ -19,7 +19,7 @@ from validate_email.exceptions import EmailValidationError
 
 from meshapi.exceptions import AddressError
 from meshapi.models import AddressTruthSource, Building, Install, Member, Node
-from meshapi.permissions import HasNNAssignPermission 
+from meshapi.permissions import HasNNAssignPermission, LegacyNNAssignmentPassword
 from meshapi.serializers import MemberSerializer
 from meshapi.util.admin_notifications import notify_administrators_of_data_issue
 from meshapi.util.constants import RECAPTCHA_CHECKBOX_TOKEN_HEADER, RECAPTCHA_INVISIBLE_TOKEN_HEADER
@@ -481,7 +481,7 @@ nn_form_success_schema = inline_serializer(
     ),
 )
 @api_view(["POST"])
-@permission_classes([HasNNAssignPermission])
+@permission_classes([HasNNAssignPermission | LegacyNNAssignmentPassword])
 @transaction.atomic
 @advisory_lock("nn_assignment_lock")
 def network_number_assignment(request: Request) -> Response:
@@ -492,6 +492,8 @@ def network_number_assignment(request: Request) -> Response:
 
     try:
         request_json = json.loads(request.body)
+        if "password" in request_json:
+            del request_json["password"]
 
         r = NetworkNumberAssignmentRequest(**request_json)
     except (TypeError, JSONDecodeError):
