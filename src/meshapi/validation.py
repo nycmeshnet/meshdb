@@ -111,7 +111,7 @@ class AddressInfo:
                 "Cannot instantiate AddressInfo directly, since we need a method to determine lat/lon. "
                 "Did you mean to use OSMAddressInfo or NYCAddressInfo?"
             )
-        return super().__new__(cls, *args, **kwargs)
+        return super().__new__(cls)
 
     def __init__(self, street_address: str, city: str, state: str, zip_code: str):
         if state != "New York" and state != "NY":
