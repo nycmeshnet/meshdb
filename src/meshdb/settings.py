@@ -136,6 +136,9 @@ ALLOWED_HOSTS = [
     "devdb.nycmesh.net",
 ]
 
+# Enable this so that Meshforms can use login credentials
+CORS_ALLOW_CREDENTIALS = True
+
 CORS_ALLOWED_ORIGINS = [
     "https://forms.nycmesh.net",
     "https://forms.devdb.nycmesh.net",
@@ -173,6 +176,7 @@ if DEBUG:
     ]
 
     CSRF_TRUSTED_ORIGINS += [
+        "http://127.0.0.1:3000",
         "http://127.0.0.1:8080",
         "http://127.0.0.1",
     ]

@@ -6,7 +6,6 @@ from drf_spectacular.utils import extend_schema, extend_schema_view
 
 from meshapi.docs import query_form_password_param
 from meshapi.models import Install, Member
-from meshapi.permissions import LegacyMeshQueryPassword
 from meshapi.serializers.query_api import QueryFormSerializer
 from meshapi.views.lookups import FilterRequiredListAPIView
 
@@ -61,7 +60,6 @@ class QueryMember(FilterRequiredListAPIView):
     )
     serializer_class = QueryFormSerializer
     filterset_class = QueryMemberFilter
-    permission_classes = [LegacyMeshQueryPassword]
 
 
 class QueryInstallFilter(filters.FilterSet):
@@ -91,7 +89,6 @@ class QueryInstall(FilterRequiredListAPIView):
     )
     serializer_class = QueryFormSerializer
     filterset_class = QueryInstallFilter
-    permission_classes = [LegacyMeshQueryPassword]
 
 
 class QueryBuildingFilter(filters.FilterSet):
@@ -125,4 +122,3 @@ class QueryBuilding(FilterRequiredListAPIView):
     )
     serializer_class = QueryFormSerializer
     filterset_class = QueryBuildingFilter
-    permission_classes = [LegacyMeshQueryPassword]
