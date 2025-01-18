@@ -2,8 +2,15 @@ async function checkIframed() {
   // Check if we're in an iframe
   const inIframe = window.self !== window.top;
   
-  // If not, do nothing
+  // If we are, do nothing
   if (inIframe) {
+    // ...Unless the iframe is at the login page, in which case, redirect the parent
+    // to the login
+    const iframeLocation = window.location.href;
+    if (iframeLocation.includes("login")) {
+      window.top.location.href = "/admin/login/"; 
+    }
+
     return;
   }
 
