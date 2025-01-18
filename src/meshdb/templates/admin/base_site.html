@@ -4,6 +4,8 @@
 
 {% block extrahead %}
     <link rel="shortcut icon" href="{% static 'meshweb/favicon.png' %}" />
+    {% include 'admin_site_search/head.html' %}
+    {{ block.super }}
 {% endblock %}
 
 {% block branding %}
@@ -18,4 +20,14 @@
     <a href="#" class="hidden" style="margin-left: 5px; vertical-align: middle; border: none;" id="show_map_button">
         <img src="{% static '/admin/map/img/map.png' %}" height="16px" title="Show Map">
     </a>
+{% endblock %}
+
+{% block footer %}
+    {{ block.super }}
+    {% include 'admin_site_search/modal.html' %}
+{% endblock %}
+
+{% block usertools %}
+    {% include 'admin_site_search/button.html' %}
+    {{ block.super }}
 {% endblock %}

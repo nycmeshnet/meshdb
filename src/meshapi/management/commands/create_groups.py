@@ -46,7 +46,7 @@ class Command(BaseCommand):
             if (act == "change" and obj in models) or (act == "view" and obj in models) or code == "assign_nn":
                 installer.permissions.add(p)
 
-            if act == "add" and obj == "accesspoint":
+            if act == "add" and obj in ["accesspoint", "link"]:
                 installer.permissions.add(p)
 
             # admin

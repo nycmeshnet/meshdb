@@ -84,9 +84,11 @@ class JoinRecordProcessor:
         response = self.s3_client.list_objects_v2(
             Bucket=JOIN_RECORD_BUCKET_NAME,
             Prefix=f"{JOIN_RECORD_PREFIX}/v3/{submission_prefix.value}",
-            StartAfter=since.strftime(f"{JOIN_RECORD_PREFIX}/v3/{submission_prefix.value}/%Y/%m/%d/%H/%M/%S")
-            if isinstance(since, datetime.datetime)
-            else "",
+            StartAfter=(
+                since.strftime(f"{JOIN_RECORD_PREFIX}/v3/{submission_prefix.value}/%Y/%m/%d/%H/%M/%S")
+                if isinstance(since, datetime.datetime)
+                else ""
+            ),
         )
 
         join_records = []

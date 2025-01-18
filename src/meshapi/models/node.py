@@ -35,12 +35,12 @@ class Node(models.Model):
         PLANNED = "Planned"
 
     class NodeType(models.TextChoices):
-        STANDARD = "Standard"
-        HUB = "Hub"
-        SUPERNODE = "Supernode"
-        POP = "POP"
-        AP = "AP"
-        REMOTE = "Remote"
+        STANDARD = "Standard", "Standard"
+        HUB = "Hub", "Hub"
+        SUPERNODE = "Supernode", "Supernode"
+        POP = "POP", "POP"
+        AP = "AP", "AP"
+        REMOTE = "Remote", "Remote"
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4)
 
