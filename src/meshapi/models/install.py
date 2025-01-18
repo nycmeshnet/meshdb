@@ -142,4 +142,11 @@ class Install(models.Model):
             if self.install_number != original.install_number:
                 raise ValidationError("Install number is immutable")
 
+        if self._state.adding:
+            if not self.node:
+                if self.building.primary_node:
+                    self.node = self.building.primary_node
+                elif self.building.nodes:
+                    self.node = self.building.nodes.first()
+
         super().save(*args, **kwargs)
