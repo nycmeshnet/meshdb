@@ -117,11 +117,14 @@ class Command(BaseCommand):
         logging.info("Scrambling nodes...")
         nodes = Node.objects.all()
         for node in nodes:
-            node.notes = fake.text()
-            _, node.install_date, node.abandon_date = self.fuzz_dates(
-                date.today(), node.install_date, node.abandon_date
-            )
-            node.save()
+            try:
+                node.notes = fake.text()
+                _, node.install_date, node.abandon_date = self.fuzz_dates(
+                    date.today(), node.install_date, node.abandon_date
+                )
+                node.save()
+            except ValueError as e:
+                logging.exception(f"Could not scramble node. {e}")
 
         logging.info("Scrambling LOSes...")
         LOSes = LOS.objects.all()
