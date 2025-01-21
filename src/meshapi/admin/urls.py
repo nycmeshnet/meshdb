@@ -14,6 +14,6 @@ urlpatterns = [
     path("password_reset/done/", AdminPasswordResetDoneView.as_view(), name="password_reset_done"),
     path("password_reset/<uidb64>/<token>/", AdminPasswordResetConfirmView.as_view(), name="password_reset_confirm"),
     path("password_reset/done/", AdminPasswordResetCompleteView.as_view(), name="password_reset_complete"),
-    path("iframe_wrapper/", admin_iframe_view),  # Match any other /admin/* URL
+    path("iframe_wrapper/", admin_iframe_view),
     path("", admin.site.urls),
 ]

@@ -3,7 +3,7 @@ async function checkIframed() {
   const inIframe = window.self !== window.top;
   
   // If we are, do nothing
-  if (inIframe) {
+  if (inIframe || mobileCheck()) {
     return;
   }
 
