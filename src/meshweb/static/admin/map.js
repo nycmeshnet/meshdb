@@ -28,7 +28,17 @@ function extractUUIDs(url) {
 
 // Checks what model the Admin Panel is looking at
 function extractModel(url) {
-  const relevantModels = ["member", "building", "install", "node", "device", "sector", "link"];
+  const relevantModels = [
+        "member",
+        "building",
+        "install",
+        "node",
+        "device",
+        "sector",
+        "accesspoint",
+        "link",
+        "los"
+    ];
   return relevantModels.find(element => url.includes(element));
 }
 
