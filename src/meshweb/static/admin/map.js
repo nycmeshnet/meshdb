@@ -246,18 +246,25 @@ async function updateMapLocation(url) {
 // Helper function to wrap everything that needs to happen when the admin panel
 // loads
 async function onAdminPanelLoad() {
-    const adminPanelIframeUrl = admin_panel_iframe.contentWindow.location.href;
+    const adminPanelIframeUrl = new URL(admin_panel_iframe.contentWindow.location.href);
+    
+    // If the admin panel iframe leaves the admin panel (by logging out, going to homescreen, etc)
+    // we should leave this iframed view and go there.
+    const escURLs = ["login", "password_reset"]
+    var shouldEscape = escURLs.some(url => adminPanelIframeUrl.pathname.includes(url));
+    if (!adminPanelIframeUrl.pathname.includes("admin") || shouldEscape) {
+        window.location.href = adminPanelIframeUrl; 
+    }
 
     // Save the new admin location. We do this here because it means that the admin panel has
     // recently reloaded.
-    const adminPanelIframeLastPageVisited = new URL(adminPanelIframeUrl).pathname;
-    localStorage.setItem(MESHDB_LAST_PAGE_VISITED, adminPanelIframeLastPageVisited);
+    localStorage.setItem(MESHDB_LAST_PAGE_VISITED, adminPanelIframeUrl.pathname);
 
     // Update the URL bar in the browser for viz
-    window.history.pushState("MeshDB Admin Panel", "", adminPanelIframeLastPageVisited);
+    window.history.pushState("MeshDB Admin Panel", "", adminPanelIframeUrl.pathname);
 
     // Finally, update the map view
-    updateMapLocation(adminPanelIframeUrl);
+    updateMapLocation(adminPanelIframeUrl.toString());
 }
 
 // Configures the listener that updates the map based on admin panel activity
