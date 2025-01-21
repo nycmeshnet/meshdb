@@ -6,7 +6,6 @@ from random import randint, randrange
 from typing import Any, Optional, Tuple
 
 from django.core.management.base import BaseCommand
-from django.db import transaction
 from faker import Faker
 
 from meshapi.models import LOS, Install, Member
@@ -37,7 +36,9 @@ class Command(BaseCommand):
             help="Skip scrambling installs",
         )
 
-    @transaction.atomic
+    # This transaction is not atomic so that even if there's some error with
+    # the scrambled data, we can scramble it partially. I'd rather break someone's
+    # dev env than give someone PII accidentally
     def handle(self, *args: Any, **options: Any) -> None:
         logging.info("Scrambling database with fake information")
 
