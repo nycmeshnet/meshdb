@@ -27,6 +27,7 @@ class QueryFormSerializer(serializers.ModelSerializer):
             "additional_email_addresses",
             "notes",
             "network_number",
+            "network_number_status",
             "status",
         )
 
@@ -42,6 +43,7 @@ class QueryFormSerializer(serializers.ModelSerializer):
     )
 
     network_number = serializers.IntegerField(source="node.network_number", allow_null=True)
+    network_number_status = serializers.CharField(source="node.status", allow_null=True)
 
     primary_email_address = serializers.CharField(source="member.primary_email_address")
     stripe_email_address = serializers.CharField(source="member.stripe_email_address")

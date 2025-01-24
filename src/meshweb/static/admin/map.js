@@ -31,7 +31,9 @@ async function getNewSelectedNodes(){
         const installResponse = await fetch(`/api/v1/installs/${id}/`);
         if (!installResponse.ok) return null;
         const install = await installResponse.json();
-        nodeId = install.install_number;
+        if (install.status !== "Closed" && install.status !== "NN Reassigned") {
+            nodeId = install.install_number;
+        }
     } else if (type === "node") {
         if (!id) return null;
         const nodeResponse = await fetch(`/api/v1/nodes/${id}/`);
@@ -40,7 +42,12 @@ async function getNewSelectedNodes(){
         if (node.network_number) {
             nodeId = node.network_number;
         } else {
-            nodeId = node.installs[0].install_number;
+            for (const install of node.installs) {
+                if (install.status !== "Closed" && install.status !== "NN Reassigned") {
+                    nodeId = install.install_number;
+                    break;
+                }
+            }
         }
     } else if (type === "building") {
         if (!id) return null;
@@ -50,7 +57,18 @@ async function getNewSelectedNodes(){
         if (building.primary_node && building.primary_node.network_number) {
             nodeId = building.primary_node.network_number;
         } else if (building.installs) {
-            nodeId = building.installs[0].install_number;
+            const installResponses = await Promise.all(
+                building.installs.map(install => fetch(`/api/v1/installs/${install.id}/`))
+            );
+            for (const installResponse of installResponses) {
+                if (installResponse.ok){
+                    const install = await installResponse.json();
+                    if (install.status !== "Closed" && install.status !== "NN Reassigned") {
+                        nodeId = install.install_number;
+                        break;
+                    }
+                }
+            }
         }
     } else if (["device", "sector", "accesspoint"].indexOf(type) !== -1) {
         if (!id) return null;
@@ -63,7 +81,16 @@ async function getNewSelectedNodes(){
         const memberResponse = await fetch(`/api/v1/members/${id}/`);
         if (!memberResponse.ok) return null;
         const member = await memberResponse.json();
-        nodeId = member.installs.map(install => install.install_number).join("-");
+
+        const installResponses = await Promise.all(
+            member.installs.map(install => fetch(`/api/v1/installs/${install.id}/`))
+        );
+
+        nodeId = (await Promise.all(installResponses
+            .filter(installResponse => installResponse.ok)
+            .map(installResponse => installResponse.json())))
+            .filter(install => install.status !== "Closed" && install.status !== "NN Reassigned")
+            .map(install => install.install_number).join("-");
     } else if (type === "link") {
         if (!id) return null;
         const linkResponse = await fetch(`/api/v1/links/${id}/`);
@@ -94,7 +121,18 @@ async function getNewSelectedNodes(){
         if (building1.primary_node && building1.primary_node.network_number) {
             b1NodeId = building1.primary_node.network_number;
         } else if (building1.installs) {
-            b1NodeId = building1.installs[0].install_number;
+            const installResponses = await Promise.all(
+                building1.installs.map(install => fetch(`/api/v1/installs/${install.id}/`))
+            );
+            for (const installResponse of installResponses) {
+                if (installResponse.ok){
+                    const install = await installResponse.json();
+                    if (install.status !== "Closed" && install.status !== "NN Reassigned") {
+                        b1NodeId = install.install_number;
+                        break;
+                    }
+                }
+            }
         }
 
         let b2NodeId = null;
@@ -104,7 +142,18 @@ async function getNewSelectedNodes(){
         if (building2.primary_node && building2.primary_node.network_number) {
             b2NodeId = building2.primary_node.network_number;
         } else if (building2.installs) {
-            b2NodeId = building2.installs[0].install_number;
+            const installResponses = await Promise.all(
+                building2.installs.map(install => fetch(`/api/v1/installs/${install.id}/`))
+            );
+            for (const installResponse of installResponses) {
+                if (installResponse.ok){
+                    const install = await installResponse.json();
+                    if (install.status !== "Closed" && install.status !== "NN Reassigned") {
+                        b2NodeId = install.install_number;
+                        break;
+                    }
+                }
+            }
         }
 
         if (b1NodeId && b2NodeId)  nodeId = `${b1NodeId}-${b2NodeId}`;
@@ -307,21 +356,30 @@ async function nodeSelectedOnMap(selectedNodes) {
         return;
     }
 
-    const installResponse = await fetch(`/api/v1/installs/${selectedNodes}/`);
-    const nodeResponse = await fetch(`/api/v1/nodes/${selectedNodes}/`);
+    const [installResponse, nodeResponse] = await Promise.all(
+        [
+            fetch(`/api/v1/installs/${selectedNodes}/`),
+            fetch(`/api/v1/nodes/${selectedNodes}/`)
+        ]
+    );
     if (installResponse.ok){
         const installJson = await installResponse.json();
-        if (installJson.node && installJson.node.network_number)  {
-            await updateAdminContent(new URL(`/admin/meshapi/node/${installJson.node.id}/change`, document.location).href);
-            updateMapForLocation(installJson.node.network_number.toString());
-        } else {
+        if (installJson.status !== "NN Reassigned" && installJson.status !== "Closed") {
+            if (installJson.node && installJson.node.network_number) {
+                await updateAdminContent(new URL(`/admin/meshapi/node/${installJson.node.id}/change`, document.location).href);
+                updateMapForLocation(installJson.node.network_number.toString());
+                return;
+            }
+
             updateAdminContent(new URL(`/admin/meshapi/install/${installJson.id}/change`, document.location).href);
+            return;
         }
-    } else {
-        if (nodeResponse.ok)  {
-            const nodeJson = await nodeResponse.json();
-            updateAdminContent(new URL(`/admin/meshapi/node/${nodeJson.id}/change`, document.location).href);
-        }
+    }
+
+    if (nodeResponse.ok)  {
+        const nodeJson = await nodeResponse.json();
+        updateAdminContent(new URL(`/admin/meshapi/node/${nodeJson.id}/change`, document.location).href);
+        return;
     }
 
 }

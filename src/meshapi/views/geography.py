@@ -353,9 +353,11 @@ class WholeMeshKML(APIView):
             placemark = kml.Placemark(
                 name=f"Links-{link_dict['link_label']}",
                 style_url=styles.StyleUrl(
-                    url="#grey_line"
-                    if link_dict["is_los"]
-                    else ("#red_line" if link_dict["mark_active"] else "#dark_grey_line")
+                    url=(
+                        "#grey_line"
+                        if link_dict["is_los"]
+                        else ("#red_line" if link_dict["mark_active"] else "#dark_grey_line")
+                    )
                 ),
                 kml_geometry=geometry.LineString(
                     geometry=LineString([link_dict["from_coord"], link_dict["to_coord"]]),
