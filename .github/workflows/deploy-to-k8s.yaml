@@ -8,7 +8,7 @@ on:
         required: true
         type: string
       useTag:
-        required: false
+        required: true
         type: string
 
 jobs:
