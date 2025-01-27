@@ -1,6 +1,6 @@
 const ADMIN_PANEL_HOME = "/admin/"
 const MESHDB_LAST_PAGE_VISITED = "MESHDB_LAST_PAGE_VISITED"
-const admin_panel_iframe = document.getElementById("admin_panel_iframe");
+const adminPanelIframe = document.getElementById("admin_panel_iframe");
 
 let currentSplit = parseFloat(localStorage.getItem("MESHDB_MAP_SIZE"));
 if (isNaN(currentSplit)) {
@@ -43,7 +43,7 @@ async function getNewSelectedNodes(url){
 
     // Guard against looking up an empty UUID
     if (objectUUIDs.length == 0) {
-      console.log("Found no UUID")
+      console.log("[Admin Panel] Found no UUID")
       return null;
     }
     const id = objectUUIDs[0];
@@ -189,7 +189,6 @@ async function getNewSelectedNodes(url){
 
 async function updateAdminPanelLocation(selectedNodes) {
     if (!selectedNodes) return;
-    console.log(`[Admin Panel] Updating admin panel location: ${selectedNodes}`);
     if (selectedNodes.indexOf("-") !== -1) return;
 
     let selectedNodeInt = parseInt(selectedNodes);
@@ -206,18 +205,16 @@ async function updateAdminPanelLocation(selectedNodes) {
     if (installResponse.ok){
         const installJson = await installResponse.json();
         if (installJson.node && installJson.node.network_number)  {
-            admin_panel_iframe.src = `/admin/meshapi/node/${installJson.node.id}/change`;
+            adminPanelIframe.src = `/admin/meshapi/node/${installJson.node.id}/change`;
         } else {
-            admin_panel_iframe.src = `/admin/meshapi/install/${installJson.id}/change`;
+            adminPanelIframe.src = `/admin/meshapi/install/${installJson.id}/change`;
         }
     } else {
         if (nodeResponse.ok)  {
             const nodeJson = await nodeResponse.json();
-            admin_panel_iframe.src = `/admin/meshapi/node/${nodeJson.id}/change`;
+            adminPanelIframe.src = `/admin/meshapi/node/${nodeJson.id}/change`;
         }
     }
-
-    console.log(`Admin Panel src set to: ${admin_panel_iframe.src}`);
 
     // Restore the listener
     listenForAdminPanelLoad();
@@ -249,7 +246,7 @@ async function updateMapLocation(url) {
 // Helper function to wrap everything that needs to happen when the admin panel
 // loads
 async function onAdminPanelLoad() {
-    const adminPanelIframeUrl = new URL(admin_panel_iframe.contentWindow.location.href);
+    const adminPanelIframeUrl = new URL(adminPanelIframe.contentWindow.location.href);
     
     // If the admin panel iframe leaves the admin panel (by logging out, going to homescreen, etc)
     // we should leave this iframed view and go there.
@@ -272,12 +269,12 @@ async function onAdminPanelLoad() {
 
 // Configures the listener that updates the map based on admin panel activity
 async function listenForAdminPanelLoad() {
-    admin_panel_iframe.addEventListener("load", onAdminPanelLoad);
+    adminPanelIframe.addEventListener("load", onAdminPanelLoad);
 }
 
 // See above
 async function dontListenForAdminPanelLoad() {
-    admin_panel_iframe.removeEventListener("load", onAdminPanelLoad);
+    adminPanelIframe.removeEventListener("load", onAdminPanelLoad);
 }
 
 // Checks local storage for the last page the user navigated to, and directs them
@@ -286,11 +283,10 @@ async function readURLBar() {
     // If the window's URL has more than just /admin/, then we wanna
     // override our stored page and replace it with that.
     const entryPath = new URL(window.location.href).pathname;
-    console.log(`Entry Path: ${entryPath}`);
     const entrypointRegex = /^(\/?admin\/?)$/;
     if (!entryPath.match(entrypointRegex)) {
       const newEntryPath = entryPath.replace(PANEL_URL, "admin");
-      document.getElementById("admin_panel_iframe").src = newEntryPath;
+      adminPanelIframe.src = newEntryPath;
       localStorage.setItem(MESHDB_LAST_PAGE_VISITED, newEntryPath);
     }
 }
@@ -313,10 +309,9 @@ function interceptLinks() {
     // Browser back
     window.addEventListener('popstate', function(event) {
         async function handler() {
-            admin_panel_iframe.src = location.href;
+            adminPanelIframe.src = location.href;
         }
         handler()
-        // console.log(location.href);
         event.preventDefault()
     }, false);
 }

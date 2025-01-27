@@ -7,9 +7,7 @@
   <head>
     <script>
       const MAP_BASE_URL = "{% get_env_var 'ADMIN_MAP_BASE_URL' %}";
-      // FIXME (wdn): This is inherited from the admin panel this document
-      // replaces. Is that desired? Do we need to get rid of that?
-      //const PANEL_URL = "/admin/iframe_wrapper/";
+      // PANEL_URL is necessary, but inherited from the admin panel
     </script>
     <!--We don't want people navigating to this URL, so we're gonna redirect them
     if they find themselves here-->
