@@ -390,7 +390,6 @@ function hideMapIfAppropriate() {
     if (mapDisabled) {
         document.getElementById('map_panel_div').classList.add("hidden");
         document.getElementById('map_controls').classList.add("hidden");
-        //document.getElementById('main').classList.remove("flex");
 
         if (!isMobile) {
             const showMapButton = document.getElementById('show_map_button');
