@@ -45,8 +45,6 @@ async function checkIframed() {
     return;
   }
   
-  // FIXME (wdn): This might not totally clear the state after all, since the variables
-  // from /admin are still hanging around
   document.open(); // Clears the screen
   document.write(await response.text());
   document.close();
