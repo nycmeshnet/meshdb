@@ -135,7 +135,7 @@ def import_and_sync_uisp_devices(uisp_devices: List[UISPDevice]) -> None:
                 width=guessed_beam_width,
                 radius=DEFAULT_SECTOR_RADIUS,
             )
-            sector.save()
+            sector.save_without_historical_record()
 
             if guessed_compass_heading:
                 azimuth_message = (
@@ -162,7 +162,7 @@ def import_and_sync_uisp_devices(uisp_devices: List[UISPDevice]) -> None:
             )
         else:
             device = Device(**device_fields)
-            device.save()
+            device.save_without_historical_record()
 
     with transaction.atomic():
         for device in Device.objects.filter(uisp_id__isnull=False):
@@ -171,7 +171,7 @@ def import_and_sync_uisp_devices(uisp_devices: List[UISPDevice]) -> None:
             if device.uisp_id and device.uisp_id not in uisp_uuid_set and device.status != Device.DeviceStatus.INACTIVE:
                 # If this device has been removed from UISP, mark it as inactive
                 device.status = Device.DeviceStatus.INACTIVE
-                device.save()
+                device.save_without_historical_record()
 
                 notify_admins_of_changes(
                     device,
@@ -298,7 +298,7 @@ def import_and_sync_uisp_links(uisp_links: List[UISPDataLink]) -> None:
             abandon_date=None,
             description=None,
         )
-        link.save()
+        link.save_without_historical_record()
 
         if uisp_link_type == Link.LinkType.ETHERNET:
             notify_admins_of_changes(
@@ -315,7 +315,7 @@ def import_and_sync_uisp_links(uisp_links: List[UISPDataLink]) -> None:
             if link.uisp_id and link.uisp_id not in uisp_uuid_set and link.status == Link.LinkStatus.ACTIVE:
                 # If this link has been removed from UISP, mark it as inactive
                 link.status = Link.LinkStatus.INACTIVE
-                link.save()
+                link.save_without_historical_record()
 
                 notify_admins_of_changes(
                     link,
@@ -364,7 +364,7 @@ def sync_link_table_into_los_objects() -> None:
                     if existing_los.source == LOS.LOSSource.EXISTING_LINK and link.last_functioning_date_estimate:
                         existing_los.analysis_date = link.last_functioning_date_estimate
 
-                    existing_los.save()
+                    existing_los.save_without_historical_record()
                 continue
 
         los = LOS(
@@ -374,4 +374,4 @@ def sync_link_table_into_los_objects() -> None:
             analysis_date=link.last_functioning_date_estimate,
             notes=f"Created automatically from Link ID {link.id} ({str(link)})\n\n",
         )
-        los.save()
+        los.save_without_historical_record()
