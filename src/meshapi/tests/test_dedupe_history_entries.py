@@ -1,8 +1,5 @@
-from datetime import datetime, date, timezone
 from django.core import management
-from uuid import UUID
 from django.test import TestCase
-from simple_history.models import HistoricalRecords
 
 from meshapi.models.devices.device import Device
 from meshapi.models.link import Link
@@ -52,6 +49,10 @@ class TestDedupeHistoryEntries(TestCase):
         )
         self.device2.save()
 
+        # This is a genuine change
+        self.device2.name="hi mom"
+        self.device2.save()
+
         self.device3 = Device(
             node=self.node3,
             status=Device.DeviceStatus.ACTIVE,
@@ -76,7 +77,6 @@ class TestDedupeHistoryEntries(TestCase):
         self.link.save()
         self.link.save()
 
-
     def test_deduplicate_history(self):
         # Ensure link has 4 entries
         self.assertEqual(4, len(self.link.history.all()))
@@ -85,11 +85,11 @@ class TestDedupeHistoryEntries(TestCase):
         self.assertEqual(3, len(self.device3.history.all()))
 
         # etc
-        self.assertEqual(1, len(self.device2.history.all()))
+        self.assertEqual(2, len(self.device2.history.all()))
+        self.assertEqual(1, len(self.device1.history.all()))
 
         management.call_command("dedupe_history_entries")
         self.assertEqual(1, len(self.link.history.all()))
         self.assertEqual(1, len(self.device3.history.all()))
-        self.assertEqual(1, len(self.device2.history.all()))
-        
-
+        self.assertEqual(2, len(self.device2.history.all()))
+        self.assertEqual(1, len(self.device1.history.all()))
