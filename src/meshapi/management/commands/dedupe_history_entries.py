@@ -7,6 +7,7 @@ from django.db import models, transaction
 
 from meshapi.models.devices.device import Device
 from meshapi.models.link import Link
+from meshapi.models.los import LOS
 
 
 class Command(BaseCommand):
@@ -16,8 +17,9 @@ class Command(BaseCommand):
         pass
 
     def handle(self, *args: Any, **options: Any) -> None:
-        # self.deduplicate_history(Link.objects.all())
+        self.deduplicate_history(Link.objects.all())
         self.deduplicate_history(Device.objects.all())
+        self.deduplicate_history(LOS.objects.all())
 
     def deduplicate_history(self, model_objects: models.QuerySet):
         for m in model_objects:
@@ -32,12 +34,13 @@ class Command(BaseCommand):
                     # This is the history object that last changed something
                     last_meaningful_history = None
                     for h in history:
+                        # Grab the first history object we come across
                         if not last_meaningful_history:
                             last_meaningful_history = h
                             continue
                         delta = last_meaningful_history.diff_against(
                             h, 
-                            # foreign_keys_are_objs=foreign_keys_are_objs
+                            foreign_keys_are_objs=False # This makes foreign keys show up as UUIDs
                         )
                         # If there were fields that changed meaningfully, then
                         # track that by updating last_meaningful_history and
@@ -48,15 +51,9 @@ class Command(BaseCommand):
                             continue
 
                         # Otherwise, delete the history object
-                        #logging.info("Deleting history")
                         h.delete()
-
-                        #import pdb; pdb.set_trace()
-                        #if not h.history_user_id:
-                        #    #logging.info(f"Deleting history record with user_id = None: {h}")
-                        #    h.delete()
 
                 except Exception as e:
                     logging.exception(f"Could not get history for this link: {e}")
                     raise e
-            input("Press any key.")
+            #input("Press any key.")
