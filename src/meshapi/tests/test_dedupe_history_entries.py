@@ -50,7 +50,7 @@ class TestDedupeHistoryEntries(TestCase):
         self.device2.save()
 
         # This is a genuine change
-        self.device2.name="hi mom"
+        self.device2.name = "hi mom"
         self.device2.save()
 
         self.device3 = Device(
