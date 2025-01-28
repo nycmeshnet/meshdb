@@ -1,5 +1,5 @@
-from argparse import ArgumentParser
 import logging
+from argparse import ArgumentParser
 from typing import Any
 
 from django.core.management.base import BaseCommand
@@ -21,7 +21,7 @@ class Command(BaseCommand):
         self.deduplicate_history(Device.objects.all())
         self.deduplicate_history(LOS.objects.all())
 
-    def deduplicate_history(self, model_objects: models.QuerySet):
+    def deduplicate_history(self, model_objects: models.QuerySet) -> None:
         for m in model_objects:
             logging.info(f"{m.id}, {m}")
             # Delete history from each object. Atomic block makes it go faster
@@ -39,8 +39,7 @@ class Command(BaseCommand):
                             last_meaningful_history = h
                             continue
                         delta = last_meaningful_history.diff_against(
-                            h, 
-                            foreign_keys_are_objs=False # This makes foreign keys show up as UUIDs
+                            h, foreign_keys_are_objs=False  # This makes foreign keys show up as UUIDs
                         )
                         # If there were fields that changed meaningfully, then
                         # track that by updating last_meaningful_history and
@@ -56,4 +55,3 @@ class Command(BaseCommand):
                 except Exception as e:
                     logging.exception(f"Could not get history for this link: {e}")
                     raise e
-            #input("Press any key.")
