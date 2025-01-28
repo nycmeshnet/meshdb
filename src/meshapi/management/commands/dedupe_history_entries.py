@@ -39,8 +39,18 @@ class Command(BaseCommand):
                             h, 
                             # foreign_keys_are_objs=foreign_keys_are_objs
                         )
-                        print(delta)
-                        return
+                        # If there were fields that changed meaningfully, then
+                        # track that by updating last_meaningful_history and
+                        # keep going
+                        if delta.changes or delta.changed_fields:
+                            logging.info(f"Preserving Change: {delta}")
+                            last_meaningful_history = h
+                            continue
+
+                        # Otherwise, delete the history object
+                        #logging.info("Deleting history")
+                        h.delete()
+
                         #import pdb; pdb.set_trace()
                         #if not h.history_user_id:
                         #    #logging.info(f"Deleting history record with user_id = None: {h}")
@@ -49,4 +59,4 @@ class Command(BaseCommand):
                 except Exception as e:
                     logging.exception(f"Could not get history for this link: {e}")
                     raise e
-
+            input("Press any key.")
