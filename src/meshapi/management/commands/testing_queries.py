@@ -17,12 +17,12 @@ class Command(BaseCommand):
         pass
 
     def handle(self, *args: Any, **options: Any) -> None:
-        self.deduplicate_history(Link.objects.all())
-        self.deduplicate_history(Device.objects.all())
-        self.deduplicate_history(LOS.objects.all())
 
-    def deduplicate_history(self, model_objects: models.QuerySet) -> None:
-        for m in model_objects:
+        field_query = f"({', '.join(field.name for field in Link._meta.fields)})"
+        print(field_query)
+        return
+
+        for m in Link.objects.all():
             history_model = m.history.model
             table_name = history_model._meta.db_table
 
@@ -64,10 +64,10 @@ class Command(BaseCommand):
                     logging.info(f"Deleting {deleted_records} from {m.id}, {m}")
 
                     # Nuke history for this object
-                    with connection.cursor() as cursor:
+                    with connection.cursor() as c:
                         query = f"DELETE FROM {table_name} WHERE id = '{m.id}'"
                         #logging.info(query)
-                        cursor.execute(query)
+                        c.execute(query)
 
                     # Replace the history with meaningful history
                     for mh in meaningful_history:
