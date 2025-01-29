@@ -1,6 +1,7 @@
 import logging
 import os
 
+import celery
 from celery.schedules import crontab
 from django.core import management
 from flags.state import disable_flag, enable_flag
@@ -84,6 +85,14 @@ def run_update_from_uisp() -> None:
         logging.exception(e)
         raise e
 
+@celery_app.task
+@skip_if_flag_disabled("TASK_ENABLED_CLEAN_DUPLICATE_HISTORY")
+def run_clean_duplicate_history() -> None:
+    logging.info("Cleaning duplicate history...")
+    try:
+        management.call_command("clean_duplicate_history", "--auto")
+    except Exception:
+        logging.exception("Failed to run django-simple-history command clean_duplicate_history")
 
 jitter_minutes = 0 if MESHDB_ENVIRONMENT == "prod2" else 2
 
@@ -95,6 +104,10 @@ celery_app.conf.beat_schedule = {
     "import-from-uisp-hourly": {
         "task": "meshapi.tasks.run_update_from_uisp",
         "schedule": crontab(minute=str(jitter_minutes + 10), hour="*/1"),
+    },
+    "clean-duplicate-history-daily": {
+        "task": "meshapi.tasks.run_clean_duplicate_history",
+        "schedule": crontab(minute=str(jitter_minutes + 10), hour="3"),
     },
 }
 
