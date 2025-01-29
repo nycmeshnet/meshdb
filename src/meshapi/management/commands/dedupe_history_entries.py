@@ -26,6 +26,7 @@ class Command(BaseCommand):
             logging.info(f"{m.id}, {m}")
             # Delete history from each object. Atomic block makes it go faster
             with transaction.atomic():
+                deleted_records = 0
                 try:
                     history = m.history.all()
                     # If there's no history, bail
@@ -51,7 +52,10 @@ class Command(BaseCommand):
 
                         # Otherwise, delete the history object
                         h.delete()
-
+                        deleted_records += 1
                 except Exception as e:
                     logging.exception(f"Could not get history for this link: {e}")
                     raise e
+
+                logging.info(f"Deleted {deleted_records} records.")
+
