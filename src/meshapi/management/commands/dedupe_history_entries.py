@@ -50,7 +50,7 @@ class Command(BaseCommand):
                         # track that by updating last_meaningful_history and
                         # keep going
                         if delta.changes or delta.changed_fields:
-                            #logging.info(f"Preserving Change: {delta}")
+                            # logging.info(f"Preserving Change: {delta}")
                             meaningful_history.append(h)
                             continue
 
@@ -66,7 +66,7 @@ class Command(BaseCommand):
                     # Nuke history for this object
                     with connection.cursor() as cursor:
                         query = f"DELETE FROM {table_name} WHERE id = '{m.id}'"
-                        #logging.info(query)
+                        # logging.info(query)
                         cursor.execute(query)
 
                     # Replace the history with meaningful history
