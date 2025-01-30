@@ -353,6 +353,116 @@ class TestUISPImportUtils(TestCase):
         )
 
 
+class TestUISPImportUpdateObjectsAndDontDuplicateHistory(TransactionTestCase):
+    def setUp(self):
+        self.node1 = Node(
+            network_number=1234,
+            status=Node.NodeStatus.ACTIVE,
+            type=Node.NodeType.STANDARD,
+            latitude=0,
+            longitude=0,
+        )
+        self.node1.save()
+
+        self.node2 = Node(
+            network_number=5678,
+            status=Node.NodeStatus.ACTIVE,
+            type=Node.NodeType.STANDARD,
+            latitude=0,
+            longitude=0,
+        )
+        self.node2.save()
+
+        self.node3 = Node(
+            network_number=9012,
+            status=Node.NodeStatus.ACTIVE,
+            type=Node.NodeType.STANDARD,
+            latitude=0,
+            longitude=0,
+        )
+        self.node3.save()
+
+        self.device1 = Device(
+            node=self.node1,
+            status=Device.DeviceStatus.ACTIVE,
+            name="nycmesh-1234-dev1",
+        )
+        self.device1.save()
+
+        self.device2 = Device(
+            node=self.node2,
+            status=Device.DeviceStatus.ACTIVE,
+            name="nycmesh-5678-dev2",
+        )
+        self.device2.save()
+
+        self.device3 = Device(
+            node=self.node3,
+            status=Device.DeviceStatus.ACTIVE,
+            name="nycmesh-9012-dev3",
+        )
+        self.device3.save()
+
+        self.link = Link(
+            from_device=self.device1,
+            to_device=self.device2,
+            status=Link.LinkStatus.ACTIVE,
+            type=Link.LinkType.FIVE_GHZ,
+            uisp_id="fake-uisp-uuid",
+        )
+        self.link.save()
+
+    @patch("meshapi.util.uisp_import.update_objects.get_uisp_link_last_seen")
+    def test_update_link_many_changes_and_dont_duplicate_history(self, mock_get_last_seen):
+        last_seen_date = datetime.datetime(2018, 11, 14, 15, 20, 32, 4000, tzinfo=tzutc())
+        mock_get_last_seen.return_value = last_seen_date
+
+        # Just one change from when we created it
+        self.assertEqual(1, len(self.link.history.all()))
+
+        change_messages = update_link_from_uisp_data(
+            self.link,
+            uisp_link_id="fake-uisp-uuid2",
+            uisp_from_device=self.device1,
+            uisp_to_device=self.device3,
+            uisp_status=Link.LinkStatus.INACTIVE,
+        )
+
+        self.link.refresh_from_db()
+        self.assertEqual(self.link.uisp_id, "fake-uisp-uuid2")
+        self.assertEqual(self.link.from_device, self.device1)
+        self.assertEqual(self.link.to_device, self.device3)
+        self.assertEqual(self.link.status, Link.LinkStatus.INACTIVE)
+        self.assertEqual(self.link.type, Link.LinkType.FIVE_GHZ)
+        self.assertEqual(self.link.abandon_date, last_seen_date.date())
+
+        # lol, uuid is non-deterministic.
+        self.assertEqual(
+            change_messages,
+            [
+                'Changed UISP link ID to fake-uisp-uuid2 for NN1234 ↔ NN5678 link (ID '
+                f'{self.link.id}). This is likely due to a UISP UUID '
+                'rotation',
+                "Changed connected device pair from [nycmesh-1234-dev1, nycmesh-5678-dev2] to [nycmesh-1234-dev1, nycmesh-9012-dev3]",
+                "Marked as Inactive due to it being offline in UISP for more than 30 days",
+            ],
+        )
+
+        # Legitimite update
+        self.assertEqual(2, len(self.link.history.all()))
+
+        change_messages = update_link_from_uisp_data(
+            self.link,
+            uisp_link_id="fake-uisp-uuid2",
+            uisp_from_device=self.device1,
+            uisp_to_device=self.device3,
+            uisp_status=Link.LinkStatus.INACTIVE,
+        )
+
+        # Don't make another history object
+        self.link.refresh_from_db()
+        self.assertEqual(2, len(self.link.history.all()))
+
 class TestUISPImportUpdateObjects(TransactionTestCase):
     def setUp(self):
         self.node1 = Node(
@@ -417,6 +527,9 @@ class TestUISPImportUpdateObjects(TransactionTestCase):
         last_seen_date = datetime.datetime(2018, 11, 14, 15, 20, 32, 4000, tzinfo=tzutc())
         mock_get_last_seen.return_value = last_seen_date
 
+        # Just one change from when we created it
+        self.assertEqual(1, len(self.link.history.all()))
+
         change_messages = update_link_from_uisp_data(
             self.link,
             uisp_link_id="fake-uisp-uuid2",
@@ -444,6 +557,22 @@ class TestUISPImportUpdateObjects(TransactionTestCase):
                 "Marked as Inactive due to it being offline in UISP for more than 30 days",
             ],
         )
+
+        # Legitimite update
+        self.assertEqual(2, len(self.link.history.all()))
+
+        change_messages = update_link_from_uisp_data(
+            self.link,
+            uisp_link_id="fake-uisp-uuid2",
+            uisp_from_device=self.device1,
+            uisp_to_device=self.device3,
+            uisp_status=Link.LinkStatus.INACTIVE,
+        )
+
+        # Don't make another history object
+        self.link.refresh_from_db()
+        self.assertEqual(2, len(self.link.history.all()))
+
 
     @patch("meshapi.util.uisp_import.update_objects.get_uisp_link_last_seen")
     def test_update_link_add_abandon_date(self, mock_get_last_seen):
@@ -1848,6 +1977,8 @@ class TestUISPImportHandlers(TransactionTestCase):
         )
         los2.save()
 
+        self.assertEqual(1, len(los1.history.all()))
+
         sync_link_table_into_los_objects()
 
         los1.refresh_from_db()
@@ -1861,6 +1992,13 @@ class TestUISPImportHandlers(TransactionTestCase):
         self.assertEqual(los2.to_building, self.building3)
         self.assertEqual(los2.source, LOS.LOSSource.EXISTING_LINK)
         self.assertEqual(los2.analysis_date, datetime.date.today())
+
+        self.assertEqual(2, len(los1.history.all()))
+
+        sync_link_table_into_los_objects()
+
+        los1.refresh_from_db()
+        self.assertEqual(2, len(los1.history.all()))
 
     def test_sync_links_with_los_inactive_link(self):
         self.link1.status = Link.LinkStatus.INACTIVE
