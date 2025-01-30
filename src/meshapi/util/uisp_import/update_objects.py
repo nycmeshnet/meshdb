@@ -80,7 +80,10 @@ def update_device_from_uisp_data(
         existing_device.abandon_date = uisp_last_seen.date()
         change_messages.append(f"Added missing abandon date of {existing_device.abandon_date} based on UISP last-seen")
 
-    existing_device.save()
+    # Only update the device if we actually changed anything to avoid making
+    # duplicate entries
+    if change_messages:
+        existing_device.save()
 
     if fire_device_deactivated_hook:
         hook_event.send(
@@ -104,7 +107,7 @@ def update_link_from_uisp_data(
 
     if uisp_link_id != existing_link.uisp_id:
         existing_link.uisp_id = uisp_link_id
-        logging.info(
+        change_messages.append(
             f"Changed UISP link ID to {uisp_link_id} for {existing_link} link (ID {existing_link.id}). "
             f"This is likely due to a UISP UUID rotation"
         )
@@ -162,5 +165,8 @@ def update_link_from_uisp_data(
         existing_link.abandon_date = uisp_last_seen.date()
         change_messages.append(f"Added missing abandon date of {existing_link.abandon_date} based on UISP last-seen")
 
-    existing_link.save()
+    # Only save the object if there actually are change_messages, otherwise don't
+    # to avoid creating an unnecessary object.
+    if change_messages:
+        existing_link.save()
     return change_messages
