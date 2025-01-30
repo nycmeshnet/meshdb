@@ -375,11 +375,16 @@ def sync_link_table_into_los_objects() -> None:
                         changed_los = True
 
                     # Keep the LOS analysis date accurate for all that come from existing links
-                    if existing_los.source == LOS.LOSSource.EXISTING_LINK and link.last_functioning_date_estimate:
+                    if (
+                        existing_los.source == LOS.LOSSource.EXISTING_LINK
+                        and link.last_functioning_date_estimate
+                        and existing_los.analysis_date != link.last_functioning_date_estimate
+                    ):
                         existing_los.analysis_date = link.last_functioning_date_estimate
                         changed_los = True
 
                     if changed_los:
+                        print("changed los")
                         existing_los.save()
                 continue
 

@@ -352,6 +352,7 @@ class TestUISPImportUtils(TestCase):
             " - Mock change 2",
         )
 
+
 class TestUISPImportUpdateObjects(TransactionTestCase):
     def setUp(self):
         self.node1 = Node(
@@ -439,9 +440,9 @@ class TestUISPImportUpdateObjects(TransactionTestCase):
         self.assertEqual(
             change_messages,
             [
-                'Changed UISP link ID to fake-uisp-uuid2 for NN1234 ↔ NN5678 link (ID '
-                f'{self.link.id}). This is likely due to a UISP UUID '
-                'rotation',
+                "Changed UISP link ID to fake-uisp-uuid2 for NN1234 ↔ NN5678 link (ID "
+                f"{self.link.id}). This is likely due to a UISP UUID "
+                "rotation",
                 "Changed connected device pair from [nycmesh-1234-dev1, nycmesh-5678-dev2] to [nycmesh-1234-dev1, nycmesh-9012-dev3]",
                 "Marked as Inactive due to it being offline in UISP for more than 30 days",
             ],
@@ -462,7 +463,6 @@ class TestUISPImportUpdateObjects(TransactionTestCase):
         # And it SHOULD NOT make another history object
         self.link.refresh_from_db()
         self.assertEqual(2, len(self.link.history.all()))
-
 
     @patch("meshapi.util.uisp_import.update_objects.get_uisp_link_last_seen")
     def test_update_link_add_abandon_date(self, mock_get_last_seen):
