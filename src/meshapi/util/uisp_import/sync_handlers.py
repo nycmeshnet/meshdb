@@ -245,8 +245,6 @@ def import_and_sync_uisp_links(uisp_links: List[UISPDataLink]) -> None:
                     message=f"Possible duplicate objects detected, links share the same UISP ID ({uisp_uuid})",
                 )
 
-            # XXX (wdn): Do we want to make a history record in this case? I _think_ so?
-            # maybe i dont understand this well enough
             if not existing_links:
                 # Under some circumstances, UISP randomly changes the internal ID it uses for
                 # ethernet link objects. We attempt to detect that here, by finding existing MeshDB
