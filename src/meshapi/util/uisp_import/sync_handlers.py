@@ -133,7 +133,6 @@ def import_and_sync_uisp_devices(uisp_devices: List[UISPDevice]) -> None:
             )
 
             # Only when we're sure the sector doesn't exist do we save it
-            # XXX (wdn): is this the only place we try to save sectors in here?
             sector = Sector(
                 **device_fields,
                 azimuth=guessed_compass_heading or DEFAULT_SECTOR_AZIMUTH,

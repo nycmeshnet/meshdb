@@ -436,13 +436,9 @@ class TestUISPImportUpdateObjects(TransactionTestCase):
         self.assertEqual(self.link.type, Link.LinkType.FIVE_GHZ)
         self.assertEqual(self.link.abandon_date, last_seen_date.date())
 
-        # lol, uuid is non-deterministic.
         self.assertEqual(
             change_messages,
             [
-                "Changed UISP link ID to fake-uisp-uuid2 for NN1234 ↔ NN5678 link (ID "
-                f"{self.link.id}). This is likely due to a UISP UUID "
-                "rotation",
                 "Changed connected device pair from [nycmesh-1234-dev1, nycmesh-5678-dev2] to [nycmesh-1234-dev1, nycmesh-9012-dev3]",
                 "Marked as Inactive due to it being offline in UISP for more than 30 days",
             ],

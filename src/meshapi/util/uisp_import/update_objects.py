@@ -1,4 +1,5 @@
 import datetime
+import logging
 from typing import List, Optional
 
 import requests
@@ -104,12 +105,17 @@ def update_link_from_uisp_data(
 ) -> List[str]:
     change_messages = []
 
+    # We can't add change messages because they're super spammy,
+    # so use this to determine if we should save when changing the uisp_id.
+    uisp_link_id_changed = False
+
     if uisp_link_id != existing_link.uisp_id:
         existing_link.uisp_id = uisp_link_id
-        change_messages.append(
+        logging.info(
             f"Changed UISP link ID to {uisp_link_id} for {existing_link} link (ID {existing_link.id}). "
             f"This is likely due to a UISP UUID rotation"
         )
+        uisp_link_id_changed = True
 
     uisp_device_pair = {uisp_to_device, uisp_from_device}
     db_device_pair = {existing_link.from_device, existing_link.to_device}
@@ -166,6 +172,6 @@ def update_link_from_uisp_data(
 
     # Only save the object if there actually are change_messages, otherwise don't
     # to avoid creating an unnecessary object.
-    if change_messages:
+    if change_messages or uisp_link_id_changed:
         existing_link.save()
     return change_messages
