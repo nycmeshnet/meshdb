@@ -51,5 +51,5 @@ jobs:
       environment: prod2
       useTag: main 
     secrets: inherit
-    needs: integration_test_dev3
+    # needs: integration_test_dev3
     if: github.ref == 'refs/heads/main'
