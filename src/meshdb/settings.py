@@ -136,6 +136,7 @@ ALLOWED_HOSTS = [
     "meshdb",
     "nginx",
     "devdb.nycmesh.net",
+    "gammadb.nycmesh.net",
 ]
 
 CORS_ALLOWED_ORIGINS = [
@@ -144,6 +145,7 @@ CORS_ALLOWED_ORIGINS = [
     "https://adminmap.db.nycmesh.net",
     "https://adminmap.devdb.nycmesh.net",
     "https://devdb.nycmesh.net",
+    "https://gammadb.nycmesh.net",
 ]
 
 CORS_ALLOW_HEADERS = [
@@ -158,6 +160,7 @@ CSRF_TRUSTED_ORIGINS = [
     "http://nginx:8080",
     "https://db.nycmesh.net",
     "https://devdb.nycmesh.net",
+    "https://gammadb.nycmesh.net",
 ]
 
 if DEBUG:

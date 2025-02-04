@@ -7,6 +7,9 @@ on:
       environment:
         required: true
         type: string
+      useTag:
+        required: true
+        type: string
 
 jobs:
   deploy_to_k8s:
@@ -33,6 +36,9 @@ jobs:
         sudo ip address add dev wg1 ${{ secrets.WIREGUARD_OVERLAY_NETWORK_IP }} peer ${{ secrets.SSH_TARGET_IP }}
         sudo wg set wg1 listen-port 48123 private-key privatekey peer ${{ secrets.WIREGUARD_PEER_PUBLIC_KEY }} allowed-ips 0.0.0.0/0 endpoint ${{ secrets.WIREGUARD_ENDPOINT }}
         sudo ip link set up dev wg1
+        
+        # Ensure we can contact the target
+        ping ${{ secrets.SSH_TARGET_IP }} -w 4 || exit 1
 
     - name: Deploy Helm Chart
       run: |
@@ -75,7 +81,8 @@ jobs:
         --set meshweb.osticket_new_ticket_endpoint="${{ vars.OSTICKET_NEW_TICKET_ENDPOINT }}" \
         --set meshweb.environment="${{ inputs.environment }}" \
         --set ingress.hosts[0].host="${{ vars.INGRESS_HOST }}",ingress.hosts[0].paths[0].path=/,ingress.hosts[0].paths[0].pathType=Prefix \
-        --set ingress.hosts[1].host="${{ vars.INGRESS_HOST_LEGACY }}",ingress.hosts[1].paths[0].path=/,ingress.hosts[1].paths[0].pathType=Prefix
+        --set ingress.hosts[1].host="${{ vars.INGRESS_HOST_LEGACY }}",ingress.hosts[1].paths[0].path=/,ingress.hosts[1].paths[0].pathType=Prefix \
+        --set meshweb.image.tag="${{ inputs.useTag }}"
 
         # Rolling restart
         kubectl --kubeconfig ./config --server https://${{ secrets.SSH_TARGET_IP }}:6443 -n ${{ vars.APP_NAMESPACE }} rollout restart deploy

@@ -15,58 +15,41 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  push_to_registry:
-    name: Push Docker Image to Docker Hub
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
-    steps:
-      - name: Check out the repo
-        uses: actions/checkout@v4
-      
-      - name: Log in to Docker Hub
-        uses: docker/login-action@f4ef78c080cd8ba55a85445d5b36e214a81df20a
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-      
-      - name: Extract metadata (tags, labels) for Docker
-        id: meta
-        uses: docker/metadata-action@9ec57ed1fcdbf14dcef7dfbe97b2010124a938b7
-        with:
-          images: willnilges/meshdb
-      
-      - name: Build and push Docker image
-        uses: docker/build-push-action@3b5e8027fcad23fda98b2e3ac259d8d67585f671
-        with:
-          context: .
-          file: ./Dockerfile
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-
-  deploy_to_dev3:
-    name: Deploy to dev 3
-    uses: ./.github/workflows/deploy-to-k8s.yaml
+  # Dev and Prod use the same image
+  push_to_registry_prod:
+    name: Push to prod
+    uses: ./.github/workflows/build-push-image.yaml
     with:
-      environment: dev3
+      environment: prod
+      image_tag: willnilges/meshdb:main
     secrets: inherit
-    needs: push_to_registry
     if: github.ref == 'refs/heads/main'
 
-  integration_test_dev3:
-    name: Integration test dev 3
-    uses: ./.github/workflows/run-integ-tests.yaml
-    with:
-      environment: dev3
-    secrets: inherit
-    needs: deploy_to_dev3
-    if: github.ref == 'refs/heads/main'
+  # deploy_to_dev3:
+  #   name: Deploy to dev 3
+  #   uses: ./.github/workflows/deploy-to-k8s.yaml
+  #   with:
+  #     environment: dev3
+  #     useTag: main 
+  #   secrets: inherit
+  #   needs: push_to_registry_prod
+  #   if: github.ref == 'refs/heads/main'
+
+  # integration_test_dev3:
+  #   name: Integration test dev 3
+  #   uses: ./.github/workflows/run-integ-tests.yaml
+  #   with:
+  #     environment: dev3
+  #   secrets: inherit
+  #   needs: deploy_to_dev3
+  #   if: github.ref == 'refs/heads/main'
 
   deploy_to_prod2:
     name: Deploy to prod2
     uses: ./.github/workflows/deploy-to-k8s.yaml
     with:
       environment: prod2
+      useTag: main 
     secrets: inherit
-    needs: integration_test_dev3
+    needs: push_to_registry_prod
     if: github.ref == 'refs/heads/main'

@@ -23,13 +23,13 @@ class Install(models.Model):
         ordering = ["-install_number"]
 
     class InstallStatus(models.TextChoices):
-        REQUEST_RECEIVED = "Request Received"
-        PENDING = "Pending"
-        BLOCKED = "Blocked"
-        ACTIVE = "Active"
-        INACTIVE = "Inactive"
-        CLOSED = "Closed"
-        NN_REASSIGNED = "NN Reassigned"
+        REQUEST_RECEIVED = "Request Received", "Request Received"
+        PENDING = "Pending", "Pending"
+        BLOCKED = "Blocked", "Blocked"
+        ACTIVE = "Active", "Active"
+        INACTIVE = "Inactive", "Inactive"
+        CLOSED = "Closed", "Closed"
+        NN_REASSIGNED = "NN Reassigned", "NN Reassigned"
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
