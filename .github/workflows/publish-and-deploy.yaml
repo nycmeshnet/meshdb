@@ -32,7 +32,7 @@ jobs:
       environment: dev3
       useTag: main 
     secrets: inherit
-    needs: push_to_registry_prod
+    #needs: push_to_registry_prod
     # if: github.ref == 'refs/heads/main'
 
   integration_test_dev3:
