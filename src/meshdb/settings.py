@@ -61,6 +61,8 @@ FLAGS: Dict[str, Any] = {
 
 USE_X_FORWARDED_HOST = True
 
+X_FRAME_OPTIONS = "SAMEORIGIN"
+
 SECURE_HSTS_SECONDS = 31536000
 SECURE_HSTS_PRELOAD = False
 SECURE_HSTS_INCLUDE_SUBDOMAINS = False
@@ -170,6 +172,7 @@ if DEBUG:
 
     CORS_ALLOWED_ORIGINS += [
         "http://127.0.0.1:3000",
+        "http://127.0.0.1:3001",
         "http://localhost:3000",
         "http://127.0.0.1:80",
         "http://localhost:80",
