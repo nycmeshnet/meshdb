@@ -2,6 +2,9 @@
 {% get_current_language as LANGUAGE_CODE %}{% get_current_language_bidi as LANGUAGE_BIDI %}
 <html lang="{{ LANGUAGE_CODE|default:"en-us" }}" dir="{{ LANGUAGE_BIDI|yesno:'rtl,ltr,auto' }}">
 <head>
+<script>const PANEL_URL = "/admin/iframe_wrapper/";</script>
+<script src="{% static '/admin/mobile_check.js' %}"></script>
+<script src="{% static 'admin/iframe_check.js' %}"></script>
 <title>{% block title %}{% endblock %}</title>
 <link rel="stylesheet" href="{% block stylesheet %}{% static "admin/css/base.css" %}{% endblock %}">
 {% block dark-mode-vars %}
@@ -82,40 +85,35 @@
     {% endblock %}
     {% endif %}
 
-    <div id="map-wrapper">
-        <div class="main flex" id="main">
-          {% if not is_popup and is_nav_sidebar_enabled %}
-            {% block nav-sidebar %}
-              {% include "admin/nav_sidebar.html" %}
-            {% endblock %}
-          {% endif %}
-          <div id="content-start" class="content" tabindex="-1">
-            {% block messages %}
-              {% if messages %}
-                <ul class="messagelist">{% for message in messages %}
-                  <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message|capfirst }}</li>
-                {% endfor %}</ul>
-              {% endif %}
-            {% endblock messages %}
-            <!-- Content -->
-            <div id="content" class="{% block coltype %}colM{% endblock %}">
-              {% block pretitle %}{% endblock %}
-              {% block content_title %}{% if title %}<h1>{{ title }}</h1>{% endif %}{% endblock %}
-              {% block content_subtitle %}{% if subtitle %}<h2>{{ subtitle }}</h2>{% endif %}{% endblock %}
-              {% block content %}
-                {% block object-tools %}{% endblock %}
-                {{ content }}
-              {% endblock %}
-              {% block sidebar %}{% endblock %}
-              <br class="clear">
-            </div>
-            <!-- END Content -->
-            {% block footer %}<div id="footer"></div>{% endblock %}
-          </div>
-        </div>
-        {% block map_sidebar %}
-            {% include "admin/map_sidebar.html" %}
+    <div class="main flex" id="main">
+      {% if not is_popup and is_nav_sidebar_enabled %}
+        {% block nav-sidebar %}
+          {% include "admin/nav_sidebar.html" %}
         {% endblock %}
+      {% endif %}
+      <div id="content-start" class="content" tabindex="-1">
+        {% block messages %}
+          {% if messages %}
+            <ul class="messagelist">{% for message in messages %}
+              <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message|capfirst }}</li>
+            {% endfor %}</ul>
+          {% endif %}
+        {% endblock messages %}
+        <!-- Content -->
+        <div id="content" class="{% block coltype %}colM{% endblock %}">
+          {% block pretitle %}{% endblock %}
+          {% block content_title %}{% if title %}<h1>{{ title }}</h1>{% endif %}{% endblock %}
+          {% block content_subtitle %}{% if subtitle %}<h2>{{ subtitle }}</h2>{% endif %}{% endblock %}
+          {% block content %}
+            {% block object-tools %}{% endblock %}
+            {{ content }}
+          {% endblock %}
+          {% block sidebar %}{% endblock %}
+          <br class="clear">
+        </div>
+        <!-- END Content -->
+        {% block footer %}<div id="footer"></div>{% endblock %}
+      </div>
     </div>
 
 </div>
