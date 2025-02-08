@@ -580,6 +580,12 @@ def network_number_assignment(request: Request) -> Response:
         nn_install.status = Install.InstallStatus.PENDING
         dirty = True
 
+    other_building_installs = [install for install in nn_building.installs.all() if install != nn_install]
+    for install in other_building_installs:
+        if install.node is None:
+            dirty = True
+            install.node = nn_install.node
+
     # If nothing was changed by this request, return a 200 instead of a 201
     if not dirty:
         message = f"This Install Number ({r.install_number}) already has a "
@@ -601,6 +607,8 @@ def network_number_assignment(request: Request) -> Response:
         nn_install.node.save()
         nn_building.save()
         nn_install.save()
+        for install in other_building_installs:
+            install.save()
     except IntegrityError:
         logging.exception("NN Request failed. Could not save node number.")
         return Response(

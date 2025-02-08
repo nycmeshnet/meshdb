@@ -6,7 +6,7 @@ from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.test import TestCase
 
-from meshapi.models import Building, Install, Member
+from meshapi.models import Building, Install, Member, Node
 from meshapi.tests.sample_data import sample_building, sample_install, sample_member
 
 
@@ -42,6 +42,78 @@ class TestInstallModel(TestCase):
 
         self.assertIsNotNone(install2.id)
         self.assertEqual(install2.install_number, 89)
+
+    def test_construct_install_building_has_node(self):
+        building_node = Node(status=Node.NodeStatus.ACTIVE, latitude=0, longitude=0)
+        building_node.save()
+
+        self.building_1.primary_node = building_node
+        self.building_1.save()
+
+        install = Install(**self.sample_install_copy, install_number=45)
+        install.save()
+
+        install.refresh_from_db()
+        self.assertEqual(install.node, building_node)
+
+    def test_construct_install_building_has_node_without_primary(self):
+        building_node = Node(status=Node.NodeStatus.ACTIVE, latitude=0, longitude=0)
+        building_node.save()
+
+        self.building_1.nodes.add(building_node)
+        self.building_1.save()
+
+        install = Install(**self.sample_install_copy, install_number=45)
+        install.save()
+
+        install.refresh_from_db()
+        self.assertEqual(install.node, building_node)
+
+    def test_remove_node_when_building_has_one(self):
+        building_node = Node(status=Node.NodeStatus.ACTIVE, latitude=0, longitude=0)
+        building_node.save()
+
+        self.building_1.primary_node = building_node
+        self.building_1.save()
+
+        install = Install(**self.sample_install_copy, install_number=45)
+        install.node = building_node
+        install.save()
+
+        install.refresh_from_db()
+        self.assertEqual(install.node, building_node)
+
+        install.node = None
+        install.save()
+
+        install.refresh_from_db()
+        self.assertEqual(install.node, None)
+
+    def test_set_install_to_different_to_building(self):
+        building1_node = Node(status=Node.NodeStatus.ACTIVE, latitude=0, longitude=0)
+        building2_node = Node(status=Node.NodeStatus.ACTIVE, latitude=0, longitude=0)
+        building1_node.save()
+        building2_node.save()
+
+        self.building_1.primary_node = building1_node
+        self.building_1.save()
+
+        building2 = Building(**sample_building)
+        building2.primary_node = building2_node
+        building2.save()
+
+        install = Install(**self.sample_install_copy, install_number=45)
+        install.node = building1_node
+        install.save()
+
+        install.refresh_from_db()
+        self.assertEqual(install.node, building1_node)
+
+        install.building = building2
+        install.save()
+
+        install.refresh_from_db()
+        self.assertEqual(install.node, building1_node)
 
     def test_construct_install_yes_id_no_install_number(self):
         install = Install(
