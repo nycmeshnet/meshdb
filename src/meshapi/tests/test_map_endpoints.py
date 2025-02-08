@@ -1,6 +1,7 @@
 import datetime
 import json
 import uuid
+from unittest.mock import patch
 
 import requests_mock
 from django.test import Client, TestCase
