@@ -4,6 +4,7 @@ import uuid
 
 import requests_mock
 from django.test import Client, TestCase
+from unittest.mock import MagicMock, patch
 
 from meshapi.models import LOS, AccessPoint, Building, Device, Install, Link, Member, Node, Sector
 from meshapi.serializers import JavascriptDateField, JavascriptDatetimeField, MapDataLinkSerializer
@@ -1725,6 +1726,23 @@ class TestKiosk(TestCase):
             f"status code incorrect, should be 200, but got {response.status_code}",
         )
         self.assertEqual(len(json.loads(response.content.decode("UTF8"))), 7)
+
+    @patch("logging.warning")
+    @requests_mock.Mocker()
+    def test_kiosk_list_empty_row(self, mock_warning, city_api_call_request_mocker):
+        # On 02-07-2025, City of New York LinkNYC API changed its data, and Row 19
+        # was blank. This tests a guard I added to ensure that doesn't cause us to
+        # raise Exceptions
+        city_api_call_request_mocker.get(LINKNYC_KIOSK_DATA_URL, json=[{}])
+
+        response = self.c.get("/api/v1/mapdata/kiosks/")
+        self.assertEqual(
+            200,
+            response.status_code,
+            f"status code incorrect, should be 200, but got {response.status_code}",
+        )
+        mock_warning.assert_called()
+        self.assertEqual(len(json.loads(response.content.decode("UTF8"))), 0)
 
     @requests_mock.Mocker()
     def test_kiosk_list_bad_fetch(self, city_api_call_request_mocker):

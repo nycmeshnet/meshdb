@@ -452,6 +452,9 @@ class KioskListWrapper(APIView):
 
             kiosks = []
             for row in data:
+                if not row:
+                    logging.warning("Got empty row from City of New York LinkNYC kiosk dataset. Skipping row and moving on.")
+                    continue
                 coordinates = [float(row["longitude"]), float(row["latitude"])]
                 kiosk_status = LINKNYC_KIOSK_STATUS_TRANSLATION.get(row["link_installation_status"])
                 kiosks.append(
