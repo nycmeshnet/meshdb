@@ -1,10 +1,10 @@
 import datetime
 import json
 import uuid
+from unittest.mock import MagicMock, patch
 
 import requests_mock
 from django.test import Client, TestCase
-from unittest.mock import MagicMock, patch
 
 from meshapi.models import LOS, AccessPoint, Building, Device, Install, Link, Member, Node, Sector
 from meshapi.serializers import JavascriptDateField, JavascriptDatetimeField, MapDataLinkSerializer
