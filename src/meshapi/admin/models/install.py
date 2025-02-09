@@ -174,10 +174,10 @@ class InstallAdmin(RankedSearchMixin, ImportExportMixin, ExportActionMixin, Simp
             pass
         return queryset, may_have_duplicates
 
-    def get_node_status(self, obj):
+    def get_node_status(self, obj: Install) -> str:
         if not obj.node or not obj.node.status:
             return "-"
         return obj.node.status
 
-    get_node_status.short_description = 'Status'
-    get_node_status.admin_order_field = 'node__status'
+    get_node_status.short_description = "Status"  # type: ignore[attr-defined]
+    get_node_status.admin_order_field = "node__status"  # type: ignore[attr-defined]
