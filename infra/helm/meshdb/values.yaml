@@ -47,11 +47,11 @@ meshweb:
   securityContext: {}
   resources:
     limits:
-      cpu: 1
-      memory: 512Mi
+      cpu: "1"
+      memory: 2Gi
     requests:
       cpu: 384m
-      memory: 512Mi
+      memory: 1Gi
   nodeSelector: {}
   affinity: {}
   tolerations: []
