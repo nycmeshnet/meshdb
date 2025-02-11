@@ -83,6 +83,9 @@ def import_and_sync_uisp_devices(uisp_devices: List[UISPDevice]) -> None:
             parse_uisp_datetime(uisp_device["overview"]["lastSeen"]) if uisp_device["overview"]["lastSeen"] else None
         )
 
+        # This block guards against most duplication by checking uisp-uuid against
+        # the uisp-uuids we already know about.
+        # Further avoidance of saving historical records is done in the update function
         with transaction.atomic():
             existing_devices: List[Device] = list(Device.objects.filter(uisp_id=uisp_uuid).select_for_update())
             if existing_devices:
@@ -129,6 +132,7 @@ def import_and_sync_uisp_devices(uisp_devices: List[UISPDevice]) -> None:
                 uisp_device["identification"]["model"], DEFAULT_SECTOR_WIDTH
             )
 
+            # Only when we're sure the sector doesn't exist do we save it
             sector = Sector(
                 **device_fields,
                 azimuth=guessed_compass_heading or DEFAULT_SECTOR_AZIMUTH,
@@ -286,6 +290,8 @@ def import_and_sync_uisp_links(uisp_links: List[UISPDataLink]) -> None:
                         notify_admins_of_changes(existing_link, change_list)
                 continue
 
+        # By now, we're reasonably sure the link doesn't exist, so go ahead and
+        # create it.
         link = Link(
             from_device=uisp_from_device,
             to_device=uisp_to_device,
@@ -355,18 +361,32 @@ def sync_link_table_into_los_objects() -> None:
 
             if len(existing_los_objects):
                 for existing_los in existing_los_objects:
+                    # Keep track of whether or not we actually changed anything,
+                    # so that we don't unnecessarily save later.
+                    changed_los = False
+
                     # Supersede manually annotated LOSes with their auto-generated counterparts,
                     # once they come online as links
                     if link.status == Link.LinkStatus.ACTIVE and existing_los.source == LOS.LOSSource.HUMAN_ANNOTATED:
                         existing_los.source = LOS.LOSSource.EXISTING_LINK
+                        changed_los = True
 
                     # Keep the LOS analysis date accurate for all that come from existing links
-                    if existing_los.source == LOS.LOSSource.EXISTING_LINK and link.last_functioning_date_estimate:
+                    if (
+                        existing_los.source == LOS.LOSSource.EXISTING_LINK
+                        and link.last_functioning_date_estimate
+                        and existing_los.analysis_date != link.last_functioning_date_estimate
+                    ):
                         existing_los.analysis_date = link.last_functioning_date_estimate
+                        changed_los = True
 
-                    existing_los.save()
+                    if changed_los:
+                        print("changed los")
+                        existing_los.save()
                 continue
 
+        # At this point, we're reasonably sure the LOS does not exist, so go ahead
+        # and create a new one.
         los = LOS(
             from_building=from_building,
             to_building=to_building,
