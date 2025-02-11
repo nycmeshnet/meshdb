@@ -179,5 +179,5 @@ class InstallAdmin(RankedSearchMixin, ImportExportMixin, ExportActionMixin, Simp
             return "-"
         return obj.node.status
 
-    get_node_status.short_description = "Status"  # type: ignore[attr-defined]
+    get_node_status.short_description = "Node Status"  # type: ignore[attr-defined]
     get_node_status.admin_order_field = "node__status"  # type: ignore[attr-defined]
