@@ -16,7 +16,7 @@ from meshapi.views.forms import JoinFormRequest
 JOIN_RECORD_ENDPOINT = os.environ.get("S3_ENDPOINT", None)
 
 JOIN_RECORD_BUCKET_NAME = os.environ.get("JOIN_RECORD_BUCKET_NAME")
-JOIN_RECORD_PREFIX = os.environ.get("JOIN_RECORD_PREFIX", "sample-basename")
+JOIN_RECORD_PREFIX = os.environ.get("JOIN_RECORD_PREFIX")
 
 
 class SubmissionStage(Enum):
