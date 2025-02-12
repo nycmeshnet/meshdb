@@ -76,14 +76,8 @@ class Command(BaseCommand):
         join_records_to_replay = {}
 
         for uuid, record in consistent_join_records_dict.items():
-            if not options["all"]:
-                # Ignore submissions that are known good
-                if record.install_number:
-                    continue
-
-                # Don't bother replaying 400's. All we care about are 500's and nulls
-                if record.code and 400 <= int(record.code) and int(record.code) <= 499:
-                    continue
+            if not options["all"] and self.filter_irrelevant_record(record):
+                continue
 
             join_records_to_replay[uuid] = record
             record_as_dict = asdict(record)
@@ -182,3 +176,14 @@ class Command(BaseCommand):
     @staticmethod
     def past_week() -> datetime:
         return datetime.now(timezone.utc) - timedelta(days=7)
+
+    @staticmethod
+    def filter_irrelevant_record(record: JoinRecord) -> bool:
+        # Ignore submissions that are known good
+        if record.install_number:
+            return True
+
+        # Don't bother replaying 400's. All we care about are 500's and nulls
+        if record.code and 400 <= int(record.code) and int(record.code) <= 499:
+            return True
+        return False

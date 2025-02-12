@@ -1,0 +1,86 @@
+{% load static %}
+
+<!DOCTYPE html>
+<head>
+<style>
+h1, h3 {
+  font-family: arial, sans-serif;
+}
+
+table {
+  font-family: arial, sans-serif;
+  border-collapse: collapse;
+  width: 100%;
+}
+
+td, th {
+  border: 1px solid #dddddd;
+  text-align: left;
+  padding: 8px;
+}
+
+tr:nth-child(even) {
+  background-color: #dddddd;
+}
+</style>
+</head>
+<body>
+  <div style="display: flex; flex-direction: row; align-items: center;">
+    <img src="{% static 'meshweb/meshdb.png' %}" height="64px" style="margin: 30px 0"/>
+    <h1>MeshDB Join Record Viewer</h1>
+  </div>
+  <div style="display:flex; flex-direction: column; justify-content: space-between; margin-top: 20px" class="links">
+    {% if records %}
+    {% if not all %}
+    <h3>The following records need to be replayed:</h3>
+    {% endif %}
+    <table>
+      <tr>
+        <th>first_name</th>
+        <th>last_name</th>
+        <th>email_address</th>
+        <th>phone_number</th>
+        <th>street_address</th>
+        <th>city</th>
+        <th>state</th>
+        <th>zip_code</th>
+        <th>apartment</th>
+        <th>roof_access</th>
+        <th>referral</th>
+        <th>ncl</th>
+        <th>trust_me_bro</th>
+        <th>submission_time</th>
+        <th>code</th>
+        <th>install_number</th>
+      </tr>
+    {% for record in records %}
+      <tr>
+      <td>{{ record.first_name      }}</td>
+      <td>{{ record.last_name       }}</td>
+      <td>{{ record.email_address   }}</td>
+      <td>{{ record.phone_number    }}</td>
+      <td>{{ record.street_address  }}</td>
+      <td>{{ record.city            }}</td>
+      <td>{{ record.state           }}</td>
+      <td>{{ record.zip_code        }}</td>
+      <td>{{ record.apartment       }}</td>
+      <td>{{ record.roof_access     }}</td>
+      <td>{{ record.referral        }}</td>
+      <td>{{ record.ncl             }}</td>
+      <td>{{ record.trust_me_bro    }}</td>
+      <td>{{ record.submission_time }}</td>
+      <td>{{ record.code            }}</td>
+      <td>{{ record.install_number  }}</td>
+      </tr>
+    {% endfor %}
+    </table>
+    {% else %}
+    {% if not all %}
+    <h3>All good! No records need to be replayed.</h3>
+    {% else %}
+    <h3>No records found. Check your query.</h3>
+    {% endif %}
+    {% endif %}
+  </div>
+</body>
+</html>

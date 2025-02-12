@@ -101,7 +101,9 @@ class JoinRecordProcessor:
             )
         except ClientError as e:
             # This will raise ClientError (AccessDenied) if the bucket doesn't exist.
-            logging.exception(f"Error accessing bucket. Check bucket name. JOIN_RECORD_BUCKET_NAME={JOIN_RECORD_BUCKET_NAME}")
+            logging.exception(
+                f"Error accessing bucket. Check bucket name. JOIN_RECORD_BUCKET_NAME={JOIN_RECORD_BUCKET_NAME}"
+            )
             raise e
 
         contents = response.get("Contents")
