@@ -42,17 +42,26 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args: Any, **options: Any) -> None:
-        logging.info("Fetching Join Records...")
+        # Default to getting join records from 1 week ago unless otherwise specified
+        since = options["since"] or self.past_week()
+
+        if since > datetime.now(timezone.utc):
+            logging.error("Can't fetch join records from the future! Quitting...")
+            return
 
         p = JoinRecordProcessor()
 
-        # Default to getting join records from 1 week ago unless otherwise specified
-        since = options["since"] or self.past_week()
+        logging.info("Fetching Join Records...")
 
         # Ensure that the join records in pre-submission match the ones in post-submission
         # This method will get both sets of records and supplement the post-submission
         # records if any are missing.
         consistent_join_records_dict = p.ensure_pre_post_consistency(since)
+
+        # Bail if there are no join records to show
+        if not consistent_join_records_dict:
+            logging.warning("Found no records, quitting...")
+            return
 
         table = PrettyTable()
         table.padding_width = 0
