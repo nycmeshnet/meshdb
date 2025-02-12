@@ -61,6 +61,12 @@ def s3_content_to_join_record(object_key: str, content: str) -> JoinRecord:
 
 class JoinRecordProcessor:
     def __init__(self) -> None:
+        if not JOIN_RECORD_BUCKET_NAME:
+            raise EnvironmentError("Did not find JOIN_RECORD_BUCKET_NAME")
+
+        if not JOIN_RECORD_PREFIX:
+            raise EnvironmentError("Did not find JOIN_RECORD_PREFIX")
+
         self.s3_client = boto3.client(
             "s3",
             endpoint_url=JOIN_RECORD_ENDPOINT,
