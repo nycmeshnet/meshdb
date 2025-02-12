@@ -1,5 +1,6 @@
 import logging
 from unittest.mock import patch
+
 from bs4 import BeautifulSoup
 from django.contrib.auth.models import User
 from django.test import Client, TestCase
@@ -35,8 +36,6 @@ class TestJoinRecordViewer(TestCase):
             username="admin", password="admin_password", email="admin@example.com"
         )
         self.c.login(username="admin", password="admin_password")
-
-
 
     def tearDown(self) -> None:
         self.p.flush_test_data()

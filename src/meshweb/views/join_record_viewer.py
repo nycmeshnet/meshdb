@@ -2,7 +2,6 @@ import logging
 from datetime import datetime, timezone
 
 from botocore.exceptions import ClientError
-from django.conf import settings
 from django.contrib.admin.views.decorators import staff_member_required
 from django.http import HttpRequest, HttpResponse
 from django.template import loader
@@ -13,11 +12,11 @@ from meshapi.util.join_records import JoinRecordProcessor
 
 @staff_member_required
 def join_record_viewer(request: HttpRequest) -> HttpResponse:
-    since = request.GET.get("since")
-    if not since:
+    since_param = request.GET.get("since")
+    if not since_param:
         since = replay_join_records.Command.past_week()
     else:
-        since = datetime.fromisoformat(since + "Z")
+        since = datetime.fromisoformat(since_param + "Z")
 
     if since > datetime.now(timezone.utc):
         return HttpResponse("Cannot retrieve records from the future!", 400)
