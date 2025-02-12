@@ -1,3 +1,4 @@
+import logging
 from unittest.mock import patch
 from bs4 import BeautifulSoup
 from django.contrib.auth.models import User
@@ -41,6 +42,25 @@ class TestJoinRecordViewer(TestCase):
         self.p.flush_test_data()
 
     def test_view_join_records(self):
+        response = self.c.get("/join-records/view/?since=2024-09-30T00:00:00")
+        self.assertEqual(200, response.status_code)
+
+        decoded = response.content.decode()
+        soup = BeautifulSoup(decoded, "html.parser")
+        record_table = soup.find(id="record_table")
+        self.assertIsNotNone(record_table)
+        for _, v in basic_sample_pre_submission_join_records.items():
+            logging.info(v.uuid)
+            record_row = soup.find(id=v.uuid)
+
+            # One of these will be None because it got submitted successfully.
+            if v.uuid == "109ede4d-0f84-4044-a14c-090121f0c7d4":
+                self.assertIsNone(record_row)
+                continue
+
+            self.assertIsNotNone(record_row)
+
+    def test_view_all_join_records(self):
         response = self.c.get("/join-records/view/?since=2024-09-30T00:00:00&all=True")
         self.assertEqual(200, response.status_code)
 
@@ -49,5 +69,6 @@ class TestJoinRecordViewer(TestCase):
         record_table = soup.find(id="record_table")
         self.assertIsNotNone(record_table)
         for _, v in basic_sample_pre_submission_join_records.items():
+            logging.info(v.uuid)
             record_row = soup.find(id=v.uuid)
             self.assertIsNotNone(record_row)
