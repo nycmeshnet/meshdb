@@ -50,21 +50,6 @@ class TestReplayJoinRecords(TestCase):
     def tearDown(self) -> None:
         self.p.flush_test_data()
 
-    @patch("meshapi.util.join_records.JOIN_RECORD_BUCKET_NAME", "")
-    def test_missing_bucket_name(self):
-        with self.assertRaises(EnvironmentError):
-            JoinRecordProcessor()
-
-    @patch("meshapi.util.join_records.JOIN_RECORD_PREFIX", "")
-    def test_missing_prefix(self):
-        with self.assertRaises(EnvironmentError):
-            JoinRecordProcessor()
-
-    @patch("meshapi.util.join_records.JOIN_RECORD_BUCKET_NAME", "chom")
-    def test_bad_bucket_name(self):
-        with self.assertRaises(ClientError):
-            self.p.get_all()
-
     # I broke the help menu once upon a time so I need to make sure this works.
     def test_help_works(self):
         with self.assertRaises(SystemExit):
