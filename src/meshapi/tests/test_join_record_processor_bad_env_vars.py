@@ -1,9 +1,10 @@
-
 from unittest.mock import patch
+
 from botocore.exceptions import ClientError
 from django.test import TestCase
 
 from meshapi.util.join_records import JoinRecordProcessor
+
 
 class TestJoinRecordProcessorBadEnvVars(TestCase):
     @patch("meshapi.util.join_records.JOIN_RECORD_BUCKET_NAME", "")

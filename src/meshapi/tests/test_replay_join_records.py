@@ -2,7 +2,6 @@ import json
 from datetime import datetime, timedelta, timezone
 from unittest.mock import patch
 
-from botocore.exceptions import ClientError
 from django.core import management
 from django.test import TestCase
 from moto import mock_aws
