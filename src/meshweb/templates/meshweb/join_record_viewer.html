@@ -34,7 +34,7 @@ tr:nth-child(even) {
     {% if not all %}
     <h3>The following records need to be replayed:</h3>
     {% endif %}
-    <table>
+    <table id="record_table">
       <tr>
         <th>first_name</th>
         <th>last_name</th>
@@ -54,7 +54,7 @@ tr:nth-child(even) {
         <th>install_number</th>
       </tr>
     {% for record in records %}
-      <tr>
+      <tr id="{{record.uuid}}">
       <td>{{ record.first_name      }}</td>
       <td>{{ record.last_name       }}</td>
       <td>{{ record.email_address   }}</td>

@@ -1,4 +1,7 @@
+import logging
 from datetime import datetime, timezone
+
+from botocore.exceptions import ClientError
 from django.conf import settings
 from django.contrib.admin.views.decorators import staff_member_required
 from django.http import HttpRequest, HttpResponse
@@ -22,7 +25,14 @@ def join_record_viewer(request: HttpRequest) -> HttpResponse:
     all = request.GET.get("all") == "True"
 
     template = loader.get_template("meshweb/join_record_viewer.html")
-    records = JoinRecordProcessor().ensure_pre_post_consistency(since)
+
+    try:
+        records = JoinRecordProcessor().ensure_pre_post_consistency(since)
+    except ClientError:
+        status = 503
+        m = f"({status}) Could not retrieve join records. Check bucket credentials."
+        logging.exception(m)
+        return HttpResponse(m, status)
 
     relevant_records = (
         [r for _, r in records.items() if not replay_join_records.Command.filter_irrelevant_record(r)]
