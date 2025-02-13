@@ -57,6 +57,13 @@ class TestReplayJoinRecords(TestCase):
     def test_list_records(self):
         management.call_command("replay_join_records")
 
+    @patch("logging.error")
+    def test_list_records_from_the_future(self, logging_error_fn):
+        # See you in a thousand years lmao
+        management.call_command("replay_join_records", "--since", "3000-03-10T00:00:00")
+
+        logging_error_fn.assert_called_once()
+
     def test_get_all_since(self):
         records_since = self.p.get_all(since=datetime.fromisoformat("2024-10-01 00:00:00"))
 
