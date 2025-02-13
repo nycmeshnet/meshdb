@@ -12,7 +12,7 @@ from import_export.admin import ExportActionMixin, ImportExportMixin
 from simple_history.admin import SimpleHistoryAdmin
 
 from meshapi.models import Install
-from meshapi.widgets import ExternalHyperlinkWidget
+from meshapi.widgets import ExternalHyperlinkWidget, WarnAboutDatesWidget
 
 from ..ranked_search import RankedSearchMixin
 
@@ -31,6 +31,11 @@ class InstallImportExportResource(resources.ModelResource):
 
 
 class InstallAdminForm(forms.ModelForm):
+    validate_install_abandon_date_set_widget = forms.Field(
+        required=False,
+        widget=WarnAboutDatesWidget(),
+    )
+
     class Meta:
         model = Install
         fields = "__all__"
@@ -54,7 +59,7 @@ class InstallAdmin(RankedSearchMixin, ImportExportMixin, ExportActionMixin, Simp
         "install_date",
         "abandon_date",
     ]
-    list_display = ["__str__", "status", "node", "member", "building", "unit"]
+    list_display = ["__str__", "status", "node", "get_node_status", "member", "building", "unit"]
     list_select_related = ["node", "member", "building"]
     search_fields = [
         # Install number
@@ -139,6 +144,7 @@ class InstallAdmin(RankedSearchMixin, ImportExportMixin, ExportActionMixin, Simp
                     "diy",
                     "referral",
                     "notes",
+                    "validate_install_abandon_date_set_widget",  # Hidden by widget CSS
                 ]
             },
         ),
@@ -167,3 +173,11 @@ class InstallAdmin(RankedSearchMixin, ImportExportMixin, ExportActionMixin, Simp
         except ValueError:
             pass
         return queryset, may_have_duplicates
+
+    def get_node_status(self, obj: Install) -> str:
+        if not obj.node or not obj.node.status:
+            return "-"
+        return obj.node.status
+
+    get_node_status.short_description = "Node Status"  # type: ignore[attr-defined]
+    get_node_status.admin_order_field = "node__status"  # type: ignore[attr-defined]

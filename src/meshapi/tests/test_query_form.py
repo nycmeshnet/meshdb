@@ -49,5 +49,8 @@ class TestQueryForm(TestCase):
     def test_query_email(self):
         self.query("members", "email_address", self.install.member.primary_email_address)
 
+    def test_query_name(self):
+        self.query("members", "name", self.install.member.name)
+
     def test_query_nn(self):
         self.query("installs", "network_number", self.install.node.network_number)

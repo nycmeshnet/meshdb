@@ -15,9 +15,10 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework_dataclasses.serializers import DataclassSerializer
+from validate_email.exceptions import EmailValidationError
 
 from meshapi.exceptions import AddressError
-from meshapi.models import Building, Install, Member, Node
+from meshapi.models import AddressTruthSource, Building, Install, Member, Node
 from meshapi.permissions import HasNNAssignPermission, LegacyNNAssignmentPassword
 from meshapi.serializers import MemberSerializer
 from meshapi.util.admin_notifications import notify_administrators_of_data_issue
@@ -32,7 +33,6 @@ from meshapi.validation import (
     validate_phone_number,
     validate_recaptcha_tokens,
 )
-from meshdb.utils.spreadsheet_import.building.constants import AddressTruthSource
 
 logging.basicConfig()
 
@@ -140,8 +140,18 @@ def process_join_form(r: JoinFormRequest, request: Optional[Request] = None) -> 
     if not r.email_address:
         return Response({"detail": "Must provide an email"}, status=status.HTTP_400_BAD_REQUEST)
 
-    if r.email_address and not validate_email_address(r.email_address):
-        return Response({"detail": f"{r.email_address} is not a valid email"}, status=status.HTTP_400_BAD_REQUEST)
+    try:
+        if r.email_address and not validate_email_address(r.email_address):
+            return Response({"detail": f"{r.email_address} is not a valid email"}, status=status.HTTP_400_BAD_REQUEST)
+    except EmailValidationError:
+        # DNSTimeoutError, SMTPCommunicationError, and TLSNegotiationError are all subclasses of EmailValidationError.
+        # Any other EmailValidationError will be caught inside validate_email_address() and trigger a return false,
+        # so we know that if validate_email_address() throws, EmailValidationError, it must be one of these
+        # and therefore our fault
+        return Response(
+            {"detail": "Could not validate email address due to an internal error"},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
 
     # Expects country code!!!!
     if r.phone_number and not validate_phone_number(r.phone_number):
@@ -160,7 +170,7 @@ def process_join_form(r: JoinFormRequest, request: Optional[Request] = None) -> 
         logging.debug(r.street_address, r.city, r.state, r.zip_code)
         return Response(
             {
-                "detail": "Non-NYC registrations are not supported at this time. Check back later, "
+                "detail": "Non-NYC registrations are not supported at this time. Please double check your zip code, "
                 "or send an email to support@nycmesh.net"
             },
             status=status.HTTP_400_BAD_REQUEST,
@@ -277,7 +287,7 @@ def process_join_form(r: JoinFormRequest, request: Optional[Request] = None) -> 
             street_address=nyc_addr_info.street_address,
             city=nyc_addr_info.city,
             state=nyc_addr_info.state,
-            zip_code=int(nyc_addr_info.zip),
+            zip_code=nyc_addr_info.zip,
             latitude=nyc_addr_info.latitude,
             longitude=nyc_addr_info.longitude,
             altitude=nyc_addr_info.altitude,
@@ -288,6 +298,33 @@ def process_join_form(r: JoinFormRequest, request: Optional[Request] = None) -> 
     if not join_form_building.primary_node:
         join_form_building.primary_node = (
             existing_primary_nodes_for_structure[0] if existing_primary_nodes_for_structure else None
+        )
+
+    existing_install = Install.objects.filter(
+        building=join_form_building,
+        member=join_form_member,
+        unit__exact=r.apartment,
+        # We only recycle install objects if nothing special has happened to them,
+        # if they're not REQUEST_RECEIVED, that dramatically increases the chance that
+        # a new identifier is warranted. e.g. NN_REASSIGNED indicates that's an absolute must
+        status=Install.InstallStatus.REQUEST_RECEIVED,
+    ).first()
+    if existing_install:
+        logging.warning(
+            f"Discarding join form submission because an install was found with exactly "
+            f"matching information: #{existing_install.install_number}"
+        )
+        return Response(
+            {
+                "detail": "Thanks! A volunteer will email you shortly",
+                "building_id": join_form_building.id,
+                "member_id": join_form_member.id,
+                "install_id": existing_install.id,
+                "install_number": existing_install.install_number,
+                "member_exists": True,
+                "changed_info": {},
+            },
+            status=status.HTTP_200_OK,
         )
 
     join_form_install = Install(
@@ -343,7 +380,7 @@ def process_join_form(r: JoinFormRequest, request: Optional[Request] = None) -> 
         )
 
     if existing_members:
-        if join_form_member.name != join_form_full_name:
+        if join_form_member.name.lower() != join_form_full_name.lower():
             name_change_note = (
                 f"Dropped name change: {join_form_full_name} (install request #{join_form_install.install_number})"
             )

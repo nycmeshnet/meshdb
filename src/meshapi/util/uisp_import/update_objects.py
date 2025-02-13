@@ -3,6 +3,7 @@ import logging
 from typing import List, Optional
 
 import requests
+from drf_hooks.signals import hook_event
 
 from meshapi.models import Device, Link, Node
 from meshapi.util.uisp_import.constants import (
@@ -31,6 +32,7 @@ def update_device_from_uisp_data(
         )
         existing_device.node = uisp_node
 
+    fire_device_deactivated_hook = False
     if existing_device.status != uisp_status:
         if uisp_status == Device.DeviceStatus.INACTIVE:
             # We wait 30 days to make sure this device is actually inactive,
@@ -46,6 +48,7 @@ def update_device_from_uisp_data(
                         " for more than "
                         f"{int(UISP_OFFLINE_DURATION_BEFORE_MARKING_INACTIVE.total_seconds() / 60 / 60 / 24)} days"
                     )
+                fire_device_deactivated_hook = True
 
                 existing_device.status = Device.DeviceStatus.INACTIVE
                 change_messages.append(change_message)
@@ -77,7 +80,18 @@ def update_device_from_uisp_data(
         existing_device.abandon_date = uisp_last_seen.date()
         change_messages.append(f"Added missing abandon date of {existing_device.abandon_date} based on UISP last-seen")
 
-    existing_device.save()
+    # Only update the device if we actually changed anything to avoid making
+    # duplicate entries
+    if change_messages:
+        existing_device.save()
+
+    if fire_device_deactivated_hook:
+        hook_event.send(
+            sender=existing_device.__class__,
+            action="uisp-deactivated",
+            instance=existing_device,
+        )
+
     return change_messages
 
 
@@ -91,12 +105,17 @@ def update_link_from_uisp_data(
 ) -> List[str]:
     change_messages = []
 
+    # We can't add change messages because they're super spammy,
+    # so use this to determine if we should save when changing the uisp_id.
+    uisp_link_id_changed = False
+
     if uisp_link_id != existing_link.uisp_id:
         existing_link.uisp_id = uisp_link_id
         logging.info(
             f"Changed UISP link ID to {uisp_link_id} for {existing_link} link (ID {existing_link.id}). "
             f"This is likely due to a UISP UUID rotation"
         )
+        uisp_link_id_changed = True
 
     uisp_device_pair = {uisp_to_device, uisp_from_device}
     db_device_pair = {existing_link.from_device, existing_link.to_device}
@@ -151,5 +170,8 @@ def update_link_from_uisp_data(
         existing_link.abandon_date = uisp_last_seen.date()
         change_messages.append(f"Added missing abandon date of {existing_link.abandon_date} based on UISP last-seen")
 
-    existing_link.save()
+    # Only save the object if there actually are change_messages, otherwise don't
+    # to avoid creating an unnecessary object.
+    if change_messages or uisp_link_id_changed:
+        existing_link.save()
     return change_messages

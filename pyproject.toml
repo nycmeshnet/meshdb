@@ -21,7 +21,6 @@ dependencies = [
     "requests-mock==1.12.*",
     "geopy==2.4.*",
     "django-cors-headers==4.3.*",
-    "nameparser==1.1.*",
     "inflect==7.0.*",
     # FIXME: Update me to stable, once 1.0 is released officially
     #  https://github.com/nycmeshnet/meshdb/issues/525
@@ -45,7 +44,9 @@ dependencies = [
     "prettytable==3.11.*",
     "matplotlib==3.9.*",
     "django-ipware==7.0.1",
+    "django-admin-site-search==1.1.*",
     "datadog==0.50.*",
+
 ]
 
 [project.optional-dependencies]
@@ -54,7 +55,7 @@ dev = [
     "pytest == 7.4.*",
     "parameterized == 0.9.*",
     "flake8 == 6.1.*",
-    "black == 23.7.*",
+    "black == 24.10.*",
     "isort == 5.12.*",
     "coverage == 7.3.*",
     "mypy == 1.10.0",

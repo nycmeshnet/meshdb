@@ -52,6 +52,7 @@ FLAGS: Dict[str, Any] = {
     "JOIN_FORM_FAIL_ALL_INVISIBLE_RECAPTCHAS": [],
     "INTEGRATION_ENABLED_SEND_JOIN_REQUEST_SLACK_MESSAGES": [],
     "INTEGRATION_ENABLED_CREATE_OSTICKET_TICKETS": [],
+    "INTEGRATION_OSTICKET_INCLUDE_EXISTING_NETWORK_NUMBER": [],
     "TASK_ENABLED_RUN_DATABASE_BACKUP": [],
     "TASK_ENABLED_RESET_DEV_DATABASE": [],
     "TASK_ENABLED_UPDATE_PANORAMAS": [],
@@ -59,6 +60,8 @@ FLAGS: Dict[str, Any] = {
 }
 
 USE_X_FORWARDED_HOST = True
+
+X_FRAME_OPTIONS = "SAMEORIGIN"
 
 SECURE_HSTS_SECONDS = 31536000
 SECURE_HSTS_PRELOAD = False
@@ -117,9 +120,9 @@ PERMISSIONS_POLICY: Dict[str, List[str]] = {
     "usb": [],
 }
 
-LOS_URL = os.environ.get("LOS_URL", "https://devlos.mesh.nycmesh.net")
-MAP_URL = os.environ.get("MAP_BASE_URL", "https://devmap.mesh.nycmesh.net")
-FORMS_URL = os.environ.get("FORMS_URL", "https://devforms.mesh.nycmesh.net")
+LOS_URL = os.environ.get("LOS_URL", "https://los.devdb.nycmesh.net")
+MAP_URL = os.environ.get("MAP_BASE_URL", "https://map.nycmesh.net")
+FORMS_URL = os.environ.get("FORMS_URL", "https://forms.devdb.nycmesh.net")
 
 # SMTP Config for password reset emails
 EMAIL_HOST = os.environ.get("SMTP_HOST")
@@ -129,29 +132,20 @@ EMAIL_HOST_PASSWORD = os.environ.get("SMTP_PASSWORD")
 EMAIL_USE_TLS = True
 
 ALLOWED_HOSTS = [
-    "db.mesh.nycmesh.net",
-    "db.mesh",
     "db.nycmesh.net",
     "meshdb",
     "nginx",
-    "devdb.mesh.nycmesh.net",
     "devdb.nycmesh.net",
+    "gammadb.nycmesh.net",
 ]
 
 CORS_ALLOWED_ORIGINS = [
-    "https://forms.mesh.nycmesh.net",
-    "https://devforms.mesh.nycmesh.net",
     "https://forms.nycmesh.net",
     "https://forms.devdb.nycmesh.net",
-    "https://map.mesh.nycmesh.net",
-    "https://devmap.mesh.nycmesh.net",
-    "https://map.db.nycmesh.net",
-    "https://map.devdb.nycmesh.net",
-    "https://adminmap.mesh.nycmesh.net",
-    "https://devadminmap.mesh.nycmesh.net",
     "https://adminmap.db.nycmesh.net",
     "https://adminmap.devdb.nycmesh.net",
     "https://devdb.nycmesh.net",
+    "https://gammadb.nycmesh.net",
 ]
 
 CORS_ALLOW_HEADERS = [
@@ -166,20 +160,19 @@ CSRF_TRUSTED_ORIGINS = [
     "http://nginx:8080",
     "https://db.nycmesh.net",
     "https://devdb.nycmesh.net",
-    "http://devdb.mesh.nycmesh.net",
-    "https://devdb.mesh.nycmesh.net",
-    "http://db.mesh.nycmesh.net",
-    "https://db.mesh.nycmesh.net",
+    "https://gammadb.nycmesh.net",
 ]
 
 if DEBUG:
     ALLOWED_HOSTS += [
         "127.0.0.1",
         "host.docker.internal",
+        "localhost",
     ]
 
     CORS_ALLOWED_ORIGINS += [
         "http://127.0.0.1:3000",
+        "http://127.0.0.1:3001",
         "http://localhost:3000",
         "http://127.0.0.1:80",
         "http://localhost:80",
@@ -219,6 +212,7 @@ INSTALLED_APPS = [
     "flags",
     "explorer",
     "simple_history",
+    "admin_site_search",
 ]
 
 MIDDLEWARE = [
@@ -416,6 +410,7 @@ HOOK_EVENTS = {
     "link.updated": "meshapi.Link.updated+",
     "los.updated": "meshapi.LOS.updated+",
     "device.updated": "meshapi.Device.updated+",
+    "device.uisp-deactivated": "meshapi.Device.uisp-deactivated+",
     "sector.updated": "meshapi.Sector.updated+",
     "access_point.updated": "meshapi.AccessPoint.updated+",
     "building.deleted": "meshapi.Building.deleted+",

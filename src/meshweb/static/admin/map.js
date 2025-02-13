@@ -1,17 +1,52 @@
+const ADMIN_PANEL_HOME = "/admin/"
+const MESHDB_LAST_PAGE_VISITED = "MESHDB_LAST_PAGE_VISITED"
+const adminPanelIframe = document.getElementById("admin_panel_iframe");
 
-
-let currentSplit = 60;
-
-function getCurrentTarget(){
-    let path = location.pathname.replace(/^\/admin\/meshapi\//, "");
-    path = path.replace(/\/$/, "");
-
-    const [type, id, action] = path.split("/");
-    return [type, id, action];
+let currentSplit = parseFloat(localStorage.getItem("MESHDB_MAP_SIZE"));
+if (isNaN(currentSplit)) {
+    currentSplit = 60;
 }
 
-async function getNewSelectedNodes(){
-    const [type, id, action] = getCurrentTarget();
+// Navigation Stuff
+
+// Gets the UUID of the object the Admin Panel is currently viewing
+function extractUUIDs(url) {
+    // Regular expression to match UUIDs
+    const uuidRegex = /\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/g;
+    // Find all matches in the input string
+    const matches = url.match(uuidRegex);
+    // Return the matches or an empty array if none found
+    return matches || [];
+}
+
+// Checks what model the Admin Panel is looking at
+function extractModel(url) {
+  const relevantModels = [
+        "member",
+        "building",
+        "install",
+        "node",
+        "device",
+        "sector",
+        "accesspoint",
+        "link",
+        "los"
+    ];
+  return relevantModels.find(element => url.includes(element));
+}
+
+// Based on the current URL of the Admin Panel, figures out what node the map
+// should focus on
+async function getNewSelectedNodes(url){
+    const objectUUIDs = extractUUIDs(url);
+    const type = extractModel(url);
+
+    // Guard against looking up an empty UUID
+    if (objectUUIDs.length == 0) {
+      console.log("[Admin Panel] Found no UUID")
+      return null;
+    }
+    const id = objectUUIDs[0];
 
     let nodeId = null;
 
@@ -20,7 +55,9 @@ async function getNewSelectedNodes(){
         const installResponse = await fetch(`/api/v1/installs/${id}/`);
         if (!installResponse.ok) return null;
         const install = await installResponse.json();
-        nodeId = install.install_number;
+        if (install.status !== "Closed" && install.status !== "NN Reassigned") {
+            nodeId = install.install_number;
+        }
     } else if (type === "node") {
         if (!id) return null;
         const nodeResponse = await fetch(`/api/v1/nodes/${id}/`);
@@ -29,7 +66,12 @@ async function getNewSelectedNodes(){
         if (node.network_number) {
             nodeId = node.network_number;
         } else {
-            nodeId = node.installs[0].install_number;
+            for (const install of node.installs) {
+                if (install.status !== "Closed" && install.status !== "NN Reassigned") {
+                    nodeId = install.install_number;
+                    break;
+                }
+            }
         }
     } else if (type === "building") {
         if (!id) return null;
@@ -39,7 +81,18 @@ async function getNewSelectedNodes(){
         if (building.primary_node && building.primary_node.network_number) {
             nodeId = building.primary_node.network_number;
         } else if (building.installs) {
-            nodeId = building.installs[0].install_number;
+            const installResponses = await Promise.all(
+                building.installs.map(install => fetch(`/api/v1/installs/${install.id}/`))
+            );
+            for (const installResponse of installResponses) {
+                if (installResponse.ok){
+                    const install = await installResponse.json();
+                    if (install.status !== "Closed" && install.status !== "NN Reassigned") {
+                        nodeId = install.install_number;
+                        break;
+                    }
+                }
+            }
         }
     } else if (["device", "sector", "accesspoint"].indexOf(type) !== -1) {
         if (!id) return null;
@@ -52,7 +105,16 @@ async function getNewSelectedNodes(){
         const memberResponse = await fetch(`/api/v1/members/${id}/`);
         if (!memberResponse.ok) return null;
         const member = await memberResponse.json();
-        nodeId = member.installs.map(install => install.install_number).join("-");
+
+        const installResponses = await Promise.all(
+            member.installs.map(install => fetch(`/api/v1/installs/${install.id}/`))
+        );
+
+        nodeId = (await Promise.all(installResponses
+            .filter(installResponse => installResponse.ok)
+            .map(installResponse => installResponse.json())))
+            .filter(install => install.status !== "Closed" && install.status !== "NN Reassigned")
+            .map(install => install.install_number).join("-");
     } else if (type === "link") {
         if (!id) return null;
         const linkResponse = await fetch(`/api/v1/links/${id}/`);
@@ -83,7 +145,18 @@ async function getNewSelectedNodes(){
         if (building1.primary_node && building1.primary_node.network_number) {
             b1NodeId = building1.primary_node.network_number;
         } else if (building1.installs) {
-            b1NodeId = building1.installs[0].install_number;
+            const installResponses = await Promise.all(
+                building1.installs.map(install => fetch(`/api/v1/installs/${install.id}/`))
+            );
+            for (const installResponse of installResponses) {
+                if (installResponse.ok){
+                    const install = await installResponse.json();
+                    if (install.status !== "Closed" && install.status !== "NN Reassigned") {
+                        b1NodeId = install.install_number;
+                        break;
+                    }
+                }
+            }
         }
 
         let b2NodeId = null;
@@ -93,7 +166,18 @@ async function getNewSelectedNodes(){
         if (building2.primary_node && building2.primary_node.network_number) {
             b2NodeId = building2.primary_node.network_number;
         } else if (building2.installs) {
-            b2NodeId = building2.installs[0].install_number;
+            const installResponses = await Promise.all(
+                building2.installs.map(install => fetch(`/api/v1/installs/${install.id}/`))
+            );
+            for (const installResponse of installResponses) {
+                if (installResponse.ok){
+                    const install = await installResponse.json();
+                    if (install.status !== "Closed" && install.status !== "NN Reassigned") {
+                        b2NodeId = install.install_number;
+                        break;
+                    }
+                }
+            }
         }
 
         if (b1NodeId && b2NodeId)  nodeId = `${b1NodeId}-${b2NodeId}`;
@@ -102,191 +186,8 @@ async function getNewSelectedNodes(){
     return nodeId ? `${nodeId}` : null;
 }
 
-async function updateMapForLocation(selectedNodes) {
-    const selectedEvent = new Event("setMapNode");//, {detail: {selectedNodes: selectedNodes}});
-    if (!selectedNodes) selectedNodes = await getNewSelectedNodes()
-    selectedEvent.selectedNodes = selectedNodes;
-    window.dispatchEvent(selectedEvent);
-}
 
-async function loadScripts(scripts, destination) {
-    const scriptsArray = [];
-    for (const script of scripts){
-        scriptsArray.push(script);
-    }
-
-    for (const script of scriptsArray) {
-        const scriptLoadPromise = new Promise((resolve, reject) => {
-            const scriptElement = document.createElement('script');
-            if (script.src) {
-                scriptElement.src = script.src;
-            } else {
-                scriptElement.innerText = script.innerText;
-            }
-            scriptElement.onload = resolve;
-            scriptElement.onerror = reject;
-            destination.appendChild(scriptElement);
-            script.remove();
-
-            // onload will never fire for in-lined scripts since they don't fetch(), so resolve the
-            // promise right away
-            if (!script.src) resolve();
-        });
-        await scriptLoadPromise;
-    }
-}
-
-async function updateAdminContent(newUrl, options, updateHistory = true) {
-    let response = null;
-    try {
-        response = await fetch(newUrl, options);
-        if (!response.ok) {
-            throw new Error("Error loading new contents for page: " + response.status + " " + response.statusText);
-        }
-    } catch (e) {
-        console.error(`Error during page nav to %s`, newUrl, e)
-        const mapWrapper = document.getElementById("map-wrapper");
-
-        const pageLink = document.createElement("a");
-        pageLink.className = "capture-exclude";
-        pageLink.href = newUrl;
-        pageLink.textContent = newUrl;
-
-        const errorNotice = document.createElement("p");
-        errorNotice.className = "error-box";
-        errorNotice.innerHTML = `<b>Error loading page</b>: ${pageLink.outerHTML}<br>${e}`
-
-        mapWrapper.parentNode.insertBefore(
-            errorNotice,
-            mapWrapper
-        );
-        return;
-    }
-
-    if (updateHistory) {
-        if (response.redirected) {
-            window.history.pushState(null, '', response.url)
-        } else {
-            window.history.pushState(null, '', newUrl);
-        }
-    }
-
-    const current_map = document.getElementById("map");
-
-    const text = await response.text();
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(text, "text/html");
-
-    doc.getElementById("map").replaceWith(current_map);
-
-    // Keep the elements Google Maps injected in the header, otherwise the map breaks
-    const headerElementsToKeep = [];
-    for (const el of document.getElementsByTagName("head")[0].getElementsByTagName("script")){
-        if (el.src && el.src.startsWith("https://maps.googleapis.com/")) headerElementsToKeep.push(el);
-    }
-    for (const el of document.getElementsByTagName("head")[0].getElementsByTagName("style")){
-        if (el.textContent.indexOf(".gm") !== -1) headerElementsToKeep.push(el);
-    }
-
-    for (const el of headerElementsToKeep){
-        doc.getElementsByTagName("head")[0].appendChild(el);
-    }
-
-    // Replace the whole page with the new one
-    const newHTML = doc.getElementsByTagName("html")[0];
-    document.getElementsByTagName("html")[0].replaceWith(newHTML);
-
-    setMapProportions(currentSplit);
-
-    // Re-run other javascript to make page happy
-    if (window.DateTimeShortcuts) window.removeEventListener('load', window.DateTimeShortcuts.init);
-
-    const scriptsToReload = [];
-    for (const script of document.head.querySelectorAll('script')){
-        if (!script.src || !script.src.startsWith("https://maps.googleapis.com/")) scriptsToReload.push(script);
-    }
-    await loadScripts(scriptsToReload, document.head);
-
-    dispatchEvent(new Event('load'));
-}
-
-
-function shouldNotIntercept(target) {
-    const isForm = target.tagName === "FORM";
-    let url = ""
-    if (isForm){
-        url = new URL(target.action);
-    } else {
-        url = new URL(target.href);
-    }
-
-    if (target.className === "capture-exclude") return true;
-    if (!url.pathname.startsWith("/admin/")) return true;
-    if (url.pathname.startsWith("/admin/login")) return true;
-    if (url.pathname.startsWith("/admin/logout")) return true;
-    if (url.pathname.endsWith("/export/") && isForm) return true;
-    if (url.host !== location.host) return true;
-
-    return false;
-}
-
-function interceptLinks() {
-    // Link clicks
-    interceptClicks(function(event, el) {
-        // Exit early if this navigation shouldn't be intercepted,
-        // e.g. if the navigation is cross-origin, or a download request
-        if (shouldNotIntercept(el)) return;
-        async function handler() {
-            await updateAdminContent(el.href);
-            updateMapForLocation();
-        }
-        handler()
-        // console.log("Intercepting " + el.href)
-        event.preventDefault()
-    });
-
-    // Browser back
-    window.addEventListener('popstate', function(event) {
-         async function handler() {
-            await updateAdminContent(location.href, {}, false);
-            updateMapForLocation();
-        }
-        handler()
-        // console.log(location.href);
-        event.preventDefault()
-    }, false)
-
-    // Form submissions
-    window.addEventListener("submit", function (event) {
-        const form = event.target;
-        // Exit early if this navigation shouldn't be intercepted
-        if (shouldNotIntercept(form)) return;
-
-        async function handler() {
-            const formData = new FormData(form);
-            const method = form.method;
-
-            if (method.toUpperCase() === "POST") {
-                const submitButton = event.submitter;
-                if (submitButton.getAttribute('name')) {
-                    formData.append(submitButton.getAttribute('name'), submitButton.getAttribute('value'));
-                }
-                await updateAdminContent(form.action, {method: "POST", body: formData});
-            } else if (method.toUpperCase() === "GET") {
-                const params = new URLSearchParams(formData).toString();
-                const actionWithoutParams = new URL(form.action);
-                actionWithoutParams.search = "";
-                await updateAdminContent(`${actionWithoutParams.href}?${params}`);
-            }
-
-            updateMapForLocation();
-        }
-        handler()
-        event.preventDefault();
-    })
-}
-
-async function nodeSelectedOnMap(selectedNodes) {
+async function updateAdminPanelLocation(selectedNodes) {
     if (!selectedNodes) return;
     if (selectedNodes.indexOf("-") !== -1) return;
 
@@ -295,105 +196,148 @@ async function nodeSelectedOnMap(selectedNodes) {
         /* Hack for APs to not break things. We unfortantely can't do a lot better than this without much pain*/
         return;
     }
-
     const installResponse = await fetch(`/api/v1/installs/${selectedNodes}/`);
     const nodeResponse = await fetch(`/api/v1/nodes/${selectedNodes}/`);
+
+    // Disable onLoad for Admin Panel while we navigate to a new page
+    dontListenForAdminPanelLoad();
+
     if (installResponse.ok){
         const installJson = await installResponse.json();
         if (installJson.node && installJson.node.network_number)  {
-            await updateAdminContent(new URL(`/admin/meshapi/node/${installJson.node.id}/change`, document.location).href);
-            updateMapForLocation(installJson.node.network_number.toString());
+            adminPanelIframe.src = `/admin/meshapi/node/${installJson.node.id}/change`;
         } else {
-            updateAdminContent(new URL(`/admin/meshapi/install/${installJson.id}/change`, document.location).href);
+            adminPanelIframe.src = `/admin/meshapi/install/${installJson.id}/change`;
         }
     } else {
         if (nodeResponse.ok)  {
             const nodeJson = await nodeResponse.json();
-            updateAdminContent(new URL(`/admin/meshapi/node/${nodeJson.id}/change`, document.location).href);
+            adminPanelIframe.src = `/admin/meshapi/node/${nodeJson.id}/change`;
         }
     }
 
+    // Restore the listener
+    listenForAdminPanelLoad();
 }
 
-function listenForMapNavigation() {
-    window.addEventListener("nodeSelectedOnMap", (event) => {
-        nodeSelectedOnMap(event.selectedNodes);
-    })
+// Configures the listener that updates the admin panel based on map activity
+async function listenForMapClick() {
+    window.addEventListener("message", ({ data, source }) => {
+      updateAdminPanelLocation(data.selectedNodes);
+    });
 }
+
+// Prompts the map to change its view to focus on whatever
+// node the admin panel is currently viewing.
+async function updateMapLocation(url) {
+  const selectedNodes = await getNewSelectedNodes(url);
+
+  if (selectedNodes === null) {
+    console.log("[Admin Panel] No node is selected.");
+    return;
+  }
+
+  console.debug(`[Admin Panel] Updating map location: ${selectedNodes}`);
+
+  // MAP_BASE_URL comes from iframed.html
+  document.getElementById("map_panel").contentWindow.postMessage({selectedNodes: selectedNodes}, MAP_BASE_URL);
+}
+
+// Helper function to wrap everything that needs to happen when the admin panel
+// loads
+async function onAdminPanelLoad() {
+    const adminPanelIframeUrl = new URL(adminPanelIframe.contentWindow.location.href);
+    
+    // If the admin panel iframe leaves the admin panel (by logging out, going to homescreen, etc)
+    // we should leave this iframed view and go there.
+    const escURLs = ["login", "password_reset"]
+    var shouldEscape = escURLs.some(url => adminPanelIframeUrl.pathname.includes(url));
+    if (!adminPanelIframeUrl.pathname.includes("admin") || shouldEscape) {
+        window.location.href = adminPanelIframeUrl; 
+    }
+
+    // Save the new admin location. We do this here because it means that the admin panel has
+    // recently reloaded.
+    localStorage.setItem(MESHDB_LAST_PAGE_VISITED, adminPanelIframeUrl.pathname);
+
+    // Update the URL bar in the browser for viz
+    window.history.pushState("MeshDB Admin Panel", "", adminPanelIframeUrl.pathname);
+
+    // Finally, update the map view
+    updateMapLocation(adminPanelIframeUrl.toString());
+}
+
+// Configures the listener that updates the map based on admin panel activity
+async function listenForAdminPanelLoad() {
+    adminPanelIframe.addEventListener("load", onAdminPanelLoad);
+}
+
+// See above
+async function dontListenForAdminPanelLoad() {
+    adminPanelIframe.removeEventListener("load", onAdminPanelLoad);
+}
+
+// Checks local storage for the last page the user navigated to, and directs them
+// there
+async function readURLBar() {
+    // If the window's URL has more than just /admin/, then we wanna
+    // override our stored page and replace it with that.
+    const entryPath = new URL(window.location.href).pathname;
+    const entrypointRegex = /^(\/?admin\/?)$/;
+    if (!entryPath.match(entrypointRegex)) {
+      const newEntryPath = entryPath.replace(PANEL_URL, "admin");
+      adminPanelIframe.src = newEntryPath;
+      localStorage.setItem(MESHDB_LAST_PAGE_VISITED, newEntryPath);
+    }
+}
+
+// Interface Stuff 
 
 function listenForRecenterClick() {
     const recenterButton = document.querySelector("#map_recenter_button");
 
     function onRecenterClick(event) {
         console.log("recenterclick");
-        updateMapForLocation();
+        updateMapLocation();
         event.preventDefault();
     }
 
     recenterButton.addEventListener("click", onRecenterClick, false);
 }
 
-async function load_map() {
-    const map_host = MAP_BASE_URL;
-
-    if (!map_host) {
-        document.getElementById("map-inner").innerHTML = "Cannot load map due to missing environment " +
-            "variable ADMIN_MAP_BASE_URL. Make sure this is set in your .env file and reload the django server";
-        document.getElementById("map-inner").style = "text-align: center; align-items: center;"
-        return;
-    }
-
-
-    const map_url = `${map_host}/index.html`;
-    let response;
-    try {
-        response = await fetch(map_url);
-    } catch (e) {
-        document.getElementById("map-inner").innerHTML = `<p>Error loading map from <a href="${map_url}">${map_url}</a>. ` +
-            "Is this host up, and serving CORS headers that allow a request from this domain?</p>";
-        document.getElementById("map-inner").style = "text-align: center; align-items: center;"
-        return;
-    }
-
-    const parser = new DOMParser();
-    const text = await response.text();
-    const remote_map_doc = parser.parseFromString(text, "text/html");
-
-    const map_scripts_div = document.getElementById("map-scripts");
-
-    for (const el of remote_map_doc.querySelectorAll('script')){
-        let src = el.getAttribute("src") ?? "";
-        if (src) {
-            if (!src.match(/https?:\/\//)){
-                el.src = map_host + src;
-            }
+function interceptLinks() {
+    // Browser back
+    window.addEventListener('popstate', function(event) {
+        async function handler() {
+            adminPanelIframe.src = location.href;
         }
-    }
-
-    for (const el of remote_map_doc.querySelectorAll('link')){
-        let href = el.getAttribute("href") ?? "";
-        if (!href.match(/https?:\/\//)){
-            el.href = map_host + href
-        }
-    }
-
-    for (const el of remote_map_doc.querySelectorAll('link')){
-        map_scripts_div.appendChild(el);
-    }
-
-    await loadScripts(remote_map_doc.querySelectorAll('script'), map_scripts_div);
+        handler()
+        event.preventDefault()
+    }, false);
 }
 
 function setMapProportions(leftWidth){
     // Apply new widths to left and right divs
-    const leftDiv = document.getElementById('main');
-    const rightDiv = document.getElementById('map');
+    const leftDiv = document.getElementById('admin_panel_div');
+    const rightDiv = document.getElementById('map_panel_div');
 
     currentSplit = leftWidth;
     leftDiv.style.width = `${leftWidth}%`;
     rightDiv.style.width = `${100 - leftWidth}%`;
+
+    localStorage.setItem("MESHDB_MAP_SIZE", leftWidth.toString());
 }
 
+function toggleIframeInteractivity() {
+    const handle = document.getElementById('handle');
+    handle.classList.toggle("bigBar");
+
+    const handlebar = document.getElementById('handlebar');
+    handlebar.classList.toggle("hidden");
+
+    const substituteHandle = document.getElementById('substituteHandle');
+    substituteHandle.classList.toggle("hidden");
+}
 
 function allowMapResize() {
     // Event listener for mouse down on handle
@@ -402,12 +346,13 @@ function allowMapResize() {
         e.preventDefault();
         window.addEventListener('mousemove', resize);
         window.addEventListener('mouseup', stopResize);
+        toggleIframeInteractivity();
     });
 
     // Function to resize divs
     function resize(e) {
         // Get elements
-        const container = document.getElementById('map-wrapper');
+        const container = document.getElementById('page_container');
 
         const rect = container.getBoundingClientRect();
         const containerLeft = rect.left;
@@ -425,18 +370,63 @@ function allowMapResize() {
     // Event listener for mouse up to stop resizing
     function stopResize() {
         window.removeEventListener('mousemove', resize);
+        window.removeEventListener('mouseup', stopResize);
+        toggleIframeInteractivity();
     }
 
     setMapProportions(currentSplit);
 }
 
-async function start() {
+// Checks for mobile/manual map hiding and configures the admin panel interface as appropriate
+function hideMapIfAppropriate() {
+    const isMobile = mobileCheck();
+
+    const mapDisabled = localStorage.getItem("MESHDB_MAP_DISABLED") === "true" || isMobile;
+    if (mapDisabled) {
+        document.getElementById('map_panel_div').classList.add("hidden");
+        document.getElementById('map_controls').classList.add("hidden");
+
+        if (!isMobile) {
+            const showMapButton = document.getElementById('show_map_button');
+            function onShowMapClick(event) {
+                localStorage.setItem("MESHDB_MAP_DISABLED", "false");
+                window.location.reload(); // Unpleasant but this action should be very infrequent
+                event.preventDefault();
+            }
+
+            showMapButton.classList.remove("hidden");
+            showMapButton.addEventListener("click", onShowMapClick, false);
+        }
+    } else {
+        // Hide the show map button
+        const showMapButton = document.getElementById('show_map_button');
+        showMapButton.classList.toggle("hidden");
+
+        const hideMapButton = document.getElementById("map_hide_button");
+
+        function onHideMapClick(event) {
+            localStorage.setItem("MESHDB_MAP_DISABLED", "true");
+            window.location.reload(); // Unpleasant but this action should be very infrequent
+            event.preventDefault();
+        }
+
+        hideMapButton.addEventListener("click", onHideMapClick, false);
+    }
+
+    return mapDisabled;
+}
+
+function start() {
+    readURLBar();
+    if (hideMapIfAppropriate()) {
+        return;
+    }
     allowMapResize();
-    await load_map();
-    updateMapForLocation();
     interceptLinks();
-    listenForMapNavigation();
+    listenForAdminPanelLoad();
+    listenForMapClick();
     listenForRecenterClick();
+
 }
 
 start();

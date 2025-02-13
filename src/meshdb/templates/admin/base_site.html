@@ -4,6 +4,8 @@
 
 {% block extrahead %}
     <link rel="shortcut icon" href="{% static 'meshweb/favicon.png' %}" />
+    {% include 'admin_site_search/head.html' %}
+    {{ block.super }}
 {% endblock %}
 
 {% block branding %}
@@ -13,8 +15,16 @@
 {% endif %}
 {% endblock %}
 
-
-{% block nav-breadcrumbs %}
+{% block userlinks %}
     {{ block.super }}
-    {% include "admin/read_only_warning_box.html" %}
+{% endblock %}
+
+{% block footer %}
+    {{ block.super }}
+    {% include 'admin_site_search/modal.html' %}
+{% endblock %}
+
+{% block usertools %}
+    {% include 'admin_site_search/button.html' %}
+    {{ block.super }}
 {% endblock %}

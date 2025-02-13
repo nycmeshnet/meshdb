@@ -12,6 +12,7 @@ spec:
       {{- include "meshdb.selectorLabels" . | nindent 6 }}
   strategy:
     type: Recreate
+  revisionHistoryLimit: {{ .Values.revisionHistoryLimit }}
   template:
     metadata:
       {{- with .Values.podAnnotations }}
@@ -19,6 +20,7 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       labels:
+        admission.datadoghq.com/enabled: "false"
         app: meshdb-postgres-app
         {{- include "meshdb.labels" . | nindent 8 }}
         {{- with .Values.podLabels }}
@@ -65,7 +67,7 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: meshdb-secrets
-                  key: postgres-password
+                  key: DB_PASSWORD
             - name: PGDATA
               value: "/var/lib/postgresql/data/meshdb_data"
           volumeMounts:

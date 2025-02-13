@@ -11,6 +11,7 @@ spec:
   selector:
     matchLabels:
       {{- include "meshdb.selectorLabels" . | nindent 6 }}
+  revisionHistoryLimit: {{ .Values.revisionHistoryLimit }}
   template:
     metadata:
       {{- with .Values.podAnnotations }}
@@ -19,6 +20,7 @@ spec:
       {{- end }}
       labels:
         app: meshdb-nginx-app
+        admission.datadoghq.com/enabled: "false"
         {{- include "meshdb.labels" . | nindent 8 }}
         {{- with .Values.podLabels }}
         {{- toYaml . | nindent 8 }}

@@ -15,7 +15,7 @@ SITE_BASE_URL = os.environ.get("SITE_BASE_URL")
 
 
 def escape_slack_text(text: str) -> str:
-    return text.replace("↔", "<->").replace("&", "&amp;").replace("<", "&lt;").replace(">", "&rt;")
+    return text.replace("↔", "<->").replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 
 
 def notify_administrators_of_data_issue(
@@ -43,7 +43,7 @@ def notify_administrators_of_data_issue(
 
     slack_message = {
         "text": f"Encountered the following data issue which may require admin attention: {escape_slack_text(message)}"
-        f"When processing the following {model_instances[0]._meta.verbose_name_plural}: "
+        f"\n\nWhen processing the following {model_instances[0]._meta.verbose_name_plural}: "
         + ", ".join(f"<{get_admin_url(m, site_base_url)}|{escape_slack_text(str(m))}>" for m in model_instances)
         + ". Please open the database admin UI using the provided links to correct this.\n\n"
         + "The current database state of these object(s) is: \n"

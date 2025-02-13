@@ -112,17 +112,26 @@ class MapDataNodeList(generics.ListAPIView):
                         altitude=node.altitude,
                     )
 
+                request_date = datetime.fromtimestamp(0)
+                if representative_install:
+                    request_date = representative_install.request_date
+                elif node.install_date:
+                    request_date = datetime.combine(
+                        node.install_date,
+                        datetime.min.time(),
+                    )
+
                 all_installs.append(
                     Install(
                         install_number=node.network_number,
                         node=node,
-                        status=Install.InstallStatus.NN_REASSIGNED
-                        if node.status == node.NodeStatus.ACTIVE
-                        else Install.InstallStatus.REQUEST_RECEIVED,
+                        status=(
+                            Install.InstallStatus.NN_REASSIGNED
+                            if node.status == node.NodeStatus.ACTIVE
+                            else Install.InstallStatus.REQUEST_RECEIVED
+                        ),
                         building=building,
-                        request_date=representative_install.request_date
-                        if representative_install
-                        else node.install_date,
+                        request_date=request_date,
                         roof_access=representative_install.roof_access if representative_install else True,
                     ),
                 )
@@ -186,6 +195,7 @@ class MapDataLinkList(generics.ListAPIView):
         Link.objects.exclude(status__in=[Link.LinkStatus.INACTIVE])
         .exclude(to_device__node__status=Node.NodeStatus.INACTIVE)
         .exclude(from_device__node__status=Node.NodeStatus.INACTIVE)
+        .exclude(from_device__node__network_number=F("to_device__node__network_number"))
         .prefetch_related("to_device__node")
         .prefetch_related("from_device__node")
         .filter(
@@ -442,6 +452,11 @@ class KioskListWrapper(APIView):
 
             kiosks = []
             for row in data:
+                if not row:
+                    logging.warning(
+                        "Got empty row from City of New York LinkNYC kiosk dataset. Skipping row and moving on."
+                    )
+                    continue
                 coordinates = [float(row["longitude"]), float(row["latitude"])]
                 kiosk_status = LINKNYC_KIOSK_STATUS_TRANSLATION.get(row["link_installation_status"])
                 kiosks.append(
