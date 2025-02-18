@@ -1,6 +1,7 @@
 import logging
 from unittest.mock import patch
 
+from botocore.exceptions import ClientError
 from bs4 import BeautifulSoup
 from django.contrib.auth.models import User
 from django.test import Client, TestCase
@@ -17,6 +18,7 @@ from meshapi.util.join_records import JOIN_RECORD_BUCKET_NAME, JoinRecordProcess
 @mock_aws
 @patch("meshapi.util.join_records.JOIN_RECORD_PREFIX", MOCK_JOIN_RECORD_PREFIX)
 class TestJoinRecordViewer(TestCase):
+    a = Client()  # Anonymous client
     c = Client()
     p = JoinRecordProcessor()
 
@@ -39,6 +41,20 @@ class TestJoinRecordViewer(TestCase):
 
     def tearDown(self) -> None:
         self.p.flush_test_data()
+
+    # @patch("meshapi.util.join_records.JOIN_RECORD_BUCKET_NAME", "idontexist")
+    def test_view_join_records_client_error(
+        self,
+    ):
+        with patch("meshapi.util.join_records.JoinRecordProcessor.ensure_pre_post_consistency") as mock_jrp:
+            mock_jrp.side_effect = ClientError({"error": "Chom"}, operation_name="Skz")
+            response = self.c.get("/join-records/view/?since=2024-09-30T00:00:00")
+            self.assertEqual(503, response.status_code)
+
+    def test_view_join_records_unauthenticated(self):
+        response = self.a.get("/join-records/view/?since=2024-09-30T00:00:00")
+        # Redirected to admin login
+        self.assertEqual(302, response.status_code)
 
     def test_view_join_records(self):
         response = self.c.get("/join-records/view/?since=2024-09-30T00:00:00")

@@ -31,7 +31,7 @@ def join_record_viewer(request: HttpRequest) -> HttpResponse:
         status = 503
         m = f"({status}) Could not retrieve join records. Check bucket credentials."
         logging.exception(m)
-        return HttpResponse(m, status)
+        return HttpResponse(m, status=status)
 
     relevant_records = (
         [r for _, r in records.items() if not replay_join_records.Command.filter_irrelevant_record(r)]
