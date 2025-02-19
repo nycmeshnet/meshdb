@@ -42,7 +42,6 @@ class TestJoinRecordViewer(TestCase):
     def tearDown(self) -> None:
         self.p.flush_test_data()
 
-    # @patch("meshapi.util.join_records.JOIN_RECORD_BUCKET_NAME", "idontexist")
     def test_view_join_records_client_error(
         self,
     ):
