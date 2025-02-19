@@ -25,5 +25,5 @@ def index(request: HttpRequest) -> HttpResponse:
             ("/api-docs/redoc/", "API Dcos (Redoc)"),
         ],
     }
-    context = {"links": links}
+    context = {"links": links, "logo": "meshweb/logo.svg"}
     return HttpResponse(template.render(context, request))

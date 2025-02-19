@@ -47,14 +47,13 @@ footer a {
   flex-grow: 1;
   flex-direction: column;
   padding: 20px;
-  justify-content: center;
 }
 
 .meshDbHeader {
   display:flex;
   flex-direction:row;
   justify-content: center;
-  align-content: center;
+  padding: 20px;
 }
 
 .links {

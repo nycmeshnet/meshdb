@@ -52,7 +52,7 @@
       </div>
     </div>
   </nav>
-  <div class="mainContent">
+  <div>
     <div class="meshDbHeader">
       <img
         src="{% static 'meshweb/meshdb.png' %}"
@@ -67,7 +67,11 @@
         </p>
       </div>
     </div>
-    <a href="https://nycmesh.net/join"><h3>New member? Click here!</h3></a>
+    <div style="display:flex; justify-content: center;">
+      <a href="https://forms.nycmesh.net/en/join"><button type="button" class="btn btn-primary btn-lg">New Member? Click Here!</button></a>
+      </div>
+    </div>
+  <div class="mainContent">
     <div style="display:flex; flex-direction: row; justify-content: space-between; margin-top: 20px" class="links">
       {% for category, tools in links.items %}
       <div class="toolList">
@@ -93,8 +97,8 @@
   <div class="container-fluid max-width-container pt-5">
     <div class="row">
       <div class="col-md-3 mb-5">
-        <img src="{{.Logo}}" width="45px" style="padding-right: 10px" />
-        <a class="navbar-brand" href="https://www.nycmesh.net/"><strong>{{.Org}}</strong></a>
+        <img src="{% static logo %}" width="45px" style="padding-right: 10px" />
+        <a class="navbar-brand" href="https://www.nycmesh.net/"><strong>NYC Mesh</strong></a>
       </div>
       <div class="col-md-2">
         <h5 class="footer-heading">Community</h5>
