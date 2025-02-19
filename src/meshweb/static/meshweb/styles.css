@@ -41,6 +41,10 @@ footer a {
   text-decoration: none;
 }
 
+.navbar-brand.collapse .text {
+  display: none;
+}
+
 .mainContent {
   display:flex;
   width: 100%;
