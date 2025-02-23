@@ -11,7 +11,11 @@ from meshapi.models.los import LOS
 
 
 class Command(BaseCommand):
-    help = "Deletes duplicate history entries on history tables"
+    help = """Deletes duplicate history entries on history tables.
+    Jazzband has their own, but it is slow, and has the potential to corrupt our database. 
+    (https://django-simple-history.readthedocs.io/en/stable/utils.html#clean-duplicate-history)
+    This script should be less likely to do that, but DO NOT use this without ensuring
+    we have a recent backup."""
 
     def add_arguments(self, parser: ArgumentParser) -> None:
         pass
