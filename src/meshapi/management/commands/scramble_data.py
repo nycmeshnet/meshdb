@@ -115,12 +115,9 @@ class Command(BaseCommand):
                 if building.street_address:
                     address = building.street_address.split(" ")
                     if len(address) > 0:
-                        try:
-                            fuzzed_street_number = str(int(address[0]) + randint(1, 20))
-                            street_name = " ".join(address[1:])
-                            building.street_address = f"{fuzzed_street_number} {street_name}"
-                        except ValueError:
-                            pass
+                        fuzzed_street_number = str(int(address[0]) + randint(1, 20))
+                        street_name = " ".join(address[1:])
+                        building.street_address = f"{fuzzed_street_number} {street_name}"
 
                 building.save()
 
@@ -128,14 +125,11 @@ class Command(BaseCommand):
             logging.info("Scrambling nodes...")
             nodes = Node.objects.all()
             for node in nodes:
-                try:
-                    node.notes = fake.text()
-                    _, node.install_date, node.abandon_date = self.fuzz_dates(
-                        date.today(), node.install_date, node.abandon_date
-                    )
-                    node.save()
-                except ValueError as e:
-                    logging.exception(f"Could not scramble node. {e}")
+                node.notes = fake.text()
+                _, node.install_date, node.abandon_date = self.fuzz_dates(
+                    date.today(), node.install_date, node.abandon_date
+                )
+                node.save()
 
         if not options["skip_devices"]:
             logging.info("Scrambling devices...")
