@@ -19,7 +19,10 @@ logging.basicConfig(level=logging.DEBUG, stream=sys.stdout)
 
 # Uses faker to get fake names, emails, and phone numbers
 class Command(BaseCommand):
-    help = "Updates all members with fake name, email, and phone number. Clears notes."
+    help = """Scrambles PII in the database.
+        Updates members, installs, buildings, nodes, devices, links, and LOSes
+        with fake name, email, and phone number. Also scrambles notes. This is used
+        to generate data that can be handed to new contributors."""
 
     def add_arguments(self, parser: ArgumentParser) -> None:
         parser.add_argument(
@@ -34,6 +37,31 @@ class Command(BaseCommand):
             "--skip-installs",
             action="store_true",
             help="Skip scrambling installs",
+        )
+        parser.add_argument(
+            "--skip-buildings",
+            action="store_true",
+            help="Skip scrambling buildings",
+        )
+        parser.add_argument(
+            "--skip-nodes",
+            action="store_true",
+            help="Skip scrambling nodes",
+        )
+        parser.add_argument(
+            "--skip-devices",
+            action="store_true",
+            help="Skip scrambling devices",
+        )
+        parser.add_argument(
+            "--skip-links",
+            action="store_true",
+            help="Skip scrambling links",
+        )
+        parser.add_argument(
+            "--skip-loses",
+            action="store_true",
+            help="Skip scrambling loses",
         )
 
     # This transaction is not atomic so that even if there's some error with
@@ -78,60 +106,63 @@ class Command(BaseCommand):
                 )
                 install.save()
 
-        logging.info("Scrambling all other notes and dates")
+        if not options["skip_buildings"]:
+            logging.info("Scrambling buildings...")
+            buildings = Building.objects.all()
+            for building in buildings:
+                building.notes = fake.text()
+                # Fuzz the street address, if possible
+                if building.street_address:
+                    address = building.street_address.split(" ")
+                    if len(address) > 0:
+                        try:
+                            fuzzed_street_number = str(int(address[0]) + randint(1, 20))
+                            street_name = " ".join(address[1:])
+                            building.street_address = f"{fuzzed_street_number} {street_name}"
+                        except ValueError:
+                            pass
 
-        logging.info("Scrambling buildings...")
-        buildings = Building.objects.all()
-        for building in buildings:
-            building.notes = fake.text()
-            # Fuzz the street address, if possible
-            if building.street_address:
-                address = building.street_address.split(" ")
-                if len(address) > 0:
-                    try:
-                        fuzzed_street_number = str(int(address[0]) + randint(1, 20))
-                        street_name = " ".join(address[1:])
-                        building.street_address = f"{fuzzed_street_number} {street_name}"
-                    except ValueError:
-                        pass
+                building.save()
 
-            building.save()
+        if not options["skip_nodes"]:
+            logging.info("Scrambling nodes...")
+            nodes = Node.objects.all()
+            for node in nodes:
+                try:
+                    node.notes = fake.text()
+                    _, node.install_date, node.abandon_date = self.fuzz_dates(
+                        date.today(), node.install_date, node.abandon_date
+                    )
+                    node.save()
+                except ValueError as e:
+                    logging.exception(f"Could not scramble node. {e}")
 
-        logging.info("Scrambling devices...")
-        devices = Device.objects.all()
-        for device in devices:
-            device.notes = fake.text()
-            _, device.install_date, device.abandon_date = self.fuzz_dates(
-                date.today(), device.install_date, device.abandon_date
-            )
-            device.save()
-
-        logging.info("Scrambling links...")
-        links = Link.objects.all()
-        for link in links:
-            link.notes = fake.text()
-            _, link.install_date, link.abandon_date = self.fuzz_dates(
-                date.today(), link.install_date, link.abandon_date
-            )
-            link.save()
-
-        logging.info("Scrambling nodes...")
-        nodes = Node.objects.all()
-        for node in nodes:
-            try:
-                node.notes = fake.text()
-                _, node.install_date, node.abandon_date = self.fuzz_dates(
-                    date.today(), node.install_date, node.abandon_date
+        if not options["skip_devices"]:
+            logging.info("Scrambling devices...")
+            devices = Device.objects.all()
+            for device in devices:
+                device.notes = fake.text()
+                _, device.install_date, device.abandon_date = self.fuzz_dates(
+                    date.today(), device.install_date, device.abandon_date
                 )
-                node.save()
-            except ValueError as e:
-                logging.exception(f"Could not scramble node. {e}")
+                device.save()
 
-        logging.info("Scrambling LOSes...")
-        LOSes = LOS.objects.all()
-        for los in LOSes:
-            los.notes = fake.text()
-            los.save()
+        if not options["skip_links"]:
+            logging.info("Scrambling links...")
+            links = Link.objects.all()
+            for link in links:
+                link.notes = fake.text()
+                _, link.install_date, link.abandon_date = self.fuzz_dates(
+                    date.today(), link.install_date, link.abandon_date
+                )
+                link.save()
+
+        if not options["skip_loses"]:
+            logging.info("Scrambling LOSes...")
+            LOSes = LOS.objects.all()
+            for los in LOSes:
+                los.notes = fake.text()
+                los.save()
 
         logging.info("Done")
 
