@@ -1,5 +1,5 @@
 import json
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from unittest.mock import patch
 
 from django.core import management
@@ -56,6 +56,13 @@ class TestReplayJoinRecords(TestCase):
 
     def test_list_records(self):
         management.call_command("replay_join_records")
+
+    @patch("logging.error")
+    def test_list_records_from_the_future(self, logging_error_fn):
+        # See you in a thousand years lmao
+        management.call_command("replay_join_records", "--since", "3000-03-10T00:00:00")
+
+        logging_error_fn.assert_called_once()
 
     def test_get_all_since(self):
         records_since = self.p.get_all(since=datetime.fromisoformat("2024-10-01 00:00:00"))
@@ -171,7 +178,7 @@ class TestReplayJoinRecords(TestCase):
     @patch("meshapi.views.forms.geocode_nyc_address")
     def test_replay_join_records_with_write(self, mock_geocode_func, past_week_function):
         # Pretend that it's halloween
-        halloween_minus_one_week = datetime(2024, 10, 31, 8, 0, 0, 0) - timedelta(days=7)
+        halloween_minus_one_week = datetime(2024, 10, 31, 8, 0, 0, 0, tzinfo=timezone.utc) - timedelta(days=7)
         past_week_function.return_value = halloween_minus_one_week
 
         # Mock return variables from Geocode API
@@ -314,7 +321,7 @@ class TestDontReplayJoinRecords(TestCase):
     @patch("meshapi.management.commands.replay_join_records.Command.past_week")
     @patch("builtins.input")
     def test_replay_join_records_skip(self, mocked_input, past_week_function):
-        halloween_minus_one_week = datetime(2024, 10, 31, 8, 0, 0, 0) - timedelta(days=7)
+        halloween_minus_one_week = datetime(2024, 10, 31, 8, 0, 0, 0, tzinfo=timezone.utc) - timedelta(days=7)
         past_week_function.return_value = halloween_minus_one_week
 
         # Force user input to skip
@@ -340,7 +347,7 @@ class TestDontReplayJoinRecords(TestCase):
     @patch("meshapi.management.commands.replay_join_records.Command.past_week")
     @patch("builtins.input")
     def test_replay_join_records_reject_changes(self, mocked_input, past_week_function):
-        halloween_minus_one_week = datetime(2024, 10, 31, 8, 0, 0, 0) - timedelta(days=7)
+        halloween_minus_one_week = datetime(2024, 10, 31, 8, 0, 0, 0, tzinfo=timezone.utc) - timedelta(days=7)
         past_week_function.return_value = halloween_minus_one_week
 
         # Force user input to skip

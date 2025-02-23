@@ -1,8 +1,8 @@
-import datetime
 import io
 import math
 import re
 import threading
+from datetime import datetime, timedelta, timezone
 from typing import List, Optional, Tuple, cast
 
 import matplotlib.pyplot as plt
@@ -52,9 +52,7 @@ def cors_allow_website_stats_to_all(sender: None, request: HttpRequest, **kwargs
     return False
 
 
-def compute_graph_stats(
-    data_source: str, start_datetime: datetime.datetime, end_datetime: datetime.datetime
-) -> List[int]:
+def compute_graph_stats(data_source: str, start_datetime: datetime, end_datetime: datetime) -> List[int]:
     buckets = [0 for _ in range(GRAPH_X_AXIS_DATAPOINT_COUNT)]
 
     total_duration_seconds = (end_datetime - start_datetime).total_seconds()
@@ -97,8 +95,8 @@ def compute_graph_stats(
 def render_graph(
     data_source: str,
     data_buckets: List[int],
-    start_datetime: datetime.datetime,
-    end_datetime: datetime.datetime,
+    start_datetime: datetime,
+    end_datetime: datetime,
 ) -> str:
     plt.figure()
     x = np.arange(0, GRAPH_X_AXIS_DATAPOINT_COUNT, 1)
@@ -111,10 +109,10 @@ def render_graph(
     ax.fill_between(x, y, 0, alpha=0.125, color=plot_color)
 
     total_duration = end_datetime - start_datetime
-    if total_duration < datetime.timedelta(days=366):
-        if total_duration < datetime.timedelta(days=8):
+    if total_duration < timedelta(days=366):
+        if total_duration < timedelta(days=8):
             vertical_divisions = 7
-        elif total_duration < datetime.timedelta(days=32):
+        elif total_duration < timedelta(days=32):
             vertical_divisions = 4
         else:
             vertical_divisions = 12
@@ -177,7 +175,7 @@ def render_graph(
     return buf.getvalue()
 
 
-def parse_stats_request_params(request: HttpRequest) -> Tuple[str, datetime.datetime, datetime.datetime]:
+def parse_stats_request_params(request: HttpRequest) -> Tuple[str, datetime, datetime]:
     days = int(request.GET.get("days", 0))
     if days < 0:
         raise ValueError("Invalid number of days to aggregate data for")
@@ -187,18 +185,18 @@ def parse_stats_request_params(request: HttpRequest) -> Tuple[str, datetime.date
         raise ValueError(f"Invalid data mode param, expecting one of: {VALID_DATA_MODES}")
 
     if days > 0:
-        start_datetime = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=days)
+        start_datetime = datetime.now(timezone.utc) - timedelta(days=days)
     else:
         # "All" Case
         initial_date = Install.objects.all().aggregate(Min("request_date"))["request_date__min"]
         if initial_date is None:
             raise EnvironmentError("No installs found, is the database empty?")
 
-        start_datetime = datetime.datetime.combine(
+        start_datetime = datetime.combine(
             Install.objects.all().aggregate(Min("request_date"))["request_date__min"].date(),
-            datetime.datetime.min.time(),
-        ).astimezone(datetime.timezone.utc)
-    end_datetime = datetime.datetime.now(datetime.timezone.utc)
+            datetime.min.time(),
+        ).astimezone(timezone.utc)
+    end_datetime = datetime.now(timezone.utc)
 
     return data_source, start_datetime, end_datetime
 
