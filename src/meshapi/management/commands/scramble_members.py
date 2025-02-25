@@ -6,7 +6,6 @@ from random import randint, randrange
 from typing import Any, Optional, Tuple
 
 from django.core.management.base import BaseCommand
-from django.db import transaction
 from faker import Faker
 
 from meshapi.models import LOS, Install, Member
@@ -37,7 +36,9 @@ class Command(BaseCommand):
             help="Skip scrambling installs",
         )
 
-    @transaction.atomic
+    # This transaction is not atomic so that even if there's some error with
+    # the scrambled data, we can scramble it partially. I'd rather break someone's
+    # dev env than give someone PII accidentally
     def handle(self, *args: Any, **options: Any) -> None:
         logging.info("Scrambling database with fake information")
 
@@ -117,11 +118,14 @@ class Command(BaseCommand):
         logging.info("Scrambling nodes...")
         nodes = Node.objects.all()
         for node in nodes:
-            node.notes = fake.text()
-            _, node.install_date, node.abandon_date = self.fuzz_dates(
-                date.today(), node.install_date, node.abandon_date
-            )
-            node.save()
+            try:
+                node.notes = fake.text()
+                _, node.install_date, node.abandon_date = self.fuzz_dates(
+                    date.today(), node.install_date, node.abandon_date
+                )
+                node.save()
+            except ValueError as e:
+                logging.exception(f"Could not scramble node. {e}")
 
         logging.info("Scrambling LOSes...")
         LOSes = LOS.objects.all()
