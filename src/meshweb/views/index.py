@@ -6,7 +6,7 @@ from django.template import loader
 def index(request: HttpRequest) -> HttpResponse:
     template = loader.get_template("meshweb/index.html")
     links = {
-        ('meshweb/member.png', "Member Tools"): [
+        ("meshweb/member.png", "Member Tools"): [
             (f"{settings.FORMS_URL}/join/", "Join Form"),
             (settings.LOS_URL, "Line of Sight Tool"),
             (settings.MAP_URL, "Map"),
