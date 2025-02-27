@@ -1,0 +1,30 @@
+
+h1, h3 {
+  font-family: arial, sans-serif;
+}
+
+table {
+  font-family: arial, sans-serif;
+  border-collapse: collapse;
+  width: 100%;
+}
+
+td, th {
+  border: 1px solid #dddddd;
+  text-align: left;
+  padding: 8px;
+}
+
+tr:nth-child(even) {
+  background-color: #dddddd;
+}
+
+.recordTable {
+  display:flex;
+  flex-direction: column;
+  align-content: flex-start;
+  justify-content: space-between;
+  margin-top: 20px;
+  overflow: scroll;
+  margin: 20px;
+}

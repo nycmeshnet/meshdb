@@ -6,6 +6,8 @@
   margin-bottom: 0;
 }
 
+
+
 .max-width-container {
   max-width: 1200px !important;
   padding: 0em 3em;
@@ -38,6 +40,10 @@ footer {
 }
 
 footer a {
+  text-decoration: none;
+}
+
+.logo-no-underline a {
   text-decoration: none;
 }
 
