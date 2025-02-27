@@ -2,6 +2,7 @@
 
 <!DOCTYPE html>
 <head>
+{% include "meshweb/head.html" %}
 <style>
 h1, h3 {
   font-family: arial, sans-serif;
@@ -25,6 +26,7 @@ tr:nth-child(even) {
 </style>
 </head>
 <body>
+  {% include "meshweb/nav.html" %}
   <div style="display: flex; flex-direction: row; align-items: center;">
     <img src="{% static 'meshweb/meshdb.png' %}" height="64px" style="margin: 30px 0"/>
     <h1>MeshDB Join Record Viewer</h1>
@@ -83,4 +85,5 @@ tr:nth-child(even) {
     {% endif %}
   </div>
 </body>
+  {% include "meshweb/footer.html" %}
 </html>

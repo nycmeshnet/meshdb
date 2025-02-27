@@ -17,6 +17,7 @@ def index(request: HttpRequest) -> HttpResponse:
             ("/explorer/play", "SQL Explorer"),
             (f"{settings.FORMS_URL}/nn-assign/", "NN Assign Form"),
             (f"{settings.FORMS_URL}/query/", "Query Form"),
+            (f"/join-records/view/", "Join Record Viewer"),
         ],
         ("meshweb/developer.png", "Developer Tools"): [
             ("https://github.com/nycmeshnet/meshdb", "Source Code"),
