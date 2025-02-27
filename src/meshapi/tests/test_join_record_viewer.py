@@ -17,6 +17,7 @@ from meshapi.util.join_records import JOIN_RECORD_BUCKET_NAME, JoinRecordProcess
 
 @mock_aws
 @patch("meshapi.util.join_records.JOIN_RECORD_PREFIX", MOCK_JOIN_RECORD_PREFIX)
+@patch("meshapi.util.join_records.JOIN_RECORD_ENDPOINT", "")
 class TestJoinRecordViewer(TestCase):
     a = Client()  # Anonymous client
     c = Client()
@@ -57,6 +58,10 @@ class TestJoinRecordViewer(TestCase):
 
     def test_view_join_records_malformed_iso_string(self):
         response = self.c.get("/join-records/view/?since=2024-9-30T00:00:00")
+        self.assertEqual(400, response.status_code)
+
+    def test_view_join_records_from_the_future(self):
+        response = self.c.get("/join-records/view/?since=3024-09-30T00:00:00")
         self.assertEqual(400, response.status_code)
 
     def test_view_join_records(self):
