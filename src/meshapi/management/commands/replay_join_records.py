@@ -42,17 +42,26 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args: Any, **options: Any) -> None:
-        logging.info("Fetching Join Records...")
+        # Default to getting join records from 1 week ago unless otherwise specified
+        since = options["since"] or self.past_week()
+
+        if since > datetime.now(timezone.utc):
+            logging.error("Can't fetch join records from the future! Quitting...")
+            return
 
         p = JoinRecordProcessor()
 
-        # Default to getting join records from 1 week ago unless otherwise specified
-        since = options["since"] or self.past_week()
+        logging.info("Fetching Join Records...")
 
         # Ensure that the join records in pre-submission match the ones in post-submission
         # This method will get both sets of records and supplement the post-submission
         # records if any are missing.
         consistent_join_records_dict = p.ensure_pre_post_consistency(since)
+
+        # Bail if there are no join records to show
+        if not consistent_join_records_dict:
+            logging.warning("Found no records, quitting...")
+            return
 
         table = PrettyTable()
         table.padding_width = 0
@@ -67,14 +76,8 @@ class Command(BaseCommand):
         join_records_to_replay = {}
 
         for uuid, record in consistent_join_records_dict.items():
-            if not options["all"]:
-                # Ignore submissions that are known good
-                if record.install_number:
-                    continue
-
-                # Don't bother replaying 400's. All we care about are 500's and nulls
-                if record.code and 400 <= int(record.code) and int(record.code) <= 499:
-                    continue
+            if not options["all"] and self.filter_irrelevant_record(record):
+                continue
 
             join_records_to_replay[uuid] = record
             record_as_dict = asdict(record)
@@ -173,3 +176,14 @@ class Command(BaseCommand):
     @staticmethod
     def past_week() -> datetime:
         return datetime.now(timezone.utc) - timedelta(days=7)
+
+    @staticmethod
+    def filter_irrelevant_record(record: JoinRecord) -> bool:
+        # Ignore submissions that are known good
+        if record.install_number:
+            return True
+
+        # Don't bother replaying 400's. All we care about are 500's and nulls
+        if record.code and 400 <= int(record.code) and int(record.code) <= 499:
+            return True
+        return False
