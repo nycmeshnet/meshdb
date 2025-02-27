@@ -7,10 +7,27 @@
 </head>
 <body>
   {% include "meshweb/nav.html" %}
-    <h2>MeshDB Join Record Viewer</h2>
+  <div class="recordViewerHead">
+    <h2>Join Record Viewer</h2>
+    <form id="paramForm" action="/join-records/view/" method="GET">
+      <div>
+        <label for="since">Since:</label>
+        <input type="datetime-local" id="since" name="since">
+      </div>
+      <div>
+        <label for="all">Show All Records:</label>
+        <input type="checkbox" id="all" name="all" value="True">
+      </div>
+      <input type="submit" value="Search">
+    </form>
+  </div>
+  <div style="color: #55585b; display: flex; justify-content:center;">
   {% if records and not all %}
   <p>The following records need to be replayed:</p>
+  {% else %}
+  <p>Showing all records since selected time</p>
   {% endif %}
+  </div>
   <div class="recordTable">
     {% if records %}
     <table id="record_table">

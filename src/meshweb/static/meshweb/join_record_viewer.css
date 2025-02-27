@@ -28,3 +28,17 @@ tr:nth-child(even) {
   overflow: scroll;
   margin: 20px;
 }
+
+.recordViewerHead {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  margin: 20px;
+}
+
+#paramForm {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  column-gap: 20px;
+}
