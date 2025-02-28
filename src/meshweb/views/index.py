@@ -1,8 +1,7 @@
+from datadog import statsd
 from django.conf import settings
 from django.http import HttpRequest, HttpResponse
 from django.template import loader
-
-from datadog import statsd
 
 
 def index(request: HttpRequest) -> HttpResponse:
