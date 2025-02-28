@@ -13,7 +13,7 @@ import os
 from datadog import initialize
 from django.core.wsgi import get_wsgi_application
 
-initialize(statsd_host="127.0.0.1", statsd_port=8125)
+initialize(statsd_host="datadog-agent.datadog.svc.cluster.local", statsd_port=8125)
 
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "meshdb.settings")
