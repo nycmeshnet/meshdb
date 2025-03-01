@@ -7,6 +7,7 @@ from json.decoder import JSONDecodeError
 from typing import Optional
 
 from datadog import statsd
+from ddtrace import tracer
 from django.db import IntegrityError, transaction
 from django.db.models import Q
 from drf_spectacular.utils import OpenApiResponse, extend_schema, extend_schema_view, inline_serializer
@@ -65,7 +66,7 @@ class JoinFormRequestSerializer(DataclassSerializer):
 
 form_err_response_schema = inline_serializer("ErrorResponse", fields={"detail": serializers.CharField()})
 
-
+@tracer.wrap()
 @extend_schema_view(
     post=extend_schema(
         tags=["User Forms"],
