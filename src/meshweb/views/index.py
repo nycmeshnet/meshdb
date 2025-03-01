@@ -1,9 +1,11 @@
+from datadog import statsd
 from django.conf import settings
 from django.http import HttpRequest, HttpResponse
 from django.template import loader
 
 
 def index(request: HttpRequest) -> HttpResponse:
+    statsd.increment("meshdb.views.index", tags=[])
     template = loader.get_template("meshweb/index.html")
     links = {
         "Member Tools": [
