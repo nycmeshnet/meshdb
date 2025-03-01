@@ -59,6 +59,8 @@ jobs:
         --set email.smtp_password="${{ secrets.SMTP_PASSWORD }}" \
         --set meshweb.backup_s3_base_folder="${{ vars.BACKUP_S3_BASE_FOLDER }}" \
         --set meshweb.backup_s3_bucket_name="${{ secrets.BACKUP_S3_BUCKET_NAME }}" \
+        --set meshweb.join_record_bucket_name="${{ secrets.JOIN_RECORD_BUCKET_NAME }}" \
+        --set meshweb.join_record_prefix="${{ secrets.JOIN_RECORD_PREFIX }}" \
         --set meshweb.django_secret_key="${{ secrets.DJANGO_SECRET_KEY }}" \
         --set meshweb.nn_assign_psk="${{ secrets.NN_ASSIGN_PSK }}" \
         --set meshweb.query_psk="${{ secrets.QUERY_PSK }}" \
