@@ -66,6 +66,7 @@ class JoinFormRequestSerializer(DataclassSerializer):
 
 form_err_response_schema = inline_serializer("ErrorResponse", fields={"detail": serializers.CharField()})
 
+
 @tracer.wrap()
 @extend_schema_view(
     post=extend_schema(
