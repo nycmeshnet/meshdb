@@ -18,6 +18,7 @@ class Install(models.Model):
     class Meta:
         permissions = [
             ("assign_nn", "Can assign an NN to install"),
+            ("disambiguate_number", "Can disambiguate an install number from an NN"),
             ("update_panoramas", "Can update panoramas"),
         ]
         ordering = ["-install_number"]
