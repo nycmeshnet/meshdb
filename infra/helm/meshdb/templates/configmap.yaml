@@ -6,7 +6,7 @@ metadata:
 data:
   MESHDB_ENVIRONMENT: {{ .Values.meshweb.environment }}
   DD_ENV: {{ .Values.meshweb.environment }}
-  DD_SERVICE: {{ include "chartname.fullname" . }}
+  DD_SERVICE: {{ include "meshdb.fullname" . }}
   DD_TRACE_AGENT_URL: http://datadog-agent.datadog.svc.cluster.local
   DB_NAME: {{ .Values.pg.dbname }}
   DB_USER: {{ .Values.pg.user | quote }}
