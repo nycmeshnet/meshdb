@@ -22,7 +22,7 @@ def index(request: HttpRequest) -> HttpResponse:
             ("https://github.com/nycmeshnet/meshdb", "Source Code"),
             ("/api/v1/", "MeshDB Data API"),
             ("/api-docs/swagger/", "API Docs (Swagger)"),
-            ("/api-docs/redoc/", "API Dcos (Redoc)"),
+            ("/api-docs/redoc/", "API Docs (Redoc)"),
         ],
     }
     context = {"links": links, "logo": "meshweb/logo.svg"}
