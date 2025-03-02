@@ -6,7 +6,7 @@ metadata:
   labels:
     {{- include "meshdb.labels" . | nindent 4 }}
 spec:
-  {{- if "prod" in .Values.meshweb.environment }}
+  {{- if contains "prod" .Values.meshweb.environment }}
   replicas: 3
   {{- else }}
   replicas: 1
