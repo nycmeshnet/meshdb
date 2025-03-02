@@ -48,13 +48,14 @@ footer a {
 .joinButton {
   display: flex;
   justify-content: center;
+  padding: 20px;
 }
 
 .meshDbHeader {
   display:flex;
   flex-direction:row;
   justify-content: center;
-  padding: 20px;
+  padding: 40px 0 0 0;
 }
 
 .links {
