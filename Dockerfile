@@ -18,4 +18,4 @@ COPY ./src/meshweb/static .
 
 COPY ./src .
 
-ENTRYPOINT ./scripts/entrypoint.sh && ddtrace-run exec gunicorn 'meshdb.wsgi' --workers 4 --graceful-timeout 2 --bind=0.0.0.0:8081
+ENTRYPOINT ./scripts/entrypoint.sh && exec ddtrace-run gunicorn 'meshdb.wsgi' --workers 4 --graceful-timeout 2 --bind=0.0.0.0:8081
