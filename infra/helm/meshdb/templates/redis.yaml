@@ -44,7 +44,7 @@ spec:
         - name: {{ .Chart.Name }}-redis
           securityContext:
             {{- toYaml .Values.redis.securityContext | nindent 12 }}
-          image: "redis:latest"
+          image: "docker.io/redis:latest"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
             - name: redis

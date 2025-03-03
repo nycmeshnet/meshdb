@@ -33,7 +33,7 @@ spec:
         - name: {{ .Chart.Name }}-postgres
           securityContext:
             {{- toYaml .Values.pg.securityContext | nindent 12 }}
-          image: postgres:15-bookworm
+          image: docker.io/postgres:15-bookworm
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
             - name: postgres

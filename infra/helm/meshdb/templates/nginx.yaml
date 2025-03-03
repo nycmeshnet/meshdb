@@ -32,7 +32,7 @@ spec:
         - name: {{ .Chart.Name }}-nginx
           securityContext:
             {{- toYaml .Values.nginx.securityContext | nindent 12 }}
-          image: "nginx:latest"
+          image: "docker.io/nginx:latest"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
             - name: nginx
