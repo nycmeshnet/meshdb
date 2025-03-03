@@ -28,6 +28,10 @@ spec:
     spec:
       securityContext:
         {{- toYaml .Values.nginx.podSecurityContext | nindent 8 }}
+      {{- if .Values.imageCredentials }}
+      imagePullSecrets:
+        - name: pull-secret
+      {{- end }}
       containers:
         - name: {{ .Chart.Name }}-nginx
           securityContext:

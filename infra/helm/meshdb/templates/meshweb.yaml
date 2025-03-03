@@ -7,10 +7,6 @@ metadata:
     {{- include "meshdb.labels" . | nindent 4 }}
 spec:
   replicas: 3
-  {{- if .Values.imageCredentials }}
-  imagePullSecrets:
-    - name: pull-secret
-  {{- end }}
   selector:
     matchLabels:
       {{- include "meshdb.selectorLabels" . | nindent 6 }}
@@ -31,6 +27,10 @@ spec:
     spec:
       securityContext:
         {{- toYaml .Values.meshweb.podSecurityContext | nindent 8 }}
+      {{- if .Values.imageCredentials }}
+      imagePullSecrets:
+        - name: pull-secret
+      {{- end }}
       containers:
         - name: {{ .Chart.Name }}-meshweb
           securityContext:
