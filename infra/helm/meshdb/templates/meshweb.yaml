@@ -7,6 +7,11 @@ metadata:
     {{- include "meshdb.labels" . | nindent 4 }}
 spec:
   replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
   selector:
     matchLabels:
       {{- include "meshdb.selectorLabels" . | nindent 6 }}
