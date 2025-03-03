@@ -29,6 +29,10 @@ spec:
     spec:
       securityContext:
         {{- toYaml .Values.pg.podSecurityContext | nindent 8 }}
+      {{- if .Values.imageCredentials }}
+      imagePullSecrets:
+        - name: pull-secret
+      {{- end }}
       containers:
         - name: {{ .Chart.Name }}-postgres
           securityContext:
