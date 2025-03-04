@@ -57,7 +57,7 @@ class TestSlackNotification(TestCase):
         self.assertEqual(
             request_payload["text"],
             "Encountered the following data issue which may require admin attention: "
-            "*Dropped name change: Stacy Marriedname (install request #98232)*. When processing "
+            "*Dropped name change: Stacy Marriedname (install request #98232)*. \n\nWhen processing "
             f"the following members: <http://testserver/admin/meshapi/member/{member.id}/change/|Stacy "
             "Maidenname>. Please open the database admin UI using the provided links to correct "
             "this.\n"
@@ -133,7 +133,7 @@ class TestSlackNotification(TestCase):
         self.assertEqual(
             request_payload["text"],
             "Encountered the following data issue which may require admin attention: *Things are broken &amp; "
-            "really bad*. When processing the following links: "
+            "really bad*. \n\nWhen processing the following links: "
             "<http://localhost/admin/meshapi/link/6600c6a5-f3dc-47cd-b791-c65ebade1f0e/change/|NN101 &lt;-&gt; NN102>. "
             "Please open the database admin UI using the provided links to correct this.\n\n"
             "The current database state of these object(s) is: \n"
@@ -193,7 +193,7 @@ class TestSlackNotification(TestCase):
         self.assertEqual(
             request_payload["text"],
             "Encountered the following data issue which may require admin attention: "
-            "*Possible duplicate member objects detected*. When processing the following members: "
+            "*Possible duplicate member objects detected*. \n\nWhen processing the following members: "
             f"<http://testserver/admin/meshapi/member/{member1.id}/change/|Stacy Fakename>, "
             f"<http://testserver/admin/meshapi/member/{member2.id}/change/|Stacy Fakename>. "
             "Please open the database admin UI using the provided links to correct this.\n"

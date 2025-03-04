@@ -417,6 +417,9 @@ class TestUISPImportUpdateObjects(TransactionTestCase):
         last_seen_date = datetime.datetime(2018, 11, 14, 15, 20, 32, 4000, tzinfo=tzutc())
         mock_get_last_seen.return_value = last_seen_date
 
+        # Link should have just one history entry from when we created it
+        self.assertEqual(1, len(self.link.history.all()))
+
         change_messages = update_link_from_uisp_data(
             self.link,
             uisp_link_id="fake-uisp-uuid2",
@@ -440,6 +443,22 @@ class TestUISPImportUpdateObjects(TransactionTestCase):
                 "Marked as Inactive due to it being offline in UISP for more than 30 days",
             ],
         )
+
+        # Link should have a second entry, due to legitimate update
+        self.assertEqual(2, len(self.link.history.all()))
+
+        # Run the update again...
+        change_messages = update_link_from_uisp_data(
+            self.link,
+            uisp_link_id="fake-uisp-uuid2",
+            uisp_from_device=self.device1,
+            uisp_to_device=self.device3,
+            uisp_status=Link.LinkStatus.INACTIVE,
+        )
+
+        # And it SHOULD NOT make another history object
+        self.link.refresh_from_db()
+        self.assertEqual(2, len(self.link.history.all()))
 
     @patch("meshapi.util.uisp_import.update_objects.get_uisp_link_last_seen")
     def test_update_link_add_abandon_date(self, mock_get_last_seen):
@@ -747,6 +766,128 @@ class TestUISPImportUpdateObjects(TransactionTestCase):
         self.assertEqual(self.device1.abandon_date, None)
 
         self.assertEqual(change_messages, [])
+
+
+class TestUISPImportHandlersDontDuplicateHistory(TransactionTestCase):
+    def setUp(self) -> None:
+        self.node1 = Node(
+            network_number=1234,
+            status=Node.NodeStatus.ACTIVE,
+            type=Node.NodeType.STANDARD,
+            latitude=0,
+            longitude=0,
+        )
+        self.node1.save()
+
+        self.node2 = Node(
+            network_number=5678,
+            status=Node.NodeStatus.ACTIVE,
+            type=Node.NodeType.STANDARD,
+            latitude=0,
+            longitude=0,
+        )
+        self.node2.save()
+
+        self.building1 = Building(latitude=0, longitude=0, address_truth_sources=[])
+        self.building1.primary_node = self.node1
+        self.building1.save()
+
+        self.building2 = Building(latitude=0, longitude=0, address_truth_sources=[])
+        self.building2.primary_node = self.node2
+        self.building2.save()
+
+        self.device1 = Device(
+            node=self.node1,
+            status=Device.DeviceStatus.ACTIVE,
+            name="nycmesh-1234-dev1",
+            uisp_id="uisp-uuid1",
+        )
+        self.device1.save()
+
+        self.device2 = Device(
+            node=self.node2,
+            status=Device.DeviceStatus.ACTIVE,
+            name="nycmesh-5678-dev2",
+            uisp_id="uisp-uuid2",
+        )
+        self.device2.save()
+
+        self.link1 = Link(
+            from_device=self.device1,
+            to_device=self.device2,
+            status=Link.LinkStatus.ACTIVE,
+            type=Link.LinkType.FIVE_GHZ,
+            uisp_id="uisp-uuid1",
+        )
+        self.link1.save()
+
+    @patch("meshapi.util.uisp_import.sync_handlers.notify_admins_of_changes")
+    def test_import_and_sync_devices_and_ensure_history_does_not_duplicate(self, mock_notify_admins):
+
+        uisp_devices = [
+            {
+                "overview": {
+                    "status": "active",
+                    "createdAt": "2018-11-14T15:20:32.004Z",
+                    "lastSeen": "2024-08-12T02:04:35.335Z",
+                    "wirelessMode": "sta-ptmp",
+                },
+                "identification": {
+                    "id": "uisp-uuid1",
+                    "name": "nycmesh-1234-dev69",  # Gonna change dev1 to dev69
+                    "category": "wireless",
+                    "type": "airMax",
+                },
+            },
+            {
+                "overview": {
+                    "status": None,
+                    "createdAt": "2018-11-14T15:20:32.004Z",
+                    "lastSeen": "2024-08-12T02:04:35.335Z",
+                    "wirelessMode": "sta-ptmp",
+                },
+                "identification": {
+                    "id": "uisp-uuid2",
+                    "name": "nycmesh-5678-dev2",
+                    "category": "wireless",
+                    "type": "airMax",
+                },
+            },
+            {
+                "overview": {
+                    "status": "active",
+                    "createdAt": "2018-11-14T15:20:32.004Z",
+                    "lastSeen": "2024-08-12T02:04:35.335Z",
+                    "wirelessMode": "sta-ptmp",
+                },
+                "identification": {
+                    "id": "uisp-uuid100",
+                    "name": "nycmesh-1234-dev100",
+                    "category": "wireless",
+                    "type": "airMax",
+                },
+            },
+        ]
+
+        # Haven't updated yet
+        created_device = Device.objects.get(uisp_id="uisp-uuid1")
+        length_1 = len(created_device.history.all())
+        self.assertEqual(1, length_1)
+
+        import_and_sync_uisp_devices(uisp_devices)
+
+        # Legitimate update
+        created_device.refresh_from_db()
+        length_2 = len(created_device.history.all())
+        self.assertEqual(2, length_2)
+
+        # Run it again. Should be a noop
+        import_and_sync_uisp_devices(uisp_devices)
+
+        # Should not have made more history
+        created_device.refresh_from_db()
+        length_3 = len(created_device.history.all())
+        self.assertEqual(2, length_3)
 
 
 class TestUISPImportHandlers(TransactionTestCase):
@@ -1722,6 +1863,9 @@ class TestUISPImportHandlers(TransactionTestCase):
         )
         los2.save()
 
+        # LOS should have one history entry from creation
+        self.assertEqual(1, len(los1.history.all()))
+
         sync_link_table_into_los_objects()
 
         los1.refresh_from_db()
@@ -1735,6 +1879,19 @@ class TestUISPImportHandlers(TransactionTestCase):
         self.assertEqual(los2.to_building, self.building3)
         self.assertEqual(los2.source, LOS.LOSSource.EXISTING_LINK)
         self.assertEqual(los2.analysis_date, datetime.date.today())
+
+        # Get another entry from legitimite update
+        self.assertEqual(2, len(los1.history.all()))
+        self.assertEqual(2, len(los2.history.all()))
+
+        # Run the sync again...
+        sync_link_table_into_los_objects()
+
+        # SHOULD NOT have a third entry
+        los1.refresh_from_db()
+        los2.refresh_from_db()
+        self.assertEqual(2, len(los1.history.all()))
+        self.assertEqual(2, len(los2.history.all()))
 
     def test_sync_links_with_los_inactive_link(self):
         self.link1.status = Link.LinkStatus.INACTIVE

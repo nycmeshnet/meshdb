@@ -61,6 +61,8 @@ FLAGS: Dict[str, Any] = {
 
 USE_X_FORWARDED_HOST = True
 
+X_FRAME_OPTIONS = "SAMEORIGIN"
+
 SECURE_HSTS_SECONDS = 31536000
 SECURE_HSTS_PRELOAD = False
 SECURE_HSTS_INCLUDE_SUBDOMAINS = False
@@ -134,6 +136,7 @@ ALLOWED_HOSTS = [
     "meshdb",
     "nginx",
     "devdb.nycmesh.net",
+    "gammadb.nycmesh.net",
 ]
 
 CORS_ALLOWED_ORIGINS = [
@@ -142,6 +145,7 @@ CORS_ALLOWED_ORIGINS = [
     "https://adminmap.db.nycmesh.net",
     "https://adminmap.devdb.nycmesh.net",
     "https://devdb.nycmesh.net",
+    "https://gammadb.nycmesh.net",
 ]
 
 CORS_ALLOW_HEADERS = [
@@ -156,6 +160,7 @@ CSRF_TRUSTED_ORIGINS = [
     "http://nginx:8080",
     "https://db.nycmesh.net",
     "https://devdb.nycmesh.net",
+    "https://gammadb.nycmesh.net",
 ]
 
 if DEBUG:
@@ -167,6 +172,7 @@ if DEBUG:
 
     CORS_ALLOWED_ORIGINS += [
         "http://127.0.0.1:3000",
+        "http://127.0.0.1:3001",
         "http://localhost:3000",
         "http://127.0.0.1:80",
         "http://localhost:80",

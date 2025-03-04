@@ -109,7 +109,7 @@ You'll probably want an admin account
 python src/manage.py createsuperuser
 ```
 
-And if you have access to it, you can use `import_spreadsheet_dump.sh` to populate
+And if you have access to it, you can use `import_datadump.sh` script to populate
 your database.
 
 > [!WARNING]
@@ -117,8 +117,9 @@ your database.
 > circumstances.
 
 ```sh
-cp -R <path_to_data_dump> ./spreadsheet_data/
-./scripts/import_spreadsheet_dump.sh
+mkdir data/
+cp <path_to_data_dump>/full_dump.sql data/
+./scripts/import_datadump.sh
 ```
 
 If you want to do work with celery, you'll need to run a worker as well as a beat.
@@ -318,6 +319,30 @@ ADMIN_MAP_BASE_URL=http://localhost:3000
 
 Follow this PR: https://github.com/nycmeshnet/meshdb/pull/617/files
 
+### Making Exports for New Devs
+
+To make importable data exports for new devs, first obtain a local copy of the data you want to 
+share (see Backups below). Then:
+
+Run the scramble script to obfuscate PII:
+```sh
+python src/manage.py scramble_members
+```
+
+Clear the data from the historical tables (so that we don't leak the data we just scrambled via a diff)
+```sh
+scripts/clear_history_tables.sh
+```
+[!WARNING]
+Be sure that you spot check the data to make sure the scramble process worked as expected.
+
+Finally, create an importable datadump with:
+```sh
+scripts/create_importable_datadump.sh
+```
+
+The file will be written to `data/full_dump.sql`, share this with the new devs
+
 ### Backups
 
 **The Proper Way**
@@ -351,7 +376,7 @@ $ echo 'drop database meshdb; create database meshdb;' | docker exec -i meshdb-p
 
 4. Restore the backup
 ```
-root@eefdc57a46c2:/opt/meshdb# python manage.py dbrestore -i default-bd0acc253775-2024-03-31-163520.psql.bin   
+root@eefdc57a46c2:/opt/meshdb# python manage.py dbrestore -i default-bd0acc253775-2024-03-31-163520.psql.bin --database default   
 ```
 
 **The Quick 'n Dirty Way**
