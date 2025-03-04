@@ -4,8 +4,9 @@ from unittest.mock import MagicMock, patch
 from django.test import TestCase
 
 from meshapi.exceptions import AddressAPIError, AddressError
-from meshapi.tests.sample_data import sample_address_response
-from meshapi.validation import NYCAddressInfo
+from meshapi.tests.sample_data import sample_address_response, sample_osm_address_response
+from meshapi.util.constants import INVALID_ALTITUDE
+from meshapi.validation import AddressInfo, NYCAddressInfo, OSMAddressInfo
 
 
 class TestValidationNYCAddressInfo(TestCase):
@@ -107,3 +108,59 @@ class TestValidationNYCAddressInfo(TestCase):
             assert nyc_addr_info.latitude == 40.716245
             assert nyc_addr_info.altitude is None
             assert nyc_addr_info.bin == 1234
+
+
+class TestValidationOSMAddressInfo(TestCase):
+    def test_invalid_state(self):
+        with self.assertRaises(ValueError):
+            OSMAddressInfo("151 Broome St", "New York", "ny", "10002")
+
+    @patch("meshapi.validation.Nominatim")
+    def test_validate_address_geosearch_empty_response(self, mock_nominatim):
+        mock_geocode_func = MagicMock()
+        mock_geolocator = MagicMock()
+        mock_geolocator.geocode = mock_geocode_func
+        mock_nominatim.return_value = mock_geolocator
+
+        mock_geocode_func.return_value = None
+
+        with self.assertRaises(AddressError):
+            OSMAddressInfo("151 Broome St", "New York", "NY", "10002")
+
+    @patch("meshapi.validation.Nominatim")
+    def test_validate_address_geosearch_network_or_throttle(self, mock_nominatim):
+        mock_geocode_func = MagicMock()
+        mock_geolocator = MagicMock()
+        mock_geolocator.geocode = mock_geocode_func
+        mock_nominatim.return_value = mock_geolocator
+        mock_geocode_func.side_effect = Exception("Pretend this is a network issue")
+
+        with self.assertRaises(AddressAPIError):
+            OSMAddressInfo("151 Broome St", "New York", "NY", "10002")
+
+    @patch("meshapi.validation.Nominatim")
+    def test_validate_address_good(self, mock_nominatim):
+        mock_geocode_func = MagicMock()
+        mock_geolocator = MagicMock()
+        mock_geolocator.geocode = mock_geocode_func
+        mock_nominatim.return_value = mock_geolocator
+        mock_geocode_func.return_value = sample_osm_address_response
+
+        osm_addr_info = OSMAddressInfo("151 broome Street", "New York", "NY", "10002")
+
+        assert osm_addr_info is not None
+        assert osm_addr_info.osm_id == 250268365
+        assert osm_addr_info.osm_place_id == 333450671
+        assert osm_addr_info.street_address == "151 Broome Street"
+        assert osm_addr_info.city == "New York"
+        assert osm_addr_info.state == "NY"
+        assert osm_addr_info.zip == "10002"
+        assert osm_addr_info.longitude == -73.98489654157149
+        assert osm_addr_info.latitude == 40.7162281
+        assert osm_addr_info.altitude == INVALID_ALTITUDE
+
+
+class TestValidationRawAddressInfo(TestCase):
+    def test_invalid_state(self):
+        with self.assertRaises(TypeError):
+            AddressInfo("151 Broome St", "New York", "NY", "10002")
