@@ -108,6 +108,18 @@ services:
       exit 0;
       "
 
+  celery-worker:
+    image: willnilges/meshdb:main
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+
+  celery-beat:
+    image: willnilges/meshdb:main
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+
 volumes:
   postgres_data:
   static_files:
