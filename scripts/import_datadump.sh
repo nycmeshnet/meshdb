@@ -3,7 +3,6 @@
 DOCKER_PG_COMMAND="docker exec -i meshdb-postgres-1 psql -U meshdb -d meshdb"
 DATA_DIR="./data/"
 tables=(
-"meshapi_building"
 "meshapi_los"
 "meshapi_link"
 "meshapi_accesspoint"
@@ -12,6 +11,7 @@ tables=(
 "meshapi_building_nodes"
 "meshapi_node"
 "meshapi_install"
+"meshapi_building"
 "meshapi_member"
 "meshapi_historicallos"
 "meshapi_historicallink"
