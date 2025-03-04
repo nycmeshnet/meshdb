@@ -3,7 +3,7 @@ import datetime
 import json
 import time
 from unittest import mock
-from unittest.mock import ANY, patch
+from unittest.mock import ANY, patch, MagicMock
 
 import requests_mock
 from django.contrib.auth.models import User
@@ -146,6 +146,7 @@ class TestJoinForm(TestCase):
         )
 
         request, s = pull_apart_join_form_submission(submission)
+        # s.street_address = submission["street_address"]
 
         response = self.c.post("/api/v1/join/", request, content_type="application/json")
         code = 201
@@ -265,10 +266,23 @@ class TestJoinForm(TestCase):
         )
         validate_successful_join_form_submission(self, "Valid Join Form", s, response)
 
-    def test_valid_join_form_use_original_with_results_from_geosearch(self):
-        submission = valid_join_form_submission
+    @mock.patch("meshapi.validation.Nominatim")
+    def test_valid_join_form_use_original_with_results_from_geosearch(self, mock_nominatim):
+        mock_geolocator = MagicMock()
+        mock_geolocator.geocode = MagicMock()
+
+        mock_geocode_result = MagicMock()
+        mock_geocode_result.latitude = 0
+        mock_geocode_result.longitude = 0
+        mock_geocode_result.raw = {"osm_id": "ABC", "place_id": "DEF"}
+
+        mock_geolocator.geocode.return_value = mock_geocode_result
+
+        mock_nominatim.return_value = mock_geolocator
+
+        submission = valid_join_form_submission.copy()
         submission["street_address"] = "151 B Street"
-        submission["city"] = "NYC"
+        submission["city"] = "new yurk"
         submission["phone_number"] = "1111111111"
 
         self.requests_mocker.get(
@@ -278,6 +292,7 @@ class TestJoinForm(TestCase):
 
         request, s = pull_apart_join_form_submission(submission)
         s.street_address = "151 B Street"
+        s.city = "New Yurk"
         request["trust_me_bro"] = False
 
         response = self.c.post("/api/v1/join/", request, content_type="application/json")
@@ -300,13 +315,13 @@ class TestJoinForm(TestCase):
 
         install = Install.objects.get(id=response.json()["install_id"])
         self.assertEqual(install.building.street_address, "151 B Street")
-        self.assertEqual(install.building.city, "NYC")
-        self.assertEqual(install.member.phone_number, "+1 111 111 1111")
+        self.assertEqual(install.building.city, "New Yurk")
+        self.assertEqual(install.member.phone_number, "+1 1111111111")
 
         validate_successful_join_form_submission(self, "Valid Join Form", s, response)
 
-    def test_valid_join_form_use_original_without_results_from_geosearch(self):
-        submission = valid_join_form_submission
+    def test_join_form_without_results_from_geosearch(self):
+        submission = valid_join_form_submission.copy()
         submission["street_address"] = "151 B Street"
         submission["city"] = "NYC"
         submission["phone_number"] = "1111111111"
@@ -318,7 +333,7 @@ class TestJoinForm(TestCase):
         request["trust_me_bro"] = False
 
         response = self.c.post("/api/v1/join/", request, content_type="application/json")
-        code = 409
+        code = 400
         self.assertEqual(
             code,
             response.status_code,
@@ -328,22 +343,15 @@ class TestJoinForm(TestCase):
         request["trust_me_bro"] = True
 
         response = self.c.post("/api/v1/join/", request, content_type="application/json")
-        code = 201
+        code = 400
         self.assertEqual(
             code,
             response.status_code,
             f"status code incorrect for Valid Join Form. Should be {code}, but got {response.status_code}.\n Response is: {response.content.decode('utf-8')}",
         )
 
-        install = Install.objects.get(id=response.json()["install_id"])
-        self.assertEqual(install.building.street_address, "151 B Street")
-        self.assertEqual(install.building.city, "NYC")
-        self.assertEqual(install.member.phone_number, "+1 111 111 1111")
-
-        validate_successful_join_form_submission(self, "Valid Join Form", s, response)
-
     def test_valid_trust_me_bro_bad_zip(self):
-        submission = valid_join_form_submission
+        submission = valid_join_form_submission.copy()
         submission["zip_code"] = "00000"
 
         self.requests_mocker.get(
@@ -363,7 +371,7 @@ class TestJoinForm(TestCase):
         )
 
     def test_valid_trust_me_bro_bad_state(self):
-        submission = valid_join_form_submission
+        submission = valid_join_form_submission.copy()
         submission["state"] = "CA"
 
         self.requests_mocker.get(

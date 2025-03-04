@@ -257,7 +257,8 @@ def process_join_form(r: JoinFormRequest, request: Optional[Request] = None) -> 
         join_form_member.additional_phone_numbers.append(formatted_phone_number)
 
     existing_exact_buildings = []
-    addr_info: AddressInfo = nyc_addr_info
+    existing_primary_nodes_for_structure = []
+    existing_nodes_for_structure = []
     if "street_address" not in changed_info and "city" not in changed_info:
         addr_info = nyc_addr_info
 
