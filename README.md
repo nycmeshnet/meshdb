@@ -333,7 +333,8 @@ Clear the data from the historical tables (so that we don't leak the data we jus
 ```sh
 scripts/clear_history_tables.sh
 ```
-[!WARNING] be sure that you spot check the data to make sure the scramble process worked as expected.
+[!WARNING]
+Be sure that you spot check the data to make sure the scramble process worked as expected.
 
 Finally, create an importable datadump with:
 ```sh
