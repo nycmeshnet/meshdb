@@ -41,7 +41,7 @@ spec:
           command: {{ toJson .command }}
           env:
           - name: DD_SERVICE
-            value: {{ include "celery.fullname" . }}
+            value: celery 
           # TODO (willnilges): Fix this in a later PR. Computers
           #  https://github.com/nycmeshnet/meshdb/issues/519
           envFrom:
