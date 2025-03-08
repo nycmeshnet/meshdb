@@ -42,7 +42,7 @@ spec:
           env:
           - name: DD_SERVICE
             value: {{ include "celery.fullname" . }}
-          # TODO (willnilges): Fix this in a later PR
+          # TODO (willnilges): Fix this in a later PR. Computers
           #  https://github.com/nycmeshnet/meshdb/issues/519
           envFrom:
             - configMapRef:
