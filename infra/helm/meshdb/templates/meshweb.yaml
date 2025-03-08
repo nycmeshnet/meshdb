@@ -41,6 +41,9 @@ spec:
             - name: http
               containerPort: {{ .Values.meshweb.port }}
               protocol: TCP
+          env:
+          - name: DD_SERVICE
+            value: {{ include "meshdb.fullname" . }}
           envFrom:
             - configMapRef:
                 name: meshdbconfig

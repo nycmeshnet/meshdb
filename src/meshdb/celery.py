@@ -6,6 +6,9 @@ from celery.apps.worker import Worker
 from celery.signals import beat_init, worker_ready, worker_shutdown
 from dotenv import load_dotenv
 
+from datadog import initialize, statsd
+from django.core.wsgi import get_wsgi_application
+
 HEARTBEAT_FILE = Path("/tmp/celery_worker_heartbeat")
 READINESS_FILE = Path("/tmp/celery_worker_ready")
 BEAT_READINESS_FILE = Path("/tmp/celery_beat_ready")
@@ -35,6 +38,7 @@ class LivenessProbe(bootsteps.StartStopStep):
         HEARTBEAT_FILE.unlink(missing_ok=True)
 
     def update_heartbeat_file(self, parent: Worker) -> None:
+        statsd.increment("meshdb.celery.heartbeat")
         HEARTBEAT_FILE.touch()
 
 
@@ -52,6 +56,8 @@ def worker_shutdown(**_: dict) -> None:
 def beat_ready(**_: dict) -> None:
     BEAT_READINESS_FILE.touch()
 
+# Initialize dogstatsd
+initialize(statsd_host="datadog-agent.datadog.svc.cluster.local", statsd_port=8125)
 
 load_dotenv()
 

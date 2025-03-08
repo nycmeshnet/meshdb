@@ -39,6 +39,9 @@ spec:
           resources:
             {{- toYaml $.Values.resources | nindent 12 }}
           command: {{ toJson .command }}
+          env:
+          - name: DD_SERVICE
+            value: {{ include "celery.fullname" . }}
           # TODO (willnilges): Fix this in a later PR
           #  https://github.com/nycmeshnet/meshdb/issues/519
           envFrom:
