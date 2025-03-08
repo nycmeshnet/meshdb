@@ -35,7 +35,6 @@ resources:
 containers:
   - name: celery-worker
     command:
-      - ddtrace-run
       - sh
       - -c
       - ./scripts/celery/celery_worker.sh
@@ -61,7 +60,6 @@ containers:
       timeoutSeconds: 10
   - name: celery-beat
     command: 
-      - ddtrace-run
       - sh
       - -c
       - ./scripts/celery/celery_beat.sh
