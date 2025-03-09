@@ -14,6 +14,7 @@ class Migration(migrations.Migration):
             model_name="install",
             name="additional_members",
             field=models.ManyToManyField(
+                blank=True,
                 help_text="Any additional members associated with this install",
                 related_name="additional_installs",
                 to="meshapi.member",

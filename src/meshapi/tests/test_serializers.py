@@ -170,6 +170,7 @@ class TestViewsGetAdmin(TestCaseWithFullData):
             "install_date": "2022-03-01",
             "install_number": 1,
             "member": {"id": "07927444-3216-4959-858a-2659743ec2a3"},
+            "additional_members": [],
             "node": {"id": "5d554dca-2c9b-4d8e-a9fc-86bedcea92ea", "network_number": 101},
             "notes": "Referral: Read about it on the internet",
             "referral": "foo abc",
