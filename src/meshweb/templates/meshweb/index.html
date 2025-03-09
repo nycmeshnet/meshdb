@@ -17,8 +17,8 @@
   <nav class="navbar navbar-expand-lg py-3">
     <div class="container-fluid max-width-container">
       <img src="{% static 'meshweb/logo.svg' %}" width="45px" style="padding-right: 10px" />
-      <a class="navbar-brand" href="https://www.nycmesh.net/"><strong>NYCMesh</strong>
-        <div class="vr" style="top: 0.1em; position: relative"></div>
+      <a class="navbar-brand collapse navbar-collapse" href="https://www.nycmesh.net/"><strong>NYCMesh</strong>
+        <div class="vr" style="top: 0.1em; position: relative; margin: 0 0.3em;"></div>
         MeshDB
       </a>
       <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent"
@@ -52,40 +52,51 @@
       </div>
     </div>
   </nav>
-  <div style="width:100%; display:flex; justify-content: center; flex-grow: 1; align-items: center;">
-    <div style="display:flex; flex-direction:column; align-items: center; margin-top: 50px; padding-bottom: 4rem;"
-      class="px-5 max-width-container">
-      <img src="{% static 'meshweb/meshdb.png' %}" height="300px" style="margin: 30px 0"/>
-      <h1>Welcome to MeshDB!</h1>
-      <p>
-        This is MeshDB, an application intended to replace the New Node Form.
-        It can be used to track Installs, Members, and Buildings in the mesh.
-      </p>
-        <p>Reach out on Slack using the <code>#meshdb</code> channel if you need access.</p>
-      <hr>
-      <div style="display:flex; flex-direction: row; justify-content: space-between; margin-top: 20px" class="links">
-        {% for category, tools in links.items %}
-        <div class="toolList">
-          <h3>{{ category }}</h3>
-          {% for link, description in tools %}
-          <a href={{ link }}>{{ description }}</a>
-          {% endfor %}
+    <div class="meshDbHeader">
+      <img
+        src="{% static 'meshweb/meshdb.png' %}"
+        height="96px"
+        style="padding: 0 10px;"
+      />
+      <div>
+        <h4>Welcome to MeshDB!</h4>
+        <p>
+          MeshDB is used to track Installs, Members, and Buildings in the mesh.<br>
+          Reach out on Slack using the <code>#meshdb</code> channel if you need access.
+        </p>
+      </div>
+    </div>
+    {% if not user.is_authenticated %}
+    <div class="joinButton">
+    <a href="https://forms.nycmesh.net/en/join"><button type="button" class="btn btn-primary">New Member? Click Here!</button></a>
+    </div>
+    {% endif %}
+    <div class="links">
+      {% for category, tools in links.items %}
+      <div class="toolList">
+        <div class="toolListHeading">
+          <img src="{% static category.0 %}" height="32px" style="padding: 0 10px 0 0;"/>
+          <h5>{{ category.1 }}</h5>
+        </div>
+        {% for link, description in tools %}
+        <div class="toolListItem">
+        <a href={{ link }}><h6>{{ description }}</h6></a>
         </div>
         {% endfor %}
       </div>
+      {% endfor %}
     </div>
-  </div>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"
     integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL"
     crossorigin="anonymous"></script>
 </body>
 
-<footer style="margin-top: auto; padding-bottom:2rem;">
+<footer style="margin-top: auto; flex-grow: 0;">
   <div class="container-fluid max-width-container pt-5">
     <div class="row">
       <div class="col-md-3 mb-5">
-        <img src="{{.Logo}}" width="45px" style="padding-right: 10px" />
-        <a class="navbar-brand" href="https://www.nycmesh.net/"><strong>{{.Org}}</strong></a>
+        <img src="{% static logo %}" width="45px" style="padding-right: 10px" />
+        <a class="navbar-brand" href="https://www.nycmesh.net/"><strong>NYC Mesh</strong></a>
       </div>
       <div class="col-md-2">
         <h5 class="footer-heading">Community</h5>
