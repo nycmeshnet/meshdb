@@ -141,7 +141,6 @@ class TestViewsPutAdmin(TestCase):
 
         inst["building"] = {"id": str(self.building.id)}
         inst["member"] = {"id": str(self.member.id)}
-        #inst["additional_members"] = {}
         inst["install_number"] = 2001
 
         response = self.c.post(
