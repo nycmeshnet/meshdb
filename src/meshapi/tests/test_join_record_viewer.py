@@ -55,6 +55,14 @@ class TestJoinRecordViewer(TestCase):
         # Redirected to admin login
         self.assertEqual(302, response.status_code)
 
+    def test_view_join_records_malformed_iso_string(self):
+        response = self.c.get("/join-records/view/?since=2024-9-30T00:00:00")
+        self.assertEqual(400, response.status_code)
+
+    def test_view_join_records_from_the_future(self):
+        response = self.c.get("/join-records/view/?since=3024-09-30T00:00:00")
+        self.assertEqual(400, response.status_code)
+
     def test_view_join_records(self):
         response = self.c.get("/join-records/view/?since=2024-09-30T00:00:00")
         self.assertEqual(200, response.status_code)
