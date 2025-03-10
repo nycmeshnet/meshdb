@@ -6,8 +6,6 @@
   margin-bottom: 0;
 }
 
-
-
 .max-width-container {
   max-width: 1200px !important;
   padding: 0em 3em;
@@ -61,10 +59,17 @@ footer a {
   align-content:center;
 }
 
+.joinButton {
+  display: flex;
+  justify-content: center;
+  padding: 20px;
+}
+
 .meshDbHeader {
   display:flex;
   flex-direction:row;
   justify-content: center;
+  /*padding: 40px 0 0 0;*/
 }
 
 .links {
@@ -96,7 +101,7 @@ footer a {
 
 .toolListItem {
   display:flex;
-  padding: 20px;
+  padding: 16px 10px;
 }
 
 .toolListItem a {
