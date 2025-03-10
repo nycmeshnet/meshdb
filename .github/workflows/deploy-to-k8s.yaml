@@ -86,8 +86,9 @@ jobs:
         --set ingress.hosts[1].host="${{ vars.INGRESS_HOST_LEGACY }}",ingress.hosts[1].paths[0].path=/,ingress.hosts[1].paths[0].pathType=Prefix \
         --set imageCredentials.username="${{ secrets.PULL_SECRET_USERNAME }}" \
         --set imageCredentials.password="${{ secrets.PULL_SECRET_PASSWORD }}" \
-        --set imageCredentials.email="${{ secrets.PULL_SECRET_EMAIL }}" \
-        --set meshweb.image.tag="${{ inputs.useTag }}"
+        --set imageCredentials.email="${{ secrets.PULL_SECRET_EMAIL }}" \        
+        --set meshweb.image.tag="${{ inputs.useTag }}" \
+        --set celery.image.tag="${{ inputs.useTag }}"
 
         # Rolling restart
         kubectl --kubeconfig ./config --server https://${{ secrets.SSH_TARGET_IP }}:6443 -n ${{ vars.APP_NAMESPACE }} rollout restart deploy

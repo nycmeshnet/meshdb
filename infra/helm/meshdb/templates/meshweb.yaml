@@ -6,7 +6,11 @@ metadata:
   labels:
     {{- include "meshdb.labels" . | nindent 4 }}
 spec:
+  {{- if contains "prod" .Values.meshweb.environment }}
   replicas: 3
+  {{- else }}
+  replicas: 1
+  {{- end }}
   strategy:
     type: RollingUpdate
     rollingUpdate:
@@ -46,6 +50,9 @@ spec:
             - name: http
               containerPort: {{ .Values.meshweb.port }}
               protocol: TCP
+          env:
+          - name: DD_SERVICE
+            value: {{ include "meshdb.fullname" . }}
           envFrom:
             - configMapRef:
                 name: meshdbconfig
