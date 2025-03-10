@@ -41,7 +41,7 @@ meshweb:
   readiness_probe: "true"
   startup_probe: "true"
   image:
-    repository: willnilges/meshdb
+    repository: docker.io/willnilges/meshdb
     tag: main
   podSecurityContext: {}
   securityContext: {}
@@ -121,6 +121,9 @@ pelias:
 
 image:
   pullPolicy: Always
+
+imageCredentials:
+  registry: docker.io
 
 nameOverride: ""
 fullnameOverride: "meshdb"

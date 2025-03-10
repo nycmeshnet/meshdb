@@ -40,11 +40,15 @@ spec:
     spec:
       securityContext:
         {{- toYaml .Values.redis.podSecurityContext | nindent 8 }}
+      {{- if .Values.imageCredentials }}
+      imagePullSecrets:
+        - name: pull-secret
+      {{- end }}
       containers:
         - name: {{ .Chart.Name }}-redis
           securityContext:
             {{- toYaml .Values.redis.securityContext | nindent 12 }}
-          image: "redis:latest"
+          image: "docker.io/redis:latest"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
             - name: redis

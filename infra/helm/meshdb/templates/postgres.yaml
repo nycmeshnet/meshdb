@@ -29,11 +29,15 @@ spec:
     spec:
       securityContext:
         {{- toYaml .Values.pg.podSecurityContext | nindent 8 }}
+      {{- if .Values.imageCredentials }}
+      imagePullSecrets:
+        - name: pull-secret
+      {{- end }}
       containers:
         - name: {{ .Chart.Name }}-postgres
           securityContext:
             {{- toYaml .Values.pg.securityContext | nindent 12 }}
-          image: postgres:15-bookworm
+          image: docker.io/postgres:15-bookworm
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
             - name: postgres

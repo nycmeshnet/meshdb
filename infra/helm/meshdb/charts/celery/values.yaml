@@ -2,7 +2,7 @@
 replicaCount: 1
 
 image:
-  repository: willnilges/meshdb
+  repository: docker.io/willnilges/meshdb
   pullPolicy: Always
   tag: "main"
 

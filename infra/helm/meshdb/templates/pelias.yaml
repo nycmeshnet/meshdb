@@ -27,11 +27,15 @@ spec:
     spec:
       securityContext:
         {{- toYaml .Values.pelias.podSecurityContext | nindent 8 }}
+      {{- if .Values.imageCredentials }}
+      imagePullSecrets:
+        - name: pull-secret
+      {{- end }}
       containers:
         - name: {{ .Chart.Name }}-pelias
           securityContext:
             {{- toYaml .Values.pelias.securityContext | nindent 12 }}
-          image: "pelias/parser"
+          image: "docker.io/pelias/parser"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
             - name: pelias
