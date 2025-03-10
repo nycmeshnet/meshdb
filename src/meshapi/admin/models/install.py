@@ -106,6 +106,7 @@ class InstallAdmin(RankedSearchMixin, ImportExportMixin, ExportActionMixin, Simp
                     "status",
                     "ticket_number",
                     "member",
+                    "additional_members",
                 ]
             },
         ),
@@ -149,6 +150,7 @@ class InstallAdmin(RankedSearchMixin, ImportExportMixin, ExportActionMixin, Simp
             },
         ),
     ]
+    filter_horizontal = ("additional_members",)
 
     def get_search_results(
         self, request: HttpRequest, queryset: QuerySet[Install], search_term: str
