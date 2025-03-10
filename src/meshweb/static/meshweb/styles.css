@@ -69,7 +69,7 @@ footer a {
   display:flex;
   flex-direction:row;
   justify-content: center;
-  /*padding: 40px 0 0 0;*/
+  padding: 40px 0 0 0;
 }
 
 .links {
