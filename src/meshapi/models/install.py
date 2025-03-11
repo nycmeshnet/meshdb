@@ -109,7 +109,7 @@ class Install(models.Model):
         Member,
         blank=True,
         related_name="additional_installs",
-        help_text="Any additional members associated with this install",
+        help_text="Any additional members associated with this install. E.g. roommates, parents, caretakers etc. Anyone that might contact us on behalf of this install belongs here",
     )
     referral = models.TextField(
         default=None,
