@@ -39,7 +39,10 @@ spec:
           resources:
             {{- toYaml $.Values.resources | nindent 12 }}
           command: {{ toJson .command }}
-          # TODO (willnilges): Fix this in a later PR
+          env:
+          - name: DD_SERVICE
+            value: celery 
+          # TODO (willnilges): Fix this in a later PR.
           #  https://github.com/nycmeshnet/meshdb/issues/519
           envFrom:
             - configMapRef:
