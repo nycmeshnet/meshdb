@@ -4,10 +4,8 @@ from pathlib import Path
 from celery import Celery, bootsteps
 from celery.apps.worker import Worker
 from celery.signals import beat_init, worker_ready, worker_shutdown
-from dotenv import load_dotenv
-
 from datadog import initialize, statsd
-from django.core.wsgi import get_wsgi_application
+from dotenv import load_dotenv
 
 HEARTBEAT_FILE = Path("/tmp/celery_worker_heartbeat")
 READINESS_FILE = Path("/tmp/celery_worker_ready")
@@ -55,6 +53,7 @@ def worker_shutdown(**_: dict) -> None:
 @beat_init.connect
 def beat_ready(**_: dict) -> None:
     BEAT_READINESS_FILE.touch()
+
 
 # Initialize dogstatsd
 initialize(statsd_host="datadog-agent.datadog.svc.cluster.local", statsd_port=8125)
