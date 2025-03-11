@@ -48,5 +48,5 @@ def join_record_viewer(request: HttpRequest) -> HttpResponse:
         else records.values()
     )
 
-    context = {"records": relevant_records, "all": all}
+    context = {"records": relevant_records, "all": all, "logo": "meshweb/logo.svg"}
     return HttpResponse(template.render(context, request))
