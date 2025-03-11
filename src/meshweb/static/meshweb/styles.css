@@ -1,3 +1,11 @@
+/*
+* Not sure why bootstrap does this, but gotta hardcode the bottom margin to not
+* Be 0
+* */
+.h1, .h2, .h3, .h4, .h5, .h6, h1, h2, h3, h4, h5, h6 {
+  margin-bottom: 0;
+}
+
 .max-width-container {
   max-width: 1200px !important;
   padding: 0em 3em;
@@ -33,6 +41,23 @@ footer a {
   text-decoration: none;
 }
 
+.navbar-brand.collapse .text {
+  display: none;
+}
+
+.joinButton {
+  display: flex;
+  justify-content: center;
+  padding: 20px;
+}
+
+.meshDbHeader {
+  display:flex;
+  flex-direction:row;
+  justify-content: center;
+  padding: 40px 0 0 0;
+}
+
 .links {
   display: flex;
   justify-content: center !important;
@@ -40,10 +65,36 @@ footer a {
   row-gap: 2rem;
   flex-wrap: wrap;
   align-content: flex-start;
+  flex-direction: row;
+  margin-top: 20px;
 }
 
 .toolList {
   display: flex; 
   flex-direction: column;
-  line-height: 3em;
+}
+
+.toolListHeading {
+  display: flex;
+  align-content: center;
+  justify-content: space-between;
+  color: #55585b;
+  border-style: solid;
+  border-color: #55585b;
+  border-width: 0px 0px 1px 0px;
+  padding: 10px;
+}
+
+.toolListItem {
+  display:flex;
+  padding: 16px 10px;
+}
+
+.toolListItem a {
+  text-decoration: none;
+}
+
+.toolListItem:hover {
+  background-color: #f9e79f;
+  border-radius: 5px;
 }

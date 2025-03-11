@@ -45,6 +45,8 @@ dependencies = [
     "matplotlib==3.9.*",
     "django-ipware==7.0.1",
     "django-admin-site-search==1.1.*",
+    "datadog==0.50.*",
+
 ]
 
 [project.optional-dependencies]
