@@ -169,6 +169,35 @@ class TestNodeModel(TestCase):
         self.assertEqual(victim_install.status, Install.InstallStatus.CLOSED)
         self.assertEqual(victim_install.install_number, 45)
 
+    def test_construct_node_with_too_high_network_number(self):
+        active_node_data = self.sample_node.copy()
+        active_node_data["status"] = Node.NodeStatus.ACTIVE
+        active_node_data["notes"] = "Test node"
+        node = Node(**active_node_data, network_number=8001)
+        with pytest.raises(ValueError):
+            node.save()
+
+    def test_construct_node_with_too_low_network_number(self):
+        active_node_data = self.sample_node.copy()
+        active_node_data["status"] = Node.NodeStatus.ACTIVE
+        active_node_data["notes"] = "Test node"
+        node = Node(**active_node_data, network_number=-23)
+        with pytest.raises(ValueError):
+            node.save()
+
+    def test_construct_node_with_sn_reserved_network_number(self):
+        active_node_data = self.sample_node.copy()
+        active_node_data["status"] = Node.NodeStatus.ACTIVE
+        active_node_data["notes"] = "Test node"
+        node = Node(**active_node_data, network_number=23)
+        node.save()
+
+        node.refresh_from_db()
+
+        self.assertEqual(node.network_number, 23)
+        self.assertEqual(node.notes, "Test node")
+        self.assertEqual(node.status, Node.NodeStatus.ACTIVE)
+
     def test_construct_planned_node_yes_id_no_network_number(self):
         node = Node(
             id=uuid.UUID("23ef170c-f37d-44e3-aaac-93dae636c86e"),

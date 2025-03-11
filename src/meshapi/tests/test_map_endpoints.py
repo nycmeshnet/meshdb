@@ -329,7 +329,7 @@ class TestViewsGetUnauthenticated(TestCase):
 
         nodes.append(
             Node(
-                network_number=9823,
+                network_number=7823,
                 status=Node.NodeStatus.ACTIVE,
                 latitude=40.724868,
                 longitude=-73.987881,
@@ -349,7 +349,7 @@ class TestViewsGetUnauthenticated(TestCase):
 
         nodes.append(
             Node(
-                network_number=9821,
+                network_number=7821,
                 status=Node.NodeStatus.ACTIVE,
                 latitude=40.724868,
                 longitude=-73.987881,
@@ -368,7 +368,7 @@ class TestViewsGetUnauthenticated(TestCase):
 
         nodes.append(
             Node(
-                network_number=9820,
+                network_number=7820,
                 status=Node.NodeStatus.ACTIVE,
                 latitude=40.724868,
                 longitude=-73.987881,
@@ -443,7 +443,7 @@ class TestViewsGetUnauthenticated(TestCase):
                 },
                 {
                     "coordinates": [-73.987881, 40.724868, None],
-                    "id": 9820,
+                    "id": 7820,
                     "panoramas": [],
                     "requestDate": 0,
                     "roofAccess": True,
@@ -451,7 +451,7 @@ class TestViewsGetUnauthenticated(TestCase):
                 },
                 {
                     "coordinates": [-73.987881, 40.724868, None],
-                    "id": 9821,
+                    "id": 7821,
                     "panoramas": [],
                     "requestDate": 0,
                     "roofAccess": True,
@@ -459,7 +459,7 @@ class TestViewsGetUnauthenticated(TestCase):
                 },
                 {
                     "coordinates": [-73.987881, 40.724868, None],
-                    "id": 9823,
+                    "id": 7823,
                     "panoramas": [],
                     "requestDate": 1706331600000,
                     "roofAccess": True,
@@ -852,7 +852,7 @@ class TestViewsGetUnauthenticated(TestCase):
 
         inactive = Node(
             id=uuid.UUID("97c3fb73-e3f0-4eee-b1aa-d7a5bacd6122"),
-            network_number=123456,
+            network_number=2345,
             latitude=0,
             longitude=0,
             status=Node.NodeStatus.INACTIVE,
