@@ -41,8 +41,22 @@ footer a {
   text-decoration: none;
 }
 
+.logo-no-underline a {
+  text-decoration: none;
+}
+
 .navbar-brand.collapse .text {
   display: none;
+}
+
+.mainContent {
+  display:flex;
+  width: 100%;
+  flex-grow: 1;
+  flex-direction: column;
+  padding: 20px;
+  justify-content: center;
+  align-content:center;
 }
 
 .joinButton {

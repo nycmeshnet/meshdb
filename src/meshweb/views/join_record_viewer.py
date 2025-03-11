@@ -16,10 +16,19 @@ def join_record_viewer(request: HttpRequest) -> HttpResponse:
     if not since_param:
         since = replay_join_records.Command.past_week()
     else:
-        since = datetime.fromisoformat(since_param + "Z")
+        try:
+            since = datetime.fromisoformat(since_param + "Z")
+        except ValueError:
+            status = 400
+            m = f"({status}) Bad ISO-formatted string for parameter 'since'"
+            logging.exception(m)
+            return HttpResponse(m, status=status)
 
     if since > datetime.now(timezone.utc):
-        return HttpResponse("Cannot retrieve records from the future!", 400)
+        status = 400
+        m = f"({status}) Cannot retrieve records from the future!"
+        logging.error(m)
+        return HttpResponse(m, status=status)
 
     all = request.GET.get("all") == "True"
 
@@ -39,5 +48,5 @@ def join_record_viewer(request: HttpRequest) -> HttpResponse:
         else records.values()
     )
 
-    context = {"records": relevant_records, "all": all}
+    context = {"records": relevant_records, "all": all, "logo": "meshweb/logo.svg"}
     return HttpResponse(template.render(context, request))

@@ -321,6 +321,10 @@ LOGGING = {
             "handlers": ["console"],
             "level": "INFO",
         },
+        "ddtrace": {
+            "handlers": ["console"],
+            "level": "WARNING",
+        },
     },
 }
 
