@@ -11,7 +11,7 @@ valid_join_form_submission = {
     "zip_code": "10002",
     "apartment": "",
     "roof_access": True,
-    "referral": "Googled it or something IDK",
+    "referral": "Test valid_join_form_submission sample data",
     "ncl": True,
     "trust_me_bro": True,
     "dob_addr_response": {
