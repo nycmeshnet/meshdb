@@ -1,7 +1,7 @@
 from typing import Any, Optional
 
 from django.contrib import admin
-from django.contrib.admin import AdminSite
+from django.contrib.admin import AdminSite, TabularInline
 from django.core.exceptions import ValidationError
 from django.db.models import Model, Q, QuerySet
 from django.forms import BaseInlineFormSet
@@ -183,3 +183,21 @@ class BuildingLOSInline(BetterNonrelatedInline):
 
     def get_form_queryset(self, obj: Building) -> QuerySet[LOS]:
         return self.model.objects.filter(Q(from_building=obj) | Q(to_building=obj))
+
+
+class AdditionalMembersInline(TabularInline):
+    model = Install.additional_members.through
+    extra = 0
+    
+    def name(self, instance):
+        return instance.member.name if instance.member else "-"
+    
+    def primary_email_address(self, instance):
+        return instance.member.primary_email_address if instance.member else "-"
+        
+    name.short_description = "Name"
+    primary_email_address.short_description = "Primary Email"
+
+    def get_readonly_fields(self, request, obj=None):
+        return list(super().get_readonly_fields(request, obj)) + ["name"] + ["primary_email_address"]
+

@@ -11,6 +11,7 @@ from import_export import resources
 from import_export.admin import ExportActionMixin, ImportExportMixin
 from simple_history.admin import SimpleHistoryAdmin
 
+from meshapi.admin import inlines
 from meshapi.models import Install
 from meshapi.widgets import ExternalHyperlinkWidget, WarnAboutDatesWidget
 
@@ -106,7 +107,6 @@ class InstallAdmin(RankedSearchMixin, ImportExportMixin, ExportActionMixin, Simp
                     "status",
                     "ticket_number",
                     "member",
-                    "additional_members",
                 ]
             },
         ),
@@ -150,7 +150,9 @@ class InstallAdmin(RankedSearchMixin, ImportExportMixin, ExportActionMixin, Simp
             },
         ),
     ]
-    filter_horizontal = ("additional_members",)
+    inlines = [
+        inlines.AdditionalMembersInline
+    ]
 
     def get_search_results(
         self, request: HttpRequest, queryset: QuerySet[Install], search_term: str
