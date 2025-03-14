@@ -1,7 +1,7 @@
 from typing import Any, Optional
 
 from django.contrib import admin
-from django.contrib.admin import AdminSite
+from django.contrib.admin import AdminSite, TabularInline
 from django.core.exceptions import ValidationError
 from django.db.models import Model, Q, QuerySet
 from django.forms import BaseInlineFormSet
@@ -10,6 +10,7 @@ from nonrelated_inlines.admin import NonrelatedTabularInline
 
 from meshapi.models import LOS, AccessPoint, Building, Device, Install, Link, Member, Node, Sector
 
+from dal_select2.widgets import ModelSelect2
 
 # Inline with the typical rules we want + Formatting
 class BetterInline(admin.TabularInline):
@@ -183,3 +184,38 @@ class BuildingLOSInline(BetterNonrelatedInline):
 
     def get_form_queryset(self, obj: Building) -> QuerySet[LOS]:
         return self.model.objects.filter(Q(from_building=obj) | Q(to_building=obj))
+
+
+class AdditionalMembersInline(TabularInline):
+    model = Install.additional_members.through
+    extra = 0
+    verbose_name = "Additional Member"
+    verbose_name_plural = "Additional Members"
+    show_change_link = True
+
+    def name(self, instance):
+        return instance.member.name if instance.member else "-"
+    
+    def primary_email_address(self, instance):
+        return instance.member.primary_email_address if instance.member else "-"
+
+    def phone_number(self, instance):
+        return instance.member.phone_number if instance.member else "-"
+
+    name.short_description = "Name"
+    primary_email_address.short_description = "Primary Email"
+    phone_number.short_description = "Phone Number"
+
+    def get_readonly_fields(self, request, obj=None):
+        return list(super().get_readonly_fields(request, obj)) + ["name"] + ["primary_email_address"] + ["phone_number"]
+
+    def get_formset(self, request, obj=None, **kwargs):
+        formset = super().get_formset(request, obj, **kwargs)
+        formset.form.base_fields['member'].widget = ModelSelect2(
+            url='member-autocomplete',
+            attrs={
+                'data-placeholder': 'Search for a Member', 
+                'data-minimum-input-length': 2
+            },
+        )
+        return formset
