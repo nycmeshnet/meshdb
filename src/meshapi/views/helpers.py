@@ -19,7 +19,6 @@ node_serializer_field = NestedKeyObjectRelatedField(
 )
 
 
-# TODO: Fix docs, maybe with custom install serializer?
 class DisambiguateInstallOrNetworkNumber(APIView):
     permission_classes = [HasDisambiguateNumberPermission]
 
@@ -51,6 +50,11 @@ class DisambiguateInstallOrNetworkNumber(APIView):
                         "supporting_data": inline_serializer(
                             "DisambiguateNumberSupportingData",
                             fields={
+                                "exact_match_install": InstallNestedRefSerializer(
+                                    help_text="An install  with the install number exactly matching the requested "
+                                    "number, if that install has NOT had its install number recycled (or null if "
+                                    "none exists)"
+                                ),
                                 "exact_match_recycled_install": InstallNestedRefSerializer(
                                     help_text="An install with the install number exactly matching the requested "
                                     "number, if that install HAS had its install number recycled (or null "
@@ -62,11 +66,6 @@ class DisambiguateInstallOrNetworkNumber(APIView):
                                     additional_keys=("network_number",),
                                     help_text="A Node with the network number exactly matching the requested number, "
                                     "if it exists",
-                                ),
-                                "exact_match_nonrecycled_install": InstallNestedRefSerializer(
-                                    help_text="An install  with the install number exactly matching the requested "
-                                    "number, if that install has NOT had its install number recycled (or null if "
-                                    "none exists)"
                                 ),
                             },
                         ),
@@ -111,14 +110,14 @@ class DisambiguateInstallOrNetworkNumber(APIView):
         output = {
             "resolved_node": node_serializer_field.to_representation(resolved_node) if resolved_node else None,
             "supporting_data": {
+                "exact_match_install": (
+                    install_serializer_field.to_representation(install_object)
+                    if install_object and install_object.status != Install.InstallStatus.NN_REASSIGNED
+                    else None
+                ),
                 "exact_match_recycled_install": (
                     install_serializer_field.to_representation(install_object)
                     if install_object and install_object.status == Install.InstallStatus.NN_REASSIGNED
-                    else None
-                ),
-                "exact_match_nonrecycled_install": (
-                    install_serializer_field.to_representation(install_object)
-                    if install_object and install_object.status != Install.InstallStatus.NN_REASSIGNED
                     else None
                 ),
                 "exact_match_node": node_serializer_field.to_representation(node_object) if node_object else None,

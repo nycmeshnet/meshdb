@@ -144,7 +144,7 @@ class TestDisambiguate(TestCase):
                 "supporting_data": {
                     "exact_match_recycled_install": None,
                     "exact_match_node": None,
-                    "exact_match_nonrecycled_install": {
+                    "exact_match_install": {
                         "id": self.active_install.id,
                         "install_number": 11000,
                         "node": {
@@ -170,7 +170,7 @@ class TestDisambiguate(TestCase):
                 "supporting_data": {
                     "exact_match_recycled_install": None,
                     "exact_match_node": None,
-                    "exact_match_nonrecycled_install": {
+                    "exact_match_install": {
                         "id": self.install_no_node.id,
                         "install_number": 12000,
                         "node": None,
@@ -203,7 +203,7 @@ class TestDisambiguate(TestCase):
                         "id": self.node_with_recycled_number.id,
                         "network_number": 123,
                     },
-                    "exact_match_nonrecycled_install": None,
+                    "exact_match_install": None,
                 },
             },
         )
@@ -228,7 +228,7 @@ class TestDisambiguate(TestCase):
                         "id": self.active_install_node.id,
                         "network_number": 201,
                     },
-                    "exact_match_nonrecycled_install": None,
+                    "exact_match_install": None,
                 },
             },
         )
@@ -253,7 +253,7 @@ class TestDisambiguate(TestCase):
                         "id": self.active_install_low_number_node.id,
                         "network_number": 100,
                     },
-                    "exact_match_nonrecycled_install": {
+                    "exact_match_install": {
                         "id": self.active_install_low_number_king_of_node.id,
                         "install_number": 100,
                         "node": {
@@ -282,7 +282,7 @@ class TestDisambiguate(TestCase):
                 "supporting_data": {
                     "exact_match_recycled_install": None,
                     "exact_match_node": None,
-                    "exact_match_nonrecycled_install": {
+                    "exact_match_install": {
                         "id": self.active_install_low_number_non_king.id,
                         "install_number": 150,
                         "node": {
