@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("meshapi", "0004_alter_historicalinstall_status_and_more"),
+        ("meshapi", "0005_alter_install_options"),
     ]
 
     operations = [
