@@ -4,6 +4,7 @@ from django.db.models import QuerySet
 from meshapi.models import Member
 
 
+# Used in Install Member many-to-many field inline in the Admin panel
 class MemberAutocomplete(Select2QuerySetView):
     def get_queryset(self) -> QuerySet[Member]:
         user = self.request.user
