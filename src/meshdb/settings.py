@@ -500,6 +500,10 @@ SPECTACULAR_SETTINGS = {
         },
         {"name": "User Forms", "description": "Forms exposed directly to humans"},
         {
+            "name": "Helpers",
+            "description": "Utilities to assist with misc tasks related to NYC Mesh data",
+        },
+        {
             "name": "Panoramas",
             "description": "Used to bulk ingest panoramas. Internal use only (use Building.panoramas instead)",
         },

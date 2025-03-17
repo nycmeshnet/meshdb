@@ -34,6 +34,11 @@ urlpatterns = [
     path("devices/<uuid:pk>/", views.DeviceDetail.as_view(), name="meshapi-v1-device-detail"),
     path("join/", views.join_form, name="meshapi-v1-join"),
     path("nn-assign/", views.network_number_assignment, name="meshapi-v1-nn-assign"),
+    path(
+        "disambiguate-number/",
+        views.DisambiguateInstallOrNetworkNumber.as_view(),
+        name="meshapi-v1-disambiguate-number",
+    ),
     path("buildings/lookup/", views.LookupBuilding.as_view(), name="meshapi-v1-lookup-building"),
     path("members/lookup/", views.LookupMember.as_view(), name="meshapi-v1-lookup-member"),
     path("installs/lookup/", views.LookupInstall.as_view(), name="meshapi-v1-lookup-install"),
