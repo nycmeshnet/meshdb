@@ -19,6 +19,7 @@ from django.urls import include, path
 from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView
 
 from meshapi.docs import SpectacularSwaggerInjectVarsView
+from meshapi.views.autocomplete import MemberAutocomplete
 from meshdb.settings import PROFILING_ENABLED
 
 urlpatterns = [
@@ -35,6 +36,11 @@ urlpatterns = [
         name="api-docs-swagger",
     ),
     path("api-docs/redoc/", SpectacularRedocView.as_view(url_name="api-docs-schema"), name="api-docs-redoc"),
+    path(
+        "member-autocomplete/",
+        MemberAutocomplete.as_view(),
+        name="member-autocomplete",
+    ),
 ]
 
 if PROFILING_ENABLED:

@@ -106,6 +106,14 @@ class Install(models.Model):
         related_name="installs",
         help_text="The member this install is associated with",
     )
+    additional_members = models.ManyToManyField(
+        Member,
+        blank=True,
+        related_name="additional_installs",
+        help_text="Any additional members associated with this install. "
+        "E.g. roommates, parents, caretakers etc. Anyone that might contact us "
+        "on behalf of this install belongs here",
+    )
     referral = models.TextField(
         default=None,
         blank=True,
