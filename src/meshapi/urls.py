@@ -1,7 +1,6 @@
 from django.urls import path
 
 from meshapi import views
-from meshapi.views.autocomplete import MemberAutocomplete
 
 urlpatterns = [
     path("", views.api_root),

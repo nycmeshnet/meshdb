@@ -41,7 +41,6 @@ urlpatterns = [
         MemberAutocomplete.as_view(),
         name="member-autocomplete",
     ),
-
 ]
 
 if PROFILING_ENABLED:

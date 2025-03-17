@@ -150,9 +150,7 @@ class InstallAdmin(RankedSearchMixin, ImportExportMixin, ExportActionMixin, Simp
             },
         ),
     ]
-    inlines = [
-        inlines.AdditionalMembersInline
-    ]
+    inlines = [inlines.AdditionalMembersInline]
 
     def get_search_results(
         self, request: HttpRequest, queryset: QuerySet[Install], search_term: str

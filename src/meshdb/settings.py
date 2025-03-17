@@ -213,8 +213,8 @@ INSTALLED_APPS = [
     "explorer",
     "simple_history",
     "admin_site_search",
-    'dal',
-    'dal_select2',
+    "dal",
+    "dal_select2",
 ]
 
 MIDDLEWARE = [

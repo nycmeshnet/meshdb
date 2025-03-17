@@ -1,12 +1,14 @@
+from dal_select2.views import Select2QuerySetView
+from django.db.models import QuerySet
+
 from meshapi.models import Member
 
-from dal_select2.views import Select2QuerySetView
 
 class MemberAutocomplete(Select2QuerySetView):
-    def get_queryset(self):
+    def get_queryset(self) -> QuerySet[Member]:
         user = self.request.user
-        #if not user.is_authenticated:
-        #    return Member.objects.none()
+        if not user.is_authenticated:
+            return Member.objects.none()
 
         queryset = Member.objects.all()
 
