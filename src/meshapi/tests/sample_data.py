@@ -1,3 +1,5 @@
+from geopy import Location, Point
+
 from meshapi.models import Device, Install, Node
 
 sample_member = {
@@ -57,3 +59,38 @@ sample_address_response = {
         }
     ]
 }
+
+
+sample_osm_address_response = Location(
+    "151, Broome Street, Manhattan Community Board 3, Manhattan, New York County, City of New York, New York, 10002, United States",
+    Point(40.7162281, -73.98489654157149, 0.0),
+    {
+        "address": {
+            "ISO3166-2-lvl4": "US-NY",
+            "city": "City of New York",
+            "country": "United States",
+            "country_code": "us",
+            "county": "New York County",
+            "house_number": "151",
+            "neighbourhood": "Manhattan Community Board 3",
+            "postcode": "10002",
+            "road": "Broome Street",
+            "state": "New York",
+            "suburb": "Manhattan",
+        },
+        "addresstype": "building",
+        "boundingbox": ["40.7160582", "40.7164320", "-73.9852426", "-73.9847390"],
+        "class": "building",
+        "display_name": "151, Broome Street, Manhattan Community Board 3, Manhattan, New York County, City of New York, New York, 10002, United States",
+        "importance": 9.175936522464359e-05,
+        "lat": "40.7162281",
+        "licence": "Data © OpenStreetMap contributors, ODbL 1.0. http://osm.org/copyright",
+        "lon": "-73.98489654157149",
+        "name": "",
+        "osm_id": 250268365,
+        "osm_type": "way",
+        "place_id": 333450671,
+        "place_rank": 30,
+        "type": "yes",
+    },
+)

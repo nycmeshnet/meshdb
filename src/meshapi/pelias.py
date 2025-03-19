@@ -10,6 +10,14 @@ from meshapi.util.constants import DEFAULT_EXTERNAL_API_TIMEOUT_SECONDS
 PELIAS_ADDRESS_PARSER_URL = os.environ.get("PELIAS_ADDRESS_PARSER_URL", "http://localhost:6800/parser/parse")
 
 
+ADDRESS_REPLACEMENTS = {
+    "N": "NORTH",
+    "S": "SOUTH",
+    "E": "EAST",
+    "W": "WEST",
+}
+
+
 def humanify_street_address(dob_address_str: str) -> str:
     """
     Convert an address from UPPERCASE to Title Case and add ordinal indicators
@@ -22,6 +30,11 @@ def humanify_street_address(dob_address_str: str) -> str:
     :param dob_address_str: The address (line 1 only) string to convert
     :return: A softened version of the input string
     """
+    parts = dob_address_str.split(" ")
+    for i, part in enumerate(parts):
+        if part in ADDRESS_REPLACEMENTS:
+            parts[i] = ADDRESS_REPLACEMENTS[part]
+
     response = requests.get(
         PELIAS_ADDRESS_PARSER_URL, params={"text": dob_address_str}, timeout=DEFAULT_EXTERNAL_API_TIMEOUT_SECONDS
     )
