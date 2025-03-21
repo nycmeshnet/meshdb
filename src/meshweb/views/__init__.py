@@ -3,3 +3,4 @@ from .index import *
 from .join_record_viewer import *
 from .maintenance import *
 from .website_stats import *
+from .uisp_on_demand import *

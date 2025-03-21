@@ -1,7 +1,7 @@
 import datetime
 import logging
 import re
-from typing import List
+from typing import List, Optional
 
 from django.db import transaction
 from django.db.models import Q
@@ -232,6 +232,7 @@ def import_and_sync_uisp_links(uisp_links: List[UISPDataLink], target_network_nu
             )
             continue
 
+        # If we're crawling a specific NN and neither of the NNs are
         if (
             target_network_number
             and uisp_from_device.node.network_number != target_network_number

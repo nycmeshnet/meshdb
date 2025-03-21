@@ -5,35 +5,24 @@ from botocore.exceptions import ClientError
 from django.contrib.admin.views.decorators import staff_member_required
 from django.http import HttpRequest, HttpResponse
 from django.template import loader
+from rest_framework.decorators import api_view
+from rest_framework.request import Request
+from rest_framework.response import Response
 
-from meshapi.management.commands import replay_join_records
-from meshapi.util.join_records import JoinRecordProcessor
 from meshapi.util.uisp_import.fetch_uisp import get_uisp_devices
 from meshapi.util.uisp_import.sync_handlers import import_and_sync_uisp_devices
 
 from meshapi.util.network_number import NETWORK_NUMBER_MAX
 
+from datadog import statsd
+from ddtrace import tracer
 
+@tracer.wrap()
 @staff_member_required
-def uisp_on_demand(request: HttpRequest) -> HttpResponse:
-    network_number = request.GET.get("network_number")
-    if not network_number:
-        status = 400
-        m = f"({status}) Please provide a network number."
-        logging.error(m)
-        return HttpResponse(m, status=status)
+def uisp_on_demand_form(request: HttpRequest) -> HttpResponse:
 
-    try:
-        if int(network_number) > NETWORK_NUMBER_MAX:
-            status = 400
-            m = f"({status}) Network number is beyond the max."
-            logging.error(m)
-            return HttpResponse(m, status=status)
-    except ValueError:
-        status = 400
-        m = f"({status}) invalid Network Number."
-        return HttpResponse(m, status=status)
+    #return HttpResponse("hi mom", status=200)
 
-    import_and_sync_uisp_devices(get_uisp_devices(), network_number)
-    import_and_sync_uisp_links(get_uisp_links(), network_number)
-    sync_link_table_into_los_objects()
+    template = loader.get_template("meshweb/uisp_on_demand_form.html")
+    context = {"logo": "meshweb/logo.svg"}
+    return HttpResponse(template.render(context, request))
