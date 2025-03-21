@@ -64,7 +64,7 @@ def import_and_sync_uisp_devices(uisp_devices: List[UISPDevice], target_network_
         uisp_network_number = int(network_number_matches[0])
 
         if target_network_number and uisp_network_number != target_network_number:
-            pass
+            continue
 
         try:
             uisp_node = Node.objects.get(network_number=uisp_network_number)
