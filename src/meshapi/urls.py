@@ -39,7 +39,7 @@ urlpatterns = [
         views.DisambiguateInstallOrNetworkNumber.as_view(),
         name="meshapi-v1-disambiguate-number",
     ),
-    path("crawl-uisp/nn/<nn>/", views.crawl_usip_for_nn, name="crawl-uisp-for-nn"),
+    path("crawl-uisp/nn/<network_number>/", views.crawl_uisp_for_nn, name="crawl-uisp-for-nn"),
     path("buildings/lookup/", views.LookupBuilding.as_view(), name="meshapi-v1-lookup-building"),
     path("members/lookup/", views.LookupMember.as_view(), name="meshapi-v1-lookup-member"),
     path("installs/lookup/", views.LookupInstall.as_view(), name="meshapi-v1-lookup-install"),

@@ -9,14 +9,11 @@
           event.preventDefault(); // Prevent the default form submission
 
           const number = document.getElementById('numberInput').value;
-
-
-              fetch(`/api/v1/crawl-uisp/nn/${number}`, {
+              fetch(`/api/v1/crawl-uisp/nn/${number}/`, {
                   method: 'POST', // Specify the request method
                   headers: {
-                      'Content-Type': 'application/json' // Set the content type if needed
+                      'Content-Type': 'application/json', // Set the content type if needed
                   },
-                  body: JSON.stringify({}) // Send an empty JSON object as the body
               })
               .then(response => {
                   if (!response.ok) {
