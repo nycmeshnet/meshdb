@@ -3,51 +3,33 @@
 <!DOCTYPE html>
 <head>
   {% include "meshweb/head.html" %}
-  <link rel="stylesheet" href="{% static 'meshweb/join_record_viewer.css' %}" />
-  <script defer>
-      function getCookie(name) {
-        const value = `; ${document.cookie}`;
-        const parts = value.split(`; ${name}=`);
-        if (parts.length === 2) return parts.pop().split(';').shift();
-      }
-
-      function submitForm(event) {
-          event.preventDefault();
-
-          const number = document.getElementById('numberInput').value;
-              fetch(`/api/v1/crawl-uisp/nn/${number}/`, {
-                  method: 'POST',
-                  headers: {
-                      'Content-Type': 'application/json',
-                      'X-CSRFToken': getCookie('csrftoken'),
-                  },
-              })
-              .then(response => {
-                  if (!response.ok) {
-                      throw new Error('Network response was not ok ' + response.statusText);
-                  }
-                  return response.json();
-              })
-              .then(data => {
-                  console.log('Success:', data.status);
-                  document.getElementById('output').innerHTML = data.detail;
-              })
-              .catch(error => {
-                  console.error('Error:', error);
-                  document.getElementById('output').innerHTML = `Error: ${error.detail}`;
-              });
-      }
-  </script>
+  <link rel="stylesheet" href="{% static 'meshweb/uisp_on_demand_form.css' %}" />
+  <script src="{% static 'meshweb/uisp_on_demand_form.js' %}"></script>
 </head>
 <body>
   {% include "meshweb/nav.html" %}
-    <h1>On-Demand™ UISP Import</h1>
+  <div class="mainContent">
+      <img src="{% static 'meshweb/uispondemand.png' %}" width="256px"/>
+      <h1>On-Demand™ UISP Import</h1>
+    </div>
+  <div class="mainContent">
     <form id="numberForm" onsubmit="submitForm(event)">
         <label for="numberInput">Network Number:</label>
         <input type="number" id="numberInput" name="numberInput" required>
-        <button type="submit">Crawl</button>
+        <button type="submit">Import</button>
     </form>
-    <h1 id="output"></h1>
+  </div>
+  <div style="padding:48px;">
+    <div id="loadingBanner" class="loadingBanner" style="display:none;">
+      <h1>Loading...</h1>
+    </div>
+    <div id="successBanner" class="successBanner" style="display:none;">
+      <h1>Success!</h1>
+    </div>
+    <div id="errorBanner" class="errorBanner" style="display:none;">
+      <h1 id="errorDetail">Error:</h1>
+    </div>
+  </div>
 </body>
   {% include "meshweb/footer.html" %}
 </html>
