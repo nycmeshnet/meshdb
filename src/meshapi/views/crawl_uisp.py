@@ -1,6 +1,8 @@
 import logging
+
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAdminUser
+from rest_framework.request import Request
 from rest_framework.response import Response
 
 from meshapi.util.network_number import NETWORK_NUMBER_MAX
@@ -14,7 +16,7 @@ from meshapi.util.uisp_import.sync_handlers import (
 
 @api_view(["POST"])
 @permission_classes([IsAdminUser])
-def crawl_uisp_for_nn(request, network_number, format=None):
+def crawl_uisp_for_nn(request: Request, network_number: int) -> Response:
     if not network_number:
         status = 400
         m = "Please provide a network number."

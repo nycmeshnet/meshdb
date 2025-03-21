@@ -190,7 +190,7 @@ def import_and_sync_uisp_devices(uisp_devices: List[UISPDevice], target_network_
                 )
 
 
-def import_and_sync_uisp_links(uisp_links: List[UISPDataLink], target_network_number: Optional[int]) -> None:
+def import_and_sync_uisp_links(uisp_links: List[UISPDataLink], target_network_number: Optional[int] = None) -> None:
     uisp_session = get_uisp_session()
     uisp_uuid_set = {uisp_link["id"] for uisp_link in uisp_links}
 
