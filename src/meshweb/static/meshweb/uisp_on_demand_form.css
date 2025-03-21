@@ -1,0 +1,24 @@
+.mainContent {
+  display:flex;
+  justify-content: center;
+}
+
+.loadingBanner {
+  display:flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.successBanner {
+  display:flex;
+  justify-content: center;
+  align-items: center;
+  background-color:mediumseagreen;
+}
+
+.errorBanner {
+  display:flex;
+  justify-content: center;
+  align-items: center;
+  background-color:red;
+}

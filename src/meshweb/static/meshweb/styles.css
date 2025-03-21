@@ -49,16 +49,6 @@ footer a {
   display: none;
 }
 
-.mainContent {
-  display:flex;
-  width: 100%;
-  flex-grow: 1;
-  flex-direction: column;
-  padding: 20px;
-  justify-content: center;
-  align-content:center;
-}
-
 .joinButton {
   display: flex;
   justify-content: center;
@@ -84,7 +74,7 @@ footer a {
 }
 
 .toolList {
-  display: flex; 
+  display: flex;
   flex-direction: column;
 }
 

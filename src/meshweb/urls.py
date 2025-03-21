@@ -11,4 +11,5 @@ urlpatterns = [
     path("website-embeds/stats-graph.json", views.website_stats_json, name="legacy-stats-json"),
     path("explorer/", include("explorer.urls")),
     path("join-records/view/", views.join_record_viewer, name="join-record-viewer"),
+    path("uisp-on-demand/", views.uisp_on_demand_form, name="uisp-on-demand"),
 ]
