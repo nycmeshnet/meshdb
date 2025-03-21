@@ -15,7 +15,7 @@ from meshapi.util.network_number import NETWORK_NUMBER_MAX
 
 
 @staff_member_required
-def join_record_viewer(request: HttpRequest) -> HttpResponse:
+def uisp_on_demand(request: HttpRequest) -> HttpResponse:
     network_number = request.GET.get("network_number")
     if not network_number:
         status = 400
@@ -23,10 +23,15 @@ def join_record_viewer(request: HttpRequest) -> HttpResponse:
         logging.error(m)
         return HttpResponse(m, status=status)
 
-    if network_number > NETWORK_NUMBER_MAX:
+    try:
+        if int(network_number) > NETWORK_NUMBER_MAX:
+            status = 400
+            m = f"({status}) Network number is beyond the max."
+            logging.error(m)
+            return HttpResponse(m, status=status)
+    except ValueError:
         status = 400
-        m = f"({status}) Network number is beyond the max."
-        logging.error(m)
+        m = f"({status}) invalid Network Number."
         return HttpResponse(m, status=status)
 
     import_and_sync_uisp_devices(get_uisp_devices(), network_number)

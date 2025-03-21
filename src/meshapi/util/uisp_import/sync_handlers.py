@@ -63,6 +63,7 @@ def import_and_sync_uisp_devices(uisp_devices: List[UISPDevice], target_network_
         # represent the other side of the link
         uisp_network_number = int(network_number_matches[0])
 
+        # If we're crawling for a specific NN, then bail if the NN doesn't match.
         if target_network_number and uisp_network_number != target_network_number:
             continue
 
@@ -229,6 +230,13 @@ def import_and_sync_uisp_links(uisp_links: List[UISPDataLink], target_network_nu
                 f"because the data in UISP references a 'to' device (UISP ID {uisp_to_device_uuid}) "
                 f"which we do not have in our database (perhaps it was skipped at device import time?)"
             )
+            continue
+
+        if (
+            target_network_number
+            and uisp_from_device.node.network_number != target_network_number
+            and uisp_to_device.node.network_number != target_network_number
+        ):
             continue
 
         if uisp_link["state"] == "active":
