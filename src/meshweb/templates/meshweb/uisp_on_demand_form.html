@@ -5,30 +5,36 @@
   {% include "meshweb/head.html" %}
   <link rel="stylesheet" href="{% static 'meshweb/join_record_viewer.css' %}" />
   <script defer>
+      function getCookie(name) {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return parts.pop().split(';').shift();
+      }
+
       function submitForm(event) {
-          event.preventDefault(); // Prevent the default form submission
+          event.preventDefault();
 
           const number = document.getElementById('numberInput').value;
               fetch(`/api/v1/crawl-uisp/nn/${number}/`, {
-                  method: 'POST', // Specify the request method
+                  method: 'POST',
                   headers: {
-                      'Content-Type': 'application/json', // Set the content type if needed
+                      'Content-Type': 'application/json',
+                      'X-CSRFToken': getCookie('csrftoken'),
                   },
               })
               .then(response => {
                   if (!response.ok) {
                       throw new Error('Network response was not ok ' + response.statusText);
                   }
-                  return response.json(); // Assuming the response is in JSON format
+                  return response.json();
               })
               .then(data => {
-                  console.log('Success:', data);
-                  // You can handle the data here (e.g., display it on the page)
-                  document.getElementById('output').innerHTML = data;
+                  console.log('Success:', data.status);
+                  document.getElementById('output').innerHTML = data.detail;
               })
               .catch(error => {
                   console.error('Error:', error);
-                  document.getElementById('output').innerHTML = "error";
+                  document.getElementById('output').innerHTML = `Error: ${error.detail}`;
               });
       }
   </script>
