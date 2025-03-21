@@ -2,12 +2,49 @@
 
 <!DOCTYPE html>
 <head>
-{% include "meshweb/head.html" %}
-<link rel="stylesheet" href="{% static 'meshweb/join_record_viewer.css' %}" />
+  {% include "meshweb/head.html" %}
+  <link rel="stylesheet" href="{% static 'meshweb/join_record_viewer.css' %}" />
+  <script defer>
+      function submitForm(event) {
+          event.preventDefault(); // Prevent the default form submission
+
+          const number = document.getElementById('numberInput').value;
+
+
+              fetch(`/api/v1/crawl-uisp/nn/${number}`, {
+                  method: 'POST', // Specify the request method
+                  headers: {
+                      'Content-Type': 'application/json' // Set the content type if needed
+                  },
+                  body: JSON.stringify({}) // Send an empty JSON object as the body
+              })
+              .then(response => {
+                  if (!response.ok) {
+                      throw new Error('Network response was not ok ' + response.statusText);
+                  }
+                  return response.json(); // Assuming the response is in JSON format
+              })
+              .then(data => {
+                  console.log('Success:', data);
+                  // You can handle the data here (e.g., display it on the page)
+                  document.getElementById('output').innerHTML = data;
+              })
+              .catch(error => {
+                  console.error('Error:', error);
+                  document.getElementById('output').innerHTML = "error";
+              });
+      }
+  </script>
 </head>
 <body>
   {% include "meshweb/nav.html" %}
-  <p> hi mom </p>
+    <h1>On-Demand™ UISP Import</h1>
+    <form id="numberForm" onsubmit="submitForm(event)">
+        <label for="numberInput">Network Number:</label>
+        <input type="number" id="numberInput" name="numberInput" required>
+        <button type="submit">Crawl</button>
+    </form>
+    <h1 id="output"></h1>
 </body>
   {% include "meshweb/footer.html" %}
 </html>

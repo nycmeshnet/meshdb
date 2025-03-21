@@ -1,4 +1,5 @@
 from django.contrib.admin.views.decorators import staff_member_required
+from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -10,9 +11,9 @@ from ddtrace import tracer
 @api_view(["POST"])
 @staff_member_required
 def crawl_usip_for_nn(request: Request) -> Response:
-    statsd.increment("meshdb.crawl_uisp_for_nn.request", tags=[])
-    network_number = request.get("network_number")
-    return 200, network_number
+    #statsd.increment("meshdb.crawl_uisp_for_nn.request", tags=[])
+    #network_number = request.get("network_number")
+    return Response({"detail": "whats poppin jimbo"}, status=status.HTTP_200_OK)
 
     """
     if not network_number:
