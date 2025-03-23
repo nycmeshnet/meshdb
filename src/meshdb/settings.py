@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 
 import logging
 import os
+from environment import MESHDB_ENVIRONMENT
 from pathlib import Path
 from typing import Any, Dict, List
 
@@ -21,9 +22,10 @@ from dotenv import load_dotenv
 
 from meshapi.util.constants import RECAPTCHA_CHECKBOX_TOKEN_HEADER, RECAPTCHA_INVISIBLE_TOKEN_HEADER
 
+
 load_dotenv()
 
-MESHDB_ENVIRONMENT = os.environ.get("MESHDB_ENVIRONMENT", "")
+MESHDB_ENVIRONMENT = MESHDB_ENVIRONMENT
 
 if not MESHDB_ENVIRONMENT:
     logging.warning("Please specify MESHDB_ENVIRONMENT environment variable. Things will not work properly without it.")
