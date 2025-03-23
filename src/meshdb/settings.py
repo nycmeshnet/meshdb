@@ -215,6 +215,8 @@ INSTALLED_APPS = [
     "explorer",
     "simple_history",
     "admin_site_search",
+    "dal",
+    "dal_select2",
 ]
 
 MIDDLEWARE = [
@@ -499,6 +501,10 @@ SPECTACULAR_SETTINGS = {
             "Uses a legacy data format, not recommended for new applications",
         },
         {"name": "User Forms", "description": "Forms exposed directly to humans"},
+        {
+            "name": "Helpers",
+            "description": "Utilities to assist with misc tasks related to NYC Mesh data",
+        },
         {
             "name": "Panoramas",
             "description": "Used to bulk ingest panoramas. Internal use only (use Building.panoramas instead)",

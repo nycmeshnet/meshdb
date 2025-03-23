@@ -18,6 +18,7 @@ class Install(models.Model):
     class Meta:
         permissions = [
             ("assign_nn", "Can assign an NN to install"),
+            ("disambiguate_number", "Can disambiguate an install number from an NN"),
             ("update_panoramas", "Can update panoramas"),
         ]
         ordering = ["-install_number"]
@@ -104,6 +105,14 @@ class Install(models.Model):
         on_delete=models.PROTECT,
         related_name="installs",
         help_text="The member this install is associated with",
+    )
+    additional_members = models.ManyToManyField(
+        Member,
+        blank=True,
+        related_name="additional_installs",
+        help_text="Any additional members associated with this install. "
+        "E.g. roommates, parents, caretakers etc. Anyone that might contact us "
+        "on behalf of this install belongs here",
     )
     referral = models.TextField(
         default=None,
