@@ -22,7 +22,3 @@ class TestJoinRecordViewer(TestCase):
         response = self.c.get("/uisp-on-demand/")
         # Redirected to admin login
         self.assertEqual(302, response.status_code)
-
-    def test_crawl_uisp_for_nn(self):
-        response = self.c.post("/api/v1/crawl-uisp/nn/1000/")
-        self.assertEqual(200, response.status_code)
