@@ -1067,6 +1067,7 @@ class TestUISPImportHandlers(TransactionTestCase):
         )
         self.link6b.save()
 
+    @patch("meshapi.util.uisp_import.fetch_uisp.get_uisp_session")
     @patch("meshapi.util.uisp_import.sync_handlers.update_link_from_uisp_data")
     @patch("meshapi.util.uisp_import.sync_handlers.get_uisp_session")
     @patch("meshapi.views.crawl_uisp.get_uisp_devices")
@@ -1081,6 +1082,7 @@ class TestUISPImportHandlers(TransactionTestCase):
         mock_get_uisp_devices,
         mock_get_uisp_session,
         mock_update_link,
+        mock_get_uisp_session2,
     ):
         """
         This test ensures that when calling the uisp import per nn endpoint, we only
@@ -1100,6 +1102,7 @@ class TestUISPImportHandlers(TransactionTestCase):
         mock_get_uisp_links.return_value = uisp_links
         mock_get_uisp_devices.return_value = uisp_devices
         mock_get_uisp_session.return_value = "mock_uisp_session"
+        mock_get_uisp_session2.return_value = "mock_uisp_session"
 
         # Create a client
         self.admin_user = User.objects.create_superuser(
