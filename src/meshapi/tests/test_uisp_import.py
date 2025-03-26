@@ -1082,6 +1082,7 @@ class TestUISPImportHandlers(TransactionTestCase):
         mock_get_uisp_session,
         mock_update_link,
     ):
+
         """
         This test ensures that when calling the uisp import per nn endpoint, we only
         import devices related to the specified endpoint.
