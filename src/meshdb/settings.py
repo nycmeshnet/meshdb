@@ -12,7 +12,7 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 
 import logging
 import os
-from environment import MESHDB_ENVIRONMENT
+import environment
 from pathlib import Path
 from typing import Any, Dict, List
 
@@ -25,8 +25,7 @@ from meshapi.util.constants import RECAPTCHA_CHECKBOX_TOKEN_HEADER, RECAPTCHA_IN
 
 load_dotenv()
 
-MESHDB_ENVIRONMENT = MESHDB_ENVIRONMENT
-
+MESHDB_ENVIRONMENT=environment.MESHDB_ENVIRONMENT
 if not MESHDB_ENVIRONMENT:
     logging.warning("Please specify MESHDB_ENVIRONMENT environment variable. Things will not work properly without it.")
 
@@ -41,11 +40,11 @@ SESSION_SAVE_EVERY_REQUEST = True  # "False" by default
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY")
+SECRET_KEY = environment.SECRET_KEY
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ.get("DEBUG", "False") == "True"
-PROFILING_ENABLED = DEBUG and not os.environ.get("DISABLE_PROFILING", "False") == "True"
+DEBUG = environment.DEBUG
+PROFILING_ENABLED = DEBUG and not environment.DEBUG
 
 
 FLAGS: Dict[str, Any] = {
@@ -122,15 +121,15 @@ PERMISSIONS_POLICY: Dict[str, List[str]] = {
     "usb": [],
 }
 
-LOS_URL = os.environ.get("LOS_URL", "https://los.devdb.nycmesh.net")
-MAP_URL = os.environ.get("MAP_BASE_URL", "https://map.nycmesh.net")
-FORMS_URL = os.environ.get("FORMS_URL", "https://forms.devdb.nycmesh.net")
+LOS_URL = environment.LOS_URL
+MAP_URL = environment.MAP_URL
+FORMS_URL = environment.FORMS_URL
 
 # SMTP Config for password reset emails
-EMAIL_HOST = os.environ.get("SMTP_HOST")
-EMAIL_PORT = os.environ.get("SMTP_PORT")
-EMAIL_HOST_USER = os.environ.get("SMTP_USER")
-EMAIL_HOST_PASSWORD = os.environ.get("SMTP_PASSWORD")
+EMAIL_HOST = environment.EMAIL_HOST
+EMAIL_PORT = environment.EMAIL_PORT
+EMAIL_HOST_USER = environment.EMAIL_HOST_USER
+EMAIL_HOST_PASSWORD = environment.EMAIL_HOST_USER
 EMAIL_USE_TLS = True
 
 ALLOWED_HOSTS = [
@@ -272,19 +271,19 @@ WSGI_APPLICATION = "meshdb.wsgi.application"
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": os.environ.get("DB_NAME"),
-        "USER": os.environ.get("DB_USER"),
-        "PASSWORD": os.environ.get("DB_PASSWORD"),
-        "HOST": os.environ.get("DB_HOST", "localhost"),
-        "PORT": os.environ.get("DB_PORT", 5432),
+        "NAME": environment.DB_NAME,
+        "PASSWORD":environment.DB_PASSWORD,
+        "USER": environment.DB_USER,
+        "HOST": environment.DB_HOST,
+        "PORT": environment.DB_PORT,
     },
     "readonly": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": os.environ.get("DB_NAME"),
-        "USER": os.environ.get("DB_USER_RO"),
-        "PASSWORD": os.environ.get("DB_PASSWORD_RO"),
-        "HOST": os.environ.get("DB_HOST", "localhost"),
-        "PORT": os.environ.get("DB_PORT", 5432),
+        "NAME": environment.DB_NAME,
+        "USER": environment.DB_USER,
+        "PASSWORD": environment.DB_PASSWORD_RO,
+        "HOST": environment.DB_HOST,
+        "PORT": environment.DB_PORT,
     },
 }
 

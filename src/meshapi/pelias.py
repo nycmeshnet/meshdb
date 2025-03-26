@@ -4,10 +4,11 @@ import re
 
 import inflect
 import requests
+import environment
 
 from meshapi.util.constants import DEFAULT_EXTERNAL_API_TIMEOUT_SECONDS
 
-PELIAS_ADDRESS_PARSER_URL = os.environ.get("PELIAS_ADDRESS_PARSER_URL", "http://localhost:6800/parser/parse")
+PELIAS_ADDRESS_PARSER_URL = environm
 
 
 def humanify_street_address(dob_address_str: str) -> str:
