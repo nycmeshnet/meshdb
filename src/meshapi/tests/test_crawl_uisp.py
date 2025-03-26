@@ -1,4 +1,4 @@
-#@patch("meshapi.util.join_records.JOIN_RECORD_PREFIX", MOCK_JOIN_RECORD_PREFIX)
+# @patch("meshapi.util.join_records.JOIN_RECORD_PREFIX", MOCK_JOIN_RECORD_PREFIX)
 from django.contrib.auth.models import User
 from django.test import Client, TestCase
 

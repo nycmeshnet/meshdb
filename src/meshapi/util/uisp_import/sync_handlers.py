@@ -33,6 +33,8 @@ from meshapi.util.uisp_import.utils import (
 
 
 def import_and_sync_uisp_devices(uisp_devices: List[UISPDevice], target_network_number: Optional[int] = None) -> None:
+    if target_network_number:
+        logging.info(f"Attempting import for NN{target_network_number}")
     for uisp_device in uisp_devices:
         uisp_uuid = uisp_device["identification"]["id"]
         uisp_category = uisp_device["identification"]["category"]

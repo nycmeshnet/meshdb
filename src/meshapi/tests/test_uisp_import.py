@@ -4,7 +4,8 @@ from unittest.mock import call, patch
 
 import pytest
 from dateutil.tz import tzutc
-from django.test import TestCase, TransactionTestCase
+from django.contrib.auth.models import User
+from django.test import Client, TestCase, TransactionTestCase
 
 from meshapi.models import LOS, AccessPoint, Building, Device, Link, Node, Sector
 from meshapi.serializers import AccessPointSerializer, DeviceSerializer, LinkSerializer, SectorSerializer
@@ -23,7 +24,8 @@ from meshapi.util.uisp_import.utils import (
     parse_uisp_datetime,
 )
 
-from .sample_data import uisp_devices
+from .sample_data import uisp_devices, uisp_links
+
 
 class TestUISPImportUtils(TestCase):
     def test_guess_compass_heading(self):
@@ -1065,16 +1067,50 @@ class TestUISPImportHandlers(TransactionTestCase):
         )
         self.link6b.save()
 
+    @patch("meshapi.util.uisp_import.sync_handlers.update_link_from_uisp_data")
+    @patch("meshapi.util.uisp_import.sync_handlers.get_uisp_session")
+    @patch("meshapi.views.crawl_uisp.get_uisp_devices")
+    @patch("meshapi.views.crawl_uisp.get_uisp_links")
     @patch("meshapi.util.uisp_import.sync_handlers.notify_admins_of_changes")
     @patch("meshapi.util.uisp_import.sync_handlers.update_device_from_uisp_data")
-    def test_import_and_sync_devices_per_nn(self, mock_update_device, mock_notify_admins):
+    def test_import_per_nn(
+        self,
+        mock_update_device,
+        mock_notify_admins,
+        mock_get_uisp_links,
+        mock_get_uisp_devices,
+        mock_get_uisp_session,
+        mock_update_link,
+    ):
+        """
+        This test ensures that when calling the uisp import per nn endpoint, we only
+        import devices related to the specified endpoint.
+        """
         mock_update_device.side_effect = [
             [],
             [],
             ["Mock update 3"],
         ]
 
-        import_and_sync_uisp_devices(uisp_devices, 1234)
+        mock_update_link.side_effect = [
+            [],  # self.link1
+            ["Mock update 2"],  # self.link2
+        ]
+
+        mock_get_uisp_links.return_value = uisp_links
+        mock_get_uisp_devices.return_value = uisp_devices
+        mock_get_uisp_session.return_value = "mock_uisp_session"
+
+        # Create a client
+        self.admin_user = User.objects.create_superuser(
+            username="admin", password="admin_password", email="admin@example.com"
+        )
+        c = Client()
+        c.login(username="admin", password="admin_password")
+
+        # Call the per-nn UISP import endpoint
+        response = c.post("/api/v1/crawl-uisp/nn/1234/")
+        self.assertEqual(200, response.status_code)
 
         self.device5.refresh_from_db()
         self.assertEqual(self.device5.status, Device.DeviceStatus.INACTIVE)
@@ -1084,55 +1120,8 @@ class TestUISPImportHandlers(TransactionTestCase):
 
         last_seen_date = datetime.datetime(2024, 8, 12, 2, 4, 35, 335000, tzinfo=tzutc())
         mock_update_device.assert_called_once_with(
-                self.device1, self.node1, "nycmesh-1234-dev1", Device.DeviceStatus.ACTIVE, last_seen_date
+            self.device1, self.node1, "nycmesh-1234-dev1", Device.DeviceStatus.ACTIVE, last_seen_date
         )
-
-        """
-        mock_notify_admins.assert_has_calls(
-            [
-                call(self.device3, ["Mock update 3"]),
-                call(
-                    created_sector1,
-                    [
-                        "Guessed azimuth of 90.0 degrees from device name. Please provide a more accurate value if available",
-                        "Guessed coverage width of 120 degrees from device type. Please provide a more accurate value if available",
-                        "Set default radius of 1 km. Please correct if this is not accurate",
-                    ],
-                    created=True,
-                ),
-                call(
-                    created_sector2,
-                    [
-                        "Azimuth defaulted to 0 degrees. Device name did not indicate a cardinal direction. Please provide a more accurate value if available",
-                        "Guessed coverage width of 120 degrees from device type. Please provide a more accurate value if available",
-                        "Set default radius of 1 km. Please correct if this is not accurate",
-                    ],
-                    created=True,
-                ),
-                call(
-                    self.device4,
-                    [
-                        "Marked as inactive because there is no corresponding device in UISP, "
-                        "it was probably deleted there",
-                    ],
-                ),
-                call(
-                    self.device6,
-                    [
-                        "Marked as inactive because there is no corresponding device in UISP, "
-                        "it was probably deleted there",
-                    ],
-                ),
-                call(
-                    self.device5,
-                    [
-                        "Marked as inactive because there is no corresponding device in UISP, "
-                        "it was probably deleted there",
-                    ],
-                ),
-            ]
-        )
-            """
 
         created_device = Device.objects.get(uisp_id="uisp-uuid9")
         self.assertEqual(created_device.node, self.node1)
@@ -1163,7 +1152,6 @@ class TestUISPImportHandlers(TransactionTestCase):
         self.assertTrue(created_sector2.notes.startswith("Automatically imported from UISP on"))
 
         self.assertIsNone(Device.objects.filter(uisp_id="uisp-uuid5").first())
-
 
     @patch("meshapi.util.uisp_import.sync_handlers.notify_admins_of_changes")
     @patch("meshapi.util.uisp_import.sync_handlers.update_device_from_uisp_data")
@@ -1339,152 +1327,6 @@ class TestUISPImportHandlers(TransactionTestCase):
         self.link5b.delete()
         self.link6a.delete()
         self.link6b.delete()
-
-        uisp_links = [
-            {
-                "from": {
-                    "device": {
-                        "identification": {
-                            "id": "uisp-uuid1",
-                            "category": "wireless",
-                            "name": "nycmesh-1234-dev1",
-                        }
-                    }
-                },
-                "to": {
-                    "device": {
-                        "identification": {
-                            "id": "uisp-uuid2",
-                            "category": "wireless",
-                            "name": "nycmesh-5678-dev2",
-                        }
-                    }
-                },
-                "state": "active",
-                "id": "uisp-uuid1",
-                "type": "wireless",
-                "frequency": 5_000,
-            },
-            {
-                "from": {
-                    "device": {
-                        "identification": {
-                            "id": "uisp-uuid1",
-                            "category": "wireless",
-                            "name": "nycmesh-1234-dev1",
-                        }
-                    }
-                },
-                "to": {
-                    "device": {
-                        "identification": {
-                            "id": "uisp-uuid3",
-                            "category": "wireless",
-                            "name": "nycmesh-9012-dev3",
-                        }
-                    }
-                },
-                "state": "inactive",
-                "id": "uisp-uuid2",
-                "type": "wireless",
-                "frequency": 60_000,
-            },
-            {
-                "from": {
-                    "device": {
-                        "identification": {
-                            "id": "uisp-uuid2",
-                            "category": "wireless",
-                            "name": "nycmesh-5678-dev2",
-                        }
-                    }
-                },
-                "to": {
-                    "device": {
-                        "identification": {
-                            "id": "uisp-uuid4",
-                            "category": "wireless",
-                            "name": "nycmesh-7890-dev4",
-                        }
-                    }
-                },
-                "state": "active",
-                "id": "uisp-uuid3",
-                "type": "wireless",
-                "frequency": 5_000,
-            },
-            {
-                "from": {
-                    "device": {
-                        "identification": {
-                            "id": "uisp-uuid2",
-                            "category": "wireless",
-                            "name": "nycmesh-5678-dev2",
-                        }
-                    }
-                },
-                "to": {
-                    "device": {
-                        "identification": {
-                            "id": "uisp-uuid-non-existent",  # Causes this link to be excluded
-                            "category": "wireless",
-                            "name": "nycmesh-3456-dev4",
-                        }
-                    }
-                },
-                "state": "active",
-                "id": "uisp-uuid4",
-                "type": "wireless",
-                "frequency": 5_000,
-            },
-            {
-                "from": {
-                    "device": {
-                        "identification": {
-                            "id": "uisp-uuid-non-existent",  # Causes this link to be excluded
-                            "category": "wireless",
-                            "name": "nycmesh-5678-dev2",
-                        }
-                    }
-                },
-                "to": {
-                    "device": {
-                        "identification": {
-                            "id": "uisp-uuid3",
-                            "category": "wireless",
-                            "name": "nycmesh-9012-dev3",
-                        }
-                    }
-                },
-                "state": "active",
-                "id": "uisp-uuid4",
-                "type": "wireless",
-                "frequency": 5_000,
-            },
-            {
-                "from": {
-                    "device": {
-                        "identification": {
-                            "id": "uisp-uuid1",
-                            "category": "wireless",
-                            "name": "nycmesh-1234-dev1",
-                        }
-                    }
-                },
-                "to": {
-                    "device": {
-                        "identification": {
-                            "id": "uisp-uuid4",
-                            "category": "wireless",
-                            "name": "nycmesh-3456-dev4",
-                        }
-                    }
-                },
-                "state": "active",
-                "id": "uisp-uuid5",
-                "type": "ethernet",
-            },
-        ]
 
         import_and_sync_uisp_links(uisp_links)
 
