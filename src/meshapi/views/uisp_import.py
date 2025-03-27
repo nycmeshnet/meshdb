@@ -16,7 +16,7 @@ from meshapi.util.uisp_import.sync_handlers import (
 
 @api_view(["POST"])
 @permission_classes([IsAdminUser])
-def crawl_uisp_for_nn(request: Request, network_number: int) -> Response:
+def uisp_import_for_nn(request: Request, network_number: int) -> Response:
     if not network_number:
         status = 400
         m = "Please provide a network number."
@@ -25,9 +25,10 @@ def crawl_uisp_for_nn(request: Request, network_number: int) -> Response:
 
     try:
         target_nn = int(network_number)  # Because I apparently can't trust nobody
-        if target_nn > NETWORK_NUMBER_MAX:
+        # Must be in valid range
+        if target_nn < NETWORK_NUMBER_MIN or NETWORK_NUMBER_MAX < target_nn:
             status = 400
-            m = "Network number is beyond the max."
+            m = "Network number is not in valid range."
             logging.error(m)
             return Response({"detail", m}, status=status)
     except ValueError:

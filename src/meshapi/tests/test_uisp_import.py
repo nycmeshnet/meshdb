@@ -1070,11 +1070,11 @@ class TestUISPImportHandlers(TransactionTestCase):
     @patch("meshapi.util.uisp_import.fetch_uisp.get_uisp_session")
     @patch("meshapi.util.uisp_import.sync_handlers.update_link_from_uisp_data")
     @patch("meshapi.util.uisp_import.sync_handlers.get_uisp_session")
-    @patch("meshapi.views.crawl_uisp.get_uisp_devices")
-    @patch("meshapi.views.crawl_uisp.get_uisp_links")
+    @patch("meshapi.views.uisp_import.get_uisp_devices")
+    @patch("meshapi.views.uisp_import.get_uisp_links")
     @patch("meshapi.util.uisp_import.sync_handlers.notify_admins_of_changes")
     @patch("meshapi.util.uisp_import.sync_handlers.update_device_from_uisp_data")
-    def test_import_per_nn(
+    def test_import_by_nn(
         self,
         mock_update_device,
         mock_notify_admins,
@@ -1112,7 +1112,7 @@ class TestUISPImportHandlers(TransactionTestCase):
         c.login(username="admin", password="admin_password")
 
         # Call the per-nn UISP import endpoint
-        response = c.post("/api/v1/crawl-uisp/nn/1234/")
+        response = c.post("/api/v1/uisp-import/nn/1234/")
         self.assertEqual(200, response.status_code)
 
         self.device5.refresh_from_db()
@@ -1155,6 +1155,20 @@ class TestUISPImportHandlers(TransactionTestCase):
         self.assertTrue(created_sector2.notes.startswith("Automatically imported from UISP on"))
 
         self.assertIsNone(Device.objects.filter(uisp_id="uisp-uuid5").first())
+
+        # Also ensure that invalid entries don't work
+
+        response = c.post("/api/v1/uisp-import/nn/-1200/")
+        self.assertEqual(400, response.status_code)
+
+        response = c.post("/api/v1/uisp-import/nn/999999999999/")
+        self.assertEqual(400, response.status_code)
+
+        response = c.post("/api/v1/uisp-import/nn/")
+        self.assertEqual(404, response.status_code)
+
+        response = c.post("/api/v1/uisp-import/nn/chom/")
+        self.assertEqual(400, response.status_code)
 
     @patch("meshapi.util.uisp_import.sync_handlers.notify_admins_of_changes")
     @patch("meshapi.util.uisp_import.sync_handlers.update_device_from_uisp_data")

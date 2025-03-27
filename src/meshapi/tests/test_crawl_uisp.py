@@ -3,7 +3,7 @@ from django.contrib.auth.models import User
 from django.test import Client, TestCase
 
 
-class TestJoinRecordViewer(TestCase):
+class TestUISPOnDemandImportForm(TestCase):
     a = Client()  # Anonymous client
     c = Client()
 

@@ -1,4 +1,4 @@
-from .crawl_uisp import *
+from .uisp_import import *
 from .forms import *
 from .geography import *
 from .helpers import *
