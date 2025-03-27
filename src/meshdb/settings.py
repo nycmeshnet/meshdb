@@ -487,6 +487,10 @@ SPECTACULAR_SETTINGS = {
             "description": "Special devices which provide community WiFi to a given area, usually in a park or "
             "other public place",
         },
+        {
+            "name": "Billing",
+            "description": "Billing data, such as for invoices of install fees to large institutions",
+        },
         {"name": "Geographic & KML Data", "description": "Endpoints for geographic and KML data export"},
         {
             "name": "Website Map Data",

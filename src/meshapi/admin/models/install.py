@@ -181,10 +181,14 @@ class InstallAdmin(RankedSearchMixin, ImportExportMixin, ExportActionMixin, Simp
             return "-"
         return obj.node.status
 
-    def get_inline_instances(self, request, obj: Install = None):
+    def get_inline_instances(self, request: HttpRequest, obj: Install = None):
         static_inlines = super().get_inline_instances(request, obj)
 
-        if obj and hasattr(obj, "install_fee_billing_datum"):
+        if (
+            obj
+            and hasattr(obj, "install_fee_billing_datum")
+            and request.user.has_perm("meshapi.view_installfeebillingdatum", None)
+        ):
             return static_inlines + [InstallFeeBillingDatumInline(self.model, self.admin_site)]
 
         return static_inlines  # Hide billing inline if no related objects exist
