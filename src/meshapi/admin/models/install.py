@@ -1,9 +1,10 @@
 import os
-from typing import Any, Tuple
+from typing import Any, List, Optional, Tuple
 
 import tablib
 from django import forms
 from django.contrib import admin
+from django.contrib.admin.options import InlineModelAdmin
 from django.contrib.postgres.search import SearchVector
 from django.db.models import QuerySet
 from django.http import HttpRequest
@@ -11,7 +12,7 @@ from import_export import resources
 from import_export.admin import ExportActionMixin, ImportExportMixin
 from simple_history.admin import SimpleHistoryAdmin
 
-from meshapi.admin import inlines, InstallFeeBillingDatumInline
+from meshapi.admin import InstallFeeBillingDatumInline, inlines
 from meshapi.models import Install
 from meshapi.widgets import ExternalHyperlinkWidget, WarnAboutDatesWidget
 
@@ -181,7 +182,7 @@ class InstallAdmin(RankedSearchMixin, ImportExportMixin, ExportActionMixin, Simp
             return "-"
         return obj.node.status
 
-    def get_inline_instances(self, request: HttpRequest, obj: Install = None):
+    def get_inline_instances(self, request: HttpRequest, obj: Optional[Install] = None) -> List[InlineModelAdmin]:
         static_inlines = super().get_inline_instances(request, obj)
 
         if (

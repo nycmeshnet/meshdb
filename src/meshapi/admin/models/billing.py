@@ -4,8 +4,9 @@ from django.contrib.postgres.search import SearchVector
 from import_export.admin import ExportActionMixin, ImportExportMixin
 from simple_history.admin import SimpleHistoryAdmin
 
-from ..ranked_search import RankedSearchMixin
 from meshapi.models.billing import InstallFeeBillingDatum
+
+from ..ranked_search import RankedSearchMixin
 
 
 class InstallFeeBillingDatumAdminForm(forms.ModelForm):

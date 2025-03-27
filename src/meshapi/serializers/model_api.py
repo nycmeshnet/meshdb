@@ -9,11 +9,11 @@ from meshapi.models import (
     Building,
     Device,
     Install,
+    InstallFeeBillingDatum,
     Link,
     Member,
     Node,
     Sector,
-    InstallFeeBillingDatum,
 )
 from meshapi.serializers.nested_key_object_related_field import NestedKeyObjectRelatedField, NestedKeyRelatedMixIn
 

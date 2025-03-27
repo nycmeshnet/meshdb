@@ -15,11 +15,11 @@ from meshapi.models import (
     Building,
     Device,
     Install,
+    InstallFeeBillingDatum,
     Link,
     Member,
     Node,
     Sector,
-    InstallFeeBillingDatum,
 )
 
 
@@ -237,7 +237,7 @@ class InstallFeeBillingDatumInline(admin.StackedInline):
     can_delete = False
     extra = 0
 
-    def has_add_permission(self, request, obj=None):
+    def has_add_permission(self, request: HttpRequest, obj: Optional[Install] = None) -> bool:
         return False  # Disable the "Add Another" button
 
     verbose_name = "Install Fee Billing Data"

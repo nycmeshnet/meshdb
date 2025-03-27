@@ -59,5 +59,5 @@ class InstallFeeBillingDatum(models.Model):
         help_text="A free-form text description, to track any additional information.",
     )
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"Billing Datum for {self.install}"

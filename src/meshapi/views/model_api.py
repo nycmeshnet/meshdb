@@ -13,16 +13,17 @@ from meshapi.models import (
     Building,
     Device,
     Install,
+    InstallFeeBillingDatum,
     Link,
     Member,
     Node,
     Sector,
-    InstallFeeBillingDatum,
 )
 from meshapi.serializers import (
     AccessPointSerializer,
     BuildingSerializer,
     DeviceSerializer,
+    InstallFeeBillingDatumSerializer,
     InstallSerializer,
     LinkSerializer,
     LOSSerializer,
@@ -30,7 +31,6 @@ from meshapi.serializers import (
     NodeEditSerializer,
     NodeSerializer,
     SectorSerializer,
-    InstallFeeBillingDatumSerializer,
 )
 
 
