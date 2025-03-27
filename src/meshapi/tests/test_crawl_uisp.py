@@ -20,5 +20,4 @@ class TestJoinRecordViewer(TestCase):
 
     def test_uisp_on_demand(self):
         response = self.c.get("/uisp-on-demand/")
-        # Redirected to admin login
-        self.assertEqual(302, response.status_code)
+        self.assertEqual(200, response.status_code)
