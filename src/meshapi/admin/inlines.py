@@ -9,7 +9,18 @@ from django.forms import BaseInlineFormSet
 from django.http import HttpRequest
 from nonrelated_inlines.admin import NonrelatedTabularInline
 
-from meshapi.models import LOS, AccessPoint, Building, Device, Install, Link, Member, Node, Sector
+from meshapi.models import (
+    LOS,
+    AccessPoint,
+    Building,
+    Device,
+    Install,
+    Link,
+    Member,
+    Node,
+    Sector,
+    InstallFeeBillingDatum,
+)
 
 
 # Inline with the typical rules we want + Formatting
@@ -217,3 +228,16 @@ class AdditionalMembersInline(TabularInline):
             attrs={"data-placeholder": "Search for a Member", "data-minimum-input-length": 2},
         )
         return formset
+
+
+class InstallFeeBillingDatumInline(admin.StackedInline):
+    model = InstallFeeBillingDatum
+    readonly_fields = ("status", "billing_date", "invoice_number", "notes")
+    show_change_link = True
+    can_delete = False
+    extra = 0
+
+    def has_add_permission(self, request, obj=None):
+        return False  # Disable the "Add Another" button
+
+    verbose_name = "Install Fee Billing Data"

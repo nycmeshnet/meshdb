@@ -11,7 +11,7 @@ from import_export import resources
 from import_export.admin import ExportActionMixin, ImportExportMixin
 from simple_history.admin import SimpleHistoryAdmin
 
-from meshapi.admin import inlines
+from meshapi.admin import inlines, InstallFeeBillingDatumInline
 from meshapi.models import Install
 from meshapi.widgets import ExternalHyperlinkWidget, WarnAboutDatesWidget
 
@@ -180,6 +180,14 @@ class InstallAdmin(RankedSearchMixin, ImportExportMixin, ExportActionMixin, Simp
         if not obj.node or not obj.node.status:
             return "-"
         return obj.node.status
+
+    def get_inline_instances(self, request, obj: Install = None):
+        static_inlines = super().get_inline_instances(request, obj)
+
+        if obj and hasattr(obj, "install_fee_billing_datum"):
+            return static_inlines + [InstallFeeBillingDatumInline(self.model, self.admin_site)]
+
+        return static_inlines  # Hide billing inline if no related objects exist
 
     get_node_status.short_description = "Node Status"  # type: ignore[attr-defined]
     get_node_status.admin_order_field = "node__status"  # type: ignore[attr-defined]

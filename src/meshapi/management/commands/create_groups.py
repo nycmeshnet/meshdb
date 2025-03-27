@@ -29,9 +29,13 @@ class Command(BaseCommand):
         ]
         all_permissions = Permission.objects.all()
 
+        billing_models = ["installfeebillingdata"]
+
         admin, _ = Group.objects.get_or_create(name="Admin")
         installer, _ = Group.objects.get_or_create(name="Installer")
         read_only, _ = Group.objects.get_or_create(name="Read Only")
+
+        billing_editor, _ = Group.objects.get_or_create(name="Billing Editor")
 
         for p in all_permissions:
             code = p.codename
@@ -39,15 +43,20 @@ class Command(BaseCommand):
             act, obj = code.split("_", maxsplit=1)
 
             # read_only
-            if act == "view" and obj in models:
+            if act == "view" and (obj in models or obj in billing_models):
                 read_only.permissions.add(p)
+                installer.permissions.add(p)
 
             # installer
-            if (act == "change" and obj in models) or (act == "view" and obj in models) or code == "assign_nn":
+            if (act == "change" and obj in models) or code == "assign_nn":
                 installer.permissions.add(p)
 
             if act == "add" and obj in ["accesspoint", "link"]:
                 installer.permissions.add(p)
+
+            # billing editor
+            if obj in billing_models:
+                billing_editor.permissions.add(p)
 
             # admin
             if (
