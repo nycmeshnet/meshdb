@@ -17,11 +17,12 @@ from meshapi.util.uisp_import.sync_handlers import (
 @api_view(["POST"])
 @permission_classes([IsAdminUser])
 def uisp_import_for_nn(request: Request, network_number: int) -> Response:
+    logging.info(f"Received uisp import reuqest for NN{network_number}")
     if not network_number:
         status = 400
         m = "Please provide a network number."
         logging.error(m)
-        return Response({"detail", m}, status=status)
+        return Response({"detail": m}, status=status)
 
     try:
         target_nn = int(network_number)  # Because I apparently can't trust nobody
@@ -39,11 +40,11 @@ def uisp_import_for_nn(request: Request, network_number: int) -> Response:
     try:
         import_and_sync_uisp_devices(get_uisp_devices(), target_nn)
         import_and_sync_uisp_links(get_uisp_links(), target_nn)
-        sync_link_table_into_los_objects()
+        sync_link_table_into_los_objects(target_nn)
     except Exception as e:
         logging.exception(e)
         status = 500
-        m = f"An error ocurred while running the import. Please try again later."
+        m = "An error ocurred while running the import. Please try again later."
         return Response({"detail": m}, status=status)
 
     return Response({"detail": "success"}, status=200)

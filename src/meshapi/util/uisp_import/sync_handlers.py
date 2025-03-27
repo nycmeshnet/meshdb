@@ -346,12 +346,20 @@ def import_and_sync_uisp_links(uisp_links: List[UISPDataLink], target_network_nu
                 )
 
 
-def sync_link_table_into_los_objects() -> None:
+def sync_link_table_into_los_objects(target_network_number: Optional[int] = None) -> None:
     for link in (
         Link.objects.exclude(type=Link.LinkType.ETHERNET)
         .exclude(type=Link.LinkType.FIBER)
         .exclude(type=Link.LinkType.VPN)
     ):
+
+        if (
+            target_network_number
+            and link.from_device.node.network_number != target_network_number
+            and link.to_device.node.network_number != target_network_number
+        ):
+            continue
+
         from_building = get_building_from_network_number(link.from_device.node.network_number)
         to_building = get_building_from_network_number(link.to_device.node.network_number)
 
