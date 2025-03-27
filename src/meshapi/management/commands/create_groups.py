@@ -29,7 +29,7 @@ class Command(BaseCommand):
         ]
         all_permissions = Permission.objects.all()
 
-        billing_models = ["installfeebillingdata"]
+        billing_models = ["installfeebillingdatum"]
 
         admin, _ = Group.objects.get_or_create(name="Admin")
         installer, _ = Group.objects.get_or_create(name="Installer")
