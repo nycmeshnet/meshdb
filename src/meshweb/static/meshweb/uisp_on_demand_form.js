@@ -18,7 +18,7 @@ async function submitForm(event) {
     // Show loading banner
     loadingBanner.style.display = 'flex';
     const number = document.getElementById('numberInput').value;
-        fetch(`/api/v1/crawl-uisp/nn/${number}/`, {
+        fetch(`/api/v1/uisp-import/nn/${number}/`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

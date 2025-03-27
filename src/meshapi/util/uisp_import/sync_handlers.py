@@ -395,7 +395,7 @@ def sync_link_table_into_los_objects() -> None:
                         changed_los = True
 
                     if changed_los:
-                        print("changed los")
+                        logging.info(f"changed los: {existing_los}")
                         existing_los.save()
                 continue
 

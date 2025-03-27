@@ -34,10 +34,16 @@ def uisp_import_for_nn(request: Request, network_number: int) -> Response:
     except ValueError:
         status = 400
         m = f"Network Number must be an integer between {NETWORK_NUMBER_MIN} and {NETWORK_NUMBER_MAX}."
-        return Response({"detail", m}, status=status)
+        return Response({"detail": m}, status=status)
 
-    import_and_sync_uisp_devices(get_uisp_devices(), target_nn)
-    import_and_sync_uisp_links(get_uisp_links(), target_nn)
-    sync_link_table_into_los_objects()
+    try:
+        import_and_sync_uisp_devices(get_uisp_devices(), target_nn)
+        import_and_sync_uisp_links(get_uisp_links(), target_nn)
+        sync_link_table_into_los_objects()
+    except Exception as e:
+        logging.exception(e)
+        status = 500
+        m = f"An error ocurred while running the import. Please try again later."
+        return Response({"detail": m}, status=status)
 
     return Response({"detail": "success"}, status=200)

@@ -9,24 +9,27 @@
 <body>
   {% include "meshweb/nav.html" %}
   <div class="mainContent">
-      <img src="{% static 'meshweb/uispondemand.png' %}" width="256px"/>
-      <h1>On-Demand™ UISP Import</h1>
-    </div>
+    <img src="{% static 'meshweb/uispondemand.png' %}" width="256px"/>
+  </div>
   <div class="mainContent">
-    <form id="numberForm" onsubmit="submitForm(event)">
-        <label for="numberInput">Network Number:</label>
-        <input type="number" id="numberInput" name="numberInput" required>
-        <button type="submit">Import</button>
+    <p>Use this form to trigger an import of UISP objects for a given Network Number. This is typically an expensive operation, so we only import objects from UISP hourly. However, if you need the latest data, a single NN should only take a moment or two.</p>
+  </div>
+  <div class="mainContent">
+    <form id="numberForm" class="row-auto" onsubmit="submitForm(event)">
+        <label for="numberInput" class="form-label">Network Number:</label>
+        <input type="number" class="form-control" id="numberInput" name="numberInput" required>
+        <br>
+        <button type="submit" class="btn btn-dark">Submit</button>
     </form>
   </div>
   <div style="padding:48px;">
-    <div id="loadingBanner" class="loadingBanner" style="display:none;">
+    <div id="loadingBanner" class="alert alert-primary alert-dismissible" style="display:none;">
       <h1>Loading...</h1>
     </div>
-    <div id="successBanner" class="successBanner" style="display:none;">
+    <div id="successBanner" class="alert alert-success alert-dismissible"  style="display:none;">
       <h1>Success!</h1>
     </div>
-    <div id="errorBanner" class="errorBanner" style="display:none;">
+    <div id="errorBanner" class="alert alert-danger alert-dismissible"  style="display:none;">
       <h1 id="errorDetail">Error:</h1>
     </div>
   </div>
