@@ -4,7 +4,18 @@ from django.contrib.auth.models import Group, User
 from django.test import Client, TestCase
 from rest_framework.authtoken.models import TokenProxy
 
-from meshapi.models import LOS, AccessPoint, Building, Device, Install, Link, Member, Node, Sector
+from meshapi.models import (
+    LOS,
+    AccessPoint,
+    Building,
+    Device,
+    Install,
+    Link,
+    Member,
+    Node,
+    Sector,
+    InstallFeeBillingDatum,
+)
 from meshapi.tests.sample_data import sample_building, sample_device, sample_install, sample_member, sample_node
 from meshapi.tests.util import get_admin_results_count
 from meshapi_hooks.hooks import CelerySerializerHook
@@ -39,6 +50,11 @@ class TestAdminListView(TestCase):
 
         self.install = Install(**sample_install_copy)
         self.install.save()
+
+        self.billing_datum = InstallFeeBillingDatum(
+            install=self.install,
+        )
+        self.billing_datum.save()
 
         self.node1 = Node(**sample_node)
         self.node1.save()
@@ -121,6 +137,10 @@ class TestAdminListView(TestCase):
 
     def test_list_install(self):
         response = self._call("/admin/meshapi/install/", 200)
+        self.assertEqual(1, get_admin_results_count(response.content.decode()))
+
+    def test_list_installfeebillingdatum(self):
+        response = self._call("/admin/meshapi/installfeebillingdatum/", 200)
         self.assertEqual(1, get_admin_results_count(response.content.decode()))
 
     def test_list_link(self):

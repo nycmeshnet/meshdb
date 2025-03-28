@@ -30,10 +30,10 @@ class InstallFeeBillingDatumAdmin(RankedSearchMixin, ImportExportMixin, ExportAc
         "@notes",
     ]
     search_vector = (
-        SearchVector("invoice_number__iexact", weight="A")
-        + SearchVector("install__node__network_number__iexact", weight="A")
-        + SearchVector("install__install_number__iexact", weight="A")
-        + SearchVector("install__building__street_address__icontains", weight="B")
+        SearchVector("invoice_number", weight="A")
+        + SearchVector("install__node__network_number", weight="A")
+        + SearchVector("install__install_number", weight="A")
+        + SearchVector("install__building__street_address", weight="B")
         + SearchVector("notes", weight="D")
     )
     list_display = ["__str__", "status", "billing_date", "invoice_number", "notes"]
