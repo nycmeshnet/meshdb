@@ -7,11 +7,8 @@ import requests
 from django.db.models import Model
 from django.http import HttpRequest
 from rest_framework.serializers import Serializer
-
+from meshdb.environment import SLACK_ADMIN_NOTIFICATIONS_WEBHOOK_URL, SITE_BASE_URL
 from meshapi.admin.utils import get_admin_url
-
-SLACK_ADMIN_NOTIFICATIONS_WEBHOOK_URL = os.environ.get("SLACK_ADMIN_NOTIFICATIONS_WEBHOOK_URL")
-SITE_BASE_URL = os.environ.get("SITE_BASE_URL")
 
 
 def escape_slack_text(text: str) -> str:

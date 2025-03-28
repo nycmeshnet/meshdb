@@ -7,6 +7,7 @@ from meshapi.models import Building, Install, Member, Node
 
 from .sample_data import sample_building, sample_install, sample_member
 
+from meshdb.environment import QUERY-PSK
 
 class TestQueryForm(TestCase):
     c = Client()

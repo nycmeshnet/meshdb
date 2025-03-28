@@ -1,0 +1,2 @@
+def environment():
+    return None

@@ -6,7 +6,7 @@ from celery.apps.worker import Worker
 from celery.signals import beat_init, worker_ready, worker_shutdown
 from datadog import initialize, statsd
 from dotenv import load_dotenv
-import environment
+from environment import CELERY_BROKER
 
 HEARTBEAT_FILE = Path("/tmp/celery_worker_heartbeat")
 READINESS_FILE = Path("/tmp/celery_worker_ready")

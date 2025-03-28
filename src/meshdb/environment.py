@@ -28,7 +28,7 @@ CELERY_BROKER = os.environ.get("CELERY_BROKER", "redis://localhost:6379/0")
 PELIAS_ADDRESS_PARSER_URL = os.environ.get("PELIAS_ADDRESS_PARSER_URL", "http://localhost:6800/parser/parse")
 
 #from validation.py
-RECAPTCHA_SECRET_KEY_V2 = os.environ.get("RECAPTCHA_SERVER_SECRET_KEY_V2")
+# RECAPTCHA_SECRET_KEY_V2 = os.environ.get("RECAPTCHA_SERVER_SECRET_KEY_V2")
 RECAPTCHA_SECRET_KEY_V3 = os.environ.get("RECAPTCHA_SERVER_SECRET_KEY_V3")
 RECAPTCHA_INVISIBLE_TOKEN_SCORE_THRESHOLD = float(os.environ.get("RECAPTCHA_INVISIBLE_TOKEN_SCORE_THRESHOLD", 0.5))
 
@@ -55,7 +55,7 @@ SLACK_ADMIN_NOTIFICATIONS_WEBHOOK_URL = os.environ.get("SLACK_ADMIN_NOTIFICATION
 SITE_BASE_URL = os.environ.get("SITE_BASE_URL")
 
 #from panoramas.py
-token = os.environ.get("PANO_GITHUB_TOKEN")
+PANO_GITHUB_TOKEN = os.environ.get("PANO_GITHUB_TOKEN")
 
 #from test_update_panos_github.py
 PANO_REPO_OWNER = os.environ.get("PANO_REPO_OWNER") or "nycmeshnet"

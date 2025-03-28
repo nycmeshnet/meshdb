@@ -4,11 +4,11 @@ import re
 
 import inflect
 import requests
-import environment
+from meshdb.environment import PELIAS_ADDRESS_PARSER_URL
 
 from meshapi.util.constants import DEFAULT_EXTERNAL_API_TIMEOUT_SECONDS
+from meshdb import environment
 
-PELIAS_ADDRESS_PARSER_URL = environm
 
 
 def humanify_street_address(dob_address_str: str) -> str:

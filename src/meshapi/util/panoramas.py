@@ -10,7 +10,9 @@ from django.db import transaction
 from meshapi.models import Install
 from meshapi.models.building import Building
 from meshapi.models.node import Node
+from meshdb.environment import PANO_GITHUB_TOKEN
 from meshapi.util.django_pglocks import advisory_lock
+
 
 # Config for gathering/generating panorama links
 PANO_REPO_OWNER = "nycmeshnet"
