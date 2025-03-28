@@ -10,11 +10,11 @@ from meshapi.models import (
     Building,
     Device,
     Install,
+    InstallFeeBillingDatum,
     Link,
     Member,
     Node,
     Sector,
-    InstallFeeBillingDatum,
 )
 from meshapi.tests.sample_data import sample_building, sample_device, sample_install, sample_member, sample_node
 from meshapi.tests.util import get_admin_results_count

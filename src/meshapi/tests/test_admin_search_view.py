@@ -9,11 +9,11 @@ from meshapi.models import (
     Building,
     Device,
     Install,
+    InstallFeeBillingDatum,
     Link,
     Member,
     Node,
     Sector,
-    InstallFeeBillingDatum,
 )
 
 from .sample_data import sample_building, sample_device, sample_install, sample_member, sample_node

@@ -15,11 +15,11 @@ from meshapi.models import (
     Building,
     Device,
     Install,
+    InstallFeeBillingDatum,
     Link,
     Member,
     Node,
     Sector,
-    InstallFeeBillingDatum,
 )
 from meshapi_hooks.hooks import CelerySerializerHook
 
