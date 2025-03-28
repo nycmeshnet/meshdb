@@ -409,6 +409,7 @@ HOOK_EVENTS = {
     "device.created": "meshapi.Device.created+",
     "sector.created": "meshapi.Sector.created+",
     "access_point.created": "meshapi.AccessPoint.created+",
+    "installfeebillingdatum.created": "meshapi.InstallFeeBillingDatum.created+",
     "building.updated": "meshapi.Building.updated+",
     "member.updated": "meshapi.Member.updated+",
     "install.updated": "meshapi.Install.updated+",
@@ -419,6 +420,7 @@ HOOK_EVENTS = {
     "device.uisp-deactivated": "meshapi.Device.uisp-deactivated+",
     "sector.updated": "meshapi.Sector.updated+",
     "access_point.updated": "meshapi.AccessPoint.updated+",
+    "installfeebillingdatum.updated": "meshapi.InstallFeeBillingDatum.updated+",
     "building.deleted": "meshapi.Building.deleted+",
     "member.deleted": "meshapi.Member.deleted+",
     "install.deleted": "meshapi.Install.deleted+",
@@ -428,6 +430,7 @@ HOOK_EVENTS = {
     "device.deleted": "meshapi.Device.deleted+",
     "sector.deleted": "meshapi.Sector.deleted+",
     "access_point.deleted": "meshapi.AccessPoint.deleted+",
+    "installfeebillingdatum.deleted": "meshapi.InstallFeeBillingDatum.deleted+",
 }
 
 HOOK_SERIALIZERS = {
@@ -440,6 +443,7 @@ HOOK_SERIALIZERS = {
     "meshapi.Device": "meshapi.serializers.model_api.DeviceSerializer",
     "meshapi.Sector": "meshapi.serializers.model_api.SectorSerializer",
     "meshapi.AccessPoint": "meshapi.serializers.model_api.AccessPointSerializer",
+    "meshapi.InstallFeeBillingDatum": "meshapi.serializers.model_api.InstallFeeBillingDatumSerializer",
 }
 
 HOOK_CUSTOM_MODEL = "meshapi_hooks.CelerySerializerHook"
