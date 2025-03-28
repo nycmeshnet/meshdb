@@ -10,10 +10,12 @@ async function submitForm(event) {
     loadingBanner = document.getElementById('loadingBanner');
     successBanner = document.getElementById('successBanner');
     errorBanner = document.getElementById('errorBanner');
+    submitButton = document.getElementById('submitButton');
 
     // Hide the result banners
     successBanner.style.display = 'none';
     errorBanner.style.display = 'none';
+    submitButton.disabled = true;
 
     // Show loading banner
     loadingBanner.style.display = 'flex';
@@ -36,10 +38,12 @@ async function submitForm(event) {
             console.log('Success:', data.status);
             loadingBanner.style.display = 'none';
             successBanner.style.display = 'flex';
+            submitButton.disabled = false;
         })
         .catch(error => {
             document.getElementById('errorDetail').innerHTML = `${error}`;
             loadingBanner.style.display = 'none';
             errorBanner.style.display = 'flex';
+            submitButton.disabled = false;
         });
 }

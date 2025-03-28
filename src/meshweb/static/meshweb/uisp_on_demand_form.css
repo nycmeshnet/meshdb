@@ -4,22 +4,13 @@
   padding: 0 20%;
 }
 
-.loadingBanner {
-  display:flex;
-  justify-content: center;
+.banner {
+  display: flex;
+  flex-direction: row;
   align-items: center;
+  justify-content: center;
 }
 
-.successBanner {
-  display:flex;
-  justify-content: center;
-  align-items: center;
-  background-color:mediumseagreen;
-}
-
-.errorBanner {
-  display:flex;
-  justify-content: center;
-  align-items: center;
-  background-color:red;
+.banner h1 {
+  padding: 0 20px;
 }

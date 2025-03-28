@@ -46,12 +46,15 @@ def uisp_import_for_nn(request: Request, network_number: int) -> Response:
 
     try:
         target_nn = int(network_number)  # Because I apparently can't trust nobody
-        # Must be in valid range
-        if target_nn < NETWORK_NUMBER_MIN or NETWORK_NUMBER_MAX < target_nn:
+        # Must be in valid range.
+        # NETWORK_NUMBER_MIN is set to something meshdb can assign new stuff, but we have lower NNs
+        # hence, I hardcode 1
+        FIRST_NN = 1
+        if target_nn < FIRST_NN or NETWORK_NUMBER_MAX < target_nn:
             status = 400
             m = "Network number is not in valid range."
             logging.error(m)
-            return Response({"detail", m}, status=status)
+            return Response({"detail": m}, status=status)
     except ValueError:
         status = 400
         m = f"Network Number must be an integer between {NETWORK_NUMBER_MIN} and {NETWORK_NUMBER_MAX}."
