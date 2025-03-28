@@ -1,7 +1,8 @@
 import typing
-from typing import Any, Dict, Tuple, cast
+from typing import Any, Dict, Tuple, cast, Optional
 from uuid import UUID
 
+from django.contrib.auth.models import User
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Model
 from drf_spectacular import drainage
@@ -37,10 +38,25 @@ class NestedKeyObjectRelatedField(serializers.RelatedField):
         if "additional_keys" in kwargs:
             self.additional_keys = kwargs.pop("additional_keys")
 
+        self.additional_keys_display_permission: Optional[str] = None
+        if "additional_keys_display_permission" in kwargs:
+            if not self.additional_keys:
+                raise ValidationError("additional_keys_display_permission requires additional_keys")
+
+            self.additional_keys_display_permission = kwargs.pop("additional_keys_display_permission")
+
         super().__init__(*args, **kwargs)
 
     def _get_key_fields(self) -> Tuple[str, ...]:
-        return ("id",) + self.additional_keys
+        non_sensitive_keys = ("id",)
+
+        user: Optional[User] = self.context["request"].user if self.context["request"] else None
+        if not self.additional_keys_display_permission or (
+            user and user.has_perm(self.additional_keys_display_permission)
+        ):
+            return non_sensitive_keys + self.additional_keys
+
+        return non_sensitive_keys
 
     def to_representation(self, value: Model) -> dict[str, Any]:
         output = {}
