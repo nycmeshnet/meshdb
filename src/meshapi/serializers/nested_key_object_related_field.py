@@ -1,5 +1,5 @@
 import typing
-from typing import Any, Dict, Tuple, cast, Optional
+from typing import Any, Dict, Optional, Tuple, cast
 from uuid import UUID
 
 from django.contrib.auth.models import User

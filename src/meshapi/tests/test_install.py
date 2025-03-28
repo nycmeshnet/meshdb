@@ -3,11 +3,11 @@ import json
 import uuid
 
 import pytest
-from django.contrib.auth.models import User, Permission
+from django.contrib.auth.models import Permission, User
 from django.core.exceptions import ValidationError
-from django.test import TestCase, Client
+from django.test import Client, TestCase
 
-from meshapi.models import Building, Install, Member, InstallFeeBillingDatum
+from meshapi.models import Building, Install, InstallFeeBillingDatum, Member
 from meshapi.tests.sample_data import sample_building, sample_install, sample_member
 
 

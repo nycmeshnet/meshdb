@@ -4,8 +4,8 @@ import json
 from django.contrib.auth.models import User
 from django.test import TestCase
 
-from ..models import Building, Member, Install, InstallFeeBillingDatum
-from .sample_data import sample_member, sample_building, sample_install
+from ..models import Building, Install, InstallFeeBillingDatum, Member
+from .sample_data import sample_building, sample_install, sample_member
 
 
 class TestInstallFeeBillingDatum(TestCase):
