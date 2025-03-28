@@ -50,7 +50,7 @@ class NestedKeyObjectRelatedField(serializers.RelatedField):
     def _get_key_fields(self) -> Tuple[str, ...]:
         non_sensitive_keys = ("id",)
 
-        user: Optional[User] = self.context["request"].user if self.context["request"] else None
+        user: Optional[User] = self.context["request"].user if self.context.get("request") else None
         if not self.additional_keys_display_permission or (
             user and user.has_perm(self.additional_keys_display_permission)
         ):
