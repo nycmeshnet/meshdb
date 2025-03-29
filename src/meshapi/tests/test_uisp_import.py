@@ -1074,6 +1074,35 @@ class TestUISPImportHandlers(TransactionTestCase):
     @patch("meshapi.views.uisp_import.get_uisp_links")
     @patch("meshapi.util.uisp_import.sync_handlers.notify_admins_of_changes")
     @patch("meshapi.util.uisp_import.sync_handlers.update_device_from_uisp_data")
+    def test_import_by_nn_raises_exception(
+        self,
+        mock_update_device,
+        mock_notify_admins,
+        mock_get_uisp_links,
+        mock_get_uisp_devices,
+        mock_get_uisp_session,
+        mock_update_link,
+        mock_get_uisp_session2,
+    ):
+        mock_get_uisp_devices.side_effect = Exception()
+
+        # Create a client
+        self.admin_user = User.objects.create_superuser(
+            username="admin", password="admin_password", email="admin@example.com"
+        )
+        c = Client()
+
+        c.login(username="admin", password="admin_password")
+        response = c.post("/api/v1/uisp-import/nn/100/")
+        self.assertEqual(500, response.status_code)
+
+    @patch("meshapi.util.uisp_import.fetch_uisp.get_uisp_session")
+    @patch("meshapi.util.uisp_import.sync_handlers.update_link_from_uisp_data")
+    @patch("meshapi.util.uisp_import.sync_handlers.get_uisp_session")
+    @patch("meshapi.views.uisp_import.get_uisp_devices")
+    @patch("meshapi.views.uisp_import.get_uisp_links")
+    @patch("meshapi.util.uisp_import.sync_handlers.notify_admins_of_changes")
+    @patch("meshapi.util.uisp_import.sync_handlers.update_device_from_uisp_data")
     def test_import_by_nn(
         self,
         mock_update_device,
