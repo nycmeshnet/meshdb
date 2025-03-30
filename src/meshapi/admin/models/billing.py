@@ -13,9 +13,6 @@ class InstallFeeBillingDatumAdminForm(forms.ModelForm):
     class Meta:
         model = InstallFeeBillingDatum
         fields = "__all__"
-        widgets = {
-            "notes": forms.TextInput(),
-        }
 
 
 @admin.register(InstallFeeBillingDatum)
