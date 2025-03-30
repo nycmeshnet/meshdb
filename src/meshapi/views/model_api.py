@@ -7,11 +7,23 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.request import Request
 from rest_framework.response import Response
 
-from meshapi.models import LOS, AccessPoint, Building, Device, Install, Link, Member, Node, Sector
+from meshapi.models import (
+    LOS,
+    AccessPoint,
+    Building,
+    Device,
+    Install,
+    InstallFeeBillingDatum,
+    Link,
+    Member,
+    Node,
+    Sector,
+)
 from meshapi.serializers import (
     AccessPointSerializer,
     BuildingSerializer,
     DeviceSerializer,
+    InstallFeeBillingDatumSerializer,
     InstallSerializer,
     LinkSerializer,
     LOSSerializer,
@@ -243,3 +255,23 @@ class AccessPointList(generics.ListCreateAPIView):
 class AccessPointDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = AccessPoint.objects.all()
     serializer_class = AccessPointSerializer
+
+
+@extend_schema_view(
+    get=extend_schema(tags=["Billing"]),
+    post=extend_schema(tags=["Billing"]),
+)
+class InstallFeeBillingDataList(generics.ListCreateAPIView):
+    queryset = InstallFeeBillingDatum.objects.all()
+    serializer_class = InstallFeeBillingDatumSerializer
+
+
+@extend_schema_view(
+    get=extend_schema(tags=["Billing"]),
+    put=extend_schema(tags=["Billing"]),
+    patch=extend_schema(tags=["Billing"]),
+    delete=extend_schema(tags=["Billing"]),
+)
+class InstallFeeBillingDataDetail(generics.RetrieveUpdateDestroyAPIView):
+    queryset = InstallFeeBillingDatum.objects.all()
+    serializer_class = InstallFeeBillingDatumSerializer
