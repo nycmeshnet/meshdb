@@ -30,11 +30,13 @@ urlpatterns = [
     path("sectors/<uuid:pk>/", views.SectorDetail.as_view(), name="meshapi-v1-sector-detail"),
     path("accesspoints/", views.AccessPointList.as_view(), name="meshapi-v1-accesspoint-list"),
     path("accesspoints/<uuid:pk>/", views.AccessPointDetail.as_view(), name="meshapi-v1-accesspoint-detail"),
-    path("billing/installfeedata/", views.InstallFeeBillingDataList.as_view(), name="meshapi-v1-installfeedata-list"),
     path(
-        "billing/installfeedata/<uuid:pk>/",
+        "billing/install-fee-data/", views.InstallFeeBillingDataList.as_view(), name="meshapi-v1-install-fee-data-list"
+    ),
+    path(
+        "billing/install-fee-data/<uuid:pk>/",
         views.InstallFeeBillingDataDetail.as_view(),
-        name="meshapi-v1-installfeedata-detail",
+        name="meshapi-v1-install-fee-data-detail",
     ),
     path("devices/", views.DeviceList.as_view(), name="meshapi-v1-device-list"),
     path("devices/<uuid:pk>/", views.DeviceDetail.as_view(), name="meshapi-v1-device-detail"),

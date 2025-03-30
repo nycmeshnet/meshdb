@@ -31,7 +31,7 @@ class TestInstallFeeBillingDatum(TestCase):
 
     def test_new_billing_datum(self):
         response = self.client.post(
-            "/api/v1/billing/installfeedata/",
+            "/api/v1/billing/install-fee-data/",
             {
                 "install": {"id": str(self.install.id)},
                 "status": "ToBeBilled",
@@ -50,7 +50,7 @@ class TestInstallFeeBillingDatum(TestCase):
 
     def test_new_billing_datum_default_status(self):
         response = self.client.post(
-            "/api/v1/billing/installfeedata/",
+            "/api/v1/billing/install-fee-data/",
             {
                 "install": {"install_number": 123},
                 "billing_date": "2025-01-01",
@@ -72,7 +72,7 @@ class TestInstallFeeBillingDatum(TestCase):
 
     def test_broken_billing_datum(self):
         response = self.client.post(
-            "/api/v1/billing/installfeedata/",
+            "/api/v1/billing/install-fee-data/",
             {
                 # install is required and missing
                 "billing_date": "2025-01-01",
@@ -97,7 +97,7 @@ class TestInstallFeeBillingDatum(TestCase):
         )
         billing_datum.save()
 
-        response = self.client.get(f"/api/v1/billing/installfeedata/{billing_datum.id}/")
+        response = self.client.get(f"/api/v1/billing/install-fee-data/{billing_datum.id}/")
 
         code = 200
         self.assertEqual(
@@ -121,7 +121,7 @@ class TestInstallFeeBillingDatum(TestCase):
         )
         billing_datum.save()
         response = self.client.patch(
-            f"/api/v1/billing/installfeedata/{billing_datum.id}/",
+            f"/api/v1/billing/install-fee-data/{billing_datum.id}/",
             {"status": "Billed"},
             content_type="application/json",
         )
