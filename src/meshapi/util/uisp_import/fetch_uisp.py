@@ -7,13 +7,10 @@ from dotenv import load_dotenv
 
 from meshapi.types.uisp_api.data_links import DataLink as UISPDataLink
 from meshapi.types.uisp_api.devices import Device as UISPDevice
-
 load_dotenv()
 
+from meshdb.environment import UISP_URL,UISP_USER,UISP_PASS
 
-UISP_URL = os.environ.get("UISP_URL")
-UISP_USER = os.environ.get("UISP_USER")
-UISP_PASS = os.environ.get("UISP_PASS")
 
 
 def get_uisp_devices() -> List[UISPDevice]:

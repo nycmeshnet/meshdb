@@ -15,7 +15,7 @@ from meshapi.models import Building, Install, Member, Node
 from .group_helpers import create_groups
 from .sample_data import sample_building, sample_install, sample_member
 from .util import TestThread
-
+from meshdb.environment import NN_ASSIGN_PSK
 
 # Test basic NN form stuff (input validation, etc)
 class TestNN(TestCase):
