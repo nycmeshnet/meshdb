@@ -39,7 +39,7 @@ from meshapi.util.uisp_import.sync_handlers import (
 def uisp_import_for_nn(request: Request, network_number: int) -> Response:
     logging.info(f"Received uisp import request for NN{network_number}")
     if not network_number:
-        status = 400
+        status = 404
         m = "Please provide a network number."
         logging.error(m)
         return Response({"detail": m}, status=status)
@@ -51,7 +51,7 @@ def uisp_import_for_nn(request: Request, network_number: int) -> Response:
         # hence, I hardcode 1
         FIRST_NN = 1
         if target_nn < FIRST_NN or NETWORK_NUMBER_MAX < target_nn:
-            status = 400
+            status = 404
             m = "Network number is not in valid range."
             logging.error(m)
             return Response({"detail": m}, status=status)

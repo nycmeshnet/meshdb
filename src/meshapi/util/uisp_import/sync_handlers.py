@@ -234,7 +234,7 @@ def import_and_sync_uisp_links(uisp_links: List[UISPDataLink], target_network_nu
             )
             continue
 
-        # If we're crawling a specific NN and neither of the NNs are
+        # If we're importing from a specific NN and neither of the NNs are the one we expect, then ignore this link and move on.
         if (
             target_network_number
             and uisp_from_device.node.network_number != target_network_number
