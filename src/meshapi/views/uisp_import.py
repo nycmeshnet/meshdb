@@ -52,10 +52,11 @@ def uisp_import_for_nn(request: Request, network_number: int) -> Response:
         FIRST_NN = 1
         if target_nn < FIRST_NN or NETWORK_NUMBER_MAX < target_nn:
             status = 404
-            m = "Network number is not in valid range."
+            m = f"Network Number must be an integer between {NETWORK_NUMBER_MIN} and {NETWORK_NUMBER_MAX}."
             logging.error(m)
             return Response({"detail": m}, status=status)
     except ValueError:
+        # Sanity check. This should never happen.
         status = 400
         m = f"Network Number must be an integer between {NETWORK_NUMBER_MIN} and {NETWORK_NUMBER_MAX}."
         return Response({"detail": m}, status=status)
