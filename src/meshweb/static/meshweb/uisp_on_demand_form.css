@@ -1,0 +1,16 @@
+.mainContent {
+  display:flex;
+  justify-content: center;
+  padding: 0 20%;
+}
+
+.banner {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+}
+
+.banner h1 {
+  padding: 0 20px;
+}

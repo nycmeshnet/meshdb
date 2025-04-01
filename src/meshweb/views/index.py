@@ -12,6 +12,7 @@ def index(request: HttpRequest) -> HttpResponse:
             (f"{settings.FORMS_URL}/join/", "Join Form"),
             (settings.LOS_URL, "Line of Sight Tool"),
             (settings.MAP_URL, "Map"),
+            ("https://github.com/orgs/nycmeshnet/projects/6/views/1", "Feature Requests"),
         ],
         ("meshweb/volunteer.png", "Volunteer Tools"): [
             ("/admin", "Admin Panel"),
@@ -20,6 +21,7 @@ def index(request: HttpRequest) -> HttpResponse:
             (f"{settings.FORMS_URL}/nn-assign/", "NN Assign Form"),
             (f"{settings.FORMS_URL}/query/", "Query Form"),
             ("/join-records/view/", "Join Record Viewer"),
+            ("/uisp-on-demand/", "UISP Import"),
         ],
         ("meshweb/developer.png", "Developer Tools"): [
             ("https://github.com/nycmeshnet/meshdb", "Source Code"),
