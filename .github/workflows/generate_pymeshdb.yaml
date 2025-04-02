@@ -1,0 +1,23 @@
+name: Generate PyMeshDB Package
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+    branches:
+      - main
+
+permissions: read-all
+
+jobs:
+  generate_pymeshdb:
+    name: Generate PyMeshDB
+
+ docker run --rm \
+  -v ${PWD}:/local openapitools/openapi-generator-cli generate \
+  -i https://db.grandsvc.mesh.nycmesh.net/api-docs/openapi3.json \
+  -g python \
+  -o /local/out/python \
+  --skip-validate-spec \
+--package-name pymeshdb
+
