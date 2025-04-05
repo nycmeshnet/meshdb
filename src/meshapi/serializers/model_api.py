@@ -54,6 +54,7 @@ class InstallSerializer(NestedKeyRelatedMixIn, serializers.ModelSerializer):
 
     request_date = serializers.DateTimeField(default_timezone=timezone.utc)
     install_fee_billing_datum = NestedKeyObjectRelatedField(
+        allow_null=True,
         read_only=True,
         additional_keys_display_permission="meshapi.view_installfeebillingdatum",
         additional_keys=(
