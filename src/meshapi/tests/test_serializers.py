@@ -173,6 +173,7 @@ class TestViewsGetAdmin(TestCaseWithFullData):
             "diy": False,
             "id": "9fdc7357-3174-42d9-b682-2f045d2fea15",
             "install_date": "2022-03-01",
+            "install_fee_billing_datum": None,
             "install_number": 1,
             "member": {"id": "07927444-3216-4959-858a-2659743ec2a3"},
             "additional_members": [{"id": "7458431f-6cd7-4845-8778-31bc0199d319"}],
