@@ -9,7 +9,7 @@ dependencies = [
     "djangorestframework@git+https://github.com/encode/django-rest-framework.git@4bbfa8d4556b5847e91ba95f457cc862b7a0f027",
     "drf-hooks==0.1.3",
     "psycopg2-binary==2.9.*",
-    "gunicorn==22.0.*",
+    "gunicorn==23.0.*",
     "django-csp==3.*",
     "django-permissions-policy==4.22.*",
     "python-dotenv==1.0.*",
