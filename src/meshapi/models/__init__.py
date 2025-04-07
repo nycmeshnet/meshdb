@@ -1,3 +1,4 @@
+from .billing import *
 from .building import *
 from .devices import *
 from .install import *

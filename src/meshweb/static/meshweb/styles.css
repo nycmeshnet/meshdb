@@ -41,6 +41,10 @@ footer a {
   text-decoration: none;
 }
 
+.logo-no-underline a {
+  text-decoration: none;
+}
+
 .navbar-brand.collapse .text {
   display: none;
 }
@@ -70,7 +74,7 @@ footer a {
 }
 
 .toolList {
-  display: flex; 
+  display: flex;
   flex-direction: column;
 }
 

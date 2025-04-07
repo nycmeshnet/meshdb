@@ -1,9 +1,10 @@
 import os
-from typing import Any, Tuple
+from typing import Any, List, Optional, Tuple
 
 import tablib
 from django import forms
 from django.contrib import admin
+from django.contrib.admin.options import InlineModelAdmin
 from django.contrib.postgres.search import SearchVector
 from django.db.models import QuerySet
 from django.http import HttpRequest
@@ -11,6 +12,7 @@ from import_export import resources
 from import_export.admin import ExportActionMixin, ImportExportMixin
 from simple_history.admin import SimpleHistoryAdmin
 
+from meshapi.admin import InstallFeeBillingDatumInline, inlines
 from meshapi.models import Install
 from meshapi.widgets import ExternalHyperlinkWidget, WarnAboutDatesWidget
 
@@ -149,6 +151,7 @@ class InstallAdmin(RankedSearchMixin, ImportExportMixin, ExportActionMixin, Simp
             },
         ),
     ]
+    inlines = [inlines.AdditionalMembersInline]
 
     def get_search_results(
         self, request: HttpRequest, queryset: QuerySet[Install], search_term: str
@@ -178,6 +181,18 @@ class InstallAdmin(RankedSearchMixin, ImportExportMixin, ExportActionMixin, Simp
         if not obj.node or not obj.node.status:
             return "-"
         return obj.node.status
+
+    def get_inline_instances(self, request: HttpRequest, obj: Optional[Install] = None) -> List[InlineModelAdmin]:
+        static_inlines = super().get_inline_instances(request, obj)
+
+        if (
+            obj
+            and hasattr(obj, "install_fee_billing_datum")
+            and request.user.has_perm("meshapi.view_installfeebillingdatum", None)
+        ):
+            return static_inlines + [InstallFeeBillingDatumInline(self.model, self.admin_site)]
+
+        return static_inlines  # Hide billing inline if no related objects exist
 
     get_node_status.short_description = "Node Status"  # type: ignore[attr-defined]
     get_node_status.admin_order_field = "node__status"  # type: ignore[attr-defined]

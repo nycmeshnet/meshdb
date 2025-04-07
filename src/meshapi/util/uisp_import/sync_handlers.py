@@ -1,7 +1,7 @@
 import datetime
 import logging
 import re
-from typing import List
+from typing import List, Optional
 
 from django.db import transaction
 from django.db.models import Q
@@ -32,7 +32,9 @@ from meshapi.util.uisp_import.utils import (
 )
 
 
-def import_and_sync_uisp_devices(uisp_devices: List[UISPDevice]) -> None:
+def import_and_sync_uisp_devices(uisp_devices: List[UISPDevice], target_network_number: Optional[int] = None) -> None:
+    if target_network_number:
+        logging.info(f"Attempting import for NN{target_network_number}")
     for uisp_device in uisp_devices:
         uisp_uuid = uisp_device["identification"]["id"]
         uisp_category = uisp_device["identification"]["category"]
@@ -62,6 +64,10 @@ def import_and_sync_uisp_devices(uisp_devices: List[UISPDevice]) -> None:
         # Take the first network number we find, since additional network numbers usually
         # represent the other side of the link
         uisp_network_number = int(network_number_matches[0])
+
+        # If we're crawling for a specific NN, then bail if the NN doesn't match.
+        if target_network_number and uisp_network_number != target_network_number:
+            continue
 
         try:
             uisp_node = Node.objects.get(network_number=uisp_network_number)
@@ -186,7 +192,7 @@ def import_and_sync_uisp_devices(uisp_devices: List[UISPDevice]) -> None:
                 )
 
 
-def import_and_sync_uisp_links(uisp_links: List[UISPDataLink]) -> None:
+def import_and_sync_uisp_links(uisp_links: List[UISPDataLink], target_network_number: Optional[int] = None) -> None:
     uisp_session = get_uisp_session()
     uisp_uuid_set = {uisp_link["id"] for uisp_link in uisp_links}
 
@@ -226,6 +232,15 @@ def import_and_sync_uisp_links(uisp_links: List[UISPDataLink]) -> None:
                 f"because the data in UISP references a 'to' device (UISP ID {uisp_to_device_uuid}) "
                 f"which we do not have in our database (perhaps it was skipped at device import time?)"
             )
+            continue
+
+        # If we're importing from a specific NN and neither of the NNs are the
+        # one we expect, then ignore this link and move on.
+        if (
+            target_network_number
+            and uisp_from_device.node.network_number != target_network_number
+            and uisp_to_device.node.network_number != target_network_number
+        ):
             continue
 
         if uisp_link["state"] == "active":
@@ -332,12 +347,20 @@ def import_and_sync_uisp_links(uisp_links: List[UISPDataLink]) -> None:
                 )
 
 
-def sync_link_table_into_los_objects() -> None:
+def sync_link_table_into_los_objects(target_network_number: Optional[int] = None) -> None:
     for link in (
         Link.objects.exclude(type=Link.LinkType.ETHERNET)
         .exclude(type=Link.LinkType.FIBER)
         .exclude(type=Link.LinkType.VPN)
     ):
+
+        if (
+            target_network_number
+            and link.from_device.node.network_number != target_network_number
+            and link.to_device.node.network_number != target_network_number
+        ):
+            continue
+
         from_building = get_building_from_network_number(link.from_device.node.network_number)
         to_building = get_building_from_network_number(link.to_device.node.network_number)
 
@@ -381,7 +404,7 @@ def sync_link_table_into_los_objects() -> None:
                         changed_los = True
 
                     if changed_los:
-                        print("changed los")
+                        logging.info(f"changed los: {existing_los}")
                         existing_los.save()
                 continue
 

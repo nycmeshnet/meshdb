@@ -1,12 +1,13 @@
+import datetime
 import json
 import uuid
 
 import pytest
-from django.contrib.auth.models import User
+from django.contrib.auth.models import Permission, User
 from django.core.exceptions import ValidationError
-from django.test import TestCase
+from django.test import Client, TestCase
 
-from meshapi.models import Building, Install, Member
+from meshapi.models import Building, Install, InstallFeeBillingDatum, Member
 from meshapi.tests.sample_data import sample_building, sample_install, sample_member
 
 
@@ -387,3 +388,100 @@ class TestInstallAPI(TestCase):
         )
 
         self.assertEqual(0, len(Install.objects.filter(install_number=install_number)))
+
+    def test_no_installfeebillingdatum_view_permissions(self):
+        less_privileged_user = User.objects.create_user(
+            username="user", password="user_password", email="user@example.com"
+        )
+        less_privileged_user.user_permissions.add(Permission.objects.get(codename="view_install"))
+
+        less_privileged_client = Client()
+        less_privileged_client.login(username="user", password="user_password")
+
+        response = less_privileged_client.get(f"/api/v1/installs/{self.install1.id}/")
+
+        code = 200
+        self.assertEqual(
+            code,
+            response.status_code,
+            f"status code incorrect. Should be {code}, but got {response.status_code}",
+        )
+
+        response_obj = json.loads(response.content)
+        self.assertEqual(response_obj["install_fee_billing_datum"], None)
+
+        billing_datum = InstallFeeBillingDatum(
+            id="5e80cada-c23a-477c-8ad3-67083cd50969",
+            install=self.install1,
+            status=InstallFeeBillingDatum.BillingStatus.TO_BE_BILLED,
+            billing_date=datetime.date(2025, 1, 1),
+        )
+        billing_datum.save()
+
+        response = less_privileged_client.get(f"/api/v1/installs/{self.install1.id}/")
+
+        code = 200
+        self.assertEqual(
+            code,
+            response.status_code,
+            f"status code incorrect. Should be {code}, but got {response.status_code}",
+        )
+
+        # Callers without view permission on the billing data only get a pointer to the object,
+        # rather than the object itself
+        response_obj = json.loads(response.content)
+        self.assertEqual(
+            response_obj["install_fee_billing_datum"],
+            {
+                "id": "5e80cada-c23a-477c-8ad3-67083cd50969",
+            },
+        )
+
+        less_privileged_user.user_permissions.add(Permission.objects.get(codename="view_installfeebillingdatum"))
+
+        response = less_privileged_client.get(f"/api/v1/installs/{self.install1.id}/")
+
+        code = 200
+        self.assertEqual(
+            code,
+            response.status_code,
+            f"status code incorrect. Should be {code}, but got {response.status_code}",
+        )
+
+        # Callers with view permission should see the data inline
+        response_obj = json.loads(response.content)
+        self.assertEqual(
+            response_obj["install_fee_billing_datum"],
+            {
+                "id": "5e80cada-c23a-477c-8ad3-67083cd50969",
+                "status": "ToBeBilled",
+                "billing_date": "2025-01-01",
+                "invoice_number": None,
+                "notes": None,
+            },
+        )
+
+    def test_installfeebillingdatum_projection_is_readonly(self):
+        billing_datum = InstallFeeBillingDatum(
+            id="5e80cada-c23a-477c-8ad3-67083cd50969",
+            install=self.install1,
+            status=InstallFeeBillingDatum.BillingStatus.TO_BE_BILLED,
+            billing_date=datetime.date(2025, 1, 1),
+        )
+        billing_datum.save()
+
+        response = self.client.patch(
+            f"/api/v1/installs/{self.install1.id}/",
+            {"install_fee_billing_datum": {"status": "Billed"}},
+            content_type="application/json",
+        )
+
+        code = 200
+        self.assertEqual(
+            code,
+            response.status_code,
+            f"status code incorrect. Should be {code}, but got {response.status_code}",
+        )
+
+        billing_datum.refresh_from_db()
+        self.assertEqual(billing_datum.status, InstallFeeBillingDatum.BillingStatus.TO_BE_BILLED)
