@@ -482,6 +482,7 @@ nn_form_success_schema = inline_serializer(
             ),
             "403": OpenApiResponse(form_err_response_schema, description="Incorrect or missing password"),
             "404": OpenApiResponse(form_err_response_schema, description="Requested install number could not be found"),
+            "409": OpenApiResponse(form_err_response_schema, description="Requested install is in an invalid state"),
             "500": OpenApiResponse(form_err_response_schema, description="Unexpected internal error"),
         },
     ),
@@ -522,6 +523,18 @@ def network_number_assignment(request: Request) -> Response:
 
     # First, we try to identify a Node object for this install if it doesn't already have one
     if not nn_install.node:
+        # Don't allow old recycled or closed installs to have a network number assigned to them,
+        # since this would be very confusing. Installs in this status should re-submit the join
+        # form and try again with a new install number
+        if nn_install.status in [Install.InstallStatus.CLOSED, Install.InstallStatus.NN_REASSIGNED]:
+            return Response(
+                {
+                    "detail": "Invalid install status for NN Assignment. "
+                    "Re-submit the join form to create a new install number"
+                },
+                status=status.HTTP_409_CONFLICT,
+            )
+
         # If the building on this install has a primary_node, then use that one
         if nn_building.primary_node is not None:
             logging.info(f"Reusing existing node ({nn_building.primary_node.id}) from building ({nn_building.id})")
