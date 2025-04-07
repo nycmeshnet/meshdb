@@ -18,7 +18,13 @@ from meshapi.util.panoramas import (
     sync_github_panoramas,
 )
 
+from meshdb.environment import (
+PANO_REPO_OWNER, PANO_REPO, PANO_BRANCH, PANO_HOST, PANO_DIR, PANO_GITHUB_TOKEN
+)
+
 from .sample_data import sample_building, sample_install, sample_member, sample_node
+from ..util.panoramas import PANO_HOST
+
 
 
 class TestSyncPanoramasCommand(TestCase):

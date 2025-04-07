@@ -6,17 +6,11 @@ import os
 from dataclasses import dataclass, fields
 from enum import Enum
 from typing import Optional
-
+from meshdb.environment import JOIN_RECORD_ENDPOINT, JOIN_RECORD_BUCKET_NAME, JOIN_RECORD_PREFIX
 import boto3
 from botocore.client import ClientError, Config
 
 from meshapi.views.forms import JoinFormRequest
-
-# Only used for dev with Minio. Don't set in deployed or unit testing envs
-JOIN_RECORD_ENDPOINT = os.environ.get("S3_ENDPOINT", None)
-
-JOIN_RECORD_BUCKET_NAME = os.environ.get("JOIN_RECORD_BUCKET_NAME")
-JOIN_RECORD_PREFIX = os.environ.get("JOIN_RECORD_PREFIX")
 
 
 class SubmissionStage(Enum):

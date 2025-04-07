@@ -10,10 +10,7 @@ from flags.state import flag_enabled
 
 from meshapi.models import Install, Node
 from meshapi.util.django_flag_decorator import skip_if_flag_disabled
-
-OSTICKET_API_TOKEN = os.environ.get("OSTICKET_API_TOKEN")
-OSTICKET_NEW_TICKET_ENDPOINT = os.environ.get("OSTICKET_NEW_TICKET_ENDPOINT")
-
+from meshdb.environment import OSTICKET_API_TOKEN, OSTICKET_NEW_TICKET_ENDPOINT, OSTICKET_URL
 
 @receiver(post_save, sender=Install, dispatch_uid="create_os_ticket_for_install")
 @skip_if_flag_disabled("INTEGRATION_ENABLED_CREATE_OSTICKET_TICKETS")
