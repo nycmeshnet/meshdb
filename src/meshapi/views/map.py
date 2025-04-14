@@ -211,6 +211,9 @@ class MapDataLinkList(generics.ListAPIView):
                             from_device__node__network_number=OuterRef("from_device__node__network_number"),
                             to_device__node__network_number=OuterRef("to_device__node__network_number"),
                         )
+                        .exclude(status__in=[Link.LinkStatus.INACTIVE])
+                        .exclude(to_device__node__status=Node.NodeStatus.INACTIVE)
+                        .exclude(from_device__node__status=Node.NodeStatus.INACTIVE)
                         .order_by("pk")
                         .values("pk")[:1]
                     )
