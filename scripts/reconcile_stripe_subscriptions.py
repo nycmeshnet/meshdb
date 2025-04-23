@@ -2,7 +2,7 @@ import csv
 import os
 import sys
 from csv import DictReader
-from typing import Optional, List
+from typing import List, Optional
 
 import requests
 
