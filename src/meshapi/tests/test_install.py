@@ -485,3 +485,39 @@ class TestInstallAPI(TestCase):
 
         billing_datum.refresh_from_db()
         self.assertEqual(billing_datum.status, InstallFeeBillingDatum.BillingStatus.TO_BE_BILLED)
+
+    def test_subscription_id_invalid(self):
+        response = self.client.post(
+            "/api/v1/installs/",
+            {
+                **self.sample_install_copy,
+                "member": {"id": str(self.member.id)},
+                "building": {"id": str(self.building_1.id)},
+                "stripe_subscription_id": "foobar",
+            },
+            content_type="application/json",
+        )
+        code = 400
+        self.assertEqual(
+            code,
+            response.status_code,
+            f"status code incorrect. Should be {code}, but got {response.status_code}",
+        )
+
+    def test_subscription_id_valid(self):
+        response = self.client.post(
+            "/api/v1/installs/",
+            {
+                **self.sample_install_copy,
+                "member": {"id": str(self.member.id)},
+                "building": {"id": str(self.building_1.id)},
+                "stripe_subscription_id": "sub_foobarfoobarfoobarfoobarfoobar",
+            },
+            content_type="application/json",
+        )
+        code = 201
+        self.assertEqual(
+            code,
+            response.status_code,
+            f"status code incorrect. Should be {code}, but got {response.status_code}",
+        )
