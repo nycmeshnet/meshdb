@@ -5,7 +5,6 @@ import uuid
 import pytest
 from django.contrib.auth.models import Permission, User
 from django.core.exceptions import ValidationError
-from django.db import IntegrityError
 from django.test import Client, TestCase
 
 from meshapi.models import Building, Install, InstallFeeBillingDatum, Member
