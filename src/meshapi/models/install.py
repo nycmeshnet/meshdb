@@ -65,6 +65,15 @@ class Install(models.Model):
         "are important, so this should be stored as a string at all times",
     )
 
+    # Stripe Subscription ID. See: https://docs.stripe.com/api/subscriptions
+    stripe_subscription_id = models.CharField(
+        blank=True,
+        null=True,
+        help_text="The Stripe.com Subscription ID for the monthly contributions associated with this install. The "
+        "presence of a subscription id here does not imply an active subscription, to determine if a "
+        "subscription is active, one must contact Stripe directly with this identifier",
+    )
+
     # Important dates
     request_date = models.DateTimeField(help_text="The date and time that this install request was received")
     install_date = models.DateField(
