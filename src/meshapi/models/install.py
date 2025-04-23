@@ -2,6 +2,7 @@ import uuid
 from typing import Any, Optional
 
 from django.core.exceptions import ValidationError
+from django.core.validators import RegexValidator
 from django.db import models
 from django.db.models import IntegerField
 from simple_history.models import HistoricalRecords
@@ -69,6 +70,7 @@ class Install(models.Model):
     stripe_subscription_id = models.CharField(
         blank=True,
         null=True,
+        validators=[RegexValidator(r"^sub_\w{24,254}$", "Invalid Stripe subscription ID")],
         help_text="The Stripe.com Subscription ID for the monthly contributions associated with this install. The "
         "presence of a subscription id here does not imply an active subscription, to determine if a "
         "subscription is active, one must contact Stripe directly with this identifier",
