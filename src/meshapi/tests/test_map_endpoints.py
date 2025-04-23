@@ -1711,6 +1711,69 @@ class TestViewsGetUnauthenticated(TestCase):
             ],
         )
 
+    def test_inactive_duplicate_link_doesnt_hide_active_one(self):
+        node1 = Node(
+            name="Hub ABC",
+            network_number=123,
+            status=Node.NodeStatus.ACTIVE,
+            latitude=40.724868,
+            longitude=-73.987881,
+            type=Node.NodeType.HUB,
+        )
+        node1.save()
+        device1 = Device(
+            node=node1,
+            status=Device.DeviceStatus.ACTIVE,
+        )
+        device1.save()
+
+        node2 = Node(
+            name="Hub DEF",
+            network_number=456,
+            status=Node.NodeStatus.ACTIVE,
+            latitude=40.724868,
+            longitude=-73.987881,
+            type=Node.NodeType.HUB,
+        )
+        node2.save()
+        device2 = Device(
+            node=node2,
+            status=Device.DeviceStatus.ACTIVE,
+        )
+        device2.save()
+
+        link1 = Link(
+            id="1a3bfc0d-0967-4a9d-88f4-166616d6d2d6",
+            from_device=device1,
+            to_device=device2,
+            status=Link.LinkStatus.INACTIVE,
+            type=Link.LinkType.FIVE_GHZ,
+        )
+        link1.save()
+
+        link2 = Link(
+            id="ff647a56-44ce-4328-889c-345b4b408858",
+            from_device=device1,
+            to_device=device2,
+            status=Link.LinkStatus.ACTIVE,
+            type=Link.LinkType.ETHERNET,
+        )
+        link2.save()
+
+        self.maxDiff = None
+        response = self.c.get("/api/v1/mapdata/links/")
+
+        self.assertEqual(
+            json.loads(response.content.decode("UTF8")),
+            [
+                {
+                    "from": 123,
+                    "to": 456,
+                    "status": "active",
+                },
+            ],
+        )
+
 
 class TestKiosk(TestCase):
     c = Client()
