@@ -666,6 +666,25 @@ class TestAdminChangeView(TestCase):
         self.assertEqual(building.primary_node, self.node1)
         self.assertEqual(list(building.nodes.all()), [self.node1])
 
+    def test_install_hyperlinks_to_nn_assigned_node(self):
+        old_install = Install(**sample_install)
+        old_install.install_number = 741
+        old_install.member = self.member
+        old_install.building = self.building_1
+        old_install.status = Install.InstallStatus.NN_REASSIGNED
+        old_install.save()
+
+        new_node = Node(**sample_node)
+        new_node.network_number = old_install.install_number
+        new_node.save()
+
+        change_url = f"/admin/meshapi/install/{old_install.id}/change/"
+        response = self._call(change_url, 200)
+        form_soup = bs4.BeautifulSoup(response.content.decode()).find(id="install_form")
+        link_tag = form_soup.find("select", {"id": "id_status"}).parent.find("a")
+        self.assertEqual(link_tag.attrs["href"], f"/admin/meshapi/node/{new_node.id}")
+        self.assertEqual(link_tag.attrs["title"], "Show the node that got this install's number")
+
 
 class TestAdminAddView(TestCase):
     def setUp(self):
