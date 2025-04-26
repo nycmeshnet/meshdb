@@ -131,7 +131,7 @@ class TestNN(TestCase):
 
     def test_building_already_has_nn(self):
         node = Node(
-            network_number=9999,
+            network_number=999,
             status=Node.NodeStatus.ACTIVE,
             type=Node.NodeType.STANDARD,
             latitude=0,
@@ -156,7 +156,7 @@ class TestNN(TestCase):
         )
 
         resp_nn = json.loads(response.content.decode("utf-8"))["network_number"]
-        expected_nn = 9999
+        expected_nn = 999
         self.assertEqual(
             expected_nn,
             resp_nn,
