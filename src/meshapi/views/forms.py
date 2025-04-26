@@ -6,6 +6,8 @@ from datetime import date, datetime, timezone
 from json.decoder import JSONDecodeError
 from typing import Optional
 
+from datadog import statsd
+from ddtrace import tracer
 from django.db import IntegrityError, transaction
 from django.db.models import Q
 from drf_spectacular.utils import OpenApiResponse, extend_schema, extend_schema_view, inline_serializer
@@ -65,6 +67,7 @@ class JoinFormRequestSerializer(DataclassSerializer):
 form_err_response_schema = inline_serializer("ErrorResponse", fields={"detail": serializers.CharField()})
 
 
+@tracer.wrap()
 @extend_schema_view(
     post=extend_schema(
         tags=["User Forms"],
@@ -100,6 +103,7 @@ form_err_response_schema = inline_serializer("ErrorResponse", fields={"detail": 
 @permission_classes([permissions.AllowAny])
 @advisory_lock("join_form_lock")
 def join_form(request: Request) -> Response:
+    statsd.increment("meshdb.join_form.request", tags=[])
     request_json = json.loads(request.body)
     try:
         r = JoinFormRequest(**request_json)
@@ -126,7 +130,9 @@ def join_form(request: Request) -> Response:
             logging.exception("Captcha validation failed")
             return Response({"detail": "Captcha verification failed"}, status=status.HTTP_401_UNAUTHORIZED)
 
-    return process_join_form(r, request)
+    response = process_join_form(r, request)
+    statsd.increment("meshdb.join_form.response", tags=[f"status:{response.status_code}"])
+    return response
 
 
 def process_join_form(r: JoinFormRequest, request: Optional[Request] = None) -> Response:

@@ -1,4 +1,5 @@
 from .access_point import *
+from .billing import *
 from .building import *
 from .device import *
 from .install import *
