@@ -15,7 +15,7 @@ spec:
     type: RollingUpdate
     rollingUpdate:
       maxSurge: 1
-      maxUnavailable: 1
+      maxUnavailable: 0
   selector:
     matchLabels:
       {{- include "meshdb.selectorLabels" . | nindent 6 }}
@@ -69,10 +69,10 @@ spec:
                 - -c
                 - 'curl http://127.0.0.1:{{ .Values.meshweb.port }}/api/v1/ -H "Host: db.nycmesh.net" -s | grep meshin'
             periodSeconds: 10
-            initialDelaySeconds: 30
+            initialDelaySeconds: 60
             timeoutSeconds: 3
           {{ end }}
-          {{ if eq .Values.meshweb.readiness_probe "true" }} 
+          {{ if eq .Values.meshweb.readiness_probe "true" }}
           readinessProbe:
             exec:
               command:
@@ -80,10 +80,10 @@ spec:
                 - -c
                 - 'curl http://127.0.0.1:{{ .Values.meshweb.port }}/api/v1/ -H "Host: db.nycmesh.net" -s | grep meshin'
             periodSeconds: 3
-            initialDelaySeconds: 10
+            initialDelaySeconds: 60
             timeoutSeconds: 3
           {{ end }}
-          {{ if eq .Values.meshweb.startup_probe "true" }} 
+          {{ if eq .Values.meshweb.startup_probe "true" }}
           startupProbe:
             exec:
               command:
@@ -91,7 +91,7 @@ spec:
                 - -c
                 - 'curl http://127.0.0.1:{{ .Values.meshweb.port }}/api/v1/ -H "Host: db.nycmesh.net" -s | grep meshin'
             periodSeconds: 3
-            initialDelaySeconds: 20
+            initialDelaySeconds: 60
             timeoutSeconds: 3
             failureThreshold: 20
           {{ end }}

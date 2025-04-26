@@ -173,7 +173,7 @@ class TestUISPImportUtils(TestCase):
         node2.save()
 
         node3 = Node(
-            network_number=9012,
+            network_number=7012,
             status=Node.NodeStatus.ACTIVE,
             type=Node.NodeType.STANDARD,
             latitude=0,
@@ -377,7 +377,7 @@ class TestUISPImportUpdateObjects(TransactionTestCase):
         self.node2.save()
 
         self.node3 = Node(
-            network_number=9012,
+            network_number=7012,
             status=Node.NodeStatus.ACTIVE,
             type=Node.NodeType.STANDARD,
             latitude=0,
@@ -402,7 +402,7 @@ class TestUISPImportUpdateObjects(TransactionTestCase):
         self.device3 = Device(
             node=self.node3,
             status=Device.DeviceStatus.ACTIVE,
-            name="nycmesh-9012-dev3",
+            name="nycmesh-7012-dev3",
         )
         self.device3.save()
 
@@ -442,7 +442,7 @@ class TestUISPImportUpdateObjects(TransactionTestCase):
         self.assertEqual(
             change_messages,
             [
-                "Changed connected device pair from [nycmesh-1234-dev1, nycmesh-5678-dev2] to [nycmesh-1234-dev1, nycmesh-9012-dev3]",
+                "Changed connected device pair from [nycmesh-1234-dev1, nycmesh-5678-dev2] to [nycmesh-1234-dev1, nycmesh-7012-dev3]",
                 "Marked as Inactive due to it being offline in UISP for more than 30 days",
             ],
         )
@@ -914,7 +914,7 @@ class TestUISPImportHandlers(TransactionTestCase):
         self.node2.save()
 
         self.node3 = Node(
-            network_number=9012,
+            network_number=7012,
             status=Node.NodeStatus.ACTIVE,
             type=Node.NodeType.STANDARD,
             latitude=0,
@@ -966,7 +966,7 @@ class TestUISPImportHandlers(TransactionTestCase):
         self.device3 = Device(
             node=self.node3,
             status=Device.DeviceStatus.ACTIVE,
-            name="nycmesh-9012-dev3",
+            name="nycmesh-7012-dev3",
             uisp_id="uisp-uuid3",
         )
         self.device3.save()
@@ -1224,7 +1224,7 @@ class TestUISPImportHandlers(TransactionTestCase):
             [
                 call(self.device1, self.node1, "nycmesh-1234-dev1", Device.DeviceStatus.ACTIVE, last_seen_date),
                 call(self.device2, self.node2, "nycmesh-5678-dev2", Device.DeviceStatus.ACTIVE, last_seen_date),
-                call(self.device3, self.node3, "nycmesh-9012-dev3", Device.DeviceStatus.INACTIVE, last_seen_date),
+                call(self.device3, self.node3, "nycmesh-7012-dev3", Device.DeviceStatus.INACTIVE, last_seen_date),
             ]
         )
 
@@ -1377,6 +1377,152 @@ class TestUISPImportHandlers(TransactionTestCase):
         self.link6a.delete()
         self.link6b.delete()
 
+        uisp_links = [
+            {
+                "from": {
+                    "device": {
+                        "identification": {
+                            "id": "uisp-uuid1",
+                            "category": "wireless",
+                            "name": "nycmesh-1234-dev1",
+                        }
+                    }
+                },
+                "to": {
+                    "device": {
+                        "identification": {
+                            "id": "uisp-uuid2",
+                            "category": "wireless",
+                            "name": "nycmesh-5678-dev2",
+                        }
+                    }
+                },
+                "state": "active",
+                "id": "uisp-uuid1",
+                "type": "wireless",
+                "frequency": 5_000,
+            },
+            {
+                "from": {
+                    "device": {
+                        "identification": {
+                            "id": "uisp-uuid1",
+                            "category": "wireless",
+                            "name": "nycmesh-1234-dev1",
+                        }
+                    }
+                },
+                "to": {
+                    "device": {
+                        "identification": {
+                            "id": "uisp-uuid3",
+                            "category": "wireless",
+                            "name": "nycmesh-7012-dev3",
+                        }
+                    }
+                },
+                "state": "inactive",
+                "id": "uisp-uuid2",
+                "type": "wireless",
+                "frequency": 60_000,
+            },
+            {
+                "from": {
+                    "device": {
+                        "identification": {
+                            "id": "uisp-uuid2",
+                            "category": "wireless",
+                            "name": "nycmesh-5678-dev2",
+                        }
+                    }
+                },
+                "to": {
+                    "device": {
+                        "identification": {
+                            "id": "uisp-uuid4",
+                            "category": "wireless",
+                            "name": "nycmesh-7890-dev4",
+                        }
+                    }
+                },
+                "state": "active",
+                "id": "uisp-uuid3",
+                "type": "wireless",
+                "frequency": 5_000,
+            },
+            {
+                "from": {
+                    "device": {
+                        "identification": {
+                            "id": "uisp-uuid2",
+                            "category": "wireless",
+                            "name": "nycmesh-5678-dev2",
+                        }
+                    }
+                },
+                "to": {
+                    "device": {
+                        "identification": {
+                            "id": "uisp-uuid-non-existent",  # Causes this link to be excluded
+                            "category": "wireless",
+                            "name": "nycmesh-3456-dev4",
+                        }
+                    }
+                },
+                "state": "active",
+                "id": "uisp-uuid4",
+                "type": "wireless",
+                "frequency": 5_000,
+            },
+            {
+                "from": {
+                    "device": {
+                        "identification": {
+                            "id": "uisp-uuid-non-existent",  # Causes this link to be excluded
+                            "category": "wireless",
+                            "name": "nycmesh-5678-dev2",
+                        }
+                    }
+                },
+                "to": {
+                    "device": {
+                        "identification": {
+                            "id": "uisp-uuid3",
+                            "category": "wireless",
+                            "name": "nycmesh-7012-dev3",
+                        }
+                    }
+                },
+                "state": "active",
+                "id": "uisp-uuid4",
+                "type": "wireless",
+                "frequency": 5_000,
+            },
+            {
+                "from": {
+                    "device": {
+                        "identification": {
+                            "id": "uisp-uuid1",
+                            "category": "wireless",
+                            "name": "nycmesh-1234-dev1",
+                        }
+                    }
+                },
+                "to": {
+                    "device": {
+                        "identification": {
+                            "id": "uisp-uuid4",
+                            "category": "wireless",
+                            "name": "nycmesh-3456-dev4",
+                        }
+                    }
+                },
+                "state": "active",
+                "id": "uisp-uuid5",
+                "type": "ethernet",
+            },
+        ]
+
         import_and_sync_uisp_links(uisp_links)
 
         mock_update_link.assert_has_calls(
@@ -1513,7 +1659,7 @@ class TestUISPImportHandlers(TransactionTestCase):
                         "identification": {
                             "id": "uisp-uuid3",
                             "category": "wireless",
-                            "name": "nycmesh-9012-dev3",
+                            "name": "nycmesh-7012-dev3",
                         }
                     }
                 },
@@ -1536,7 +1682,7 @@ class TestUISPImportHandlers(TransactionTestCase):
                         "identification": {
                             "id": "uisp-uuid3",
                             "category": "wireless",
-                            "name": "nycmesh-9012-dev3",
+                            "name": "nycmesh-7012-dev3",
                         }
                     }
                 },
@@ -1796,13 +1942,13 @@ class TestUISPImportHandlers(TransactionTestCase):
         new_los = LOS.objects.get(from_building=self.building1, to_building=self.building3)
         self.assertEqual(new_los.source, LOS.LOSSource.EXISTING_LINK)
         self.assertEqual(new_los.analysis_date, datetime.date.today())
-        self.assertEqual(new_los.notes, f"Created automatically from Link ID {self.link2.id} (NN1234 ↔ NN9012)\n\n")
+        self.assertEqual(new_los.notes, f"Created automatically from Link ID {self.link2.id} (NN1234 ↔ NN7012)\n\n")
 
     def test_sync_same_building_link_with_los(self):
         self.device3b = Device(
             node=self.node3,
             status=Device.DeviceStatus.ACTIVE,
-            name="nycmesh-9012-dev3b",
+            name="nycmesh-7012-dev3b",
         )
         self.device3b.save()
 

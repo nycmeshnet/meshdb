@@ -14,11 +14,12 @@ from simple_history.admin import SimpleHistoryAdmin
 
 from meshapi.admin import InstallFeeBillingDatumInline, inlines
 from meshapi.models import Install
-from meshapi.widgets import ExternalHyperlinkWidget, WarnAboutDatesWidget
+from meshapi.widgets import ExternalHyperlinkWidget, InstallStatusWidget, WarnAboutDatesWidget
 
 from ..ranked_search import RankedSearchMixin
 
 OSTICKET_URL = os.environ.get("OSTICKET_URL", "https://support.nycmesh.net")
+STRIPE_SUBSCRIPTIONS_URL = os.environ.get("STRIPE_SUBSCRIPTIONS_URL", "https://dashboard.stripe.com/subscriptions/")
 
 
 class InstallImportExportResource(resources.ModelResource):
@@ -47,7 +48,16 @@ class InstallAdminForm(forms.ModelForm):
                 lambda ticket_number: f"{OSTICKET_URL}/scp/tickets.php?number={ticket_number}",
                 title="View in OSTicket",
             ),
+            "status": InstallStatusWidget(),
+            "stripe_subscription_id": ExternalHyperlinkWidget(
+                lambda subscription_id: STRIPE_SUBSCRIPTIONS_URL + subscription_id,
+                title="View on Stripe.com",
+            ),
         }
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        self.fields["status"].widget.form_instance = self
 
 
 @admin.register(Install)
@@ -107,6 +117,7 @@ class InstallAdmin(RankedSearchMixin, ImportExportMixin, ExportActionMixin, Simp
                     "install_number",
                     "status",
                     "ticket_number",
+                    "stripe_subscription_id",
                     "member",
                 ]
             },

@@ -329,7 +329,7 @@ class TestViewsGetUnauthenticated(TestCase):
 
         nodes.append(
             Node(
-                network_number=9823,
+                network_number=7823,
                 status=Node.NodeStatus.ACTIVE,
                 latitude=40.724868,
                 longitude=-73.987881,
@@ -349,7 +349,7 @@ class TestViewsGetUnauthenticated(TestCase):
 
         nodes.append(
             Node(
-                network_number=9821,
+                network_number=7821,
                 status=Node.NodeStatus.ACTIVE,
                 latitude=40.724868,
                 longitude=-73.987881,
@@ -368,7 +368,7 @@ class TestViewsGetUnauthenticated(TestCase):
 
         nodes.append(
             Node(
-                network_number=9820,
+                network_number=7820,
                 status=Node.NodeStatus.ACTIVE,
                 latitude=40.724868,
                 longitude=-73.987881,
@@ -443,7 +443,7 @@ class TestViewsGetUnauthenticated(TestCase):
                 },
                 {
                     "coordinates": [-73.987881, 40.724868, None],
-                    "id": 9820,
+                    "id": 7820,
                     "panoramas": [],
                     "requestDate": 0,
                     "roofAccess": True,
@@ -451,7 +451,7 @@ class TestViewsGetUnauthenticated(TestCase):
                 },
                 {
                     "coordinates": [-73.987881, 40.724868, None],
-                    "id": 9821,
+                    "id": 7821,
                     "panoramas": [],
                     "requestDate": 0,
                     "roofAccess": True,
@@ -459,7 +459,7 @@ class TestViewsGetUnauthenticated(TestCase):
                 },
                 {
                     "coordinates": [-73.987881, 40.724868, None],
-                    "id": 9823,
+                    "id": 7823,
                     "panoramas": [],
                     "requestDate": 1706331600000,
                     "roofAccess": True,
@@ -852,7 +852,7 @@ class TestViewsGetUnauthenticated(TestCase):
 
         inactive = Node(
             id=uuid.UUID("97c3fb73-e3f0-4eee-b1aa-d7a5bacd6122"),
-            network_number=123456,
+            network_number=2345,
             latitude=0,
             longitude=0,
             status=Node.NodeStatus.INACTIVE,
@@ -1707,6 +1707,69 @@ class TestViewsGetUnauthenticated(TestCase):
                     "from": 19452,
                     "to": 19460,
                     "status": "planned",
+                },
+            ],
+        )
+
+    def test_inactive_duplicate_link_doesnt_hide_active_one(self):
+        node1 = Node(
+            name="Hub ABC",
+            network_number=123,
+            status=Node.NodeStatus.ACTIVE,
+            latitude=40.724868,
+            longitude=-73.987881,
+            type=Node.NodeType.HUB,
+        )
+        node1.save()
+        device1 = Device(
+            node=node1,
+            status=Device.DeviceStatus.ACTIVE,
+        )
+        device1.save()
+
+        node2 = Node(
+            name="Hub DEF",
+            network_number=456,
+            status=Node.NodeStatus.ACTIVE,
+            latitude=40.724868,
+            longitude=-73.987881,
+            type=Node.NodeType.HUB,
+        )
+        node2.save()
+        device2 = Device(
+            node=node2,
+            status=Device.DeviceStatus.ACTIVE,
+        )
+        device2.save()
+
+        link1 = Link(
+            id="1a3bfc0d-0967-4a9d-88f4-166616d6d2d6",
+            from_device=device1,
+            to_device=device2,
+            status=Link.LinkStatus.INACTIVE,
+            type=Link.LinkType.FIVE_GHZ,
+        )
+        link1.save()
+
+        link2 = Link(
+            id="ff647a56-44ce-4328-889c-345b4b408858",
+            from_device=device1,
+            to_device=device2,
+            status=Link.LinkStatus.ACTIVE,
+            type=Link.LinkType.ETHERNET,
+        )
+        link2.save()
+
+        self.maxDiff = None
+        response = self.c.get("/api/v1/mapdata/links/")
+
+        self.assertEqual(
+            json.loads(response.content.decode("UTF8")),
+            [
+                {
+                    "from": 123,
+                    "to": 456,
+                    "status": "active",
                 },
             ],
         )

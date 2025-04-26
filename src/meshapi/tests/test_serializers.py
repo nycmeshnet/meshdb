@@ -183,6 +183,7 @@ class TestViewsGetAdmin(TestCaseWithFullData):
             "request_date": "2022-02-27T00:00:00Z",
             "roof_access": True,
             "status": "Active",
+            "stripe_subscription_id": None,
             "ticket_number": "69",
             "unit": "3",
         }
