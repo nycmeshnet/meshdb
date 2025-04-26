@@ -26,7 +26,7 @@ from meshapi.serializers import MemberSerializer
 from meshapi.util.admin_notifications import notify_administrators_of_data_issue
 from meshapi.util.constants import RECAPTCHA_CHECKBOX_TOKEN_HEADER, RECAPTCHA_INVISIBLE_TOKEN_HEADER
 from meshapi.util.django_pglocks import advisory_lock
-from meshapi.util.network_number import NETWORK_NUMBER_MAX, NETWORK_NUMBER_MIN, get_next_available_network_number
+from meshapi.util.network_number import NETWORK_NUMBER_ASSIGN_MIN, NETWORK_NUMBER_MAX, get_next_available_network_number
 from meshapi.validation import (
     NYCAddressInfo,
     geocode_nyc_address,
@@ -570,7 +570,7 @@ def network_number_assignment(request: Request) -> Response:
         # specifically for use on their install)
         candidate_nn = nn_install.install_number
         if (
-            candidate_nn < NETWORK_NUMBER_MIN
+            candidate_nn < NETWORK_NUMBER_ASSIGN_MIN
             or candidate_nn > NETWORK_NUMBER_MAX
             or len(Node.objects.filter(network_number=candidate_nn))
             or nn_install.status in [Install.InstallStatus.NN_REASSIGNED, Install.InstallStatus.CLOSED]
