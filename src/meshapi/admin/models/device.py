@@ -1,5 +1,5 @@
 import os
-from typing import Optional
+from typing import Any, List, Optional
 
 from django import forms
 from django.contrib import admin
@@ -18,7 +18,7 @@ from ..inlines import DeviceLinkInline
 from ..ranked_search import RankedSearchMixin
 from ..utils import downclass_device, get_admin_url
 
-UISP_URL = os.environ.get("UISP_URL", "https://uisp.mesh.nycmesh.net/nms")
+UISP_URL: str = os.environ.get("UISP_URL", "https://uisp.mesh.nycmesh.net/nms")
 
 
 class DeviceAdminForm(forms.ModelForm):
@@ -47,7 +47,7 @@ class DeviceAdmin(RankedSearchMixin, ImportExportMixin, ExportActionMixin, Simpl
         "status",
         "install_date",
     ]
-    fieldsets = [
+    fieldsets: List[Any] = [
         (
             "Details",
             {
