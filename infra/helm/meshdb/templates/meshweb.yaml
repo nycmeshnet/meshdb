@@ -44,7 +44,11 @@ spec:
         - name: {{ .Chart.Name }}-meshweb
           securityContext:
             {{- toYaml .Values.meshweb.securityContext | nindent 12 }}
-          image: "{{ .Values.meshweb.image.repository }}:{{ .Values.meshweb.image.tag }}"
+          {{- if .Value.meshweb.image.digest }}
+          image: "{{ $.Values.image.repository }}@sha256:{{ .Value.meshweb.image.digest }}"
+          {{- else }}
+          image: "{{ $.Values.image.repository }}:{{ $.Values.image.tag | default $.Chart.AppVersion }}"
+          {{- end }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
             - name: http

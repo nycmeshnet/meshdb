@@ -34,7 +34,11 @@ spec:
         - name: {{ .name }}
           securityContext:
             {{- toYaml $.Values.securityContext | nindent 12 }}
+          {{- if .Value.global.celery.image.digest }}
+          image: "{{ $.Values.image.repository }}@sha256:{{ .Value.global.celery.image.digest }}"
+          {{- else }}
           image: "{{ $.Values.image.repository }}:{{ $.Values.image.tag | default $.Chart.AppVersion }}"
+          {{- end }}
           imagePullPolicy: {{ $.Values.image.pullPolicy }}
           resources:
             {{- toYaml $.Values.resources | nindent 12 }}

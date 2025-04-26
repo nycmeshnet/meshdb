@@ -120,7 +120,7 @@ pelias:
   tolerations: []
 
 image:
-  pullPolicy: Always
+  pullPolicy: IfNotPresent
 
 imageCredentials:
   registry: docker.io

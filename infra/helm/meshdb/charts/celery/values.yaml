@@ -3,7 +3,7 @@ replicaCount: 1
 
 image:
   repository: docker.io/willnilges/meshdb
-  pullPolicy: Always
+  pullPolicy: IfNotPresent
   tag: "main"
 
 imagePullSecrets: []
