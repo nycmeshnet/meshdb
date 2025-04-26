@@ -2,6 +2,7 @@ import uuid
 from typing import Any, Optional
 
 from django.core.exceptions import ValidationError
+from django.core.validators import RegexValidator
 from django.db import models
 from django.db.models import IntegerField
 from simple_history.models import HistoricalRecords
@@ -18,18 +19,19 @@ class Install(models.Model):
     class Meta:
         permissions = [
             ("assign_nn", "Can assign an NN to install"),
+            ("disambiguate_number", "Can disambiguate an install number from an NN"),
             ("update_panoramas", "Can update panoramas"),
         ]
         ordering = ["-install_number"]
 
     class InstallStatus(models.TextChoices):
-        REQUEST_RECEIVED = "Request Received"
-        PENDING = "Pending"
-        BLOCKED = "Blocked"
-        ACTIVE = "Active"
-        INACTIVE = "Inactive"
-        CLOSED = "Closed"
-        NN_REASSIGNED = "NN Reassigned"
+        REQUEST_RECEIVED = "Request Received", "Request Received"
+        PENDING = "Pending", "Pending"
+        BLOCKED = "Blocked", "Blocked"
+        ACTIVE = "Active", "Active"
+        INACTIVE = "Inactive", "Inactive"
+        CLOSED = "Closed", "Closed"
+        NN_REASSIGNED = "NN Reassigned", "NN Reassigned"
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
@@ -62,6 +64,16 @@ class Install(models.Model):
         help_text="The ticket number of the OSTicket used to track communications with the member about "
         "this install. Note that although this appears to be an integer, it is not. Leading zeros "
         "are important, so this should be stored as a string at all times",
+    )
+
+    # Stripe Subscription ID. See: https://docs.stripe.com/api/subscriptions
+    stripe_subscription_id = models.CharField(
+        blank=True,
+        null=True,
+        validators=[RegexValidator(r"^sub_\w{24,254}$", "Invalid Stripe subscription ID")],
+        help_text="The Stripe.com Subscription ID for the monthly contributions associated with this install. The "
+        "presence of a subscription id here does not imply an active subscription, to determine if a "
+        "subscription is active, one must contact Stripe directly with this identifier",
     )
 
     # Important dates
@@ -104,6 +116,14 @@ class Install(models.Model):
         on_delete=models.PROTECT,
         related_name="installs",
         help_text="The member this install is associated with",
+    )
+    additional_members = models.ManyToManyField(
+        Member,
+        blank=True,
+        related_name="additional_installs",
+        help_text="Any additional members associated with this install. "
+        "E.g. roommates, parents, caretakers etc. Anyone that might contact us "
+        "on behalf of this install belongs here",
     )
     referral = models.TextField(
         default=None,

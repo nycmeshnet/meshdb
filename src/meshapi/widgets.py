@@ -131,5 +131,15 @@ class AutoPopulateLocationWidget(forms.Widget):
         return context
 
 
+class WarnAboutDatesWidget(forms.Widget):
+    template_name = "widgets/warn_about_date.html"
+
+    class Media:
+        css = {
+            "all": ("widgets/warn_about_date.css",),
+        }
+        js = ["widgets/warn_about_date.js"]
+
+
 # Down here to resolve circular imports
 from meshapi.admin.models.install import InstallAdminForm  # noqa: E402

@@ -772,6 +772,64 @@ class TestJoinForm(TestCase):
             ANY,
         )
 
+    @mock.patch("meshapi.views.forms.notify_administrators_of_data_issue")
+    def test_member_moved_and_changed_names_case_only_join_form(self, mock_admin_notif_func):
+        # Name, email, phone, location, apt, rooftop, referral
+        form, s = pull_apart_join_form_submission(valid_join_form_submission)
+        response1 = self.c.post("/api/v1/join/", form, content_type="application/json")
+
+        code = 201
+        self.assertEqual(
+            code,
+            response1.status_code,
+            f"status code incorrect for Valid Join Form. Should be {code}, but got {response1.status_code}.\n Response is: {response1.content.decode('utf-8')}",
+        )
+
+        validate_successful_join_form_submission(self, "Valid Join Form", s, response1)
+
+        # Now test that the member can "move" and still access the join form
+        v_sub_2 = valid_join_form_submission.copy()
+        v_sub_2["first_name"] = "john"  # Lowercase from original
+        v_sub_2["last_name"] = "Smith"
+        v_sub_2["street_address"] = "152 Broome Street"
+
+        form, s = pull_apart_join_form_submission(v_sub_2)
+
+        # Name, email, phone, location, apt, rooftop, referral
+        response2 = self.c.post("/api/v1/join/", form, content_type="application/json")
+
+        code = 201
+        self.assertEqual(
+            code,
+            response2.status_code,
+            f"status code incorrect for Valid Join Form. Should be {code}, but got {response2.status_code}.\n Response is: {response2.content.decode('utf-8')}",
+        )
+
+        validate_successful_join_form_submission(self, "Valid Join Form", s, response2)
+
+        # Make sure it uses the same member ID
+        self.assertEqual(
+            json.loads(
+                response1.content.decode("utf-8"),
+            )["member_id"],
+            json.loads(
+                response2.content.decode("utf-8"),
+            )["member_id"],
+        )
+
+        # Make sure the member's name wasn't changed (prevents join form griefing)
+        # but also confirm we noted the name change request, and that we sent a notification
+        # to slack
+        member = Member.objects.get(
+            id=json.loads(
+                response1.content.decode("utf-8"),
+            )["member_id"]
+        )
+        self.assertEqual(member.name, "John Smith")
+        self.assertEqual(None, member.notes)
+
+        mock_admin_notif_func.assert_not_called()
+
     def test_member_moved_and_used_additional_email_join_form(self):
         # Name, email, phone, location, apt, rooftop, referral
         form, s = pull_apart_join_form_submission(valid_join_form_submission)

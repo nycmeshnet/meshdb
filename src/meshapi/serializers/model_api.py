@@ -3,7 +3,18 @@ from datetime import timezone
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
 
-from meshapi.models import LOS, AccessPoint, Building, Device, Install, Link, Member, Node, Sector
+from meshapi.models import (
+    LOS,
+    AccessPoint,
+    Building,
+    Device,
+    Install,
+    InstallFeeBillingDatum,
+    Link,
+    Member,
+    Node,
+    Sector,
+)
 from meshapi.serializers.nested_key_object_related_field import NestedKeyObjectRelatedField, NestedKeyRelatedMixIn
 
 
@@ -42,6 +53,17 @@ class InstallSerializer(NestedKeyRelatedMixIn, serializers.ModelSerializer):
         }
 
     request_date = serializers.DateTimeField(default_timezone=timezone.utc)
+    install_fee_billing_datum = NestedKeyObjectRelatedField(
+        allow_null=True,
+        read_only=True,
+        additional_keys_display_permission="meshapi.view_installfeebillingdatum",
+        additional_keys=(
+            "status",
+            "billing_date",
+            "invoice_number",
+            "notes",
+        ),
+    )
 
 
 class NodeSerializer(NestedKeyRelatedMixIn, serializers.ModelSerializer):
@@ -147,3 +169,14 @@ class LOSSerializer(NestedKeyRelatedMixIn, serializers.ModelSerializer):
     class Meta:
         model = LOS
         fields = "__all__"
+
+
+class InstallFeeBillingDatumSerializer(NestedKeyRelatedMixIn, serializers.ModelSerializer):
+    serializer_related_field = NestedKeyObjectRelatedField
+
+    class Meta:
+        model = InstallFeeBillingDatum
+        fields = "__all__"
+        extra_kwargs = {
+            "install": {"additional_keys": ("install_number",)},
+        }
