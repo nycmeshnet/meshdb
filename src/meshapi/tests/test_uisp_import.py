@@ -1417,7 +1417,7 @@ class TestUISPImportHandlers(TransactionTestCase):
                         "identification": {
                             "id": "uisp-uuid3",
                             "category": "wireless",
-                            "name": "nycmesh-9012-dev3",
+                            "name": "nycmesh-7012-dev3",
                         }
                     }
                 },
@@ -1489,7 +1489,7 @@ class TestUISPImportHandlers(TransactionTestCase):
                         "identification": {
                             "id": "uisp-uuid3",
                             "category": "wireless",
-                            "name": "nycmesh-9012-dev3",
+                            "name": "nycmesh-7012-dev3",
                         }
                     }
                 },
