@@ -14,7 +14,7 @@ from simple_history.admin import SimpleHistoryAdmin
 
 from meshapi.admin import InstallFeeBillingDatumInline, inlines
 from meshapi.models import Install
-from meshapi.widgets import ExternalHyperlinkWidget, WarnAboutDatesWidget, InstallStatusWidget
+from meshapi.widgets import ExternalHyperlinkWidget, InstallStatusWidget, WarnAboutDatesWidget
 
 from ..ranked_search import RankedSearchMixin
 
