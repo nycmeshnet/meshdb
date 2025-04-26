@@ -16,7 +16,7 @@ from meshapi.views.forms import JoinFormRequest
 JOIN_RECORD_ENDPOINT = os.environ.get("S3_ENDPOINT", None)
 
 JOIN_RECORD_BUCKET_NAME = os.environ.get("JOIN_RECORD_BUCKET_NAME")
-JOIN_RECORD_PREFIX = os.environ.get("JOIN_RECORD_PREFIX", "sample-basename")
+JOIN_RECORD_PREFIX = os.environ.get("JOIN_RECORD_PREFIX")
 
 
 class SubmissionStage(Enum):
@@ -61,6 +61,12 @@ def s3_content_to_join_record(object_key: str, content: str) -> JoinRecord:
 
 class JoinRecordProcessor:
     def __init__(self) -> None:
+        if not JOIN_RECORD_BUCKET_NAME:
+            raise EnvironmentError("Did not find JOIN_RECORD_BUCKET_NAME")
+
+        if not JOIN_RECORD_PREFIX:
+            raise EnvironmentError("Did not find JOIN_RECORD_PREFIX")
+
         self.s3_client = boto3.client(
             "s3",
             endpoint_url=JOIN_RECORD_ENDPOINT,
@@ -81,30 +87,41 @@ class JoinRecordProcessor:
     def get_all(
         self, since: Optional[datetime.datetime] = None, submission_prefix: SubmissionStage = SubmissionStage.POST
     ) -> list[JoinRecord]:
-        response = self.s3_client.list_objects_v2(
-            Bucket=JOIN_RECORD_BUCKET_NAME,
-            Prefix=f"{JOIN_RECORD_PREFIX}/v3/{submission_prefix.value}",
-            StartAfter=(
-                since.strftime(f"{JOIN_RECORD_PREFIX}/v3/{submission_prefix.value}/%Y/%m/%d/%H/%M/%S")
-                if isinstance(since, datetime.datetime)
-                else ""
-            ),
+        prefix = f"{JOIN_RECORD_PREFIX}/v3/{submission_prefix.value}"
+        start_after = (
+            since.strftime(f"{JOIN_RECORD_PREFIX}/v3/{submission_prefix.value}/%Y/%m/%d/%H/%M/%S")
+            if isinstance(since, datetime.datetime)
+            else ""
         )
+        try:
+            response = self.s3_client.list_objects_v2(
+                Bucket=JOIN_RECORD_BUCKET_NAME,
+                Prefix=prefix,
+                StartAfter=start_after,
+            )
+        except ClientError as e:
+            # This will raise ClientError (AccessDenied) if the bucket doesn't exist.
+            logging.exception(
+                f"Error accessing bucket. Check bucket name. JOIN_RECORD_BUCKET_NAME={JOIN_RECORD_BUCKET_NAME}"
+            )
+            raise e
+
+        contents = response.get("Contents")
+        if not contents:
+            logging.error(
+                f"Found no records. Check Prefix or StartAfter parameters. Prefix={prefix}, StartAfter={start_after}"
+            )
+            return []
 
         join_records = []
+        for obj in contents:
+            object_key = obj["Key"]
 
-        # Loop through each object and get its contents
-        if "Contents" in response:
-            for obj in response["Contents"]:
-                object_key = obj["Key"]
+            # Get object content
+            content_object = self.s3_client.get_object(Bucket=JOIN_RECORD_BUCKET_NAME, Key=object_key)
+            content = content_object["Body"].read().decode("utf-8")
 
-                # Get object content
-                content_object = self.s3_client.get_object(Bucket=JOIN_RECORD_BUCKET_NAME, Key=object_key)
-                content = content_object["Body"].read().decode("utf-8")
-
-                join_records.append(s3_content_to_join_record(object_key, content))
-        else:
-            print("Bucket is empty or does not exist.")
+            join_records.append(s3_content_to_join_record(object_key, content))
 
         return join_records
 

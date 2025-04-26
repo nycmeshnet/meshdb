@@ -1,0 +1,83 @@
+{% load static %}
+
+<!DOCTYPE html>
+<head>
+{% include "meshweb/head.html" %}
+<link rel="stylesheet" href="{% static 'meshweb/join_record_viewer.css' %}" />
+</head>
+<body>
+  {% include "meshweb/nav.html" %}
+  <div class="recordViewerHead">
+    <h2>Join Record Viewer</h2>
+    <form id="paramForm" action="/join-records/view/" method="GET">
+      <div>
+        <label for="since">Since:</label>
+        <input type="datetime-local" id="since" name="since">
+      </div>
+      <div>
+        <label for="all">Show All Records:</label>
+        <input type="checkbox" id="all" name="all" value="True">
+      </div>
+      <input type="submit" value="Search">
+    </form>
+  </div>
+  <div style="color: #55585b; display: flex; justify-content:center;">
+  {% if records and not all %}
+  <p>The following records need to be replayed:</p>
+  {% else %}
+  <p>Showing all records since selected time</p>
+  {% endif %}
+  </div>
+  <div class="recordTable">
+    {% if records %}
+    <table id="record_table">
+      <tr>
+        <th>first_name</th>
+        <th>last_name</th>
+        <th>email_address</th>
+        <th>phone_number</th>
+        <th>street_address</th>
+        <th>city</th>
+        <th>state</th>
+        <th>zip_code</th>
+        <th>apartment</th>
+        <th>roof_access</th>
+        <th>referral</th>
+        <th>ncl</th>
+        <th>trust_me_bro</th>
+        <th>submission_time</th>
+        <th>code</th>
+        <th>install_number</th>
+      </tr>
+    {% for record in records %}
+      <tr id="{{record.uuid}}">
+      <td>{{ record.first_name      }}</td>
+      <td>{{ record.last_name       }}</td>
+      <td>{{ record.email_address   }}</td>
+      <td>{{ record.phone_number    }}</td>
+      <td>{{ record.street_address  }}</td>
+      <td>{{ record.city            }}</td>
+      <td>{{ record.state           }}</td>
+      <td>{{ record.zip_code        }}</td>
+      <td>{{ record.apartment       }}</td>
+      <td>{{ record.roof_access     }}</td>
+      <td>{{ record.referral        }}</td>
+      <td>{{ record.ncl             }}</td>
+      <td>{{ record.trust_me_bro    }}</td>
+      <td>{{ record.submission_time }}</td>
+      <td>{{ record.code            }}</td>
+      <td>{{ record.install_number  }}</td>
+      </tr>
+    {% endfor %}
+    </table>
+    {% else %}
+    {% if not all %}
+    <h3>All good! No records need to be replayed.</h3>
+    {% else %}
+    <h3>No records found. Check your query.</h3>
+    {% endif %}
+    {% endif %}
+  </div>
+</body>
+  {% include "meshweb/footer.html" %}
+</html>

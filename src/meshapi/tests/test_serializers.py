@@ -65,6 +65,10 @@ class TestCaseWithFullData(TestCase):
         self.member2 = Member(name="Test Member")
         self.member2.save()
 
+        self.member3 = Member(name="Test Member3")
+        self.member3.id = "7458431f-6cd7-4845-8778-31bc0199d319"
+        self.member3.save()
+
         self.install = Install(
             id="9fdc7357-3174-42d9-b682-2f045d2fea15",
             **sample_install_copy,
@@ -72,6 +76,7 @@ class TestCaseWithFullData(TestCase):
             referral="foo abc",
             diy=False,
         )
+        self.install.additional_members.set([self.member3])
         self.install.save()
 
         self.node1 = Node(
@@ -168,14 +173,17 @@ class TestViewsGetAdmin(TestCaseWithFullData):
             "diy": False,
             "id": "9fdc7357-3174-42d9-b682-2f045d2fea15",
             "install_date": "2022-03-01",
+            "install_fee_billing_datum": None,
             "install_number": 1,
             "member": {"id": "07927444-3216-4959-858a-2659743ec2a3"},
+            "additional_members": [{"id": "7458431f-6cd7-4845-8778-31bc0199d319"}],
             "node": {"id": "5d554dca-2c9b-4d8e-a9fc-86bedcea92ea", "network_number": 101},
             "notes": "Referral: Read about it on the internet",
             "referral": "foo abc",
             "request_date": "2022-02-27T00:00:00Z",
             "roof_access": True,
             "status": "Active",
+            "stripe_subscription_id": None,
             "ticket_number": "69",
             "unit": "3",
         }

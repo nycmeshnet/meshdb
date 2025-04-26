@@ -1,0 +1,82 @@
+{% load static %}
+
+{% load env_extras %}
+
+<!DOCTYPE html>
+<html>
+  <head>
+    <script>
+      const MAP_BASE_URL = "{% get_env_var 'ADMIN_MAP_BASE_URL' %}";
+      // PANEL_URL is necessary, but inherited from the admin panel
+    </script>
+    <!--We don't want people navigating to this URL, so we're gonna redirect them
+    if they find themselves here-->
+    <script src="{% static 'admin/panel_url_check.js' %}"></script>
+    <script src="{% static '/admin/mobile_check.js' %}"></script>
+    <!--Script that powers this iframed view and communicates between the admin panel
+    and the map-->
+    <script src="{% static '/admin/map.js' %}" defer></script>
+    <title>{% block title %}{% endblock %}</title>
+    <link rel="stylesheet" href="{% block stylesheet %}{% static "admin/css/base.css" %}{% endblock %}">
+    {% block dark-mode-vars %}
+      <link rel="stylesheet" href="{% static "admin/css/dark_mode.css" %}">
+      <script src="{% static "admin/js/theme.js" %}" defer></script>
+    {% endblock %}
+    {% if not is_popup and is_nav_sidebar_enabled %}
+      <link rel="stylesheet" href="{% static "admin/css/nav_sidebar.css" %}">
+      <script src="{% static 'admin/js/nav_sidebar.js' %}" defer></script>
+    {% endif %}
+    {% block extrastyle %}{% endblock %}
+    <link rel="stylesheet" href="{% static "admin/admin_ext.css" %}">
+    {% if LANGUAGE_BIDI %}<link rel="stylesheet" href="{% block stylesheet_rtl %}{% static "admin/css/rtl.css" %}{% endblock %}">{% endif %}
+    {% block extrahead %}{% endblock %}
+    {% block responsive %}
+        <meta name="viewport" content="user-scalable=no, width=device-width, initial-scale=1.0, maximum-scale=1.0">
+        <link rel="stylesheet" href="{% static "admin/css/responsive.css" %}">
+        {% if LANGUAGE_BIDI %}<link rel="stylesheet" href="{% static "admin/css/responsive_rtl.css" %}">{% endif %}
+    {% endblock %}
+    {% block blockbots %}<meta name="robots" content="NONE,NOARCHIVE">{% endblock %}
+    <link rel="stylesheet" href="{% static '/admin/iframed.css'%}"/> 
+  </head>
+  <body>
+    <div id="page_container">
+      <div id="admin_panel_div" class="frameGrow">
+        <iframe src="/admin/" id="admin_panel_iframe" class="frameGrow"></iframe>
+      </div>
+
+      <div class="floating-button-above">
+        <a href="#" class="button" style="display: inline-block" id="show_map_button">
+          <img src="{% static '/admin/map/img/map.png' %}" height="16px" title="Show Map">
+        </a>
+      </div>
+
+      <div id="map_controls">
+        <!-- This handle is always visible, unless you're resizing, in which case
+        goes big and invisible to block the iframes from stealing focus -->
+        <div class="handle" id="handle">
+          <span class="vert-align-helper"></span>
+          <img class="handlebar" id="handlebar" src="{% static '/admin/map/img/handlebar.svg' %}" height="60px"/>
+        </div>
+        <!-- Only shows up during resizes -->
+        <div class="handle hidden" id="substituteHandle">
+          <span class="vert-align-helper"></span>
+          <img class="handlebar" id="substituteHandlebar" src="{% static '/admin/map/img/handlebar.svg' %}" height="60px"/>
+        </div>
+        <div class="floating-button">
+            <a href="#" class="button" style="display: inline-block" id="map_hide_button">
+                <img src="{% static '/admin/map/img/cross.png' %}" height="24px" title="Hide Map">
+            </a>
+        </div>
+        <div class="floating-button-below">
+            <a href="#" class="button" style="display: inline-block" id="map_recenter_button">
+                <img src="{% static '/admin/map/img/recenter.png' %}" height="24px" title="Recenter map">
+            </a>
+        </div>
+      </div>
+
+      <div id="map_panel_div">
+      <iframe src="{% get_env_var 'ADMIN_MAP_BASE_URL' %}" id="map_panel"></iframe>
+      </div>
+    </div>
+  </body>
+</html>

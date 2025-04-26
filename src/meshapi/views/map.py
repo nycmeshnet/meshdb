@@ -211,6 +211,9 @@ class MapDataLinkList(generics.ListAPIView):
                             from_device__node__network_number=OuterRef("from_device__node__network_number"),
                             to_device__node__network_number=OuterRef("to_device__node__network_number"),
                         )
+                        .exclude(status__in=[Link.LinkStatus.INACTIVE])
+                        .exclude(to_device__node__status=Node.NodeStatus.INACTIVE)
+                        .exclude(from_device__node__status=Node.NodeStatus.INACTIVE)
                         .order_by("pk")
                         .values("pk")[:1]
                     )
@@ -452,6 +455,11 @@ class KioskListWrapper(APIView):
 
             kiosks = []
             for row in data:
+                if not row:
+                    logging.warning(
+                        "Got empty row from City of New York LinkNYC kiosk dataset. Skipping row and moving on."
+                    )
+                    continue
                 coordinates = [float(row["longitude"]), float(row["latitude"])]
                 kiosk_status = LINKNYC_KIOSK_STATUS_TRANSLATION.get(row["link_installation_status"])
                 kiosks.append(
