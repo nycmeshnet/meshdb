@@ -1,7 +1,7 @@
 import datetime
 import logging
 import re
-from typing import List
+from typing import List, Optional
 
 from django.db import transaction
 from django.db.models import Q
@@ -32,7 +32,9 @@ from meshapi.util.uisp_import.utils import (
 )
 
 
-def import_and_sync_uisp_devices(uisp_devices: List[UISPDevice]) -> None:
+def import_and_sync_uisp_devices(uisp_devices: List[UISPDevice], target_network_number: Optional[int] = None) -> None:
+    if target_network_number:
+        logging.info(f"Attempting import for NN{target_network_number}")
     for uisp_device in uisp_devices:
         uisp_uuid = uisp_device["identification"]["id"]
         uisp_category = uisp_device["identification"]["category"]
@@ -63,6 +65,10 @@ def import_and_sync_uisp_devices(uisp_devices: List[UISPDevice]) -> None:
         # represent the other side of the link
         uisp_network_number = int(network_number_matches[0])
 
+        # If we're crawling for a specific NN, then bail if the NN doesn't match.
+        if target_network_number and uisp_network_number != target_network_number:
+            continue
+
         try:
             uisp_node = Node.objects.get(network_number=uisp_network_number)
         except Node.DoesNotExist:
@@ -83,6 +89,9 @@ def import_and_sync_uisp_devices(uisp_devices: List[UISPDevice]) -> None:
             parse_uisp_datetime(uisp_device["overview"]["lastSeen"]) if uisp_device["overview"]["lastSeen"] else None
         )
 
+        # This block guards against most duplication by checking uisp-uuid against
+        # the uisp-uuids we already know about.
+        # Further avoidance of saving historical records is done in the update function
         with transaction.atomic():
             existing_devices: List[Device] = list(Device.objects.filter(uisp_id=uisp_uuid).select_for_update())
             if existing_devices:
@@ -129,6 +138,7 @@ def import_and_sync_uisp_devices(uisp_devices: List[UISPDevice]) -> None:
                 uisp_device["identification"]["model"], DEFAULT_SECTOR_WIDTH
             )
 
+            # Only when we're sure the sector doesn't exist do we save it
             sector = Sector(
                 **device_fields,
                 azimuth=guessed_compass_heading or DEFAULT_SECTOR_AZIMUTH,
@@ -182,7 +192,7 @@ def import_and_sync_uisp_devices(uisp_devices: List[UISPDevice]) -> None:
                 )
 
 
-def import_and_sync_uisp_links(uisp_links: List[UISPDataLink]) -> None:
+def import_and_sync_uisp_links(uisp_links: List[UISPDataLink], target_network_number: Optional[int] = None) -> None:
     uisp_session = get_uisp_session()
     uisp_uuid_set = {uisp_link["id"] for uisp_link in uisp_links}
 
@@ -222,6 +232,15 @@ def import_and_sync_uisp_links(uisp_links: List[UISPDataLink]) -> None:
                 f"because the data in UISP references a 'to' device (UISP ID {uisp_to_device_uuid}) "
                 f"which we do not have in our database (perhaps it was skipped at device import time?)"
             )
+            continue
+
+        # If we're importing from a specific NN and neither of the NNs are the
+        # one we expect, then ignore this link and move on.
+        if (
+            target_network_number
+            and uisp_from_device.node.network_number != target_network_number
+            and uisp_to_device.node.network_number != target_network_number
+        ):
             continue
 
         if uisp_link["state"] == "active":
@@ -286,6 +305,8 @@ def import_and_sync_uisp_links(uisp_links: List[UISPDataLink]) -> None:
                         notify_admins_of_changes(existing_link, change_list)
                 continue
 
+        # By now, we're reasonably sure the link doesn't exist, so go ahead and
+        # create it.
         link = Link(
             from_device=uisp_from_device,
             to_device=uisp_to_device,
@@ -326,12 +347,20 @@ def import_and_sync_uisp_links(uisp_links: List[UISPDataLink]) -> None:
                 )
 
 
-def sync_link_table_into_los_objects() -> None:
+def sync_link_table_into_los_objects(target_network_number: Optional[int] = None) -> None:
     for link in (
         Link.objects.exclude(type=Link.LinkType.ETHERNET)
         .exclude(type=Link.LinkType.FIBER)
         .exclude(type=Link.LinkType.VPN)
     ):
+
+        if (
+            target_network_number
+            and link.from_device.node.network_number != target_network_number
+            and link.to_device.node.network_number != target_network_number
+        ):
+            continue
+
         from_building = get_building_from_network_number(link.from_device.node.network_number)
         to_building = get_building_from_network_number(link.to_device.node.network_number)
 
@@ -355,18 +384,32 @@ def sync_link_table_into_los_objects() -> None:
 
             if len(existing_los_objects):
                 for existing_los in existing_los_objects:
+                    # Keep track of whether or not we actually changed anything,
+                    # so that we don't unnecessarily save later.
+                    changed_los = False
+
                     # Supersede manually annotated LOSes with their auto-generated counterparts,
                     # once they come online as links
                     if link.status == Link.LinkStatus.ACTIVE and existing_los.source == LOS.LOSSource.HUMAN_ANNOTATED:
                         existing_los.source = LOS.LOSSource.EXISTING_LINK
+                        changed_los = True
 
                     # Keep the LOS analysis date accurate for all that come from existing links
-                    if existing_los.source == LOS.LOSSource.EXISTING_LINK and link.last_functioning_date_estimate:
+                    if (
+                        existing_los.source == LOS.LOSSource.EXISTING_LINK
+                        and link.last_functioning_date_estimate
+                        and existing_los.analysis_date != link.last_functioning_date_estimate
+                    ):
                         existing_los.analysis_date = link.last_functioning_date_estimate
+                        changed_los = True
 
-                    existing_los.save()
+                    if changed_los:
+                        logging.info(f"changed los: {existing_los}")
+                        existing_los.save()
                 continue
 
+        # At this point, we're reasonably sure the LOS does not exist, so go ahead
+        # and create a new one.
         los = LOS(
             from_building=from_building,
             to_building=to_building,

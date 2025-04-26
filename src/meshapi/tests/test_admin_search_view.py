@@ -3,7 +3,18 @@ import datetime
 from django.contrib.auth.models import User
 from django.test import Client, TestCase
 
-from meshapi.models import LOS, AccessPoint, Building, Device, Install, Link, Member, Node, Sector
+from meshapi.models import (
+    LOS,
+    AccessPoint,
+    Building,
+    Device,
+    Install,
+    InstallFeeBillingDatum,
+    Link,
+    Member,
+    Node,
+    Sector,
+)
 
 from .sample_data import sample_building, sample_device, sample_install, sample_member, sample_node
 from .util import get_admin_results_count
@@ -36,6 +47,11 @@ class TestAdminSearchView(TestCase):
         self.install = Install(**sample_install_copy)
         self.install.referral = "reddit or something, I don't remember"
         self.install.save()
+
+        self.billing_datum = InstallFeeBillingDatum(
+            install=self.install,
+        )
+        self.billing_datum.save()
 
         self.node1 = Node(**sample_node)
         self.node1.save()
@@ -112,6 +128,10 @@ class TestAdminSearchView(TestCase):
 
     def test_search_install(self):
         response = self._call(f"/admin/meshapi/install/?q={self.install.install_number}", 200)
+        self.assertEqual(1, get_admin_results_count(response.content.decode()))
+
+    def test_search_installfeebillingdatum(self):
+        response = self._call(f"/admin/meshapi/installfeebillingdatum/?q={self.install.install_number}", 200)
         self.assertEqual(1, get_admin_results_count(response.content.decode()))
 
     def test_search_link(self):

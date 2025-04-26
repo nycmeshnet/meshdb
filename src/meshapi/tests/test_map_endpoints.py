@@ -1,6 +1,7 @@
 import datetime
 import json
 import uuid
+from unittest.mock import patch
 
 import requests_mock
 from django.test import Client, TestCase
@@ -1710,6 +1711,69 @@ class TestViewsGetUnauthenticated(TestCase):
             ],
         )
 
+    def test_inactive_duplicate_link_doesnt_hide_active_one(self):
+        node1 = Node(
+            name="Hub ABC",
+            network_number=123,
+            status=Node.NodeStatus.ACTIVE,
+            latitude=40.724868,
+            longitude=-73.987881,
+            type=Node.NodeType.HUB,
+        )
+        node1.save()
+        device1 = Device(
+            node=node1,
+            status=Device.DeviceStatus.ACTIVE,
+        )
+        device1.save()
+
+        node2 = Node(
+            name="Hub DEF",
+            network_number=456,
+            status=Node.NodeStatus.ACTIVE,
+            latitude=40.724868,
+            longitude=-73.987881,
+            type=Node.NodeType.HUB,
+        )
+        node2.save()
+        device2 = Device(
+            node=node2,
+            status=Device.DeviceStatus.ACTIVE,
+        )
+        device2.save()
+
+        link1 = Link(
+            id="1a3bfc0d-0967-4a9d-88f4-166616d6d2d6",
+            from_device=device1,
+            to_device=device2,
+            status=Link.LinkStatus.INACTIVE,
+            type=Link.LinkType.FIVE_GHZ,
+        )
+        link1.save()
+
+        link2 = Link(
+            id="ff647a56-44ce-4328-889c-345b4b408858",
+            from_device=device1,
+            to_device=device2,
+            status=Link.LinkStatus.ACTIVE,
+            type=Link.LinkType.ETHERNET,
+        )
+        link2.save()
+
+        self.maxDiff = None
+        response = self.c.get("/api/v1/mapdata/links/")
+
+        self.assertEqual(
+            json.loads(response.content.decode("UTF8")),
+            [
+                {
+                    "from": 123,
+                    "to": 456,
+                    "status": "active",
+                },
+            ],
+        )
+
 
 class TestKiosk(TestCase):
     c = Client()
@@ -1725,6 +1789,23 @@ class TestKiosk(TestCase):
             f"status code incorrect, should be 200, but got {response.status_code}",
         )
         self.assertEqual(len(json.loads(response.content.decode("UTF8"))), 7)
+
+    @patch("logging.warning")
+    @requests_mock.Mocker()
+    def test_kiosk_list_empty_row(self, mock_warning, city_api_call_request_mocker):
+        # On 02-07-2025, City of New York LinkNYC API changed its data, and Row 19
+        # was blank. This tests a guard I added to ensure that doesn't cause us to
+        # raise Exceptions
+        city_api_call_request_mocker.get(LINKNYC_KIOSK_DATA_URL, json=[{}])
+
+        response = self.c.get("/api/v1/mapdata/kiosks/")
+        self.assertEqual(
+            200,
+            response.status_code,
+            f"status code incorrect, should be 200, but got {response.status_code}",
+        )
+        mock_warning.assert_called()
+        self.assertEqual(len(json.loads(response.content.decode("UTF8"))), 0)
 
     @requests_mock.Mocker()
     def test_kiosk_list_bad_fetch(self, city_api_call_request_mocker):

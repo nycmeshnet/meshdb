@@ -38,18 +38,20 @@ meshweb:
   static_pvc_name: "meshdb-static-pvc"
   static_pvc_size: "1Gi"
   liveness_probe: "true"
+  readiness_probe: "true"
+  startup_probe: "true"
   image:
-    repository: willnilges/meshdb
+    repository: docker.io/willnilges/meshdb
     tag: main
   podSecurityContext: {}
   securityContext: {}
   resources:
     limits:
-      cpu: 1
-      memory: 512Mi
+      cpu: "1"
+      memory: 2Gi
     requests:
       cpu: 384m
-      memory: 512Mi
+      memory: 1Gi
   nodeSelector: {}
   affinity: {}
   tolerations: []
@@ -119,6 +121,9 @@ pelias:
 
 image:
   pullPolicy: Always
+
+imageCredentials:
+  registry: docker.io
 
 nameOverride: ""
 fullnameOverride: "meshdb"

@@ -61,6 +61,8 @@ FLAGS: Dict[str, Any] = {
 
 USE_X_FORWARDED_HOST = True
 
+X_FRAME_OPTIONS = "SAMEORIGIN"
+
 SECURE_HSTS_SECONDS = 31536000
 SECURE_HSTS_PRELOAD = False
 SECURE_HSTS_INCLUDE_SUBDOMAINS = False
@@ -134,6 +136,7 @@ ALLOWED_HOSTS = [
     "meshdb",
     "nginx",
     "devdb.nycmesh.net",
+    "gammadb.nycmesh.net",
 ]
 
 CORS_ALLOWED_ORIGINS = [
@@ -142,6 +145,7 @@ CORS_ALLOWED_ORIGINS = [
     "https://adminmap.db.nycmesh.net",
     "https://adminmap.devdb.nycmesh.net",
     "https://devdb.nycmesh.net",
+    "https://gammadb.nycmesh.net",
 ]
 
 CORS_ALLOW_HEADERS = [
@@ -156,6 +160,7 @@ CSRF_TRUSTED_ORIGINS = [
     "http://nginx:8080",
     "https://db.nycmesh.net",
     "https://devdb.nycmesh.net",
+    "https://gammadb.nycmesh.net",
 ]
 
 if DEBUG:
@@ -167,6 +172,7 @@ if DEBUG:
 
     CORS_ALLOWED_ORIGINS += [
         "http://127.0.0.1:3000",
+        "http://127.0.0.1:3001",
         "http://localhost:3000",
         "http://127.0.0.1:80",
         "http://localhost:80",
@@ -207,6 +213,8 @@ INSTALLED_APPS = [
     "explorer",
     "simple_history",
     "admin_site_search",
+    "dal",
+    "dal_select2",
 ]
 
 MIDDLEWARE = [
@@ -315,6 +323,10 @@ LOGGING = {
             "handlers": ["console"],
             "level": "INFO",
         },
+        "ddtrace": {
+            "handlers": ["console"],
+            "level": "WARNING",
+        },
     },
 }
 
@@ -397,6 +409,7 @@ HOOK_EVENTS = {
     "device.created": "meshapi.Device.created+",
     "sector.created": "meshapi.Sector.created+",
     "access_point.created": "meshapi.AccessPoint.created+",
+    "installfeebillingdatum.created": "meshapi.InstallFeeBillingDatum.created+",
     "building.updated": "meshapi.Building.updated+",
     "member.updated": "meshapi.Member.updated+",
     "install.updated": "meshapi.Install.updated+",
@@ -407,6 +420,7 @@ HOOK_EVENTS = {
     "device.uisp-deactivated": "meshapi.Device.uisp-deactivated+",
     "sector.updated": "meshapi.Sector.updated+",
     "access_point.updated": "meshapi.AccessPoint.updated+",
+    "installfeebillingdatum.updated": "meshapi.InstallFeeBillingDatum.updated+",
     "building.deleted": "meshapi.Building.deleted+",
     "member.deleted": "meshapi.Member.deleted+",
     "install.deleted": "meshapi.Install.deleted+",
@@ -416,6 +430,7 @@ HOOK_EVENTS = {
     "device.deleted": "meshapi.Device.deleted+",
     "sector.deleted": "meshapi.Sector.deleted+",
     "access_point.deleted": "meshapi.AccessPoint.deleted+",
+    "installfeebillingdatum.deleted": "meshapi.InstallFeeBillingDatum.deleted+",
 }
 
 HOOK_SERIALIZERS = {
@@ -428,6 +443,7 @@ HOOK_SERIALIZERS = {
     "meshapi.Device": "meshapi.serializers.model_api.DeviceSerializer",
     "meshapi.Sector": "meshapi.serializers.model_api.SectorSerializer",
     "meshapi.AccessPoint": "meshapi.serializers.model_api.AccessPointSerializer",
+    "meshapi.InstallFeeBillingDatum": "meshapi.serializers.model_api.InstallFeeBillingDatumSerializer",
 }
 
 HOOK_CUSTOM_MODEL = "meshapi_hooks.CelerySerializerHook"
@@ -475,6 +491,10 @@ SPECTACULAR_SETTINGS = {
             "description": "Special devices which provide community WiFi to a given area, usually in a park or "
             "other public place",
         },
+        {
+            "name": "Billing",
+            "description": "Billing data, such as for invoices of install fees to large institutions",
+        },
         {"name": "Geographic & KML Data", "description": "Endpoints for geographic and KML data export"},
         {
             "name": "Website Map Data",
@@ -487,6 +507,10 @@ SPECTACULAR_SETTINGS = {
             "Uses a legacy data format, not recommended for new applications",
         },
         {"name": "User Forms", "description": "Forms exposed directly to humans"},
+        {
+            "name": "Helpers",
+            "description": "Utilities to assist with misc tasks related to NYC Mesh data",
+        },
         {
             "name": "Panoramas",
             "description": "Used to bulk ingest panoramas. Internal use only (use Building.panoramas instead)",

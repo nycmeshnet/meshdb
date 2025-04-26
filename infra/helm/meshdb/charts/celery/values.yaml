@@ -2,7 +2,7 @@
 replicaCount: 1
 
 image:
-  repository: willnilges/meshdb
+  repository: docker.io/willnilges/meshdb
   pullPolicy: Always
   tag: "main"
 
@@ -27,7 +27,7 @@ ingress:
 resources:
   limits:
     cpu: 1
-    #memory: 2Gi
+    memory: 2Gi
   requests:
     cpu: 100m
     memory: 512Mi
