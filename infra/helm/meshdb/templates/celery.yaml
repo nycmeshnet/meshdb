@@ -34,7 +34,7 @@ spec:
         - name: {{ .name }}
           securityContext:
             {{- toYaml $.Values.celery.securityContext | nindent 12 }}
-          {{- if .Values.celery.image.digest }}
+          {{- if $.Values.celery.image.digest }}
           image: "{{ $.Values.celery.image.repository }}@{{ .Values.celery.image.digest }}"
           {{- else }}
           image: "{{ $.Values.celery.image.repository }}:{{ $.Values.celery.image.tag | default $.Chart.AppVersion }}"
