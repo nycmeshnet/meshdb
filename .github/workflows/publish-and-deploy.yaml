@@ -3,7 +3,7 @@ name: Publish and Deploy
 
 on:
   push:
-    branches: [ main , james/digest]
+    branches: [ main ]
   workflow_dispatch:
     branches:
       - main
@@ -23,7 +23,7 @@ jobs:
       environment: prod
       image_tag: willnilges/meshdb:main
     secrets: inherit
-    #if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main'
 
   deploy_to_dev3:
     name: Deploy to dev 3
@@ -33,7 +33,7 @@ jobs:
       image_digest: ${{ needs.push_to_registry_prod.outputs.image_digest }}
     secrets: inherit
     needs: push_to_registry_prod
-    #if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main'
 
   integration_test_dev3:
     name: Integration test dev 3
