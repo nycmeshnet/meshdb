@@ -88,7 +88,7 @@ jobs:
         --set imageCredentials.password="${{ secrets.PULL_SECRET_PASSWORD }}" \
         --set imageCredentials.email="${{ secrets.PULL_SECRET_EMAIL }}" \
         --set meshweb.image.digest="${{ inputs.image_digest }}" \
-        --set global.celery.image.digest="${{ inputs.image_digest }}"
+        --set celery.image.digest="${{ inputs.image_digest }}"
 
         # Rolling restart
         kubectl --kubeconfig ./config --server https://${{ secrets.SSH_TARGET_IP }}:6443 -n ${{ vars.APP_NAMESPACE }} rollout restart deploy
