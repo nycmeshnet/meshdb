@@ -42,6 +42,7 @@ jobs:
 
     - name: Deploy Helm Chart
       run: |
+        echo ${{ inputs.image_digest }}"
         # Get the kubeconfig
         scp ${{ secrets.SSH_USER }}@${{ secrets.SSH_TARGET_IP }}:~/.kube/config ./
 
