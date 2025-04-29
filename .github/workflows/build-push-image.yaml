@@ -10,12 +10,18 @@ on:
       image_tag:
         required: true
         type: string
+    outputs:
+      image_digest:
+        description: "Digest of the built image"
+        value: ${{ jobs.push_to_registry_env.outputs.image_digest }}
 
 jobs:
   push_to_registry_env:
     name: Push Docker Image to Docker Hub
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment }}
+    outputs:
+      image_digest: ${{ steps.build.outputs.digest }}
     steps:
       - name: Check out the repo
         uses: actions/checkout@v4
@@ -33,6 +39,7 @@ jobs:
           images: willnilges/meshdb
       
       - name: Build and push Docker image
+        id: build
         uses: docker/build-push-action@3b5e8027fcad23fda98b2e3ac259d8d67585f671
         with:
           context: .
