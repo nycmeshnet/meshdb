@@ -1,10 +1,7 @@
 [project]
 name = "nycmesh-meshdb"
 version = "0.1"
-dependencies = [
-    "celery[redis]==5.3.*",
-    "django==4.2.*",
-    # FIXME: Go back to PyPI once DRF adds support for using Django's read-only permissions
+dependencies = [E: Go back to PyPI once DRF adds support for using Django's read-only permissions
     #  https://github.com/nycmeshnet/meshdb/issues/524
     "djangorestframework@git+https://github.com/encode/django-rest-framework.git@4bbfa8d4556b5847e91ba95f457cc862b7a0f027",
     "drf-hooks==0.1.3",
@@ -22,6 +19,7 @@ dependencies = [
     "geopy==2.4.*",
     "django-cors-headers==4.3.*",
     "inflect==7.0.*",
+
     # FIXME: Update me to stable, once 1.0 is released officially
     #  https://github.com/nycmeshnet/meshdb/issues/525
     "fastkml[lxml]==1.0a12",

@@ -1,12 +1,11 @@
 import os
 from pathlib import Path
-from django.conf import settings
 from celery import Celery, bootsteps
 from celery.apps.worker import Worker
 from celery.signals import beat_init, worker_ready, worker_shutdown
 from datadog import initialize, statsd
 from dotenv import load_dotenv
-from environment import CELERY_BROKER
+from django.conf import settings
 
 HEARTBEAT_FILE = Path("/tmp/celery_worker_heartbeat")
 READINESS_FILE = Path("/tmp/celery_worker_ready")
@@ -65,7 +64,7 @@ load_dotenv()
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "meshdb.settings")
 
 # Use the docker-hosted Redis container as the backend for Celery
-app = Celery("meshdb", broker= environment.CELERY_BROKER)
+app = Celery("meshdb", broker= settings.CELERY_BROKER)
 
 app.steps["worker"].add(LivenessProbe)
 

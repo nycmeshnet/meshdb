@@ -10,7 +10,7 @@ from django.db import transaction
 from meshapi.models import Install
 from meshapi.models.building import Building
 from meshapi.models.node import Node
-from meshdb.environment import PANO_GITHUB_TOKEN
+from django.conf import settings
 from meshapi.util.django_pglocks import advisory_lock
 
 
@@ -124,7 +124,9 @@ def sync_github_panoramas() -> tuple[int, list[str]]:
     branch = PANO_BRANCH
     directory = PANO_DIR
 
-    token = os.environ.get("PANO_GITHUB_TOKEN")
+    token = settings.PANO_GITHUB_TOKEN
+
+
     if token is None:
         raise ValueError("Environment variable PANO_GITHUB_TOKEN not found")
 

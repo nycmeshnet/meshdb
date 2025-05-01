@@ -9,19 +9,19 @@ from meshapi.types.uisp_api.data_links import DataLink as UISPDataLink
 from meshapi.types.uisp_api.devices import Device as UISPDevice
 load_dotenv()
 
-from meshdb.environment import UISP_URL,UISP_USER,UISP_PASS
+from django.conf import settings
 
 
 
 def get_uisp_devices() -> List[UISPDevice]:
     session = get_uisp_session()
 
-    if not UISP_URL:
+    if not settings.UISP_URL:
         raise EnvironmentError("Missing UISP_URL, please set it via an environment variable")
 
     return json.loads(
         session.get(
-            os.path.join(UISP_URL, "api/v2.1/devices"),
+            os.path.join(settings.UISP_URL, "api/v2.1/devices"),
         ).content.decode("UTF8")
     )
 
@@ -29,12 +29,12 @@ def get_uisp_devices() -> List[UISPDevice]:
 def get_uisp_links() -> List[UISPDataLink]:
     session = get_uisp_session()
 
-    if not UISP_URL:
+    if not settings.UISP_URL:
         raise EnvironmentError("Missing UISP_URL, please set it via an environment variable")
 
     return json.loads(
         session.get(
-            os.path.join(UISP_URL, "api/v2.1/data-links"),
+            os.path.join(settings.UISP_URL, "api/v2.1/data-links"),
         ).content.decode("UTF8")
     )
 
@@ -43,25 +43,25 @@ def get_uisp_device_detail(device_id: str, session: Optional[requests.Session] =
     if not session:
         session = get_uisp_session()
 
-    if not UISP_URL:
+    if not settings.UISP_URL:
         raise EnvironmentError("Missing UISP_URL, please set it via an environment variable")
 
     return json.loads(
         session.get(
-            os.path.join(UISP_URL, f"api/v2.1/devices/{device_id}"),
+            os.path.join(settings.UISP_URL, f"api/v2.1/devices/{device_id}"),
         ).content.decode("UTF8")
     )
 
 
 def get_uisp_token(session: requests.Session) -> str:
-    if not UISP_URL:
+    if not settings.UISP_URL:
         raise EnvironmentError("Missing UISP_URL, please set it via an environment variable")
 
     return session.post(
-        os.path.join(UISP_URL, "api/v2.1/user/login"),
+        os.path.join(settings.UISP_URL, "api/v2.1/user/login"),
         json={
-            "username": UISP_USER,
-            "password": UISP_PASS,
+            "username": settings.UISP_USER,
+            "password": settings.UISP_PASS,
         },
     ).headers["x-auth-token"]
 

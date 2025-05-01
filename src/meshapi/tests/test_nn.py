@@ -15,7 +15,7 @@ from meshapi.models import Building, Install, Member, Node
 from .group_helpers import create_groups
 from .sample_data import sample_building, sample_install, sample_member
 from .util import TestThread
-from meshdb.environment import NN_ASSIGN_PSK
+from django.conf import settings
 
 # Test basic NN form stuff (input validation, etc)
 class TestNN(TestCase):
@@ -59,7 +59,7 @@ class TestNN(TestCase):
     def test_nn_valid_install_number(self):
         response = self.admin_c.post(
             "/api/v1/nn-assign/",
-            {"install_number": self.install_number, "password": os.environ.get("NN_ASSIGN_PSK")},
+            {"install_number": self.install_number, "password": settings.NN_ASSIGN_PSK},
             content_type="application/json",
         )
 
@@ -91,7 +91,7 @@ class TestNN(TestCase):
         # Now test to make sure that we get 200 for dupes
         response = self.admin_c.post(
             "/api/v1/nn-assign/",
-            {"install_number": self.install_number, "password": os.environ.get("NN_ASSIGN_PSK")},
+            {"install_number": self.install_number, "password": settings.NN_ASSIGN_PSK},
             content_type="application/json",
         )
 
@@ -115,7 +115,7 @@ class TestNN(TestCase):
 
         response = self.admin_c.post(
             "/api/v1/nn-assign/",
-            {"install_number": self.install_number, "password": os.environ.get("NN_ASSIGN_PSK")},
+            {"install_number": self.install_number, "password": settings.NN_ASSIGN_PSK},
             content_type="application/json",
         )
 
@@ -144,7 +144,7 @@ class TestNN(TestCase):
 
         response = self.admin_c.post(
             "/api/v1/nn-assign/",
-            {"install_number": self.install_number, "password": os.environ.get("NN_ASSIGN_PSK")},
+            {"install_number": self.install_number, "password": settings.NN_ASSIGN_PSK},
             content_type="application/json",
         )
 
@@ -185,7 +185,7 @@ class TestNN(TestCase):
 
         response = self.admin_c.post(
             "/api/v1/nn-assign/",
-            {"install_number": self.install_number, "password": os.environ.get("NN_ASSIGN_PSK")},
+            {"install_number": self.install_number, "password": settings.NN_ASSIGN_PSK},
             content_type="application/json",
         )
 
@@ -232,7 +232,7 @@ class TestNN(TestCase):
 
         response = self.admin_c.post(
             "/api/v1/nn-assign/",
-            {"install_number": self.install_number, "password": os.environ.get("NN_ASSIGN_PSK")},
+            {"install_number": self.install_number, "password": settings.NN_ASSIGN_PSK},
             content_type="application/json",
         )
 
@@ -280,7 +280,7 @@ class TestNN(TestCase):
 
         response = self.admin_c.post(
             "/api/v1/nn-assign/",
-            {"install_number": self.install_number, "password": os.environ.get("NN_ASSIGN_PSK")},
+            {"install_number": self.install_number, "password": settings.NN_ASSIGN_PSK},
             content_type="application/json",
         )
 
@@ -330,7 +330,7 @@ class TestNN(TestCase):
 
         response = self.admin_c.post(
             "/api/v1/nn-assign/",
-            {"install_number": self.install_number, "password": os.environ.get("NN_ASSIGN_PSK")},
+            {"install_number": self.install_number, "password": settings.NN_ASSIGN_PSK},
             content_type="application/json",
         )
 
@@ -365,7 +365,7 @@ class TestNN(TestCase):
 
         response = self.admin_c.post(
             "/api/v1/nn-assign/",
-            {"install_number": self.install_number, "password": os.environ.get("NN_ASSIGN_PSK")},
+            {"install_number": self.install_number, "password": settings.NN_ASSIGN_PSK},
             content_type="application/json",
         )
 
@@ -385,7 +385,7 @@ class TestNN(TestCase):
 
         response = self.admin_c.post(
             "/api/v1/nn-assign/",
-            {"install_number": self.install_number_low, "password": os.environ.get("NN_ASSIGN_PSK")},
+            {"install_number": self.install_number_low, "password": settings.NN_ASSIGN_PSK},
             content_type="application/json",
         )
 
@@ -425,7 +425,7 @@ class TestNN(TestCase):
 
         response = self.admin_c.post(
             "/api/v1/nn-assign/",
-            {"install_number": self.install_number_low, "password": os.environ.get("NN_ASSIGN_PSK")},
+            {"install_number": self.install_number_low, "password": settings.NN_ASSIGN_PSK},
             content_type="application/json",
         )
 
@@ -465,7 +465,7 @@ class TestNN(TestCase):
 
         response = self.admin_c.post(
             "/api/v1/nn-assign/",
-            {"install_number": self.install_number_low, "password": os.environ.get("NN_ASSIGN_PSK")},
+            {"install_number": self.install_number_low, "password": settings.NN_ASSIGN_PSK},
             content_type="application/json",
         )
 
@@ -506,7 +506,7 @@ class TestNN(TestCase):
 
         response = self.admin_c.post(
             "/api/v1/nn-assign/",
-            {"install_number": self.install_number_low, "password": os.environ.get("NN_ASSIGN_PSK")},
+            {"install_number": self.install_number_low, "password": settings.NN_ASSIGN_PSK},
             content_type="application/json",
         )
 
@@ -584,7 +584,7 @@ class TestNN(TestCase):
     def test_nn_invalid_building_id(self):
         response = self.admin_c.post(
             "/api/v1/nn-assign/",
-            {"install_number": 69420, "password": os.environ.get("NN_ASSIGN_PSK")},
+            {"install_number": 69420, "password": settings.NN_ASSIGN_PSK},
             content_type="application/json",
         )
 
@@ -598,7 +598,7 @@ class TestNN(TestCase):
     def test_nn_bad_request(self):
         response = self.admin_c.post(
             "/api/v1/nn-assign/",
-            {"install_number": "chom", "password": os.environ.get("NN_ASSIGN_PSK")},
+            {"install_number": "chom", "password": settings.NN_ASSIGN_PSK},
             content_type="application/json",
         )
 
@@ -711,7 +711,7 @@ class TestFindGaps(TestCase):
         for inst, nn in [(self.inst2, 111), (self.inst3, 112), (self.inst4, 131)]:
             response = self.admin_c.post(
                 "/api/v1/nn-assign/",
-                {"install_number": inst["install_number"], "password": os.environ.get("NN_ASSIGN_PSK")},
+                {"install_number": inst["install_number"], "password": settings.NN_ASSIGN_PSK},
                 content_type="application/json",
             )
             response.content.decode("utf-8")
@@ -799,7 +799,7 @@ class TestNNRaceCondition(TransactionTestCase):
             with mock.patch("meshapi.util.network_number.no_op", partial(time.sleep, 1)):
                 result = self.admin_c.post(
                     "/api/v1/nn-assign/",
-                    {"install_number": install_num, "password": os.environ.get("NN_ASSIGN_PSK")},
+                    {"install_number": install_num, "password": settings.NN_ASSIGN_PSK},
                     content_type="application/json",
                 )
                 outputs_dict[install_num] = result
@@ -849,7 +849,7 @@ class TestNNRaceCondition(TransactionTestCase):
             with mock.patch("meshapi.util.network_number.no_op", partial(time.sleep, 1)):
                 result = self.admin_c.post(
                     "/api/v1/nn-assign/",
-                    {"install_number": install_num, "password": os.environ.get("NN_ASSIGN_PSK")},
+                    {"install_number": install_num, "password": settings.NN_ASSIGN_PSK},
                     content_type="application/json",
                 )
                 outputs_dict[install_num] = result
@@ -915,7 +915,7 @@ class TestNNRaceCondition(TransactionTestCase):
             with mock.patch("meshapi.util.network_number.no_op", partial(time.sleep, 1)):
                 result = self.admin_c.post(
                     "/api/v1/nn-assign/",
-                    {"install_number": install_num, "password": os.environ.get("NN_ASSIGN_PSK")},
+                    {"install_number": install_num, "password": settings.NN_ASSIGN_PSK},
                     content_type="application/json",
                 )
                 outputs.append(result)

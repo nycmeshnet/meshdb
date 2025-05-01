@@ -10,7 +10,7 @@ from flags.state import flag_enabled
 
 from meshapi.models import Install, Node
 from meshapi.util.django_flag_decorator import skip_if_flag_disabled
-from meshdb.environment import OSTICKET_API_TOKEN, OSTICKET_NEW_TICKET_ENDPOINT, OSTICKET_URL
+from django.conf import settings
 
 @receiver(post_save, sender=Install, dispatch_uid="create_os_ticket_for_install")
 @skip_if_flag_disabled("INTEGRATION_ENABLED_CREATE_OSTICKET_TICKETS")
@@ -20,7 +20,7 @@ def create_os_ticket_for_install(sender: ModelBase, instance: Install, created: 
 
     install: Install = instance
     install.refresh_from_db()
-    if not OSTICKET_API_TOKEN or not OSTICKET_NEW_TICKET_ENDPOINT:
+    if not settings.OSTICKET_API_TOKEN or not settings.OSTICKET_NEW_TICKET_ENDPOINT:
         logging.error(
             f"Unable to create ticket for install {str(install)}, did you set the OSTICKET_API_TOKEN "
             f"and OSTICKET_NEW_TICKET_ENDPOINT env vars?"
@@ -85,9 +85,9 @@ def create_os_ticket_for_install(sender: ModelBase, instance: Install, created: 
     while attempts < 4:
         attempts += 1
         response = requests.post(
-            OSTICKET_NEW_TICKET_ENDPOINT,
+            settings.OSTICKET_NEW_TICKET_ENDPOINT,
             json=data,
-            headers={"X-API-Key": OSTICKET_API_TOKEN},
+            headers={"X-API-Key": settings.OSTICKET_API_TOKEN},
         )
 
         if response.status_code == 201:

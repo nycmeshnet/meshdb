@@ -23,7 +23,7 @@ from meshapi.util.constants import DEFAULT_EXTERNAL_API_TIMEOUT_SECONDS, INVALID
 from meshapi.zips import NYCZipCodes
 
 from .pelias import humanify_street_address
-from meshdb.environment import RECAPTCHA_SECRET_KEY_V2, RECAPTCHA_SECRET_KEY_V3, RECAPTCHA_INVISIBLE_TOKEN_SCORE_THRESHOLD
+from django.conf import RECAPTCHA_SECRET_KEY_V2, RECAPTCHA_SECRET_KEY_V3, RECAPTCHA_INVISIBLE_TOKEN_SCORE_THRESHOLD
 
 
 

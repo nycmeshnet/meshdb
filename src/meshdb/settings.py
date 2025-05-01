@@ -12,7 +12,6 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 
 import logging
 import os
-import environment
 from pathlib import Path
 from typing import Any, Dict, List
 
@@ -22,10 +21,10 @@ from dotenv import load_dotenv
 
 from meshapi.util.constants import RECAPTCHA_CHECKBOX_TOKEN_HEADER, RECAPTCHA_INVISIBLE_TOKEN_HEADER
 
-
 load_dotenv()
 
-MESHDB_ENVIRONMENT=environment.MESHDB_ENVIRONMENT
+MESHDB_ENVIRONMENT = os.environ.get("MESHDB_ENVIRONMENT", "")
+
 if not MESHDB_ENVIRONMENT:
     logging.warning("Please specify MESHDB_ENVIRONMENT environment variable. Things will not work properly without it.")
 
@@ -40,11 +39,11 @@ SESSION_SAVE_EVERY_REQUEST = True  # "False" by default
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = environment.SECRET_KEY
+SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = environment.DEBUG
-PROFILING_ENABLED = DEBUG and not environment.DEBUG
+DEBUG = os.environ.get("DEBUG", "False") == "True"
+PROFILING_ENABLED = DEBUG and not os.environ.get("DISABLE_PROFILING", "False") == "True"
 
 
 FLAGS: Dict[str, Any] = {
@@ -83,7 +82,7 @@ CSP_DEFAULT_SRC = [
     "https://cdn.redoc.ly",  # Redoc
     "blob:",  # Redoc
     "'unsafe-inline'",  # TODO: Remove me https://github.com/nycmeshnet/meshdb/issues/645
-    "*.browser-intake-us5-datadoghq.com",
+    "https://browser-intake-us5-datadoghq.com",
 ]
 CSP_IMG_SRC = [
     "'self'",
@@ -121,15 +120,15 @@ PERMISSIONS_POLICY: Dict[str, List[str]] = {
     "usb": [],
 }
 
-LOS_URL = environment.LOS_URL
-MAP_URL = environment.MAP_URL
-FORMS_URL = environment.FORMS_URL
+LOS_URL = os.environ.get("LOS_URL", "https://los.devdb.nycmesh.net")
+MAP_URL = os.environ.get("MAP_BASE_URL", "https://map.nycmesh.net")
+FORMS_URL = os.environ.get("FORMS_URL", "https://forms.devdb.nycmesh.net")
 
 # SMTP Config for password reset emails
-EMAIL_HOST = environment.EMAIL_HOST
-EMAIL_PORT = environment.EMAIL_PORT
-EMAIL_HOST_USER = environment.EMAIL_HOST_USER
-EMAIL_HOST_PASSWORD = environment.EMAIL_HOST_USER
+EMAIL_HOST = os.environ.get("SMTP_HOST")
+EMAIL_PORT = os.environ.get("SMTP_PORT")
+EMAIL_HOST_USER = os.environ.get("SMTP_USER")
+EMAIL_HOST_PASSWORD = os.environ.get("SMTP_PASSWORD")
 EMAIL_USE_TLS = True
 
 ALLOWED_HOSTS = [
@@ -271,19 +270,19 @@ WSGI_APPLICATION = "meshdb.wsgi.application"
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": environment.DB_NAME,
-        "PASSWORD":environment.DB_PASSWORD,
-        "USER": environment.DB_USER,
-        "HOST": environment.DB_HOST,
-        "PORT": environment.DB_PORT,
+        "NAME": os.environ.get("DB_NAME"),
+        "USER": os.environ.get("DB_USER"),
+        "PASSWORD": os.environ.get("DB_PASSWORD"),
+        "HOST": os.environ.get("DB_HOST", "localhost"),
+        "PORT": os.environ.get("DB_PORT", 5432),
     },
     "readonly": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": environment.DB_NAME,
-        "USER": environment.DB_USER,
-        "PASSWORD": environment.DB_PASSWORD_RO,
-        "HOST": environment.DB_HOST,
-        "PORT": environment.DB_PORT,
+        "NAME": os.environ.get("DB_NAME"),
+        "USER": os.environ.get("DB_USER_RO"),
+        "PASSWORD": os.environ.get("DB_PASSWORD_RO"),
+        "HOST": os.environ.get("DB_HOST", "localhost"),
+        "PORT": os.environ.get("DB_PORT", 5432),
     },
 }
 
@@ -410,6 +409,7 @@ HOOK_EVENTS = {
     "device.created": "meshapi.Device.created+",
     "sector.created": "meshapi.Sector.created+",
     "access_point.created": "meshapi.AccessPoint.created+",
+    "installfeebillingdatum.created": "meshapi.InstallFeeBillingDatum.created+",
     "building.updated": "meshapi.Building.updated+",
     "member.updated": "meshapi.Member.updated+",
     "install.updated": "meshapi.Install.updated+",
@@ -420,6 +420,7 @@ HOOK_EVENTS = {
     "device.uisp-deactivated": "meshapi.Device.uisp-deactivated+",
     "sector.updated": "meshapi.Sector.updated+",
     "access_point.updated": "meshapi.AccessPoint.updated+",
+    "installfeebillingdatum.updated": "meshapi.InstallFeeBillingDatum.updated+",
     "building.deleted": "meshapi.Building.deleted+",
     "member.deleted": "meshapi.Member.deleted+",
     "install.deleted": "meshapi.Install.deleted+",
@@ -429,6 +430,7 @@ HOOK_EVENTS = {
     "device.deleted": "meshapi.Device.deleted+",
     "sector.deleted": "meshapi.Sector.deleted+",
     "access_point.deleted": "meshapi.AccessPoint.deleted+",
+    "installfeebillingdatum.deleted": "meshapi.InstallFeeBillingDatum.deleted+",
 }
 
 HOOK_SERIALIZERS = {
@@ -441,6 +443,7 @@ HOOK_SERIALIZERS = {
     "meshapi.Device": "meshapi.serializers.model_api.DeviceSerializer",
     "meshapi.Sector": "meshapi.serializers.model_api.SectorSerializer",
     "meshapi.AccessPoint": "meshapi.serializers.model_api.AccessPointSerializer",
+    "meshapi.InstallFeeBillingDatum": "meshapi.serializers.model_api.InstallFeeBillingDatumSerializer",
 }
 
 HOOK_CUSTOM_MODEL = "meshapi_hooks.CelerySerializerHook"
@@ -487,6 +490,10 @@ SPECTACULAR_SETTINGS = {
             "name": "Access Points",
             "description": "Special devices which provide community WiFi to a given area, usually in a park or "
             "other public place",
+        },
+        {
+            "name": "Billing",
+            "description": "Billing data, such as for invoices of install fees to large institutions",
         },
         {"name": "Geographic & KML Data", "description": "Endpoints for geographic and KML data export"},
         {
@@ -571,3 +578,57 @@ EXPLORER_SCHEMA_EXCLUDE_TABLE_PREFIXES = [
     "explorer_",
     "meshapi_hooks_",
 ]
+
+# from celery.py
+CELERY_BROKER = os.environ.get("CELERY_BROKER", "redis://localhost:6379/0")
+
+
+#from pelias.py
+PELIAS_ADDRESS_PARSER_URL = os.environ.get("PELIAS_ADDRESS_PARSER_URL", "http://localhost:6800/parser/parse")
+
+#from validation.py
+RECAPTCHA_SECRET_KEY_V2 = os.environ.get("RECAPTCHA_SERVER_SECRET_KEY_V2")
+RECAPTCHA_SECRET_KEY_V3 = os.environ.get("RECAPTCHA_SERVER_SECRET_KEY_V3")
+RECAPTCHA_INVISIBLE_TOKEN_SCORE_THRESHOLD = float(os.environ.get("RECAPTCHA_INVISIBLE_TOKEN_SCORE_THRESHOLD", 0.5))
+
+#from fetch_uisp.py
+UISP_URL = os.environ.get("UISP_URL")
+UISP_USER = os.environ.get("UISP_USER")
+UISP_PASS = os.environ.get("UISP_PASS")
+
+#from osticket_creation.py
+OSTICKET_API_TOKEN = os.environ.get("OSTICKET_API_TOKEN")
+OSTICKET_NEW_TICKET_ENDPOINT = os.environ.get("OSTICKET_NEW_TICKET_ENDPOINT")
+OSTICKET_URL = os.environ.get("OSTICKET_URL", "https://support.nycmesh.net"
+                              )
+#from join_requests_slack_channel.py
+SLACK_JOIN_REQUESTS_CHANNEL_WEBHOOK_URL = os.environ.get("SLACK_JOIN_REQUESTS_CHANNEL_WEBHOOK_URL")
+
+#from join_records.py
+JOIN_RECORD_ENDPOINT = os.environ.get("S3_ENDPOINT", None)
+JOIN_RECORD_BUCKET_NAME = os.environ.get("JOIN_RECORD_BUCKET_NAME")
+JOIN_RECORD_PREFIX = os.environ.get("JOIN_RECORD_PREFIX")
+
+#from admin_notifications.py
+SLACK_ADMIN_NOTIFICATIONS_WEBHOOK_URL = os.environ.get("SLACK_ADMIN_NOTIFICATIONS_WEBHOOK_URL")
+SITE_BASE_URL = os.environ.get("SITE_BASE_URL")
+
+#from panoramas.py
+PANO_GITHUB_TOKEN = os.environ.get("PANO_GITHUB_TOKEN")
+
+#from test_update_panos_github.py
+PANO_REPO_OWNER = os.environ.get("PANO_REPO_OWNER") or "nycmeshnet"
+PANO_REPO = os.environ.get("PANO_REPO") or "node-db"
+PANO_BRANCH=os.environ.get("PANO_BRANCH") or "master"
+PANO_DIR = os.environ.get("PANO_DIR") or "data/panoramas"
+PANO_HOST= os.environ.get("PANO_HOST") or "http://example.com"
+PANO_GITHUB_TOKEN = os.environ.get("PANO_GITHUB_TOKEN") or "4"
+
+#from test_query_form.py
+QUERY_PSK = os.environ.get("QUERY_PSK")
+
+
+NN_ASSIGN_PSK = os.environ.get("NN_ASSIGN_PSK")
+AWS_ACCESS_KEY_ID = os.environ.get("AWS_ACCESS_KEY_ID", " ")
+AWS_SECRET_ACCESS_KEY = os.environ.get("AWS_SECRET_ACCESS_KEY", " ")
+

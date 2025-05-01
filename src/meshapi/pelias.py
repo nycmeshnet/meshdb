@@ -4,10 +4,10 @@ import re
 
 import inflect
 import requests
-from meshdb.environment import PELIAS_ADDRESS_PARSER_URL
+from django.conf import settings
 
 from meshapi.util.constants import DEFAULT_EXTERNAL_API_TIMEOUT_SECONDS
-from meshdb import environment
+
 
 
 
@@ -24,7 +24,7 @@ def humanify_street_address(dob_address_str: str) -> str:
     :return: A softened version of the input string
     """
     response = requests.get(
-        PELIAS_ADDRESS_PARSER_URL, params={"text": dob_address_str}, timeout=DEFAULT_EXTERNAL_API_TIMEOUT_SECONDS
+        settings.PELIAS_ADDRESS_PARSER_URL, params={"text": dob_address_str}, timeout=DEFAULT_EXTERNAL_API_TIMEOUT_SECONDS
     )
 
     best_score = 0

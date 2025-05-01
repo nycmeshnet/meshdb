@@ -6,7 +6,7 @@ import os
 from dataclasses import dataclass, fields
 from enum import Enum
 from typing import Optional
-from meshdb.environment import JOIN_RECORD_ENDPOINT, JOIN_RECORD_BUCKET_NAME, JOIN_RECORD_PREFIX
+from django.conf import settings
 import boto3
 from botocore.client import ClientError, Config
 
@@ -55,22 +55,22 @@ def s3_content_to_join_record(object_key: str, content: str) -> JoinRecord:
 
 class JoinRecordProcessor:
     def __init__(self) -> None:
-        if not JOIN_RECORD_BUCKET_NAME:
+        if not settings.JOIN_RECORD_BUCKET_NAME:
             raise EnvironmentError("Did not find JOIN_RECORD_BUCKET_NAME")
 
-        if not JOIN_RECORD_PREFIX:
+        if not settings.JOIN_RECORD_PREFIX:
             raise EnvironmentError("Did not find JOIN_RECORD_PREFIX")
 
         self.s3_client = boto3.client(
             "s3",
-            endpoint_url=JOIN_RECORD_ENDPOINT,
+            endpoint_url=settings.JOIN_RECORD_ENDPOINT,
             config=Config(signature_version="s3v4"),  # Ensure S3 signature v4 is used
         )
 
     def upload(self, join_record: JoinRecord, key: str) -> None:
         try:
             self.s3_client.put_object(
-                Bucket=JOIN_RECORD_BUCKET_NAME,
+                Bucket=settings.JOIN_RECORD_BUCKET_NAME,
                 Key=key,
                 Body=json.dumps(dataclasses.asdict(join_record)),
                 ContentType="application/json",
@@ -81,22 +81,22 @@ class JoinRecordProcessor:
     def get_all(
         self, since: Optional[datetime.datetime] = None, submission_prefix: SubmissionStage = SubmissionStage.POST
     ) -> list[JoinRecord]:
-        prefix = f"{JOIN_RECORD_PREFIX}/v3/{submission_prefix.value}"
+        prefix = f"{settings.JOIN_RECORD_PREFIX}/v3/{submission_prefix.value}"
         start_after = (
-            since.strftime(f"{JOIN_RECORD_PREFIX}/v3/{submission_prefix.value}/%Y/%m/%d/%H/%M/%S")
+            since.strftime(f"{settings.JOIN_RECORD_PREFIX}/v3/{submission_prefix.value}/%Y/%m/%d/%H/%M/%S")
             if isinstance(since, datetime.datetime)
             else ""
         )
         try:
             response = self.s3_client.list_objects_v2(
-                Bucket=JOIN_RECORD_BUCKET_NAME,
+                Bucket=settings.JOIN_RECORD_BUCKET_NAME,
                 Prefix=prefix,
                 StartAfter=start_after,
             )
         except ClientError as e:
             # This will raise ClientError (AccessDenied) if the bucket doesn't exist.
             logging.exception(
-                f"Error accessing bucket. Check bucket name. JOIN_RECORD_BUCKET_NAME={JOIN_RECORD_BUCKET_NAME}"
+                f"Error accessing bucket. Check bucket name. JOIN_RECORD_BUCKET_NAME={settings.JOIN_RECORD_BUCKET_NAME}"
             )
             raise e
 
@@ -112,7 +112,7 @@ class JoinRecordProcessor:
             object_key = obj["Key"]
 
             # Get object content
-            content_object = self.s3_client.get_object(Bucket=JOIN_RECORD_BUCKET_NAME, Key=object_key)
+            content_object = self.s3_client.get_object(Bucket=settings.JOIN_RECORD_BUCKET_NAME, Key=object_key)
             content = content_object["Body"].read().decode("utf-8")
 
             join_records.append(s3_content_to_join_record(object_key, content))
@@ -124,13 +124,13 @@ class JoinRecordProcessor:
         # This should be the same as MOCK_JOIN_RECORD_PREFIX
         folder_path = "join-record-test"
 
-        objects_to_delete = self.s3_client.list_objects_v2(Bucket=JOIN_RECORD_BUCKET_NAME, Prefix=folder_path)
+        objects_to_delete = self.s3_client.list_objects_v2(Bucket=settings.JOIN_RECORD_BUCKET_NAME, Prefix=folder_path)
 
         if "Contents" in objects_to_delete:
             delete_keys = [{"Key": obj["Key"]} for obj in objects_to_delete["Contents"]]
 
-            self.s3_client.delete_objects(Bucket=JOIN_RECORD_BUCKET_NAME, Delete={"Objects": delete_keys})
-            print(f"Folder '{folder_path}' deleted from bucket '{JOIN_RECORD_BUCKET_NAME}'.")
+            self.s3_client.delete_objects(Bucket=settings.JOIN_RECORD_BUCKET_NAME, Delete={"Objects": delete_keys})
+            print(f"Folder '{folder_path}' deleted from bucket '{settings.JOIN_RECORD_BUCKET_NAME}'.")
         else:
             print(f"No objects found in folder '{folder_path}'.")
 
@@ -188,4 +188,4 @@ class JoinRecordProcessor:
         submission_time = datetime.datetime.fromisoformat(join_record.submission_time)
         uuid_snippet = join_record.uuid.split("-")[1]
 
-        return submission_time.strftime(f"{JOIN_RECORD_PREFIX}/v3/{stage.value}/%Y/%m/%d/%H/%M/%S/{uuid_snippet}.json")
+        return submission_time.strftime(f"{settings.JOIN_RECORD_PREFIX}/v3/{stage.value}/%Y/%m/%d/%H/%M/%S/{uuid_snippet}.json")
