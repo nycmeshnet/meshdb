@@ -19,6 +19,11 @@ pg:
   # readOnlyRootFilesystem: true
   # runAsNonRoot: true
   # runAsUser: 1000
+  image:
+    repository: docker.io/postgres
+    # 15-bookworm
+    digest: sha256:8f6fbd24a12304d2adc332a2162ee9ff9d6044045a0b07f94d6e53e73125e11c
+    pullPolicy: IfNotPresent
   resources:
     limits:
       cpu: 1
@@ -43,6 +48,7 @@ meshweb:
   image:
     repository: docker.io/willnilges/meshdb
     tag: main
+    pullPolicy: IfNotPresent
   podSecurityContext: {}
   securityContext: {}
   resources:
@@ -67,6 +73,10 @@ nginx:
     requests:
       cpu: 100m
       memory: 30Mi
+  image:
+    repository: docker.io/nginx
+    tag: latest
+    pullPolicy: Always
   nodeSelector: {}
   affinity: {}
   tolerations: []
@@ -100,6 +110,10 @@ redis:
     requests:
       cpu: 250m
       memory: 256Mi
+  image:
+    repository: docker.io/redis
+    tag: latest
+    pullPolicy: Always
   nodeSelector: {}
   affinity: {}
   tolerations: []
@@ -115,12 +129,14 @@ pelias:
     requests:
       cpu: 250m
       memory: 512Mi
+  image:
+    repository: docker.io/pelias/parser
+    # v3.1.0
+    digest: sha256:458fe3ae873414064ac15a0702c348b641bcbbde3dba39a492abdff54e8b5891
+    pullPolicy: IfNotPresent
   nodeSelector: {}
   affinity: {}
   tolerations: []
-
-image:
-  pullPolicy: IfNotPresent
 
 imageCredentials:
   registry: docker.io
