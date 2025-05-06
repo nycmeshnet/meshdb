@@ -40,7 +40,7 @@ sample_install = {
     "unit": "3",
     "roof_access": True,
     "notes": "Referral: Read about it on the internet",
-    "stripe_subscription_id": "sub_NotARealIDValue",
+    "stripe_subscription_id": "sub_NotARealSubscriptionIDValue",
 }
 
 sample_address_response = {

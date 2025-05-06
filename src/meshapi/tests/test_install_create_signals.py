@@ -518,5 +518,5 @@ class TestInstallCreateSignals(TestCase):
             [install],
             InstallSerializer,
             "Fatal exception (after retries) when trying to update the Stripe subscription(s): "
-            "[None, 'sub_NotARealIDValue']",
+            "[None, 'sub_NotARealSubscriptionIDValue']",
         )
