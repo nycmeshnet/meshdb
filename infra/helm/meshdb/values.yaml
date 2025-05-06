@@ -75,8 +75,9 @@ nginx:
       memory: 30Mi
   image:
     repository: docker.io/nginx
-    tag: latest
-    pullPolicy: Always
+    # latest
+    digest: sha256:c15da6c91de8d2f436196f3a768483ad32c258ed4e1beb3d367a27ed67253e66
+    pullPolicy: IfNotPresent
   nodeSelector: {}
   affinity: {}
   tolerations: []
@@ -112,8 +113,9 @@ redis:
       memory: 256Mi
   image:
     repository: docker.io/redis
-    tag: latest
-    pullPolicy: Always
+    # latest
+    digest: sha256:a4b90e7079b67c41bdf4ca6f9d87197079e4c1c3273b7f489a74f2687d85a05e
+    pullPolicy: IfNotPresent
   nodeSelector: {}
   affinity: {}
   tolerations: []
