@@ -1,13 +1,13 @@
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
 import pytest
-import stripe.error
+import stripe
 from django.test import TestCase
 
 from meshapi.util.events.update_stripe_subscription import (
     add_install_to_subscription,
-    remove_install_from_subscription,
     fetch_existing_installs,
+    remove_install_from_subscription,
 )
 
 
@@ -34,7 +34,7 @@ class TestStripeHelpers(TestCase):
 
     @patch("meshapi.util.events.update_stripe_subscription.stripe.Subscription")
     def test_fetch_non_existent(self, mock_stripe_Subscription):
-        mock_stripe_Subscription.retrieve.side_effect = stripe.error.InvalidRequestError(
+        mock_stripe_Subscription.retrieve.side_effect = stripe.InvalidRequestError(
             "foo_message", "foo_param", http_status=404
         )
 
@@ -43,7 +43,7 @@ class TestStripeHelpers(TestCase):
 
     @patch("meshapi.util.events.update_stripe_subscription.stripe.Subscription")
     def test_fetch_other_invalid(self, mock_stripe_Subscription):
-        mock_stripe_Subscription.retrieve.side_effect = stripe.error.InvalidRequestError("foo_message", "foo_param")
+        mock_stripe_Subscription.retrieve.side_effect = stripe.InvalidRequestError("foo_message", "foo_param")
 
         with pytest.raises(RuntimeError):
             fetch_existing_installs("sub_mockid")
@@ -53,7 +53,7 @@ class TestStripeHelpers(TestCase):
 
     @patch("meshapi.util.events.update_stripe_subscription.stripe.Subscription")
     def test_fetch_other_error(self, mock_stripe_Subscription):
-        mock_stripe_Subscription.retrieve.side_effect = stripe.error.PermissionError
+        mock_stripe_Subscription.retrieve.side_effect = stripe.PermissionError
 
         with pytest.raises(RuntimeError):
             fetch_existing_installs("sub_mockid")
@@ -98,7 +98,7 @@ class TestStripeHelpers(TestCase):
     def test_add_throws_exception(self, mock_stripe_Subscription, mock_fetch_existing_installs):
         mock_fetch_existing_installs.return_value = []
 
-        mock_stripe_Subscription.modify.side_effect = stripe.error.PermissionError
+        mock_stripe_Subscription.modify.side_effect = stripe.PermissionError
 
         with pytest.raises(RuntimeError):
             add_install_to_subscription(1234, "sub_mockid")
@@ -146,7 +146,7 @@ class TestStripeHelpers(TestCase):
     def test_remove_throws_exception(self, mock_stripe_Subscription, mock_fetch_existing_installs):
         mock_fetch_existing_installs.return_value = [1234]
 
-        mock_stripe_Subscription.modify.side_effect = stripe.error.PermissionError
+        mock_stripe_Subscription.modify.side_effect = stripe.PermissionError
 
         with pytest.raises(RuntimeError):
             remove_install_from_subscription(1234, "sub_mockid")

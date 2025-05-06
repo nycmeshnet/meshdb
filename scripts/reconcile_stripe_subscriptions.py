@@ -4,10 +4,10 @@ import os
 import re
 import sys
 from csv import DictReader
+from typing import List
 
 import requests
 import stripe
-from typing import List
 
 stripe.api_key = os.environ["STRIPE_API_TOKEN"]
 MESHDB_API_TOKEN = os.environ["MESHDB_API_TOKEN"]

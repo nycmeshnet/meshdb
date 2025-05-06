@@ -8,7 +8,7 @@ from django.db.models.base import ModelBase
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
-from meshapi.models import Install, Node
+from meshapi.models import Install
 from meshapi.serializers import InstallSerializer
 from meshapi.util.admin_notifications import notify_administrators_of_data_issue
 from meshapi.util.django_flag_decorator import skip_if_flag_disabled
@@ -19,18 +19,18 @@ STRIPE_API_TOKEN = os.environ.get("STRIPE_API_TOKEN")
 
 def fetch_existing_installs(subscription_id: str) -> Optional[List[int]]:
     attempts = 0
-    stripe_error = None
+    stripe_error: Optional[Exception] = None
     while attempts < 4:
         attempts += 1
 
         try:
             subscription = stripe.Subscription.retrieve(subscription_id)
             return [int(install_num) for install_num in subscription.metadata.get("installs", "").split(",")]
-        except stripe.error.InvalidRequestError as e:
+        except stripe.InvalidRequestError as e:
             if e.http_status == 404:
                 return None
             stripe_error = e
-        except stripe.error.StripeError as e:
+        except stripe.StripeError as e:
             stripe_error = e
 
         time.sleep(1)
@@ -53,7 +53,7 @@ def remove_install_from_subscription(install_number: int, subscription_id: str) 
         return
 
     attempts = 0
-    stripe_error = None
+    stripe_error: Optional[Exception] = None
     while attempts < 4:
         attempts += 1
 
@@ -67,7 +67,7 @@ def remove_install_from_subscription(install_number: int, subscription_id: str) 
                 },
             )
             return
-        except stripe.error.StripeError as e:
+        except stripe.StripeError as e:
             stripe_error = e
 
         time.sleep(1)
@@ -77,7 +77,7 @@ def remove_install_from_subscription(install_number: int, subscription_id: str) 
     ) from stripe_error
 
 
-def add_install_to_subscription(install_number: int, subscription_id: str):
+def add_install_to_subscription(install_number: int, subscription_id: str) -> None:
     logging.info(f"Adding install number {install_number} to Stripe subscription_id {subscription_id}...")
     existing_installs = fetch_existing_installs(subscription_id)
 
@@ -92,7 +92,7 @@ def add_install_to_subscription(install_number: int, subscription_id: str):
     existing_installs.append(install_number)
 
     attempts = 0
-    stripe_error = None
+    stripe_error: Optional[Exception] = None
     while attempts < 4:
         attempts += 1
 
@@ -101,7 +101,7 @@ def add_install_to_subscription(install_number: int, subscription_id: str):
                 subscription_id, metadata={"installs": ",".join(str(install) for install in sorted(existing_installs))}
             )
             return
-        except stripe.error.StripeError as e:
+        except stripe.StripeError as e:
             stripe_error = e
 
         time.sleep(1)
@@ -148,7 +148,7 @@ def update_stripe_subscription_on_install_update(
             add_install_to_subscription(install.install_number, current_stripe_subscription_id)
     except RuntimeError:
         error_summary = (
-            f"Fatal exception (after retries) when trying to update the Stripe subscription(s): "
+            "Fatal exception (after retries) when trying to update the Stripe subscription(s): "
             + f"{[former_stripe_subscription_id, current_stripe_subscription_id]}"
         )
 
