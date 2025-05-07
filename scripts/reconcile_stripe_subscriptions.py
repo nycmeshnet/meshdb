@@ -22,7 +22,9 @@ def find_install_numbers_by_stripe_email(stripe_email: str) -> List[str]:
 
     member_data = member_response.json()
 
-    install_numbers = []
+    stripe_email_explicit_installs = []
+    active_installs = []
+    other_installs = []
     for member in member_data["results"]:
         for install in member["installs"]:
             install_detail_response = requests.get(
@@ -31,11 +33,16 @@ def find_install_numbers_by_stripe_email(stripe_email: str) -> List[str]:
             )
             install_detail_response.raise_for_status()
             install_detail = install_detail_response.json()
+            if member["stripe_email_address"] == stripe_email:
+                stripe_email_explicit_installs.append(install_detail)
+            elif install_detail["status"] == "Active":
+                active_installs.append(install_detail)
+            else:
+                other_installs.append(install_detail)
 
-            if install_detail["status"] == "Active":
-                install_numbers.append(str(install["install_number"]))
-
-    return install_numbers
+    return [
+        str(install["install_number"]) for install in stripe_email_explicit_installs + active_installs + other_installs
+    ]
 
 
 def get_subscription_ids_for_charge_id(charge_id: str) -> List[str]:
@@ -43,10 +50,10 @@ def get_subscription_ids_for_charge_id(charge_id: str) -> List[str]:
         # Retrieve the charge
         charge = stripe.Charge.retrieve(charge_id)
 
-        # Extract the customer ID from the charge
+        # Extract the customer ID from the charge (if present)
         customer_id = charge.get("customer")
         if not customer_id:
-            raise ValueError(f"Charge {charge_id} does not have a customer associated with it.")
+            return []
 
         # Retrieve all subscriptions for the customer
         subscriptions = stripe.Subscription.list(customer=customer_id)
@@ -65,6 +72,7 @@ def main():
         print(f"Usage: {sys.argv[0]} <stripe-csv-file> <slack-export-file>")
         sys.exit(1)
 
+    print("Parsing slack export...")
     slack_charge_mapping = {}
     slack_export_file = sys.argv[2]
     with open(slack_export_file, "r") as f:
@@ -111,29 +119,47 @@ def main():
                                 slack_charge_mapping[stripe_charge_id] = install_number
                                 continue
 
+    print("Querying stripe to convert payment IDs to subscription IDs...")
     slack_subscription_mapping = {}
-    for stripe_charge_id, install_number in slack_charge_mapping.items():
+    for i, (stripe_charge_id, install_number) in enumerate(slack_charge_mapping.items()):
+        if i % 100 == 0:
+            print(f"{i} / {len(slack_charge_mapping)}")
+
         stripe_subscription_ids = get_subscription_ids_for_charge_id(stripe_charge_id)
         for stripe_subscription_id in stripe_subscription_ids:
             if stripe_subscription_id not in slack_subscription_mapping:
                 slack_subscription_mapping[stripe_subscription_id] = []
             slack_subscription_mapping[stripe_subscription_id].append(install_number)
 
+    print("Loading stripe CSV export...")
     stripe_csv_filename = sys.argv[1]
+    stripe_csv_data = []
     with open(stripe_csv_filename, "r") as csv_file:
         reader = DictReader(csv_file)
+        fieldnames = list(reader.fieldnames) + ["install_nums_email", "install_nums_slack"]
 
-        with open("output.csv", "w") as output_file:
-            writer = csv.DictWriter(output_file, fieldnames=list(reader.fieldnames) + ["install_nums"])
+        for row in reader:
+            stripe_csv_data.append(row)
 
-            for row in reader:
-                stripe_email = row["Customer Email"]
-                if stripe_email:  # Some rows are blank
-                    print(row["Customer Email"])
-                    install_numbers = find_install_numbers_by_stripe_email(stripe_email)
-                    row["install_nums_email"] = ",".join(install_numbers)
-                    row["install_num_slack"] = ",".join(slack_subscription_mapping.get(row["id"]) or [])
-                    writer.writerow(row)
+    print("Querying MeshDB to do email-based lookups...")
+    output_data = []
+    for i, row in enumerate(stripe_csv_data):
+        if i % 100 == 0:
+            print(f"{i} / {len(stripe_csv_data)}")
+
+        stripe_email = row["Customer Email"]
+        if stripe_email:  # Some rows are blank
+            install_numbers = find_install_numbers_by_stripe_email(stripe_email)
+            row["install_nums_email"] = ",".join(install_numbers)
+            row["install_nums_slack"] = ",".join(slack_subscription_mapping.get(row["id"]) or [])
+            output_data.append(row)
+
+    print("Writing output file...")
+    with open("output.csv", "w") as output_file:
+        writer = csv.DictWriter(output_file, fieldnames=fieldnames)
+        writer.writeheader()
+        for row in output_data:
+            writer.writerow(row)
 
 
 if __name__ == "__main__":
