@@ -174,14 +174,6 @@ celery:
   ingress:
     enabled: false
 
-  resources:
-    limits:
-      cpu: 1
-      memory: 2Gi
-    requests:
-      cpu: 100m
-      memory: 512Mi
-
   containers:
     - name: celery-worker
       command:
@@ -208,6 +200,13 @@ celery:
         initialDelaySeconds: 60
         periodSeconds: 60
         timeoutSeconds: 10
+      resources:
+        limits:
+          cpu: 1
+          memory: 2Gi
+        requests:
+          cpu: 100m
+          memory: 512Mi
     - name: celery-beat
       command: 
         - sh
@@ -233,3 +232,10 @@ celery:
         initialDelaySeconds: 60
         periodSeconds: 60
         timeoutSeconds: 10
+      resources:
+        limits:
+          cpu: 1
+          memory: 2Gi
+        requests:
+          cpu: 100m
+          memory: 512Mi
