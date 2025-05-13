@@ -35,8 +35,12 @@ spec:
         - name: {{ .Chart.Name }}-pelias
           securityContext:
             {{- toYaml .Values.pelias.securityContext | nindent 12 }}
-          image: "docker.io/pelias/parser"
-          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- if .Values.pelias.image.digest }}
+          image: "{{ .Values.pelias.image.repository }}@{{ .Values.pelias.image.digest }}"
+          {{- else }}
+          image: "{{ .Values.pelias.image.repository }}:{{ .Values.pelias.image.tag }}"
+          {{- end }}
+          imagePullPolicy: {{ .Values.pelias.image.pullPolicy }}
           ports:
             - name: pelias
               containerPort: {{ .Values.pelias.port }}
