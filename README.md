@@ -17,6 +17,8 @@ This project aims to provide a convenient, stable, and sane interface for use wi
 robots and humans. For more information, [check the
 wiki](https://wiki.nycmesh.net/books/6-services-software/chapter/meshdb)
 
+To start contributing, find a [good first issue](https://github.com/nycmeshnet/meshdb/issues?q=is%3Aissue%20state%3Aopen%20label%3A%22good%20first%20issue%22).
+
 ## Setup
 
 ### Dev Environment
