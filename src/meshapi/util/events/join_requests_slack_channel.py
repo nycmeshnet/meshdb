@@ -9,8 +9,7 @@ from django.dispatch import receiver
 
 from meshapi.models import Install
 from meshapi.util.django_flag_decorator import skip_if_flag_disabled
-
-SLACK_JOIN_REQUESTS_CHANNEL_WEBHOOK_URL = os.environ.get("SLACK_JOIN_REQUESTS_CHANNEL_WEBHOOK_URL")
+from django.conf import settings
 
 
 @receiver(post_save, sender=Install, dispatch_uid="join_requests_slack_channel")
@@ -20,7 +19,7 @@ def send_join_request_slack_message(sender: ModelBase, instance: Install, create
         return
 
     install: Install = instance
-    if not SLACK_JOIN_REQUESTS_CHANNEL_WEBHOOK_URL:
+    if not settings.SLACK_JOIN_REQUESTS_CHANNEL_WEBHOOK_URL:
         logging.error(
             f"Unable to send join request notification for install {str(install)}, did you set the "
             f"SLACK_JOIN_REQUESTS_CHANNEL_WEBHOOK_URL environment variable?"
@@ -34,7 +33,7 @@ def send_join_request_slack_message(sender: ModelBase, instance: Install, create
     while attempts < 4:
         attempts += 1
         response = requests.post(
-            SLACK_JOIN_REQUESTS_CHANNEL_WEBHOOK_URL,
+            settings.SLACK_JOIN_REQUESTS_CHANNEL_WEBHOOK_URL,
             json={
                 "text": f"*<https://www.nycmesh.net/map/nodes/{install.install_number}"
                 f"|{install.building.one_line_complete_address}>*\n"

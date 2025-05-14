@@ -7,6 +7,7 @@ from meshapi.models import Building, Install, Member, Node
 
 from .sample_data import sample_building, sample_install, sample_member
 
+from django.conf import settings
 
 class TestQueryForm(TestCase):
     c = Client()
@@ -30,7 +31,7 @@ class TestQueryForm(TestCase):
 
     def query(self, route, field, data):
         code = 200
-        password = os.environ.get("QUERY_PSK")
+        password = settings.QUERY_PSK
         route = f"/api/v1/query/{route}/?{field}={data}"
         headers = {"Authorization": f"Bearer {password}"}
         response = self.c.get(route, headers=headers)

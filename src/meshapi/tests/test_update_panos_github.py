@@ -17,8 +17,11 @@ from meshapi.util.panoramas import (
     set_panoramas,
     sync_github_panoramas,
 )
+from django.conf import settings
 
 from .sample_data import sample_building, sample_install, sample_member, sample_node
+from ..util.panoramas import PANO_HOST
+
 
 
 class TestSyncPanoramasCommand(TestCase):
@@ -147,12 +150,12 @@ class TestSaveBuildings(TestCase):
 class TestPanoUtils(TestCase):
     def setUp(self):
         # Check that we have all the environment variables we need
-        self.owner = os.environ.get("PANO_REPO_OWNER") or "nycmeshnet"
-        self.repo = os.environ.get("PANO_REPO") or "node-db"
-        self.branch = os.environ.get("PANO_BRANCH") or "master"
-        self.directory = os.environ.get("PANO_DIR") or "data/panoramas"
-        self.host_url = os.environ.get("PANO_HOST") or "http://example.com"
-        self.token = os.environ.get("PANO_GITHUB_TOKEN") or "4"
+        self.owner = settings.PANO_REPO_OWNER or "nycmeshnet"
+        self.repo = settings.PANO_REPO or "node-db"
+        self.branch = settings.PANO_BRANCH or "master"
+        self.host_url = settings.PANO_HOST or "http://example.com"
+        self.directory = settings.PANO_DIR or "data/panoramas"
+        self.token = settings.PANO_GITHUB_TOKEN or "4"
 
     def test_parse_pano_title(self):
         test_cases = {

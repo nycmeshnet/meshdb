@@ -6,6 +6,7 @@ from flags.state import enable_flag
 
 from meshapi.tasks import reset_dev_database, run_database_backup, run_update_panoramas
 
+from meshdb.environment import AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
 
 # Not intended to test the functionality of, say, dbbackup. More intended
 # to test the environment logic.

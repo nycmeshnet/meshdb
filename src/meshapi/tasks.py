@@ -16,7 +16,7 @@ from meshapi.util.uisp_import.sync_handlers import (
 )
 from meshdb.celery import app as celery_app
 from meshdb.settings import MESHDB_ENVIRONMENT
-
+from django.conf import settings
 
 @celery_app.task
 @skip_if_flag_disabled("TASK_ENABLED_RUN_DATABASE_BACKUP")
@@ -26,7 +26,7 @@ def run_database_backup() -> None:
         raise EnvironmentError(f'Not running database backup. This environment is: "{MESHDB_ENVIRONMENT}"')
 
     logging.info(f'Running database backup task. This environment is "{MESHDB_ENVIRONMENT}"')
-    if not os.environ.get("AWS_ACCESS_KEY_ID") or not os.environ.get("AWS_SECRET_ACCESS_KEY"):
+    if not settings.AWS_ACCESS_KEY_ID or not settings.AWS_SECRET_ACCESS_KEY:
         raise ValueError("Could not run backup. Missing AWS credentials!")
 
     try:
@@ -48,7 +48,7 @@ def reset_dev_database() -> None:
 
     logging.info(f'Running database reset task. This environment is: "{MESHDB_ENVIRONMENT}"')
 
-    if not os.environ.get("AWS_ACCESS_KEY_ID") or not os.environ.get("AWS_SECRET_ACCESS_KEY"):
+    if not settings.AWS_ACCESS_KEY_ID  or not settings.AWS_ACCESS_KEY_ID :
         raise ValueError("Could not run database reset. Missing AWS credentials!")
 
     try:

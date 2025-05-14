@@ -7,11 +7,8 @@ import requests
 from django.db.models import Model
 from django.http import HttpRequest
 from rest_framework.serializers import Serializer
-
+from django.cong import settings
 from meshapi.admin.utils import get_admin_url
-
-SLACK_ADMIN_NOTIFICATIONS_WEBHOOK_URL = os.environ.get("SLACK_ADMIN_NOTIFICATIONS_WEBHOOK_URL")
-SITE_BASE_URL = os.environ.get("SITE_BASE_URL")
 
 
 def escape_slack_text(text: str) -> str:
@@ -27,7 +24,7 @@ def notify_administrators_of_data_issue(
 ) -> None:
     serializer = serializer_class(model_instances, many=True)
 
-    site_base_url = SITE_BASE_URL
+    site_base_url = settings.SITE_BASE_URL
     if request:
         site_base_url = f"{request.scheme}://{request.get_host()}"
 
@@ -50,7 +47,7 @@ def notify_administrators_of_data_issue(
         + f"```\n{json.dumps(serializer.data, indent=2, default=str)}\n```",
     }
 
-    if not SLACK_ADMIN_NOTIFICATIONS_WEBHOOK_URL:
+    if not settings.SLACK_ADMIN_NOTIFICATIONS_WEBHOOK_URL:
         logging.error(
             "Env var SLACK_ADMIN_NOTIFICATIONS_WEBHOOK_URL is not set, please set this "
             "variable to prevent silenced notifications. Unable to notify admins of "
@@ -58,7 +55,7 @@ def notify_administrators_of_data_issue(
         )
         return
 
-    response = requests.post(SLACK_ADMIN_NOTIFICATIONS_WEBHOOK_URL, json=slack_message)
+    response = requests.post(settings.SLACK_ADMIN_NOTIFICATIONS_WEBHOOK_URL, json=slack_message)
 
     if raise_exception_on_failure:
         response.raise_for_status()
