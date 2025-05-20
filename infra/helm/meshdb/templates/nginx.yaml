@@ -36,8 +36,12 @@ spec:
         - name: {{ .Chart.Name }}-nginx
           securityContext:
             {{- toYaml .Values.nginx.securityContext | nindent 12 }}
-          image: "docker.io/nginx:latest"
-          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- if .Values.nginx.image.digest }}
+          image: "{{ .Values.nginx.image.repository }}@{{ .Values.nginx.image.digest }}"
+          {{- else }}
+          image: "{{ .Values.nginx.image.repository }}:{{ .Values.nginx.image.tag }}"
+          {{- end }}
+          imagePullPolicy: {{ .Values.nginx.image.pullPolicy }}
           ports:
             - name: nginx
               containerPort: {{ .Values.nginx.port }}

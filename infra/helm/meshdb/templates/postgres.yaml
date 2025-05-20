@@ -37,8 +37,12 @@ spec:
         - name: {{ .Chart.Name }}-postgres
           securityContext:
             {{- toYaml .Values.pg.securityContext | nindent 12 }}
-          image: docker.io/postgres:15-bookworm
-          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- if .Values.meshweb.image.digest }}
+          image: "{{ .Values.pg.image.repository }}@{{ .Values.pg.image.digest }}"
+          {{- else }}
+          image: "{{ .Values.pg.image.repository }}:{{ .Values.pg.image.tag }}"
+          {{- end }}
+          imagePullPolicy: {{ .Values.pg.image.pullPolicy }}
           ports:
             - name: postgres
               containerPort: {{ .Values.pg.port }}

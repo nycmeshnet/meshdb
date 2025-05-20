@@ -48,8 +48,12 @@ spec:
         - name: {{ .Chart.Name }}-redis
           securityContext:
             {{- toYaml .Values.redis.securityContext | nindent 12 }}
-          image: "docker.io/redis:latest"
-          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- if .Values.redis.image.digest }}
+          image: "{{ .Values.redis.image.repository }}@{{ .Values.redis.image.digest }}"
+          {{- else }}
+          image: "{{ .Values.redis.image.repository }}:{{ .Values.redis.image.tag }}"
+          {{- end }}
+          imagePullPolicy: {{ .Values.redis.image.pullPolicy }}
           ports:
             - name: redis
               containerPort: {{ .Values.redis.port }}
