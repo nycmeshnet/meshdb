@@ -23,6 +23,16 @@ spec:
         {{- toYaml . | nindent 8 }}
         {{- end }}
     spec:
+
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: node-role.kubernetes.io/control-plane
+                operator: NotIn
+                values:
+                - "true"
       {{- if .Values.imageCredentials }}
       imagePullSecrets:
         - name: pull-secret
@@ -45,7 +55,7 @@ spec:
           command: {{ toJson .command }}
           env:
           - name: DD_SERVICE
-            value: celery 
+            value: celery
           # TODO (willnilges): Fix this in a later PR.
           #  https://github.com/nycmeshnet/meshdb/issues/519
           envFrom:
