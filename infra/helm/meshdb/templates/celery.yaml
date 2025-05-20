@@ -41,7 +41,7 @@ spec:
           {{- end }}
           imagePullPolicy: {{ $.Values.celery.image.pullPolicy }}
           resources:
-            {{- toYaml $.Values.celery.resources | nindent 12 }}
+            {{- toYaml .resources | nindent 12 }}
           command: {{ toJson .command }}
           env:
           - name: DD_SERVICE
