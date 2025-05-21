@@ -48,7 +48,7 @@ jobs:
     name: Deploy to prod1
     uses: ./.github/workflows/deploy-to-k8s.yaml
     with:
-      environment: prod1
+      environment: prod
       image_digest: ${{ needs.push_to_registry_prod.outputs.image_digest }}
     secrets: inherit
     needs: [push_to_registry_prod, integration_test_dev3]
