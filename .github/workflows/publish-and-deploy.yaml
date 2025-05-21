@@ -44,6 +44,16 @@ jobs:
     needs: deploy_to_dev3
     if: github.ref == 'refs/heads/main'
 
+  deploy_to_prod1:
+    name: Deploy to prod1
+    uses: ./.github/workflows/deploy-to-k8s.yaml
+    with:
+      environment: prod1
+      image_digest: ${{ needs.push_to_registry_prod.outputs.image_digest }}
+    secrets: inherit
+    needs: [push_to_registry_prod, integration_test_dev3]
+    if: github.ref == 'refs/heads/main'
+
   deploy_to_prod2:
     name: Deploy to prod2
     uses: ./.github/workflows/deploy-to-k8s.yaml
@@ -51,5 +61,5 @@ jobs:
       environment: prod2
       image_digest: ${{ needs.push_to_registry_prod.outputs.image_digest }}
     secrets: inherit
-    needs: [push_to_registry_prod, integration_test_dev3]
+    needs: [push_to_registry_prod, deploy_to_prod1]
     if: github.ref == 'refs/heads/main'
