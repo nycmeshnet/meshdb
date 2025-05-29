@@ -22,7 +22,7 @@ from meshdb.settings import MESHDB_ENVIRONMENT
 @skip_if_flag_disabled("TASK_ENABLED_RUN_DATABASE_BACKUP")
 def run_database_backup() -> None:
     # Don't run a backup unless it's prod
-    if MESHDB_ENVIRONMENT != "prod2":
+    if MESHDB_ENVIRONMENT != "prod":  # This is bad but this is a temporary change
         raise EnvironmentError(f'Not running database backup. This environment is: "{MESHDB_ENVIRONMENT}"')
 
     logging.info(f'Running database backup task. This environment is "{MESHDB_ENVIRONMENT}"')
