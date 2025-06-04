@@ -1,0 +1,16 @@
+{% load i18n static %}
+<div class="related-widget-wrapper">
+    {% include "django/forms/widgets/input.html" %}
+    {% block links %}
+    {% spaceless %}
+    <a class="related-widget-wrapper-link view-related"
+        {% if widget.value %}
+            href="https://a810-bisweb.nyc.gov/bisweb/PropertyProfileOverviewServlet?bin={{ widget.value }}"
+        {% endif %}
+        target="_blank"
+        title="{% blocktranslate %}View in DOB{% endblocktranslate %}">
+        <img src="{% static 'admin/img/icon-viewlink.svg' %}" alt="{% translate 'Navigate' %}">
+    </a>
+    {% endspaceless %}
+    {% endblock %}
+</div>
