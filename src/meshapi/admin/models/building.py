@@ -55,7 +55,7 @@ class BuildingAdminForm(forms.ModelForm):
         fields = "__all__"
         widgets = {
             "panoramas": PanoramaViewer(schema={"type": "array", "items": {"type": "string"}}),
-            "bin": DOBIdentifierWidget(attrs={"style": "min-width:21ch"}),
+            "bin": DOBIdentifierWidget,
         }
 
 

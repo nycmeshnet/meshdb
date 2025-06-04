@@ -90,11 +90,10 @@ class ExternalHyperlinkWidget(widgets.TextInput):
 class DeviceIPAddressWidget(widgets.TextInput):
     template_name = "widgets/ip_address.html"
 
+
 class DOBIdentifierWidget(forms.NumberInput):
     template_name = "widgets/dob_identifier.html"
 
-    def __init__(self, attrs=None):
-        super().__init__(attrs)
 
 class UISPHyperlinkWidget(widgets.TextInput):
     template_name = "widgets/uisp_link.html"
