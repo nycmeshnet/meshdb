@@ -1,12 +1,12 @@
 import copy
-from typing import List
+from typing import Any, Iterator, List, Type, Union
 
-from django.db.models import Q, QuerySet, F
+from django.db.models import Model, Q, QuerySet
 from django_filters import rest_framework as filters
 from drf_spectacular.utils import extend_schema, extend_schema_view
 
 from meshapi.docs import query_form_password_param
-from meshapi.models import Install, Member
+from meshapi.models import Install
 from meshapi.permissions import LegacyMeshQueryPassword
 from meshapi.serializers.query_api import QueryFormSerializer
 from meshapi.views.lookups import FilterRequiredListAPIView
@@ -29,26 +29,26 @@ class FakeQuerySet(QuerySet):
     of the same "install" object similar to a classic SQL JOIN
     """
 
-    def __init__(self, model=None, data=None):
+    def __init__(self, model: Type[Model], data: List) -> None:
         super().__init__(model)
         self.model = model
-        self._result_cache = data
+        self._result_cache: List = data
 
-    def _clone(self):
+    def _clone(self) -> "FakeQuerySet":
         return FakeQuerySet(self.model, self._result_cache)
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[Model]:
         yield from self._result_cache
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self._result_cache)
 
-    def __getitem__(self, k):
+    def __getitem__(self, k: Union[int | slice]) -> Any:
         return self._result_cache[k]
 
 
 def multiply_install_queryset_over_all_members(queryset: QuerySet[Install]) -> QuerySet[Install]:
-    multiplied_results = []
+    multiplied_results: List[Install] = []
     for install in queryset:
         multiplied_results.append(install)
         for member in install.additional_members.all():
@@ -115,7 +115,7 @@ class QueryMember(FilterRequiredListAPIView):
     filterset_class = QueryMemberFilter
     permission_classes = [LegacyMeshQueryPassword]
 
-    def get_queryset(self):
+    def get_queryset(self) -> QuerySet:
         return multiply_install_queryset_over_all_members(super(QueryMember, self).get_queryset())
 
 
@@ -148,7 +148,7 @@ class QueryInstall(FilterRequiredListAPIView):
     filterset_class = QueryInstallFilter
     permission_classes = [LegacyMeshQueryPassword]
 
-    def get_queryset(self):
+    def get_queryset(self) -> QuerySet:
         return multiply_install_queryset_over_all_members(super(QueryInstall, self).get_queryset())
 
 
@@ -185,5 +185,5 @@ class QueryBuilding(FilterRequiredListAPIView):
     filterset_class = QueryBuildingFilter
     permission_classes = [LegacyMeshQueryPassword]
 
-    def get_queryset(self):
+    def get_queryset(self) -> QuerySet:
         return multiply_install_queryset_over_all_members(super(QueryBuilding, self).get_queryset())
