@@ -1,6 +1,7 @@
+import copy
 from typing import List
 
-from django.db.models import Q, QuerySet
+from django.db.models import Q, QuerySet, F
 from django_filters import rest_framework as filters
 from drf_spectacular.utils import extend_schema, extend_schema_view
 
@@ -19,23 +20,74 @@ However, we return a JSON array, rather than a CSV file
 """
 
 
+class FakeQuerySet(QuerySet):
+    """
+    A fake queryset that lets us inject a List of objects in place of a real QuerySet
+
+    This is needed because the default QuerySet implementation de-duplicates the _result_cache
+    field automatically, and we need to "spread" the additional members over multiple copies
+    of the same "install" object similar to a classic SQL JOIN
+    """
+
+    def __init__(self, model=None, data=None):
+        super().__init__(model)
+        self.model = model
+        self._result_cache = data
+
+    def _clone(self):
+        return FakeQuerySet(self.model, self._result_cache)
+
+    def __iter__(self):
+        yield from self._result_cache
+
+    def __len__(self):
+        return len(self._result_cache)
+
+    def __getitem__(self, k):
+        return self._result_cache[k]
+
+
+def multiply_install_queryset_over_all_members(queryset: QuerySet[Install]) -> QuerySet[Install]:
+    multiplied_results = []
+    for install in queryset:
+        multiplied_results.append(install)
+        for member in install.additional_members.all():
+            # This is an ugly hack to accommodate the query form's limited awareness of our relational model.
+            # We manually duplicate the Django model instances and mutate them in a way that is not consistent with
+            # the DB, so that the serializer can understand that "for this install, we want you to use one of
+            # the additional members as the source of the email address and other member fields"
+            duplicated_install = copy.copy(install)
+            duplicated_install.member = member
+            multiplied_results.append(duplicated_install)
+
+    return FakeQuerySet(queryset.model, multiplied_results)
+
+
 class QueryMemberFilter(filters.FilterSet):
     name = filters.CharFilter(method="filter_on_member_name")
     email_address = filters.CharFilter(method="filter_on_all_emails")
     phone_number = filters.CharFilter(method="filter_on_all_phone_numbers")
 
-    def filter_on_member_name(self, queryset: QuerySet[Member], field_name: str, value: str) -> QuerySet[Member]:
-        return queryset.filter(Q(member__name__icontains=value))
+    def filter_on_member_name(self, queryset: QuerySet[Install], field_name: str, value: str) -> QuerySet[Install]:
+        return queryset.filter(Q(member__name__icontains=value) | Q(additional_members__name__icontains=value))
 
-    def filter_on_all_emails(self, queryset: QuerySet[Member], field_name: str, value: str) -> QuerySet[Member]:
+    def filter_on_all_emails(self, queryset: QuerySet[Install], field_name: str, value: str) -> QuerySet[Install]:
         return queryset.filter(
             Q(member__primary_email_address__icontains=value)
             | Q(member__stripe_email_address__icontains=value)
             | Q(member__additional_email_addresses__icontains=value)
+            | Q(additional_members__primary_email_address__icontains=value)
+            | Q(additional_members__stripe_email_address__icontains=value)
+            | Q(additional_members__additional_email_addresses__icontains=value)
         )
 
-    def filter_on_all_phone_numbers(self, queryset: QuerySet[Member], name: str, value: str) -> QuerySet[Member]:
-        return queryset.filter(Q(phone_number__icontains=value) | Q(additional_phone_numbers__icontains=value))
+    def filter_on_all_phone_numbers(self, queryset: QuerySet[Install], name: str, value: str) -> QuerySet[Install]:
+        return queryset.filter(
+            Q(member__phone_number__icontains=value)
+            | Q(member__additional_phone_numbers__icontains=value)
+            | Q(additional_members__phone_number__icontains=value)
+            | Q(additional_members__member__additional_phone_numbers__icontains=value)
+        )
 
     class Meta:
         model = Install
@@ -62,6 +114,9 @@ class QueryMember(FilterRequiredListAPIView):
     serializer_class = QueryFormSerializer
     filterset_class = QueryMemberFilter
     permission_classes = [LegacyMeshQueryPassword]
+
+    def get_queryset(self):
+        return multiply_install_queryset_over_all_members(super(QueryMember, self).get_queryset())
 
 
 class QueryInstallFilter(filters.FilterSet):
@@ -92,6 +147,9 @@ class QueryInstall(FilterRequiredListAPIView):
     serializer_class = QueryFormSerializer
     filterset_class = QueryInstallFilter
     permission_classes = [LegacyMeshQueryPassword]
+
+    def get_queryset(self):
+        return multiply_install_queryset_over_all_members(super(QueryInstall, self).get_queryset())
 
 
 class QueryBuildingFilter(filters.FilterSet):
@@ -126,3 +184,6 @@ class QueryBuilding(FilterRequiredListAPIView):
     serializer_class = QueryFormSerializer
     filterset_class = QueryBuildingFilter
     permission_classes = [LegacyMeshQueryPassword]
+
+    def get_queryset(self):
+        return multiply_install_queryset_over_all_members(super(QueryBuilding, self).get_queryset())
