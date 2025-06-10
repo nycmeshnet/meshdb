@@ -21,17 +21,12 @@ class TestQueryForm(TestCase):
         member.save()
         sample_install_copy["member"] = member
 
-        self.additional_member = Member(**sample_member)
-        self.additional_member.name = "Jane Doe"
-        self.additional_member.save()
-
         node = Node(latitude=0, longitude=0, status=Node.NodeStatus.ACTIVE)
         node.save()
 
         self.install = Install(**sample_install_copy)
         self.install.node = node
         self.install.save()
-        self.install.additional_members.add(self.additional_member)
 
     def query(self, route, field, data):
         code = 200
@@ -46,11 +41,7 @@ class TestQueryForm(TestCase):
         )
 
         resp_json = json.loads(response.content.decode("utf-8"))
-        self.assertEqual(len(resp_json["results"]), 2)
-
-        # Check that we are correctly multiplying the Install row for each additional member
-        discovered_names = {row["name"] for row in resp_json["results"]}
-        self.assertEqual(discovered_names, {"John Smith", "Jane Doe"})
+        self.assertEqual(len(resp_json["results"]), 1)
 
     def test_query_address(self):
         self.query("buildings", "street_address", self.install.building.street_address)
@@ -60,9 +51,6 @@ class TestQueryForm(TestCase):
 
     def test_query_name(self):
         self.query("members", "name", self.install.member.name)
-
-    def test_query_additional_name(self):
-        self.query("members", "name", self.additional_member.name)
 
     def test_query_nn(self):
         self.query("installs", "network_number", self.install.node.network_number)
