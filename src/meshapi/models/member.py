@@ -12,9 +12,9 @@ from meshapi.validation import normalize_phone_number, validate_multi_phone_numb
 class Member(models.Model):
     history = HistoricalRecords()
     payment_preference_choices = (
-        (None, 'None'),
-        ('cash','Cash'),
-        ('stripe', 'Stripe'),
+        (None, "None"),
+        ("cash", "Cash"),
+        ("stripe", "Stripe"),
     )
 
     class Meta:
