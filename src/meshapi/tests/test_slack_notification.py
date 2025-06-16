@@ -218,7 +218,8 @@ class TestSlackNotification(TestCase):
             '    "phone_number": "+1 212-555-5555",\n'
             '    "additional_phone_numbers": [],\n'
             '    "slack_handle": null,\n'
-            '    "notes": null\n'
+            '    "notes": null,\n'
+            '    "payment_preference": null\n'
             "  },\n"
             "  {\n"
             f'    "id": "{member2.id}",\n'
@@ -236,7 +237,8 @@ class TestSlackNotification(TestCase):
             '    "phone_number": "+1 212-555-3333",\n'
             '    "additional_phone_numbers": [],\n'
             '    "slack_handle": null,\n'
-            '    "notes": null\n'
+            '    "notes": null,\n'
+            '    "payment_preference": null\n'
             "  }\n"
             "]\n"
             "```",
