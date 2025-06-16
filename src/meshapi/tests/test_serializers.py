@@ -234,6 +234,7 @@ class TestViewsGetAdmin(TestCaseWithFullData):
                 "primary_email_address": "john.smith@example.com",
                 "slack_handle": "@jsmith",
                 "stripe_email_address": "foo@bar.com",
+                "payment_preference": None
             },
         )
 
