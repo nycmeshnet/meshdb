@@ -37,7 +37,6 @@ class Command(BaseCommand):
             help="Skip scrambling installs",
         )
 
-    @transaction.atomic
     def handle(self, *args: Any, **options: Any) -> None:
         logging.info("Scrambling database with fake information")
 
