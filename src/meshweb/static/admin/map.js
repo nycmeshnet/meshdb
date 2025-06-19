@@ -428,11 +428,11 @@ function hideMapIfAppropriate() {
 
 function start() {
     readURLBar();
+    interceptLinks();
     if (hideMapIfAppropriate()) {
         return;
     }
     allowMapResize();
-    interceptLinks();
     listenForAdminPanelLoad();
     listenForMapClick();
     listenForRecenterClick();
