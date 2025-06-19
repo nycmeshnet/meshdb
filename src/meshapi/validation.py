@@ -153,11 +153,22 @@ class NYCAddressInfo:
             not addr_props.get("addendum", {}).get("pad", {}).get("bin")
             or int(addr_props["addendum"]["pad"]["bin"]) in INVALID_BIN_NUMBERS
         ):
-            raise AddressError(
-                f"(NYC) Could not find address '{street_address}, {city}, {state} {zip_code}'. "
-                f"DOB API returned invalid BIN: {addr_props['addendum']['pad']['bin']}"
-            )
-        self.bin = addr_props["addendum"]["pad"]["bin"]
+            dob_warning_message = f"DOB API returned invalid BIN: {addr_props['addendum']['pad']['bin']}"
+            logging.warning(dob_warning_message)
+            logging.warning("Falling back to NYC Open Data: New Buildings dataset")
+            # XXX: (wdn) We're using the addr_props returned from DOB API because
+            # they should be in the same format required by NYC Open Data
+            self.bin = lookup_address_nyc_open_data_new_buildings(addr_props['street'], addr_props['housenumber'], addr_props['borough'].upper(), str(addr_props['postalcode']))
+
+            if not self.bin:
+                raise AddressError(
+                    f"(NYC) Could not find address '{street_address}, {city}, {state} {zip_code}'. " +
+                    dob_warning_message +
+                    ". NYC Open Data returned no data."
+                )
+        else:
+            self.bin = addr_props["addendum"]["pad"]["bin"]
+
         self.longitude, self.latitude = nyc_planning_resp["features"][0]["geometry"]["coordinates"]
 
         # Now that we have the bin, we can definitively get the height from
@@ -290,3 +301,34 @@ def validate_recaptcha_tokens(
             "Feature flag JOIN_FORM_FAIL_ALL_INVISIBLE_RECAPTCHAS enabled, failing validation "
             "even though this request should have succeeded"
         )
+
+def lookup_address_nyc_open_data_new_buildings(street_name: str, house_number: str, borough: str, zip_code: str):
+    # https://data.cityofnewyork.us/Housing-Development/DOB-NYC-New-Buildings/6xbh-bxki/data_preview
+    url = "https://data.cityofnewyork.us/resource/6xbh-bxki.json"
+    params = {
+        "street_name": street_name,
+        "house__": house_number,
+        "borough": borough,
+        "zip_code": zip_code,
+    }
+
+    # XXX: (wdn) This returns multiple entries, but spot checking, it looks like
+    # multiple entries are just different permits and the like, so we should be
+    # safe grabbing the first response, however, let's make sure all the responses
+    # are the same BIN and raise an exception if that is not the case.
+    # The most likely reason for that would be if a building was built, demolished,
+    # and rebuilt with the same addy.
+    response = requests.get(url, params=params)
+
+    if response.status_code == 200:
+        data = response.json()
+        if data:
+            # FIXME: Assuming the first record is the one we want
+            bin = data[0].get("bin__")
+            return bin
+        else:
+            print("No data found for the specified address.")
+            return None
+    else:
+        logging.error(f"Error: {response.status_code}")
+        return None
