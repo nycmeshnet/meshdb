@@ -205,7 +205,7 @@ class NYCAddressInfo:
             )
         except Exception:
             self.altitude = INVALID_ALTITUDE
-            logging.exception(f"An error occurred while trying to find ({self.bin}) in NYC OpenData")
+            logging.exception(f"An error occurred while trying to find DOB BIN ({self.bin}) in NYC OpenData")
 
 
 def validate_multi_phone_number_field(phone_number_list: List[str]) -> None:
