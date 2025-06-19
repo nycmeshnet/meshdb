@@ -21,7 +21,7 @@ function extractUUIDs(url) {
 
 // Checks what model the Admin Panel is looking at
 function extractModel(url) {
-  const relevantModels = [
+    const relevantModels = [
         "member",
         "building",
         "install",
@@ -32,19 +32,19 @@ function extractModel(url) {
         "link",
         "los"
     ];
-  return relevantModels.find(element => url.includes(element));
+    return relevantModels.find(element => url.includes(element));
 }
 
 // Based on the current URL of the Admin Panel, figures out what node the map
 // should focus on
-async function getNewSelectedNodes(url){
+async function getNewSelectedNodes(url) {
     const objectUUIDs = extractUUIDs(url);
     const type = extractModel(url);
 
     // Guard against looking up an empty UUID
     if (objectUUIDs.length == 0) {
-      console.log("[Admin Panel] Found no UUID")
-      return null;
+        console.log("[Admin Panel] Found no UUID")
+        return null;
     }
     const id = objectUUIDs[0];
 
@@ -85,7 +85,7 @@ async function getNewSelectedNodes(url){
                 building.installs.map(install => fetch(`/api/v1/installs/${install.id}/`))
             );
             for (const installResponse of installResponses) {
-                if (installResponse.ok){
+                if (installResponse.ok) {
                     const install = await installResponse.json();
                     if (install.status !== "Closed" && install.status !== "NN Reassigned") {
                         nodeId = install.install_number;
@@ -149,7 +149,7 @@ async function getNewSelectedNodes(url){
                 building1.installs.map(install => fetch(`/api/v1/installs/${install.id}/`))
             );
             for (const installResponse of installResponses) {
-                if (installResponse.ok){
+                if (installResponse.ok) {
                     const install = await installResponse.json();
                     if (install.status !== "Closed" && install.status !== "NN Reassigned") {
                         b1NodeId = install.install_number;
@@ -170,7 +170,7 @@ async function getNewSelectedNodes(url){
                 building2.installs.map(install => fetch(`/api/v1/installs/${install.id}/`))
             );
             for (const installResponse of installResponses) {
-                if (installResponse.ok){
+                if (installResponse.ok) {
                     const install = await installResponse.json();
                     if (install.status !== "Closed" && install.status !== "NN Reassigned") {
                         b2NodeId = install.install_number;
@@ -180,7 +180,7 @@ async function getNewSelectedNodes(url){
             }
         }
 
-        if (b1NodeId && b2NodeId)  nodeId = `${b1NodeId}-${b2NodeId}`;
+        if (b1NodeId && b2NodeId) nodeId = `${b1NodeId}-${b2NodeId}`;
     }
 
     return nodeId ? `${nodeId}` : null;
@@ -202,15 +202,15 @@ async function updateAdminPanelLocation(selectedNodes) {
     // Disable onLoad for Admin Panel while we navigate to a new page
     dontListenForAdminPanelLoad();
 
-    if (installResponse.ok){
+    if (installResponse.ok) {
         const installJson = await installResponse.json();
-        if (installJson.node && installJson.node.network_number)  {
+        if (installJson.node && installJson.node.network_number) {
             adminPanelIframe.src = `/admin/meshapi/node/${installJson.node.id}/change`;
         } else {
             adminPanelIframe.src = `/admin/meshapi/install/${installJson.id}/change`;
         }
     } else {
-        if (nodeResponse.ok)  {
+        if (nodeResponse.ok) {
             const nodeJson = await nodeResponse.json();
             adminPanelIframe.src = `/admin/meshapi/node/${nodeJson.id}/change`;
         }
@@ -223,37 +223,44 @@ async function updateAdminPanelLocation(selectedNodes) {
 // Configures the listener that updates the admin panel based on map activity
 async function listenForMapClick() {
     window.addEventListener("message", ({ data, source }) => {
-      updateAdminPanelLocation(data.selectedNodes);
+        updateAdminPanelLocation(data.selectedNodes);
     });
 }
 
 // Prompts the map to change its view to focus on whatever
 // node the admin panel is currently viewing.
 async function updateMapLocation(url) {
-  const selectedNodes = await getNewSelectedNodes(url);
+    const selectedNodes = await getNewSelectedNodes(url);
 
-  if (selectedNodes === null) {
-    console.log("[Admin Panel] No node is selected.");
-    return;
-  }
+    if (selectedNodes === null) {
+        console.log("[Admin Panel] No node is selected.");
+        return;
+    }
 
-  console.debug(`[Admin Panel] Updating map location: ${selectedNodes}`);
+    console.debug(`[Admin Panel] Updating map location: ${selectedNodes}`);
 
-  // MAP_BASE_URL comes from iframed.html
-  document.getElementById("map_panel").contentWindow.postMessage({selectedNodes: selectedNodes}, MAP_BASE_URL);
+    // MAP_BASE_URL comes from iframed.html
+    document.getElementById("map_panel").contentWindow.postMessage({ selectedNodes: selectedNodes }, MAP_BASE_URL);
+}
+
+async function onAdminPanelLoadWithMapClosed() {
+    const adminPanelIframeUrl = new URL(adminPanelIframe.contentWindow.location.href);
+
+    // Update the URL bar in the browser for viz
+    window.history.pushState("MeshDB Admin Panel", "", adminPanelIframeUrl.pathname);
 }
 
 // Helper function to wrap everything that needs to happen when the admin panel
 // loads
 async function onAdminPanelLoad() {
     const adminPanelIframeUrl = new URL(adminPanelIframe.contentWindow.location.href);
-    
+
     // If the admin panel iframe leaves the admin panel (by logging out, going to homescreen, etc)
     // we should leave this iframed view and go there.
     const escURLs = ["login", "password_reset"]
     var shouldEscape = escURLs.some(url => adminPanelIframeUrl.pathname.includes(url));
     if (!adminPanelIframeUrl.pathname.includes("admin") || shouldEscape) {
-        window.location.href = adminPanelIframeUrl; 
+        window.location.href = adminPanelIframeUrl;
     }
 
     // Save the new admin location. We do this here because it means that the admin panel has
@@ -285,13 +292,13 @@ async function readURLBar() {
     const entryPath = new URL(window.location.href).pathname;
     const entrypointRegex = /^(\/?admin\/?)$/;
     if (!entryPath.match(entrypointRegex)) {
-      const newEntryPath = entryPath.replace(PANEL_URL, "admin");
-      adminPanelIframe.src = newEntryPath;
-      localStorage.setItem(MESHDB_LAST_PAGE_VISITED, newEntryPath);
+        const newEntryPath = entryPath.replace(PANEL_URL, "admin");
+        adminPanelIframe.src = newEntryPath;
+        localStorage.setItem(MESHDB_LAST_PAGE_VISITED, newEntryPath);
     }
 }
 
-// Interface Stuff 
+// Interface Stuff
 
 function listenForRecenterClick() {
     const recenterButton = document.querySelector("#map_recenter_button");
@@ -316,7 +323,7 @@ function interceptLinks() {
     }, false);
 }
 
-function setMapProportions(leftWidth){
+function setMapProportions(leftWidth) {
     // Apply new widths to left and right divs
     const leftDiv = document.getElementById('admin_panel_div');
     const rightDiv = document.getElementById('map_panel_div');
@@ -397,6 +404,9 @@ function hideMapIfAppropriate() {
             showMapButton.classList.remove("hidden");
             showMapButton.addEventListener("click", onShowMapClick, false);
         }
+
+        // Make sure the URL bar still updates
+        adminPanelIframe.addEventListener("load", onAdminPanelLoadWithMapClosed);
     } else {
         // Hide the show map button
         const showMapButton = document.getElementById('show_map_button');
@@ -418,11 +428,11 @@ function hideMapIfAppropriate() {
 
 function start() {
     readURLBar();
+    interceptLinks();
     if (hideMapIfAppropriate()) {
         return;
     }
     allowMapResize();
-    interceptLinks();
     listenForAdminPanelLoad();
     listenForMapClick();
     listenForRecenterClick();
