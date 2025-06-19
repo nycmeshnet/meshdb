@@ -114,6 +114,8 @@ class NYCAddressInfo:
                 params=query_params,
                 timeout=DEFAULT_EXTERNAL_API_TIMEOUT_SECONDS,
             )
+            if nyc_planning_req.status_code != 200:
+                raise Exception("Received non-200 error code from geosearch.planninglabs.nyc")
             nyc_planning_resp = json.loads(nyc_planning_req.content.decode("utf-8"))
         except Exception:
             logging.exception("Got exception querying geosearch.planninglabs.nyc")
@@ -155,17 +157,24 @@ class NYCAddressInfo:
         ):
             dob_warning_message = f"DOB API returned invalid BIN: {addr_props['addendum']['pad']['bin']}"
             logging.warning(dob_warning_message)
-            logging.warning("Falling back to NYC Open Data: New Buildings dataset")
-            # XXX: (wdn) We're using the addr_props returned from DOB API because
+            logging.warning("Falling back to NYC OpenData New Buildings dataset")
+            # We're using the addr_props returned from DOB API because
             # they should be in the same format required by NYC Open Data
-            self.bin = lookup_address_nyc_open_data_new_buildings(addr_props['street'], addr_props['housenumber'], addr_props['borough'].upper(), str(addr_props['postalcode']))
+            open_data_bin = lookup_address_nyc_open_data_new_buildings(
+                addr_props["street"],
+                addr_props["housenumber"],
+                addr_props["borough"].upper(),
+                str(addr_props["postalcode"]),
+            )
 
-            if not self.bin:
+            if not open_data_bin:
                 raise AddressError(
-                    f"(NYC) Could not find address '{street_address}, {city}, {state} {zip_code}'. " +
-                    dob_warning_message +
-                    ". NYC Open Data returned no data."
+                    f"(NYC) Could not find address '{street_address}, {city}, {state} {zip_code}'. "
+                    + dob_warning_message
+                    + ". NYC OpenData returned no data."
                 )
+
+            self.bin = open_data_bin
         else:
             self.bin = addr_props["addendum"]["pad"]["bin"]
 
@@ -302,7 +311,10 @@ def validate_recaptcha_tokens(
             "even though this request should have succeeded"
         )
 
-def lookup_address_nyc_open_data_new_buildings(street_name: str, house_number: str, borough: str, zip_code: str):
+
+def lookup_address_nyc_open_data_new_buildings(
+    street_name: str, house_number: str, borough: str, zip_code: str
+) -> Optional[int]:
     # https://data.cityofnewyork.us/Housing-Development/DOB-NYC-New-Buildings/6xbh-bxki/data_preview
     url = "https://data.cityofnewyork.us/resource/6xbh-bxki.json"
     params = {
@@ -312,23 +324,22 @@ def lookup_address_nyc_open_data_new_buildings(street_name: str, house_number: s
         "zip_code": zip_code,
     }
 
-    # XXX: (wdn) This returns multiple entries, but spot checking, it looks like
-    # multiple entries are just different permits and the like, so we should be
-    # safe grabbing the first response, however, let's make sure all the responses
-    # are the same BIN and raise an exception if that is not the case.
-    # The most likely reason for that would be if a building was built, demolished,
-    # and rebuilt with the same addy.
     response = requests.get(url, params=params)
 
     if response.status_code == 200:
         data = response.json()
         if data:
-            # FIXME: Assuming the first record is the one we want
-            bin = data[0].get("bin__")
-            return bin
+            open_data_bin = data[0].get("bin__")
+
+            # Make sure we get only one BIN
+            for d in data:
+                if d.get("bin__") != open_data_bin:
+                    raise ValueError("Open Data API Returned multiple BINs")
+
+            return int(open_data_bin)
         else:
             print("No data found for the specified address.")
             return None
     else:
-        logging.error(f"Error: {response.status_code}")
+        logging.error(f"Error retrieving data from NYC OpenData New Buildings: {response.status_code}")
         return None

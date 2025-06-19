@@ -4,7 +4,7 @@ from unittest.mock import MagicMock, patch
 from django.test import TestCase
 
 from meshapi.exceptions import AddressAPIError, AddressError
-from meshapi.tests.sample_data import sample_address_response
+from meshapi.tests.sample_data import sample_address_response, sample_new_buildings_response
 from meshapi.validation import NYCAddressInfo
 
 
@@ -48,6 +48,42 @@ class TestValidationNYCAddressInfo(TestCase):
         mock_3.content = '[{"heightroof":123.456, "groundelev":76.544}]'.encode("utf-8")
 
         mock_requests.side_effect = [mock_1, mock_2, mock_3]
+
+        nyc_addr_info = NYCAddressInfo("151 Broome St", "New York", "NY", "10002")
+
+        assert nyc_addr_info is not None
+        assert nyc_addr_info.street_address == "151 Broome St"
+        assert nyc_addr_info.city == "New York"
+        assert nyc_addr_info.state == "NY"
+        assert nyc_addr_info.zip == "10002"
+        assert nyc_addr_info.longitude == -73.98492
+        assert nyc_addr_info.latitude == 40.716245
+        assert nyc_addr_info.altitude == 61.0
+        assert nyc_addr_info.bin == 1234
+
+    @patch("meshapi.validation.requests.get")
+    def test_validate_address_with_nyc_open_data(self, mock_requests):
+        sample_address_response_invalid_bin = sample_address_response
+
+        # zero out that bin
+        sample_address_response_invalid_bin["features"][0]["properties"]["addendum"]["pad"]["bin"] = 1000000
+
+        mock_1 = MagicMock()
+        mock_1.content = json.dumps(sample_address_response_invalid_bin).encode("utf-8")
+        mock_1.status_code = 200
+
+        mock_4 = MagicMock()
+        # Fuck you
+        mock_4.json.side_effect = [sample_new_buildings_response]
+        mock_4.status_code = 200
+
+        mock_2 = MagicMock()
+        mock_2.content = "{}".encode("utf-8")
+
+        mock_3 = MagicMock()
+        mock_3.content = '[{"heightroof":123.456, "groundelev":76.544}]'.encode("utf-8")
+
+        mock_requests.side_effect = [mock_1, mock_2, mock_4, mock_3]
 
         nyc_addr_info = NYCAddressInfo("151 Broome St", "New York", "NY", "10002")
 
@@ -107,3 +143,6 @@ class TestValidationNYCAddressInfo(TestCase):
             assert nyc_addr_info.latitude == 40.716245
             assert nyc_addr_info.altitude is None
             assert nyc_addr_info.bin == 1234
+
+    def test_lookup_address_nyc_open_data_new_buildings(self, mock_requests):
+        pass
