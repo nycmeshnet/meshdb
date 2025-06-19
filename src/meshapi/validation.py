@@ -114,8 +114,6 @@ class NYCAddressInfo:
                 params=query_params,
                 timeout=DEFAULT_EXTERNAL_API_TIMEOUT_SECONDS,
             )
-            if nyc_planning_req.status_code != 200:
-                raise Exception("Received non-200 error code from geosearch.planninglabs.nyc")
             nyc_planning_resp = json.loads(nyc_planning_req.content.decode("utf-8"))
         except Exception:
             logging.exception("Got exception querying geosearch.planninglabs.nyc")

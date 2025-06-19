@@ -70,7 +70,6 @@ class TestValidationNYCAddressInfo(TestCase):
 
         mock_1 = MagicMock()
         mock_1.content = json.dumps(sample_address_response_invalid_bin).encode("utf-8")
-        mock_1.status_code = 200
 
         mock_4 = MagicMock()
         # Fuck you
