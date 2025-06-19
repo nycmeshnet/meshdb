@@ -142,6 +142,3 @@ class TestValidationNYCAddressInfo(TestCase):
             assert nyc_addr_info.latitude == 40.716245
             assert nyc_addr_info.altitude is None
             assert nyc_addr_info.bin == 1234
-
-    def test_lookup_address_nyc_open_data_new_buildings(self, mock_requests):
-        pass
