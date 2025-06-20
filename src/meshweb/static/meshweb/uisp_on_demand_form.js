@@ -1,8 +1,8 @@
 function getCookie(name) {
-        const value = `; ${document.cookie}`;
-        const parts = value.split(`; ${name}=`);
-        if (parts.length === 2) return parts.pop().split(';').shift();
-      }
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop().split(';').shift();
+}
 
 async function submitForm(event) {
     event.preventDefault();
@@ -10,6 +10,9 @@ async function submitForm(event) {
     loadingBanner = document.getElementById('loadingBanner');
     successBanner = document.getElementById('successBanner');
     errorBanner = document.getElementById('errorBanner');
+    errorDetail = document.getElementById('errorDetail');
+    successBanner = document.getElementById('successBanner');
+    successDetail = document.getElementById('successDetail');
     submitButton = document.getElementById('submitButton');
 
     // Hide the result banners
@@ -20,13 +23,13 @@ async function submitForm(event) {
     // Show loading banner
     loadingBanner.style.display = 'flex';
     const number = document.getElementById('numberInput').value;
-        fetch(`/api/v1/uisp-import/nn/${number}/`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCookie('csrftoken'),
-            },
-        })
+    fetch(`/api/v1/uisp-import/nn/${number}/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken'),
+        },
+    })
         .then(async response => {
             if (!response.ok) {
                 const j = await response.json()
@@ -36,12 +39,13 @@ async function submitForm(event) {
         })
         .then(data => {
             console.log('Success:', data.status);
+            successDetail.innerHTML = `UISP Import is now running for NN${number}. Task ID: ${data.task_id}`;
             loadingBanner.style.display = 'none';
             successBanner.style.display = 'flex';
             submitButton.disabled = false;
         })
         .catch(error => {
-            document.getElementById('errorDetail').innerHTML = `${error}`;
+            errorDetail.innerHTML = `${error}`;
             loadingBanner.style.display = 'none';
             errorBanner.style.display = 'flex';
             submitButton.disabled = false;

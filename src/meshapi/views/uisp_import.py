@@ -65,34 +65,9 @@ def uisp_import_for_nn(request: Request, network_number: int) -> Response:
         m = f"Network Number must be an integer between {NETWORK_NUMBER_MIN} and {NETWORK_NUMBER_MAX}."
         return Response({"detail": m}, status=status)
 
-    task_id = run_uisp_on_demand_import.delay(target_nn)
+    import_result = run_uisp_on_demand_import.delay(target_nn)
 
-
-    # Inspect all nodes.
-    i = app.control.inspect()
-
-    # Show the items that have an ETA or are scheduled for later processing
-    scheduled = i.scheduled()
-
-    # Show tasks that are currently active.
-    active = i.active()
-
-    # Show tasks that have been claimed by workers
-    reserved = i.reserved()
-
-    print(scheduled)
-    print(active)
-    print(reserved)
-
-    # try:
-    #     import_and_sync_uisp_devices(get_uisp_devices(), target_nn)
-    #     import_and_sync_uisp_links(get_uisp_links(), target_nn)
-    #     sync_link_table_into_los_objects(target_nn)
-    # except Exception as e:
-    #     logging.exception(e)
-    #     status = 500
-    #     m = "An error ocurred while running the import. Please try again later."
-    #     return Response({"detail": m}, status=status)
-
-    logging.info(f"Successfully ran uisp import for NN{network_number}")
-    return Response({"detail": "success"}, status=200)
+    # TODO: (wdn) Add some way to monitor the status of a celery job in real time
+    # https://docs.celeryq.dev/en/stable/userguide/monitoring.html#flower-real-time-celery-web-monitor
+    logging.info(f"UISP Import for NN{network_number} is now running with Task ID {import_result.id}. Check the object in a few minutes to see if it worked.")
+    return Response({"detail": "success", "task_id": import_result.id}, status=200)

@@ -19,10 +19,15 @@ from meshdb.celery import app as celery_app
 from meshdb.settings import MESHDB_ENVIRONMENT
 
 @celery_app.task
-def run_uisp_on_demand_import(network_number: int) -> None:
-    print("Received. Waiting 3 seconds...")
-    time.sleep(3)
-    print(f"Network Number is {network_number}")
+def run_uisp_on_demand_import(target_nn: int) -> None:
+    try:
+        import_and_sync_uisp_devices(get_uisp_devices(), target_nn)
+        import_and_sync_uisp_links(get_uisp_links(), target_nn)
+        sync_link_table_into_los_objects(target_nn)
+    except Exception as e:
+        logging.exception(e)
+        # TODO: (wdn) How do we alert the user if the job failed?
+
 
 @celery_app.task
 @skip_if_flag_disabled("TASK_ENABLED_RUN_DATABASE_BACKUP")
