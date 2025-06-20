@@ -31,6 +31,8 @@ RECAPTCHA_INVISIBLE_TOKEN_SCORE_THRESHOLD = float(os.environ.get("RECAPTCHA_INVI
 NYC_PLANNING_LABS_GEOCODE_URL = "https://geosearch.planninglabs.nyc/v2/search"
 # "Building Footprint" Dataset (https://data.cityofnewyork.us/City-Government/Building-Footprints/5zhs-2jue/about_data)
 DOB_BUILDING_HEIGHT_API_URL = "https://data.cityofnewyork.us/resource/5zhs-2jue.json"
+# https://data.cityofnewyork.us/Housing-Development/DOB-NYC-New-Buildings/6xbh-bxki/data_preview
+DOB_NEW_BUILDINGS_API_URL = "https://data.cityofnewyork.us/resource/6xbh-bxki.json"
 RECAPTCHA_TOKEN_VALIDATION_URL = "https://www.google.com/recaptcha/api/siteverify"
 
 
@@ -313,8 +315,6 @@ def validate_recaptcha_tokens(
 def lookup_address_nyc_open_data_new_buildings(
     street_name: str, house_number: str, borough: str, zip_code: str
 ) -> Optional[int]:
-    # https://data.cityofnewyork.us/Housing-Development/DOB-NYC-New-Buildings/6xbh-bxki/data_preview
-    url = "https://data.cityofnewyork.us/resource/6xbh-bxki.json"
     params = {
         "street_name": street_name,
         "house__": house_number,
@@ -322,7 +322,7 @@ def lookup_address_nyc_open_data_new_buildings(
         "zip_code": zip_code,
     }
 
-    response = requests.get(url, params=params)
+    response = requests.get(DOB_NEW_BUILDINGS_API_URL, params=params)
 
     if response.status_code == 200:
         data = response.json()
@@ -332,7 +332,7 @@ def lookup_address_nyc_open_data_new_buildings(
             # Make sure we get only one BIN
             for d in data:
                 if d.get("bin__") != open_data_bin:
-                    raise ValueError("Open Data API Returned multiple BINs")
+                    raise AddressAPIError("Open Data API Returned multiple BINs")
 
             return int(open_data_bin)
         else:
