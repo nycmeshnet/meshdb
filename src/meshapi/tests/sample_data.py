@@ -58,6 +58,39 @@ sample_address_response = {
     ]
 }
 
+sample_new_buildings_response = [
+    {
+        "borough": "MANHATTAN",  # IDK if this is accurate
+        "bin__": "1234",
+        "house__": "151",
+        "street_name": "BROOME ST",
+        "job__": "0",
+        "job_doc___": "0",
+        "job_type": "NONBINARY",
+        "self_cert": "N",
+        "block": "420",
+        "lot": "69",
+        "community_board": "420",
+        "zip_code": "10002",
+        "bldg_type": "69",
+        "residential": "YES",
+        "permit_status": "ISSUED",
+        "filing_status": "RENEWAL",
+        "permit_type": "FOMO",
+        "permit_sequence__": "420",
+        "permit_subtype": "E",
+        "site_fill": "USE UNDER 69 CU.YD",
+        "permittee_s_first_name": "SOME",
+        "permittee_s_last_name": "GUY",
+        "permittee_s_business_name": "E E E EEEE",
+        "permittee_s_license_type": "GC",
+        "owner_s_business_type": "CORPORATION",
+        "non_profit": "Y",
+        "owner_s_business_name": "E LLC",
+        "owner_s_first_name": "HOMIE",
+        "owner_s_last_name": "FLEXIBLE",
+    }
+]
 uisp_devices = [
     {
         "overview": {
