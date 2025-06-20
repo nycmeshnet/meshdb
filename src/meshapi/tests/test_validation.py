@@ -96,7 +96,7 @@ class TestValidationNYCAddressInfo(TestCase):
         assert nyc_addr_info.bin == 1234
 
     @patch("meshapi.validation.requests.get")
-    def test_validate_address_with_nyc_open_data_different_bin(self, mock_requests):
+    def test_validate_address_with_nyc_open_data_new_buildings_different_bin(self, mock_requests):
         sample_address_response_invalid_bin = sample_address_response
 
         # zero out that bin
@@ -122,6 +122,35 @@ class TestValidationNYCAddressInfo(TestCase):
         mock_requests.side_effect = [mock_1, mock_2, mock_4, mock_3]
 
         with self.assertRaises(AddressAPIError):
+            nyc_addr_info = NYCAddressInfo("151 Broome St", "New York", "NY", "10002")
+
+    @patch("meshapi.validation.requests.get")
+    def test_validate_address_with_nyc_open_data_new_buildings_none_response(self, mock_requests):
+        sample_address_response_invalid_bin = sample_address_response
+
+        # zero out that bin
+        sample_address_response_invalid_bin["features"][0]["properties"]["addendum"]["pad"]["bin"] = 1000000
+
+        mock_1 = MagicMock()
+        mock_1.content = json.dumps(sample_address_response_invalid_bin).encode("utf-8")
+
+        sample_new_buildings_response_different_bin = sample_new_buildings_response
+        sample_new_buildings_response_different_bin.append(sample_new_buildings_response_different_bin[0].copy())
+        sample_new_buildings_response_different_bin[1]["bin__"] = "5678"
+
+        mock_4 = MagicMock()
+        mock_4.json.side_effect = [[]]
+        mock_4.status_code = 200
+
+        mock_2 = MagicMock()
+        mock_2.content = "{}".encode("utf-8")
+
+        mock_3 = MagicMock()
+        mock_3.content = '[{"heightroof":123.456, "groundelev":76.544}]'.encode("utf-8")
+
+        mock_requests.side_effect = [mock_1, mock_2, mock_4, mock_3]
+
+        with self.assertRaises(AddressError):
             nyc_addr_info = NYCAddressInfo("151 Broome St", "New York", "NY", "10002")
 
     @patch("meshapi.validation.requests.get")
