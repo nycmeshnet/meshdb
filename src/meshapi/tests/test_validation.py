@@ -122,7 +122,7 @@ class TestValidationNYCAddressInfo(TestCase):
         mock_requests.side_effect = [mock_1, mock_2, mock_4, mock_3]
 
         with self.assertRaises(AddressAPIError):
-            nyc_addr_info = NYCAddressInfo("151 Broome St", "New York", "NY", "10002")
+            _ = NYCAddressInfo("151 Broome St", "New York", "NY", "10002")
 
     @patch("meshapi.validation.requests.get")
     def test_validate_address_with_nyc_open_data_new_buildings_none_response(self, mock_requests):
@@ -151,7 +151,7 @@ class TestValidationNYCAddressInfo(TestCase):
         mock_requests.side_effect = [mock_1, mock_2, mock_4, mock_3]
 
         with self.assertRaises(AddressError):
-            nyc_addr_info = NYCAddressInfo("151 Broome St", "New York", "NY", "10002")
+            _ = NYCAddressInfo("151 Broome St", "New York", "NY", "10002")
 
     @patch("meshapi.validation.requests.get")
     def test_lookup_address_nyc_open_data_new_buildings_with_no_response(self, mock_requests):
