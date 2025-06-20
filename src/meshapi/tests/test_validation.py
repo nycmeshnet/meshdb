@@ -62,7 +62,7 @@ class TestValidationNYCAddressInfo(TestCase):
         assert nyc_addr_info.bin == 1234
 
     @patch("meshapi.validation.requests.get")
-    def test_validate_address_with_nyc_open_data(self, mock_requests):
+    def test_validate_address_with_nyc_open_data_new_buildings(self, mock_requests):
         sample_address_response_invalid_bin = sample_address_response
 
         # zero out that bin
@@ -105,7 +105,7 @@ class TestValidationNYCAddressInfo(TestCase):
         mock_1 = MagicMock()
         mock_1.content = json.dumps(sample_address_response_invalid_bin).encode("utf-8")
 
-        sample_new_buildings_response_different_bin = sample_new_buildings_response
+        sample_new_buildings_response_different_bin = sample_new_buildings_response.copy()
         sample_new_buildings_response_different_bin.append(sample_new_buildings_response_different_bin[0].copy())
         sample_new_buildings_response_different_bin[1]["bin__"] = "5678"
 
@@ -134,7 +134,7 @@ class TestValidationNYCAddressInfo(TestCase):
         mock_1 = MagicMock()
         mock_1.content = json.dumps(sample_address_response_invalid_bin).encode("utf-8")
 
-        sample_new_buildings_response_different_bin = sample_new_buildings_response
+        sample_new_buildings_response_different_bin = sample_new_buildings_response.copy()
         sample_new_buildings_response_different_bin.append(sample_new_buildings_response_different_bin[0].copy())
         sample_new_buildings_response_different_bin[1]["bin__"] = "5678"
 
@@ -155,7 +155,7 @@ class TestValidationNYCAddressInfo(TestCase):
 
     @patch("meshapi.validation.requests.get")
     def test_lookup_address_nyc_open_data_new_buildings_with_no_response(self, mock_requests):
-        sample_new_buildings_response_different_bin = sample_new_buildings_response
+        sample_new_buildings_response_different_bin = sample_new_buildings_response.copy()
         sample_new_buildings_response_different_bin.append(sample_new_buildings_response_different_bin[0].copy())
         sample_new_buildings_response_different_bin[1]["bin__"] = "5678"
 
