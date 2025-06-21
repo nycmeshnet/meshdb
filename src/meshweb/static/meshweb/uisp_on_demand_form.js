@@ -4,9 +4,36 @@ function getCookie(name) {
     if (parts.length === 2) return parts.pop().split(';').shift();
 }
 
-async function submitForm(event) {
-    event.preventDefault();
+async function updateTaskStatusTable() {
+    const taskStatusTable = document.getElementById('taskStatusTable').getElementsByTagName('tbody')[0];
+    const loadingTaskStatusTable = document.getElementById('loadingTaskStatusTable');
 
+    const status = await fetch(`/api/v1/uisp-import/status/`, {
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken'),
+        },
+    });
+    const j = await status.json();
+
+    taskStatusTable.innerHTML = '';
+
+    j.tasks.forEach(task => {
+
+        const row = taskStatusTable.insertRow();
+        const cellId = row.insertCell(0);
+        const cellName = row.insertCell(1);
+        const cellValue = row.insertCell(2);
+
+        cellId.textContent = task.id;
+        cellName.textContent = task.nn;
+        cellValue.textContent = task.status;
+    });
+
+    loadingTaskStatusTable.style.display = 'none';
+}
+
+async function submitForm(event) {
     loadingBanner = document.getElementById('loadingBanner');
     successBanner = document.getElementById('successBanner');
     errorBanner = document.getElementById('errorBanner');
@@ -15,6 +42,9 @@ async function submitForm(event) {
     successDetail = document.getElementById('successDetail');
     submitButton = document.getElementById('submitButton');
 
+    taskStatusTable = document.getElementById('taskStatusTable');
+
+    event.preventDefault();
     // Hide the result banners
     successBanner.style.display = 'none';
     errorBanner.style.display = 'none';
@@ -43,6 +73,7 @@ async function submitForm(event) {
             loadingBanner.style.display = 'none';
             successBanner.style.display = 'flex';
             submitButton.disabled = false;
+            loadingTaskStatusTable.style.display = 'flex';
         })
         .catch(error => {
             errorDetail.innerHTML = `${error}`;
@@ -50,4 +81,6 @@ async function submitForm(event) {
             errorBanner.style.display = 'flex';
             submitButton.disabled = false;
         });
+
+    await updateTaskStatusTable();
 }

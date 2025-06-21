@@ -16,9 +16,68 @@ from meshapi.util.uisp_import.sync_handlers import (
     import_and_sync_uisp_links,
     sync_link_table_into_los_objects,
 )
-
 from meshdb.celery import app
 
+
+@extend_schema_view(
+    summary="View status for UISP Import jobs.",
+    post=extend_schema(tags=["UISP Import"]),
+    responses={
+        "200": OpenApiResponse(
+            description="API is up and serving traffic",
+            response=OpenApiTypes.STR,
+        ),
+        "500": OpenApiResponse(
+            description="Server error, probbaly a misconfigured environment variable.",
+            response=OpenApiTypes.STR,
+        ),
+    },
+)
+@api_view(["GET"])
+@permission_classes([IsAdminUser])
+def view_uisp_on_demand_import_status(request: Request) -> Response:
+    # Inspect all nodes.
+    i = app.control.inspect()
+
+    # Show the items that have an ETA or are scheduled for later processing
+    scheduled = i.scheduled()
+
+    # Show tasks that are currently active.
+    active = i.active()
+
+    # Show tasks that have been claimed by workers
+    reserved = i.reserved()
+
+    print(scheduled)
+    print(active)
+    print(reserved)
+
+    my_tasks = []
+    for _, tasks in scheduled.items():
+        for t in tasks:
+            my_tasks.append({
+                "id": t.get("id"),
+                "nn": t.get("args")[0],
+                "status": "scheduled"
+            })
+
+    for _, tasks in active.items():
+        for t in tasks:
+            my_tasks.append({
+                "id": t.get("id"),
+                "nn": t.get("args")[0],
+                "status": "active"
+            })
+
+    for _, tasks in reserved.items():
+        for t in tasks:
+            my_tasks.append({
+                "id": t.get("id"),
+                "nn": t.get("args")[0],
+                "status": "reserved"
+            })
+
+    return Response({"tasks": my_tasks}, status=200)
 
 @extend_schema_view(
     summary="Run the UISP Import job for a single Network Number.",
@@ -69,5 +128,7 @@ def uisp_import_for_nn(request: Request, network_number: int) -> Response:
 
     # TODO: (wdn) Add some way to monitor the status of a celery job in real time
     # https://docs.celeryq.dev/en/stable/userguide/monitoring.html#flower-real-time-celery-web-monitor
-    logging.info(f"UISP Import for NN{network_number} is now running with Task ID {import_result.id}. Check the object in a few minutes to see if it worked.")
+    logging.info(
+        f"UISP Import for NN{network_number} is now running with Task ID {import_result.id}. Check the object in a few minutes to see if it worked."
+    )
     return Response({"detail": "success", "task_id": import_result.id}, status=200)
