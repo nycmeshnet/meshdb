@@ -1,6 +1,5 @@
 import logging
 import os
-import time
 
 from celery.schedules import crontab
 from datadog import statsd
@@ -18,6 +17,7 @@ from meshapi.util.uisp_import.sync_handlers import (
 from meshdb.celery import app as celery_app
 from meshdb.settings import MESHDB_ENVIRONMENT
 
+
 @celery_app.task
 def run_uisp_on_demand_import(target_nn: int) -> None:
     try:
@@ -27,6 +27,7 @@ def run_uisp_on_demand_import(target_nn: int) -> None:
     except Exception as e:
         logging.exception(e)
         # TODO: (wdn) How do we alert the user if the job failed?
+
 
 @celery_app.task
 @skip_if_flag_disabled("TASK_ENABLED_RUN_DATABASE_BACKUP")
