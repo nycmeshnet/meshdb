@@ -8,6 +8,8 @@ async function updateTaskStatusTable() {
     const taskStatusTable = document.getElementById('taskStatusTable').getElementsByTagName('tbody')[0];
     const loadingTaskStatusTable = document.getElementById('loadingTaskStatusTable');
 
+    loadingTaskStatusTable.style.display = 'flex';
+
     const status = await fetch(`/api/v1/uisp-import/status/`, {
         headers: {
             'Content-Type': 'application/json',
@@ -77,7 +79,6 @@ async function submitForm(event) {
             loadingBanner.style.display = 'none';
             successBanner.style.display = 'flex';
             submitButton.disabled = false;
-            loadingTaskStatusTable.style.display = 'flex';
         })
         .catch(error => {
             errorDetail.innerHTML = `${error}`;
@@ -88,3 +89,5 @@ async function submitForm(event) {
 
     await updateTaskStatusTable();
 }
+
+setInterval(updateTaskStatusTable, 10000);

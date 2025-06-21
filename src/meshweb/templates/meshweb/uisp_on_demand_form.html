@@ -40,17 +40,17 @@
 
             <div id="taskStatusTable">
                 <p>Running Tasks</p>
-                <div id="loadingTaskStatusTable" style="display: none;">
-                    <h6>Fetching Task Status</h6>
-                    <div class="spinner-border" role="status">
-                            <span class="sr-only"></span>
-                    </div>
-                </div>
                 <table id='taskStatusTable'>
                     <tr>
                         <th>ID</th><th>NN</th><th>Status</th>
                     </tr>
                 </table>
+                <div id="loadingTaskStatusTable" style="display: none;">
+                    <div class="spinner-border spinner-border-sm text-secondary" role="status">
+                            <span class="sr-only"></span>
+                    </div>
+                    <p>Fetching Task Status</p>
+                </div>
             </div>
         </div>
     </div>
