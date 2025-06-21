@@ -20,9 +20,6 @@ from meshdb.settings import MESHDB_ENVIRONMENT
 
 @celery_app.task
 def run_uisp_on_demand_import(target_nn: int) -> None:
-    time.sleep(10);
-
-    """
     try:
         import_and_sync_uisp_devices(get_uisp_devices(), target_nn)
         import_and_sync_uisp_links(get_uisp_links(), target_nn)
@@ -30,7 +27,6 @@ def run_uisp_on_demand_import(target_nn: int) -> None:
     except Exception as e:
         logging.exception(e)
         # TODO: (wdn) How do we alert the user if the job failed?
-    """
 
 @celery_app.task
 @skip_if_flag_disabled("TASK_ENABLED_RUN_DATABASE_BACKUP")
