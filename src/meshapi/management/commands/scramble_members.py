@@ -37,7 +37,6 @@ class Command(BaseCommand):
             help="Skip scrambling installs",
         )
 
-    @transaction.atomic
     def handle(self, *args: Any, **options: Any) -> None:
         logging.info("Scrambling database with fake information")
 
@@ -53,81 +52,88 @@ class Command(BaseCommand):
 
         fake = Faker()
         if not options["skip_members"]:
-            members = Member.objects.all()
             logging.info("Scrambling members...")
-            for member in members:
-                member.name = fake.name()
-                member.primary_email_address = f"{member.name.replace(' ', '').lower()}@gmail.com"
-                member.stripe_email_address = ""
-                member.additional_email_addresses = []
-                member.phone_number = fake.phone_number()
-                member.additional_phone_numbers = [] if randint(0, 100) > 0 else [fake.phone_number()]
-                member.slack_handle = ""
-                member.notes = fake.text()
-                member.save()
+            with transaction.atomic():
+                members = Member.objects.all()
+                for member in members:
+                    member.name = fake.name()
+                    member.primary_email_address = f"{member.name.replace(' ', '').lower()}@gmail.com"
+                    member.stripe_email_address = ""
+                    member.additional_email_addresses = []
+                    member.phone_number = fake.phone_number()
+                    member.additional_phone_numbers = [] if randint(0, 100) > 0 else [fake.phone_number()]
+                    member.slack_handle = ""
+                    member.notes = fake.text()
+                    member.save()
 
         if not options["skip_installs"]:
             logging.info("Scrambling installs...")
-            installs = Install.objects.all()
-            for install in installs:
-                install.unit = randrange(100)
-                install.notes = fake.text()
-                install.request_date, install.install_date, install.abandon_date = self.fuzz_dates(
-                    install.request_date, install.install_date, install.abandon_date
-                )
-                install.save()
+            with transaction.atomic():
+                installs = Install.objects.all()
+                for install in installs:
+                    install.unit = randrange(100)
+                    install.notes = fake.text()
+                    install.request_date, install.install_date, install.abandon_date = self.fuzz_dates(
+                        install.request_date, install.install_date, install.abandon_date
+                    )
+                    install.save()
 
         logging.info("Scrambling all other notes and dates")
 
         logging.info("Scrambling buildings...")
-        buildings = Building.objects.all()
-        for building in buildings:
-            building.notes = fake.text()
-            # Fuzz the street address, if possible
-            if building.street_address:
-                address = building.street_address.split(" ")
-                if len(address) > 0:
-                    try:
-                        fuzzed_street_number = str(int(address[0]) + randint(1, 20))
-                        street_name = " ".join(address[1:])
-                        building.street_address = f"{fuzzed_street_number} {street_name}"
-                    except ValueError:
-                        pass
+        with transaction.atomic():
+            buildings = Building.objects.all()
+            for building in buildings:
+                building.notes = fake.text()
+                # Fuzz the street address, if possible
+                if building.street_address:
+                    address = building.street_address.split(" ")
+                    if len(address) > 0:
+                        try:
+                            fuzzed_street_number = str(int(address[0]) + randint(1, 20))
+                            street_name = " ".join(address[1:])
+                            building.street_address = f"{fuzzed_street_number} {street_name}"
+                        except ValueError:
+                            pass
 
-            building.save()
+                building.save()
 
         logging.info("Scrambling devices...")
-        devices = Device.objects.all()
-        for device in devices:
-            device.notes = fake.text()
-            _, device.install_date, device.abandon_date = self.fuzz_dates(
-                date.today(), device.install_date, device.abandon_date
-            )
-            device.save()
+        with transaction.atomic():
+            devices = Device.objects.all()
+            for device in devices:
+                device.notes = fake.text()
+                _, device.install_date, device.abandon_date = self.fuzz_dates(
+                    date.today(), device.install_date, device.abandon_date
+                )
+                device.save()
 
         logging.info("Scrambling links...")
-        links = Link.objects.all()
-        for link in links:
-            link.notes = fake.text()
-            _, link.install_date, link.abandon_date = self.fuzz_dates(
-                date.today(), link.install_date, link.abandon_date
-            )
-            link.save()
+        with transaction.atomic():
+            links = Link.objects.all()
+            for link in links:
+                link.notes = fake.text()
+                _, link.install_date, link.abandon_date = self.fuzz_dates(
+                    date.today(), link.install_date, link.abandon_date
+                )
+                link.save()
 
         logging.info("Scrambling nodes...")
-        nodes = Node.objects.all()
-        for node in nodes:
-            node.notes = fake.text()
-            _, node.install_date, node.abandon_date = self.fuzz_dates(
-                date.today(), node.install_date, node.abandon_date
-            )
-            node.save()
+        with transaction.atomic():
+            nodes = Node.objects.all()
+            for node in nodes:
+                node.notes = fake.text()
+                _, node.install_date, node.abandon_date = self.fuzz_dates(
+                    date.today(), node.install_date, node.abandon_date
+                )
+                node.save()
 
         logging.info("Scrambling LOSes...")
-        LOSes = LOS.objects.all()
-        for los in LOSes:
-            los.notes = fake.text()
-            los.save()
+        with transaction.atomic():
+            LOSes = LOS.objects.all()
+            for los in LOSes:
+                los.notes = fake.text()
+                los.save()
 
         logging.info("Done")
 
