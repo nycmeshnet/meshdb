@@ -48,34 +48,33 @@ def view_uisp_on_demand_import_status(request: Request) -> Response:
     # Show tasks that have been claimed by workers
     reserved = i.reserved()
 
-    print(scheduled)
-    print(active)
-    print(reserved)
-
     my_tasks = []
     for _, tasks in scheduled.items():
         for t in tasks:
-            my_tasks.append({
-                "id": t.get("id"),
-                "nn": t.get("args")[0],
-                "status": "scheduled"
-            })
+            if "run_uisp_on_demand_import" in t.get("name"):
+                my_tasks.append({
+                    "id": t.get("id"),
+                    "nn": t.get("args")[0],
+                    "status": "scheduled"
+                })
 
     for _, tasks in active.items():
         for t in tasks:
-            my_tasks.append({
-                "id": t.get("id"),
-                "nn": t.get("args")[0],
-                "status": "active"
-            })
+            if "run_uisp_on_demand_import" in t.get("name"):
+                my_tasks.append({
+                    "id": t.get("id"),
+                    "nn": t.get("args")[0],
+                    "status": "active"
+                })
 
     for _, tasks in reserved.items():
         for t in tasks:
-            my_tasks.append({
-                "id": t.get("id"),
-                "nn": t.get("args")[0],
-                "status": "reserved"
-            })
+            if "run_uisp_on_demand_import" in t.get("name"):
+                my_tasks.append({
+                    "id": t.get("id"),
+                    "nn": t.get("args")[0],
+                    "status": "reserved"
+                })
 
     return Response({"tasks": my_tasks}, status=200)
 

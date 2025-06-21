@@ -1,12 +1,16 @@
-.sideBySide {
-    display: flex;
-    flex-direction: row;
-}
-
 .mainContent {
   display:flex;
+  flex-direction: column;
   justify-content: center;
+  align-items: center;
   padding: 0 20%;
+}
+
+.sideBySide {
+  display:flex;
+  flex-direction: row;
+  justify-content: space-evenly;
+  width: 100%;
 }
 
 .banner {
@@ -24,8 +28,8 @@
 #taskStatusTable {
   font-family: Arial, Helvetica, sans-serif;
   border-collapse: collapse;
-  width: 100%;
-  background-color: lightgray;
+  width: 400px;
+  border-radius: 5px;
 }
 
 #taskStatusTable td, #taskStatusTable th {
@@ -33,7 +37,7 @@
   padding: 8px;
 }
 
-#taskStatusTable tr:nth-child(even){background-color: #f2f2f2;}
+#taskStatusTable tr:nth-child(odd){background-color: #f2f2f2;}
 
 #taskStatusTable tr:hover {background-color: #ddd;}
 
@@ -41,6 +45,6 @@
   padding-top: 12px;
   padding-bottom: 12px;
   text-align: left;
-  background-color: #04AA6D;
-  color: white;
+  background-color: #f4f4f4;
+  color: black;
 }

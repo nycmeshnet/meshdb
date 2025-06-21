@@ -16,7 +16,11 @@ async function updateTaskStatusTable() {
     });
     const j = await status.json();
 
-    taskStatusTable.innerHTML = '';
+    taskStatusTable.innerHTML = `
+        <tr>
+            <th>ID</th><th>NN</th><th>Status</th>
+        </tr>
+    `;
 
     j.tasks.forEach(task => {
 
@@ -69,7 +73,7 @@ async function submitForm(event) {
         })
         .then(data => {
             console.log('Success:', data.status);
-            successDetail.innerHTML = `UISP Import is now running for NN${number}. Task ID: ${data.task_id}`;
+            successDetail.innerHTML = `UISP Import ${data.task_id} is now running for NN${number}.`;
             loadingBanner.style.display = 'none';
             successBanner.style.display = 'flex';
             submitButton.disabled = false;
