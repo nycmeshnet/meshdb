@@ -176,3 +176,5 @@ loadenv.sh
 # Spreadsheet data
 spreadsheet_data
 data/
+
+.env.container

@@ -7,13 +7,57 @@ from rest_framework.permissions import IsAdminUser
 from rest_framework.request import Request
 from rest_framework.response import Response
 
+from meshapi.tasks import run_uisp_on_demand_import
 from meshapi.util.network_number import NETWORK_NUMBER_MAX, NETWORK_NUMBER_MIN
-from meshapi.util.uisp_import.fetch_uisp import get_uisp_devices, get_uisp_links
-from meshapi.util.uisp_import.sync_handlers import (
-    import_and_sync_uisp_devices,
-    import_and_sync_uisp_links,
-    sync_link_table_into_los_objects,
+from meshdb.celery import app
+
+
+@extend_schema_view(
+    summary="View status for UISP Import jobs.",
+    post=extend_schema(tags=["UISP Import"]),
+    responses={
+        "200": OpenApiResponse(
+            description="API is up and serving traffic",
+            response=OpenApiTypes.STR,
+        ),
+        "500": OpenApiResponse(
+            description="Server error, probbaly a misconfigured environment variable.",
+            response=OpenApiTypes.STR,
+        ),
+    },
 )
+@api_view(["GET"])
+@permission_classes([IsAdminUser])
+def view_uisp_on_demand_import_status(request: Request) -> Response:
+    # Inspect all nodes.
+    i = app.control.inspect()
+
+    # Show the items that have an ETA or are scheduled for later processing
+    scheduled = i.scheduled()
+
+    # Show tasks that are currently active.
+    active = i.active()
+
+    # Show tasks that have been claimed by workers
+    reserved = i.reserved()
+
+    my_tasks = []
+    for _, tasks in scheduled.items():
+        for t in tasks:
+            if "run_uisp_on_demand_import" in t.get("name"):
+                my_tasks.append({"id": t.get("id"), "nn": t.get("args")[0], "status": "scheduled"})
+
+    for _, tasks in active.items():
+        for t in tasks:
+            if "run_uisp_on_demand_import" in t.get("name"):
+                my_tasks.append({"id": t.get("id"), "nn": t.get("args")[0], "status": "running"})
+
+    for _, tasks in reserved.items():
+        for t in tasks:
+            if "run_uisp_on_demand_import" in t.get("name"):
+                my_tasks.append({"id": t.get("id"), "nn": t.get("args")[0], "status": "claimed"})
+
+    return Response({"tasks": my_tasks}, status=200)
 
 
 @extend_schema_view(
@@ -61,15 +105,12 @@ def uisp_import_for_nn(request: Request, network_number: int) -> Response:
         m = f"Network Number must be an integer between {NETWORK_NUMBER_MIN} and {NETWORK_NUMBER_MAX}."
         return Response({"detail": m}, status=status)
 
-    try:
-        import_and_sync_uisp_devices(get_uisp_devices(), target_nn)
-        import_and_sync_uisp_links(get_uisp_links(), target_nn)
-        sync_link_table_into_los_objects(target_nn)
-    except Exception as e:
-        logging.exception(e)
-        status = 500
-        m = "An error ocurred while running the import. Please try again later."
-        return Response({"detail": m}, status=status)
+    import_result = run_uisp_on_demand_import.delay(target_nn)
 
-    logging.info(f"Successfully ran uisp import for NN{network_number}")
-    return Response({"detail": "success"}, status=200)
+    # TODO: (wdn) Add some way to monitor the status of a celery job in real time
+    # https://docs.celeryq.dev/en/stable/userguide/monitoring.html#flower-real-time-celery-web-monitor
+    logging.info(
+        f"UISP Import for NN{network_number} is now running with Task ID {import_result.id}."
+        " Check the object in a few minutes to see updates."
+    )
+    return Response({"detail": "success", "task_id": import_result.id}, status=200)
