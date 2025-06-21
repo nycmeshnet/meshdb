@@ -133,7 +133,9 @@ celery -A meshdb worker -l INFO
 celery -A meshdb beat -s /tmp/celerybeat-schedule -l DEBUG
 ```
 
-You can also run the celery containers with this command. Copy your `.env` to `.env.container` and update the Redis and Postgres URLs according to the comments in the file.
+You can also run the celery containers with this command. Copy your `.env` to
+`.env.container` and update the Redis and Postgres URLs according to the
+comments in the file.
 
 ```
 docker compose up -d celery-worker celery-beat
