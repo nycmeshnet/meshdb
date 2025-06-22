@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 import datetime
 import json
 import uuid
@@ -1096,12 +1097,16 @@ class TestUISPImportHandlers(TransactionTestCase):
         with self.assertRaises(Exception):
             run_uisp_on_demand_import(1234)
 
-    @patch("meshapi.views.uisp_import.run_uisp_on_demand_import")
+    @patch("meshapi.tasks.import_and_sync_uisp_devices")
+    @patch("meshapi.tasks.import_and_sync_uisp_links")
+    @patch("meshapi.tasks.sync_link_table_into_los_objects")
     def test_uisp_import_for_nn_view(
         self,
-        mock_run_uisp_on_demand_import,
+        mock_import_and_sync_uisp_devices,
+        mock_import_and_sync_uisp_links,
+        mock_sync_link_table_into_los_objects,
     ):
-        mock_run_uisp_on_demand_import.delay.side_effect = MagicMock()
+        test_uuid = "mock-uuid-12345"
 
         # Create a client
         self.admin_user = User.objects.create_superuser(
@@ -1113,6 +1118,8 @@ class TestUISPImportHandlers(TransactionTestCase):
         # Call the per-nn UISP import endpoint
         response = c.post("/api/v1/uisp-import/nn/1234/")
         self.assertEqual(200, response.status_code)
+
+        self.assertEqual({"detail": "success", "task_id": test_uuid}, json.loads(response.content))
 
     @patch("meshapi.util.uisp_import.fetch_uisp.get_uisp_session")
     @patch("meshapi.util.uisp_import.sync_handlers.update_link_from_uisp_data")
