@@ -26,7 +26,11 @@ def run_uisp_on_demand_import(target_nn: int) -> None:
         sync_link_table_into_los_objects(target_nn)
     except Exception as e:
         logging.exception(e)
+        statsd.increment("meshdb.tasks.run_uisp_on_demand", tags=["status:failure"])
         # TODO: (wdn) How do we alert the user if the job failed?
+        raise e
+
+    statsd.increment("meshdb.tasks.run_uisp_on_demand", tags=["status:success"])
 
 
 @celery_app.task

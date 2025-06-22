@@ -9,6 +9,7 @@ from django.test import Client, TestCase, TransactionTestCase
 
 from meshapi.models import LOS, AccessPoint, Building, Device, Link, Node, Sector
 from meshapi.serializers import AccessPointSerializer, DeviceSerializer, LinkSerializer, SectorSerializer
+from meshapi.tasks import run_uisp_on_demand_import
 from meshapi.util.uisp_import.sync_handlers import (
     import_and_sync_uisp_devices,
     import_and_sync_uisp_links,
@@ -1070,8 +1071,8 @@ class TestUISPImportHandlers(TransactionTestCase):
     @patch("meshapi.util.uisp_import.fetch_uisp.get_uisp_session")
     @patch("meshapi.util.uisp_import.sync_handlers.update_link_from_uisp_data")
     @patch("meshapi.util.uisp_import.sync_handlers.get_uisp_session")
-    @patch("meshapi.views.uisp_import.get_uisp_devices")
-    @patch("meshapi.views.uisp_import.get_uisp_links")
+    @patch("meshapi.tasks.get_uisp_devices")
+    @patch("meshapi.tasks.get_uisp_links")
     @patch("meshapi.util.uisp_import.sync_handlers.notify_admins_of_changes")
     @patch("meshapi.util.uisp_import.sync_handlers.update_device_from_uisp_data")
     def test_import_by_nn_raises_exception(
@@ -1087,20 +1088,23 @@ class TestUISPImportHandlers(TransactionTestCase):
         mock_get_uisp_devices.side_effect = Exception()
 
         # Create a client
-        self.admin_user = User.objects.create_superuser(
-            username="admin", password="admin_password", email="admin@example.com"
-        )
-        c = Client()
+        # self.admin_user = User.objects.create_superuser(
+        #    username="admin", password="admin_password", email="admin@example.com"
+        # )
+        # c = Client()
 
-        c.login(username="admin", password="admin_password")
-        response = c.post("/api/v1/uisp-import/nn/100/")
-        self.assertEqual(500, response.status_code)
+        # c.login(username="admin", password="admin_password")
+        # response = c.post("/api/v1/uisp-import/nn/100/")
+
+        with self.assertRaises(Exception):
+            run_uisp_on_demand_import(1234)
+        # self.assertEqual(500, response.status_code)
 
     @patch("meshapi.util.uisp_import.fetch_uisp.get_uisp_session")
     @patch("meshapi.util.uisp_import.sync_handlers.update_link_from_uisp_data")
     @patch("meshapi.util.uisp_import.sync_handlers.get_uisp_session")
-    @patch("meshapi.views.uisp_import.get_uisp_devices")
-    @patch("meshapi.views.uisp_import.get_uisp_links")
+    @patch("meshapi.tasks.get_uisp_devices")
+    @patch("meshapi.tasks.get_uisp_links")
     @patch("meshapi.util.uisp_import.sync_handlers.notify_admins_of_changes")
     @patch("meshapi.util.uisp_import.sync_handlers.update_device_from_uisp_data")
     def test_import_by_nn(
@@ -1141,8 +1145,10 @@ class TestUISPImportHandlers(TransactionTestCase):
         c.login(username="admin", password="admin_password")
 
         # Call the per-nn UISP import endpoint
-        response = c.post("/api/v1/uisp-import/nn/1234/")
-        self.assertEqual(200, response.status_code)
+        # response = c.post("/api/v1/uisp-import/nn/1234/")
+        # self.assertEqual(200, response.status_code)
+
+        run_uisp_on_demand_import(1234)
 
         self.device5.refresh_from_db()
         self.assertEqual(self.device5.status, Device.DeviceStatus.INACTIVE)
