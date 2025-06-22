@@ -105,7 +105,11 @@ def uisp_import_for_nn(request: Request, network_number: int) -> Response:
         m = f"Network Number must be an integer between {NETWORK_NUMBER_MIN} and {NETWORK_NUMBER_MAX}."
         return Response({"detail": m}, status=status)
 
-    import_result = run_uisp_on_demand_import.delay(target_nn)
+    try:
+        import_result = run_uisp_on_demand_import.delay(target_nn)
+    except Exception as e:
+        logging.exception(e)
+        return Response({"detail": "error", "task_id": None}, status=500)
 
     # TODO: (wdn) Add some way to monitor the status of a celery job in real time
     # https://docs.celeryq.dev/en/stable/userguide/monitoring.html#flower-real-time-celery-web-monitor
