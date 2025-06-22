@@ -1,4 +1,3 @@
-from dataclasses import dataclass
 import datetime
 import json
 import uuid
@@ -1097,14 +1096,17 @@ class TestUISPImportHandlers(TransactionTestCase):
         with self.assertRaises(Exception):
             run_uisp_on_demand_import(1234)
 
-    @patch("meshapi.views.uisp_import.launch_import_task")
+    @patch("meshapi.views.uisp_import.run_uisp_on_demand_import.delay")
     def test_uisp_import_for_nn_view(
         self,
-        mock_launch_import_task,
+        mock_run_uisp_on_demand_import,
     ):
         test_uuid = "mock-uuid-12345"
 
-        mock_launch_import_task.side_effect = [test_uuid]
+        mock_result = MagicMock()
+        mock_result.id = test_uuid
+
+        mock_run_uisp_on_demand_import.side_effect = [mock_result]
 
         # Create a client
         self.admin_user = User.objects.create_superuser(

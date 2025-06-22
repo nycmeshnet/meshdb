@@ -64,12 +64,6 @@ def view_uisp_on_demand_import_status(request: Request) -> Response:
 
     return Response({"tasks": my_tasks}, status=200)
 
-# This is kinda gross but it makes unit testing a lot easier.
-# for some reason the celery xyz.delay() function and getting the ID is a huge
-# pain in the ass, and this causes an infinite loop when I try to mock it.
-def launch_import_task(network_number: int) -> str:
-    import_result = run_uisp_on_demand_import.delay(network_number)
-    return import_result.id
 
 @extend_schema_view(
     summary="Run the UISP Import job for a single Network Number.",
@@ -117,7 +111,7 @@ def uisp_import_for_nn(request: Request, network_number: int) -> Response:
         return Response({"detail": m}, status=status)
 
     try:
-        import_result_id = launch_import_task(target_nn)
+        import_result = run_uisp_on_demand_import.delay(target_nn)
     except Exception as e:
         logging.exception(e)
         return Response({"detail": "error", "task_id": None}, status=500)
@@ -125,7 +119,7 @@ def uisp_import_for_nn(request: Request, network_number: int) -> Response:
     # TODO: (wdn) Add some way to monitor the status of a celery job in real time
     # https://docs.celeryq.dev/en/stable/userguide/monitoring.html#flower-real-time-celery-web-monitor
     logging.info(
-        f"UISP Import for NN{network_number} is now running with Task ID {import_result_id}."
+        f"UISP Import for NN{network_number} is now running with Task ID {import_result.id}."
         " Check the object in a few minutes to see updates."
     )
-    return Response({"detail": "success", "task_id": import_result_id}, status=200)
+    return Response({"detail": "success", "task_id": import_result.id}, status=200)
