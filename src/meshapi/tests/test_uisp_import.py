@@ -1,4 +1,5 @@
 import datetime
+import json
 import uuid
 from unittest.mock import MagicMock, call, patch
 
@@ -1068,7 +1069,6 @@ class TestUISPImportHandlers(TransactionTestCase):
         )
         self.link6b.save()
 
-
     @patch("meshapi.views.uisp_import.run_uisp_on_demand_import")
     def test_uisp_import_for_nn_view_raises_exception(
         self,
@@ -1078,7 +1078,7 @@ class TestUISPImportHandlers(TransactionTestCase):
 
         # Create a client
         self.admin_user = User.objects.create_superuser(
-           username="admin", password="admin_password", email="admin@example.com"
+            username="admin", password="admin_password", email="admin@example.com"
         )
         c = Client()
 
@@ -2020,3 +2020,75 @@ class TestUISPImportHandlers(TransactionTestCase):
 
         # Fiber, ethernet, and VPN links should not generate LOS entries
         self.assertEqual(0, len(LOS.objects.all()))
+
+    @patch("meshapi.views.uisp_import.app.control.inspect")
+    def test_view_uisp_on_demand_import_status(self, mock_celery_app):
+        class MockInspect(MagicMock):
+            def scheduled(self):
+                return {}
+
+            def reserved(self):
+                return {}
+
+            def active(self):
+                return {
+                    "mock-worker": [
+                        {
+                            "id": "mock-uuid",
+                            "args": [1234],
+                            "name": "run_uisp_on_demand_import",
+                        },
+                        { # Shouldn't show up
+                            "id": "mock-uuid-2",
+                            "args": ["fifty-five"],
+                            "name": "some-other-task",
+                        },
+                    ]
+                }
+
+        mock_celery_app.side_effect = MockInspect()
+
+        # Create a client
+        self.admin_user = User.objects.create_superuser(
+            username="admin", password="admin_password", email="admin@example.com"
+        )
+        c = Client()
+        c.login(username="admin", password="admin_password")
+        response = c.get("/api/v1/uisp-import/status/")
+
+        self.assertEqual(200, response.status_code)
+
+        self.assertEqual(json.loads(response.content), {"tasks": [{"id": "mock-uuid", "nn": 1234, "status": "running"}]})
+
+    @patch("meshapi.views.uisp_import.app.control.inspect")
+    def test_view_uisp_on_demand_import_status_unauthorized(self, mock_celery_app):
+        class MockInspect(MagicMock):
+            def scheduled(self):
+                return {}
+
+            def reserved(self):
+                return {}
+
+            def active(self):
+                return {
+                    "mock-worker": [
+                        {
+                            "id": "mock-uuid",
+                            "args": [1234],
+                            "name": "run_uisp_on_demand_import",
+                        },
+                        { # Shouldn't show up
+                            "id": "mock-uuid-2",
+                            "args": ["fifty-five"],
+                            "name": "some-other-task",
+                        },
+                    ]
+                }
+
+        mock_celery_app.side_effect = MockInspect()
+
+        # Create a client
+        c = Client()
+        response = c.get("/api/v1/uisp-import/status/")
+
+        self.assertEqual(403, response.status_code)

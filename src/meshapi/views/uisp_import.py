@@ -29,33 +29,38 @@ from meshdb.celery import app
 @api_view(["GET"])
 @permission_classes([IsAdminUser])
 def view_uisp_on_demand_import_status(request: Request) -> Response:
-    # Inspect all nodes.
-    i = app.control.inspect()
+    try:
+        # Inspect all nodes.
+        i = app.control.inspect()
 
-    # Show the items that have an ETA or are scheduled for later processing
-    scheduled = i.scheduled()
+        # Show the items that have an ETA or are scheduled for later processing
+        scheduled = i.scheduled()
 
-    # Show tasks that are currently active.
-    active = i.active()
+        # Show tasks that are currently active.
+        active = i.active()
 
-    # Show tasks that have been claimed by workers
-    reserved = i.reserved()
+        # Show tasks that have been claimed by workers
+        reserved = i.reserved()
 
-    my_tasks = []
-    for _, tasks in scheduled.items():
-        for t in tasks:
-            if "run_uisp_on_demand_import" in t.get("name"):
-                my_tasks.append({"id": t.get("id"), "nn": t.get("args")[0], "status": "scheduled"})
+        my_tasks = []
+        for _, tasks in scheduled.items():
+            for t in tasks:
+                if "run_uisp_on_demand_import" in t.get("name"):
+                    my_tasks.append({"id": t.get("id"), "nn": t.get("args")[0], "status": "scheduled"})
 
-    for _, tasks in active.items():
-        for t in tasks:
-            if "run_uisp_on_demand_import" in t.get("name"):
-                my_tasks.append({"id": t.get("id"), "nn": t.get("args")[0], "status": "running"})
+        for _, tasks in active.items():
+            for t in tasks:
+                if "run_uisp_on_demand_import" in t.get("name"):
+                    my_tasks.append({"id": t.get("id"), "nn": t.get("args")[0], "status": "running"})
 
-    for _, tasks in reserved.items():
-        for t in tasks:
-            if "run_uisp_on_demand_import" in t.get("name"):
-                my_tasks.append({"id": t.get("id"), "nn": t.get("args")[0], "status": "claimed"})
+        for _, tasks in reserved.items():
+            for t in tasks:
+                if "run_uisp_on_demand_import" in t.get("name"):
+                    my_tasks.append({"id": t.get("id"), "nn": t.get("args")[0], "status": "claimed"})
+
+    except Exception as e:
+        logging.exception(e)
+        return Response({"detail": "An error occurred trying to fetch task status"}, status=500)
 
     return Response({"tasks": my_tasks}, status=200)
 
