@@ -2094,3 +2094,27 @@ class TestUISPImportHandlers(TransactionTestCase):
         response = c.get("/api/v1/uisp-import/status/")
 
         self.assertEqual(403, response.status_code)
+
+    @patch("meshapi.views.uisp_import.app.control.inspect")
+    def test_view_uisp_on_demand_import_status_exception(self, mock_celery_app):
+        class BrokenMockInspect(MagicMock):
+            def scheduled(self):
+                raise Exception
+
+            def reserved(self):
+                raise Exception
+
+            def active(self):
+                raise Exception
+
+        mock_celery_app.side_effect = BrokenMockInspect()
+
+        # Create a client
+        self.admin_user = User.objects.create_superuser(
+            username="admin", password="admin_password", email="admin@example.com"
+        )
+        c = Client()
+        c.login(username="admin", password="admin_password")
+        response = c.get("/api/v1/uisp-import/status/")
+
+        self.assertEqual(500, response.status_code)
