@@ -2038,7 +2038,7 @@ class TestUISPImportHandlers(TransactionTestCase):
                             "args": [1234],
                             "name": "run_uisp_on_demand_import",
                         },
-                        { # Shouldn't show up
+                        {  # Shouldn't show up
                             "id": "mock-uuid-2",
                             "args": ["fifty-five"],
                             "name": "some-other-task",
@@ -2058,7 +2058,9 @@ class TestUISPImportHandlers(TransactionTestCase):
 
         self.assertEqual(200, response.status_code)
 
-        self.assertEqual(json.loads(response.content), {"tasks": [{"id": "mock-uuid", "nn": 1234, "status": "running"}]})
+        self.assertEqual(
+            json.loads(response.content), {"tasks": [{"id": "mock-uuid", "nn": 1234, "status": "running"}]}
+        )
 
     @patch("meshapi.views.uisp_import.app.control.inspect")
     def test_view_uisp_on_demand_import_status_unauthorized(self, mock_celery_app):
@@ -2077,7 +2079,7 @@ class TestUISPImportHandlers(TransactionTestCase):
                             "args": [1234],
                             "name": "run_uisp_on_demand_import",
                         },
-                        { # Shouldn't show up
+                        {  # Shouldn't show up
                             "id": "mock-uuid-2",
                             "args": ["fifty-five"],
                             "name": "some-other-task",
