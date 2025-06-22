@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 import datetime
 import json
 import uuid
@@ -1096,16 +1097,14 @@ class TestUISPImportHandlers(TransactionTestCase):
         with self.assertRaises(Exception):
             run_uisp_on_demand_import(1234)
 
-    @patch("meshapi.tasks.import_and_sync_uisp_devices")
-    @patch("meshapi.tasks.import_and_sync_uisp_links")
-    @patch("meshapi.tasks.sync_link_table_into_los_objects")
+    @patch("meshapi.views.uisp_import.launch_import_task")
     def test_uisp_import_for_nn_view(
         self,
-        mock_import_and_sync_uisp_devices,
-        mock_import_and_sync_uisp_links,
-        mock_sync_link_table_into_los_objects,
+        mock_launch_import_task,
     ):
         test_uuid = "mock-uuid-12345"
+
+        mock_launch_import_task.side_effect = [test_uuid]
 
         # Create a client
         self.admin_user = User.objects.create_superuser(
@@ -1118,9 +1117,7 @@ class TestUISPImportHandlers(TransactionTestCase):
         response = c.post("/api/v1/uisp-import/nn/1234/")
         self.assertEqual(200, response.status_code)
 
-        # for some reason the celery xyz.delay() function and getting the ID is a huge
-        # pain in the ass, and this causes an infinite loop when I try to mock it.
-        # self.assertEqual({"detail": "success", "task_id": test_uuid}, json.loads(response.content))
+        self.assertEqual({"detail": "success", "task_id": test_uuid}, json.loads(response.content))
 
     @patch("meshapi.util.uisp_import.fetch_uisp.get_uisp_session")
     @patch("meshapi.util.uisp_import.sync_handlers.update_link_from_uisp_data")
