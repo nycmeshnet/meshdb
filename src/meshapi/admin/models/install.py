@@ -107,7 +107,7 @@ class InstallAdmin(RankedSearchMixin, ImportExportMixin, ExportActionMixin, Simp
         + SearchVector("referral", weight="D")
         + SearchVector("notes", weight="D")
     )
-    autocomplete_fields = ["building", "member"]
+    autocomplete_fields = ["building", "member", "node"]
     readonly_fields = ["install_number"]
     fieldsets = [
         (
