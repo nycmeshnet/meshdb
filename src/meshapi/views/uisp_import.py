@@ -42,27 +42,25 @@ def view_uisp_on_demand_import_status(request: Request) -> Response:
         # Show tasks that have been claimed by workers
         reserved = i.reserved()
 
-        my_tasks = []
-        for _, tasks in scheduled.items():
-            for t in tasks:
-                if "run_uisp_on_demand_import" in t.get("name"):
-                    my_tasks.append({"id": t.get("id"), "nn": t.get("args")[0], "status": "scheduled"})
+        tasks = []
 
-        for _, tasks in active.items():
-            for t in tasks:
-                if "run_uisp_on_demand_import" in t.get("name"):
-                    my_tasks.append({"id": t.get("id"), "nn": t.get("args")[0], "status": "running"})
+        def parse_tasks(tasks_by_worker: dict[str, list], status: str) -> list[dict[str, str]]:
+            parsed_tasks = []
+            for _, tasks in tasks_by_worker.items():
+                for t in tasks:
+                    if "run_uisp_on_demand_import" in t.get("name"):
+                        parsed_tasks.append({"id": t.get("id"), "nn": t.get("args")[0], "status": status})
+            return parsed_tasks
 
-        for _, tasks in reserved.items():
-            for t in tasks:
-                if "run_uisp_on_demand_import" in t.get("name"):
-                    my_tasks.append({"id": t.get("id"), "nn": t.get("args")[0], "status": "claimed"})
+        tasks.extend(parse_tasks(active, "running"))
+        tasks.extend(parse_tasks(reserved, "claimed"))
+        tasks.extend(parse_tasks(scheduled, "scheduled"))
 
     except Exception as e:
         logging.exception(e)
         return Response({"detail": "An error occurred trying to fetch task status"}, status=500)
 
-    return Response({"tasks": my_tasks}, status=200)
+    return Response({"tasks": tasks}, status=200)
 
 
 @extend_schema_view(
@@ -116,8 +114,6 @@ def uisp_import_for_nn(request: Request, network_number: int) -> Response:
         logging.exception(e)
         return Response({"detail": "error", "task_id": None}, status=500)
 
-    # TODO: (wdn) Add some way to monitor the status of a celery job in real time
-    # https://docs.celeryq.dev/en/stable/userguide/monitoring.html#flower-real-time-celery-web-monitor
     logging.info(
         f"UISP Import for NN{network_number} is now running with Task ID {import_result.id}."
         " Check the object in a few minutes to see updates."

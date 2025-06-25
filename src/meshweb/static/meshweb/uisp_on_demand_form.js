@@ -75,13 +75,13 @@ async function submitForm(event) {
         })
         .then(data => {
             console.log('Success:', data.status);
-            successDetail.innerHTML = `UISP Import ${data.task_id} is now running for NN${number}.`;
+            successDetail.textContent = `UISP Import ${data.task_id} is now running for NN${number}.`;
             loadingBanner.style.display = 'none';
             successBanner.style.display = 'flex';
             submitButton.disabled = false;
         })
         .catch(error => {
-            errorDetail.innerHTML = `${error}`;
+            errorDetail.textContent = `${error}`;
             loadingBanner.style.display = 'none';
             errorBanner.style.display = 'flex';
             submitButton.disabled = false;
