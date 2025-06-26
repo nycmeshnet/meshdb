@@ -6,6 +6,7 @@ from datadog import statsd
 from django.core import management
 from flags.state import disable_flag, enable_flag
 
+from meshapi.util.admin_notifications import notify_admins
 from meshapi.util.django_flag_decorator import skip_if_flag_disabled
 from meshapi.util.panoramas import sync_github_panoramas
 from meshapi.util.uisp_import.fetch_uisp import get_uisp_devices, get_uisp_links
@@ -27,7 +28,7 @@ def run_uisp_on_demand_import(target_nn: int) -> None:
     except Exception as e:
         logging.exception(e)
         statsd.increment("meshdb.tasks.run_uisp_on_demand", tags=["status:failure"])
-        # TODO: (wdn) How do we alert the user if the job failed?
+        notify_admins(f"Failed to run USIP On Demand import for NN{target_nn}:\n{e}")
         raise e
 
     statsd.increment("meshdb.tasks.run_uisp_on_demand", tags=["status:success"])

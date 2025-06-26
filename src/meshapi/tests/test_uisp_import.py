@@ -1087,14 +1087,17 @@ class TestUISPImportHandlers(TransactionTestCase):
 
         self.assertEqual(500, response.status_code)
 
+    @patch("meshapi.tasks.notify_admins")
     @patch("meshapi.tasks.get_uisp_devices")
     def test_import_by_nn_raises_exception(
         self,
         mock_get_uisp_devices,
+        mock_notify_admins,
     ):
         mock_get_uisp_devices.side_effect = Exception()
         with self.assertRaises(Exception):
             run_uisp_on_demand_import(1234)
+            self.assert_called(mock_notify_admins)
 
     @patch("meshapi.views.uisp_import.run_uisp_on_demand_import.delay")
     def test_uisp_import_for_nn_view(
