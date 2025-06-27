@@ -34,7 +34,7 @@ jobs:
       
       - name: Extract metadata (tags, labels) for Docker
         id: meta
-        uses: docker/metadata-action@be19121bfd18b9c1ac415d9571d4f67b9b357886
+        uses: docker/metadata-action@902fa8ec7d6ecbf8d84d538b9b233a880e428804 # v5.7.0
         with:
           images: willnilges/meshdb
       
