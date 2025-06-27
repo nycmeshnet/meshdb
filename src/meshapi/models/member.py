@@ -11,6 +11,11 @@ from meshapi.validation import normalize_phone_number, validate_multi_phone_numb
 
 class Member(models.Model):
     history = HistoricalRecords()
+    payment_preference_choices = (
+        (None, "None"),
+        ("cash", "Cash"),
+        ("stripe", "Stripe"),
+    )
 
     class Meta:
         ordering = ["id"]
@@ -58,6 +63,7 @@ class Member(models.Model):
         "import process and original spreadsheet data. However this structure can be changed by admins at any "
         "time and should not be relied on by automated systems. ",
     )
+    payment_preference = models.CharField(default=None, choices=payment_preference_choices, blank=True, null=True)
 
     def __str__(self) -> str:
         if self.name:
