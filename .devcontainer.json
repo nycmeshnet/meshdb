@@ -1,5 +1,5 @@
 {
-    "image": "docker.io/python:3.11-bookworm",
+    "image": "docker.io/python:3.13-bookworm",
     "runArgs": [
         "--network=host",
     ],
