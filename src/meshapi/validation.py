@@ -31,6 +31,8 @@ RECAPTCHA_INVISIBLE_TOKEN_SCORE_THRESHOLD = float(os.environ.get("RECAPTCHA_INVI
 NYC_PLANNING_LABS_GEOCODE_URL = "https://geosearch.planninglabs.nyc/v2/search"
 # "Building Footprint" Dataset (https://data.cityofnewyork.us/City-Government/Building-Footprints/5zhs-2jue/about_data)
 DOB_BUILDING_HEIGHT_API_URL = "https://data.cityofnewyork.us/resource/5zhs-2jue.json"
+# https://data.cityofnewyork.us/Housing-Development/DOB-NYC-New-Buildings/6xbh-bxki/data_preview
+DOB_NEW_BUILDINGS_API_URL = "https://data.cityofnewyork.us/resource/6xbh-bxki.json"
 RECAPTCHA_TOKEN_VALIDATION_URL = "https://www.google.com/recaptcha/api/siteverify"
 
 
@@ -153,11 +155,29 @@ class NYCAddressInfo:
             not addr_props.get("addendum", {}).get("pad", {}).get("bin")
             or int(addr_props["addendum"]["pad"]["bin"]) in INVALID_BIN_NUMBERS
         ):
-            raise AddressError(
-                f"(NYC) Could not find address '{street_address}, {city}, {state} {zip_code}'. "
-                f"DOB API returned invalid BIN: {addr_props['addendum']['pad']['bin']}"
+            dob_warning_message = f"DOB API returned invalid BIN: {addr_props['addendum']['pad']['bin']}"
+            logging.warning(dob_warning_message)
+            logging.warning("Falling back to NYC OpenData New Buildings dataset")
+            # We're using the addr_props returned from DOB API because
+            # they should be in the same format required by NYC Open Data
+            open_data_bin = lookup_address_nyc_open_data_new_buildings(
+                addr_props["street"],
+                addr_props["housenumber"],
+                addr_props["borough"].upper(),
+                str(addr_props["postalcode"]),
             )
-        self.bin = addr_props["addendum"]["pad"]["bin"]
+
+            if not open_data_bin:
+                raise AddressError(
+                    f"(NYC) Could not find address '{street_address}, {city}, {state} {zip_code}'. "
+                    + dob_warning_message
+                    + ". NYC OpenData returned no data."
+                )
+
+            self.bin = open_data_bin
+        else:
+            self.bin = addr_props["addendum"]["pad"]["bin"]
+
         self.longitude, self.latitude = nyc_planning_resp["features"][0]["geometry"]["coordinates"]
 
         # Now that we have the bin, we can definitively get the height from
@@ -194,7 +214,7 @@ class NYCAddressInfo:
             )
         except Exception:
             self.altitude = INVALID_ALTITUDE
-            logging.exception(f"An error occurred while trying to find ({self.bin}) in NYC OpenData")
+            logging.exception(f"An error occurred while trying to find DOB BIN ({self.bin}) in NYC OpenData")
 
 
 def validate_multi_phone_number_field(phone_number_list: List[str]) -> None:
@@ -290,3 +310,34 @@ def validate_recaptcha_tokens(
             "Feature flag JOIN_FORM_FAIL_ALL_INVISIBLE_RECAPTCHAS enabled, failing validation "
             "even though this request should have succeeded"
         )
+
+
+def lookup_address_nyc_open_data_new_buildings(
+    street_name: str, house_number: str, borough: str, zip_code: str
+) -> Optional[int]:
+    params = {
+        "street_name": street_name,
+        "house__": house_number,
+        "borough": borough,
+        "zip_code": zip_code,
+    }
+
+    response = requests.get(DOB_NEW_BUILDINGS_API_URL, params=params)
+
+    if response.status_code == 200:
+        data = response.json()
+        if data:
+            open_data_bin = data[0].get("bin__")
+
+            # Make sure we get only one BIN
+            for d in data:
+                if d.get("bin__") != open_data_bin:
+                    raise AddressAPIError("Open Data API Returned multiple BINs")
+
+            return int(open_data_bin)
+        else:
+            print("No data found for the specified address.")
+            return None
+    else:
+        logging.error(f"Error retrieving data from NYC OpenData New Buildings: {response.status_code}")
+        return None

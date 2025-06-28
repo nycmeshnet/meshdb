@@ -1,5 +1,7 @@
 #!/bin/bash
 
+echo 'MeshDB entrypoint.sh'
+
 echo 'Waiting for Postgres'
 
 echo "DB_HOST: $DB_HOST"
@@ -7,6 +9,7 @@ echo "DB_PORT: $DB_PORT"
 
 while ! nc -z $DB_HOST $DB_PORT; do
 		sleep 0.1
+        echo 'Trying again'
 done
 
 echo 'DB started'
