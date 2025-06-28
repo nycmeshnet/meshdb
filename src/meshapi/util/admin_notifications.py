@@ -41,14 +41,25 @@ def notify_administrators_of_data_issue(
     if "\n" not in message:
         message = f"*{message}*. "
 
-    slack_message = {
-        "text": f"Encountered the following data issue which may require admin attention: {escape_slack_text(message)}"
+    urls = ", ".join(f"<{get_admin_url(m, site_base_url)}|{escape_slack_text(str(m))}>" for m in model_instances)
+
+    templated_message = (
+        f"Encountered the following data issue which may require admin attention: {escape_slack_text(message)}"
         f"\n\nWhen processing the following {model_instances[0]._meta.verbose_name_plural}: "
-        + ", ".join(f"<{get_admin_url(m, site_base_url)}|{escape_slack_text(str(m))}>" for m in model_instances)
-        + ". Please open the database admin UI using the provided links to correct this.\n\n"
-        + "The current database state of these object(s) is: \n"
-        + f"```\n{json.dumps(serializer.data, indent=2, default=str)}\n```",
-    }
+        f"{urls}"
+        ". Please open the database admin UI using the provided links to correct this.\n\n"
+        "The current database state of these object(s) is: \n"
+        f"```\n{json.dumps(serializer.data, indent=2, default=str)}\n```"
+    )
+
+    notify_admins(templated_message, raise_exception_on_failure)
+
+
+def notify_admins(
+    message: str,
+    raise_exception_on_failure: bool = False,
+) -> None:
+    slack_message = {"text": message}
 
     if not SLACK_ADMIN_NOTIFICATIONS_WEBHOOK_URL:
         logging.error(

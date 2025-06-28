@@ -1,6 +1,7 @@
 import datetime
+import json
 import uuid
-from unittest.mock import call, patch
+from unittest.mock import MagicMock, call, patch
 
 import pytest
 from dateutil.tz import tzutc
@@ -9,6 +10,7 @@ from django.test import Client, TestCase, TransactionTestCase
 
 from meshapi.models import LOS, AccessPoint, Building, Device, Link, Node, Sector
 from meshapi.serializers import AccessPointSerializer, DeviceSerializer, LinkSerializer, SectorSerializer
+from meshapi.tasks import run_uisp_on_demand_import
 from meshapi.util.uisp_import.sync_handlers import (
     import_and_sync_uisp_devices,
     import_and_sync_uisp_links,
@@ -1067,24 +1069,12 @@ class TestUISPImportHandlers(TransactionTestCase):
         )
         self.link6b.save()
 
-    @patch("meshapi.util.uisp_import.fetch_uisp.get_uisp_session")
-    @patch("meshapi.util.uisp_import.sync_handlers.update_link_from_uisp_data")
-    @patch("meshapi.util.uisp_import.sync_handlers.get_uisp_session")
-    @patch("meshapi.views.uisp_import.get_uisp_devices")
-    @patch("meshapi.views.uisp_import.get_uisp_links")
-    @patch("meshapi.util.uisp_import.sync_handlers.notify_admins_of_changes")
-    @patch("meshapi.util.uisp_import.sync_handlers.update_device_from_uisp_data")
-    def test_import_by_nn_raises_exception(
+    @patch("meshapi.views.uisp_import.run_uisp_on_demand_import")
+    def test_uisp_import_for_nn_view_raises_exception(
         self,
-        mock_update_device,
-        mock_notify_admins,
-        mock_get_uisp_links,
-        mock_get_uisp_devices,
-        mock_get_uisp_session,
-        mock_update_link,
-        mock_get_uisp_session2,
+        mock_run_uisp_on_demand_import,
     ):
-        mock_get_uisp_devices.side_effect = Exception()
+        mock_run_uisp_on_demand_import.delay.side_effect = Exception()
 
         # Create a client
         self.admin_user = User.objects.create_superuser(
@@ -1094,13 +1084,51 @@ class TestUISPImportHandlers(TransactionTestCase):
 
         c.login(username="admin", password="admin_password")
         response = c.post("/api/v1/uisp-import/nn/100/")
+
         self.assertEqual(500, response.status_code)
+
+    @patch("meshapi.tasks.notify_admins")
+    @patch("meshapi.tasks.get_uisp_devices")
+    def test_import_by_nn_raises_exception(
+        self,
+        mock_get_uisp_devices,
+        mock_notify_admins,
+    ):
+        mock_get_uisp_devices.side_effect = Exception()
+        with self.assertRaises(Exception):
+            run_uisp_on_demand_import(1234)
+            self.assert_called(mock_notify_admins)
+
+    @patch("meshapi.views.uisp_import.run_uisp_on_demand_import.delay")
+    def test_uisp_import_for_nn_view(
+        self,
+        mock_run_uisp_on_demand_import,
+    ):
+        test_uuid = "mock-uuid-12345"
+
+        mock_result = MagicMock()
+        mock_result.id = test_uuid
+
+        mock_run_uisp_on_demand_import.side_effect = [mock_result]
+
+        # Create a client
+        self.admin_user = User.objects.create_superuser(
+            username="admin", password="admin_password", email="admin@example.com"
+        )
+        c = Client()
+        c.login(username="admin", password="admin_password")
+
+        # Call the per-nn UISP import endpoint
+        response = c.post("/api/v1/uisp-import/nn/1234/")
+        self.assertEqual(200, response.status_code)
+
+        self.assertEqual({"detail": "success", "task_id": test_uuid}, json.loads(response.content))
 
     @patch("meshapi.util.uisp_import.fetch_uisp.get_uisp_session")
     @patch("meshapi.util.uisp_import.sync_handlers.update_link_from_uisp_data")
     @patch("meshapi.util.uisp_import.sync_handlers.get_uisp_session")
-    @patch("meshapi.views.uisp_import.get_uisp_devices")
-    @patch("meshapi.views.uisp_import.get_uisp_links")
+    @patch("meshapi.tasks.get_uisp_devices")
+    @patch("meshapi.tasks.get_uisp_links")
     @patch("meshapi.util.uisp_import.sync_handlers.notify_admins_of_changes")
     @patch("meshapi.util.uisp_import.sync_handlers.update_device_from_uisp_data")
     def test_import_by_nn(
@@ -1141,8 +1169,10 @@ class TestUISPImportHandlers(TransactionTestCase):
         c.login(username="admin", password="admin_password")
 
         # Call the per-nn UISP import endpoint
-        response = c.post("/api/v1/uisp-import/nn/1234/")
-        self.assertEqual(200, response.status_code)
+        # response = c.post("/api/v1/uisp-import/nn/1234/")
+        # self.assertEqual(200, response.status_code)
+
+        run_uisp_on_demand_import(1234)
 
         self.device5.refresh_from_db()
         self.assertEqual(self.device5.status, Device.DeviceStatus.INACTIVE)
@@ -2000,3 +2030,101 @@ class TestUISPImportHandlers(TransactionTestCase):
 
         # Fiber, ethernet, and VPN links should not generate LOS entries
         self.assertEqual(0, len(LOS.objects.all()))
+
+    @patch("meshapi.views.uisp_import.app.control.inspect")
+    def test_view_uisp_on_demand_import_status(self, mock_celery_app):
+        class MockInspect(MagicMock):
+            def scheduled(self):
+                return {}
+
+            def reserved(self):
+                return {}
+
+            def active(self):
+                return {
+                    "mock-worker": [
+                        {
+                            "id": "mock-uuid",
+                            "args": [1234],
+                            "name": "run_uisp_on_demand_import",
+                        },
+                        {  # Shouldn't show up
+                            "id": "mock-uuid-2",
+                            "args": ["fifty-five"],
+                            "name": "some-other-task",
+                        },
+                    ]
+                }
+
+        mock_celery_app.side_effect = MockInspect()
+
+        # Create a client
+        self.admin_user = User.objects.create_superuser(
+            username="admin", password="admin_password", email="admin@example.com"
+        )
+        c = Client()
+        c.login(username="admin", password="admin_password")
+        response = c.get("/api/v1/uisp-import/status/")
+
+        self.assertEqual(200, response.status_code)
+
+        self.assertEqual(
+            json.loads(response.content), {"tasks": [{"id": "mock-uuid", "nn": 1234, "status": "running"}]}
+        )
+
+    @patch("meshapi.views.uisp_import.app.control.inspect")
+    def test_view_uisp_on_demand_import_status_unauthorized(self, mock_celery_app):
+        class MockInspect(MagicMock):
+            def scheduled(self):
+                return {}
+
+            def reserved(self):
+                return {}
+
+            def active(self):
+                return {
+                    "mock-worker": [
+                        {
+                            "id": "mock-uuid",
+                            "args": [1234],
+                            "name": "run_uisp_on_demand_import",
+                        },
+                        {  # Shouldn't show up
+                            "id": "mock-uuid-2",
+                            "args": ["fifty-five"],
+                            "name": "some-other-task",
+                        },
+                    ]
+                }
+
+        mock_celery_app.side_effect = MockInspect()
+
+        # Create a client
+        c = Client()
+        response = c.get("/api/v1/uisp-import/status/")
+
+        self.assertEqual(403, response.status_code)
+
+    @patch("meshapi.views.uisp_import.app.control.inspect")
+    def test_view_uisp_on_demand_import_status_exception(self, mock_celery_app):
+        class BrokenMockInspect(MagicMock):
+            def scheduled(self):
+                raise Exception
+
+            def reserved(self):
+                raise Exception
+
+            def active(self):
+                raise Exception
+
+        mock_celery_app.side_effect = BrokenMockInspect()
+
+        # Create a client
+        self.admin_user = User.objects.create_superuser(
+            username="admin", password="admin_password", email="admin@example.com"
+        )
+        c = Client()
+        c.login(username="admin", password="admin_password")
+        response = c.get("/api/v1/uisp-import/status/")
+
+        self.assertEqual(500, response.status_code)
