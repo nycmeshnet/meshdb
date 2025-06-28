@@ -30,10 +30,25 @@ urlpatterns = [
     path("sectors/<uuid:pk>/", views.SectorDetail.as_view(), name="meshapi-v1-sector-detail"),
     path("accesspoints/", views.AccessPointList.as_view(), name="meshapi-v1-accesspoint-list"),
     path("accesspoints/<uuid:pk>/", views.AccessPointDetail.as_view(), name="meshapi-v1-accesspoint-detail"),
+    path(
+        "billing/install-fee-data/", views.InstallFeeBillingDataList.as_view(), name="meshapi-v1-install-fee-data-list"
+    ),
+    path(
+        "billing/install-fee-data/<uuid:pk>/",
+        views.InstallFeeBillingDataDetail.as_view(),
+        name="meshapi-v1-install-fee-data-detail",
+    ),
     path("devices/", views.DeviceList.as_view(), name="meshapi-v1-device-list"),
     path("devices/<uuid:pk>/", views.DeviceDetail.as_view(), name="meshapi-v1-device-detail"),
     path("join/", views.join_form, name="meshapi-v1-join"),
     path("nn-assign/", views.network_number_assignment, name="meshapi-v1-nn-assign"),
+    path(
+        "disambiguate-number/",
+        views.DisambiguateInstallOrNetworkNumber.as_view(),
+        name="meshapi-v1-disambiguate-number",
+    ),
+    path("uisp-import/nn/<int:network_number>/", views.uisp_import_for_nn, name="uisp-import-by-nn"),
+    path("uisp-import/status/", views.view_uisp_on_demand_import_status, name="view-uisp-on-demand-import-status"),
     path("buildings/lookup/", views.LookupBuilding.as_view(), name="meshapi-v1-lookup-building"),
     path("members/lookup/", views.LookupMember.as_view(), name="meshapi-v1-lookup-member"),
     path("installs/lookup/", views.LookupInstall.as_view(), name="meshapi-v1-lookup-install"),

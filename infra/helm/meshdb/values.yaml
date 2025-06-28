@@ -19,6 +19,11 @@ pg:
   # readOnlyRootFilesystem: true
   # runAsNonRoot: true
   # runAsUser: 1000
+  image:
+    repository: docker.io/postgres
+    # 15-bookworm
+    digest: sha256:8f6fbd24a12304d2adc332a2162ee9ff9d6044045a0b07f94d6e53e73125e11c
+    pullPolicy: IfNotPresent
   resources:
     limits:
       cpu: 1
@@ -43,6 +48,7 @@ meshweb:
   image:
     repository: docker.io/willnilges/meshdb
     tag: main
+    pullPolicy: IfNotPresent
   podSecurityContext: {}
   securityContext: {}
   resources:
@@ -67,6 +73,11 @@ nginx:
     requests:
       cpu: 100m
       memory: 30Mi
+  image:
+    repository: docker.io/nginx
+    # latest
+    digest: sha256:c15da6c91de8d2f436196f3a768483ad32c258ed4e1beb3d367a27ed67253e66
+    pullPolicy: IfNotPresent
   nodeSelector: {}
   affinity: {}
   tolerations: []
@@ -100,6 +111,11 @@ redis:
     requests:
       cpu: 250m
       memory: 256Mi
+  image:
+    repository: docker.io/redis
+    # latest
+    digest: sha256:a4b90e7079b67c41bdf4ca6f9d87197079e4c1c3273b7f489a74f2687d85a05e
+    pullPolicy: IfNotPresent
   nodeSelector: {}
   affinity: {}
   tolerations: []
@@ -115,12 +131,14 @@ pelias:
     requests:
       cpu: 250m
       memory: 512Mi
+  image:
+    repository: docker.io/pelias/parser
+    # v3.1.0
+    digest: sha256:458fe3ae873414064ac15a0702c348b641bcbbde3dba39a492abdff54e8b5891
+    pullPolicy: IfNotPresent
   nodeSelector: {}
   affinity: {}
   tolerations: []
-
-image:
-  pullPolicy: Always
 
 imageCredentials:
   registry: docker.io
@@ -150,3 +168,92 @@ autoscaling:
   # targetMemoryUtilizationPercentage: 80
 
 revisionHistoryLimit: 4
+
+celery:
+  # This pod should NOT be scaled higher.
+  replicaCount: 1
+
+  image:
+    repository: docker.io/willnilges/meshdb
+    pullPolicy: IfNotPresent
+    tag: "main"
+
+  nameOverride: ""
+  fullnameOverride: ""
+
+  serviceAccount:
+    create: false
+
+  podSecurityContext:
+    seccompProfile:
+      type: RuntimeDefault
+  securityContext: {}
+
+  ingress:
+    enabled: false
+
+  containers:
+    - name: celery-worker
+      command:
+        - sh
+        - -c
+        - ./scripts/celery/celery_worker.sh
+      livenessProbe:
+        exec:
+          # bash is needed to replace the environment variable
+          command:
+            - "sh"
+            - "-c"
+            - "python scripts/celery/probes/celery_liveness.py"
+        initialDelaySeconds: 60  # startup takes some time
+        periodSeconds: 60  # default is quite often and celery uses a lot cpu/ram then.
+        timeoutSeconds: 10  # default is too low
+      readinessProbe:
+        exec:
+          # bash is needed to replace the environment variable
+          command:
+            - "sh"
+            - "-c"
+            - "python scripts/celery/probes/celery_readiness.py"
+        initialDelaySeconds: 60
+        periodSeconds: 60
+        timeoutSeconds: 10
+      resources:
+        limits:
+          cpu: 1
+          memory: 2Gi
+        requests:
+          cpu: 100m
+          memory: 2Gi
+    - name: celery-beat
+      command: 
+        - sh
+        - -c
+        - ./scripts/celery/celery_beat.sh
+      livenessProbe:
+        exec:
+          # bash is needed to replace the environment variable
+          command:
+            - "sh"
+            - "-c"
+            - "python scripts/celery/probes/celery_beat_liveness.py"
+        initialDelaySeconds: 60
+        periodSeconds: 60
+        timeoutSeconds: 10
+      readinessProbe:
+        exec:
+          # bash is needed to replace the environment variable
+          command:
+            - "sh"
+            - "-c"
+            - "python scripts/celery/probes/celery_beat_readiness.py"
+        initialDelaySeconds: 60
+        periodSeconds: 60
+        timeoutSeconds: 10
+      resources:
+        limits:
+          cpu: 250m
+          memory: 512Mi
+        requests:
+          cpu: 100m
+          memory: 256Mi

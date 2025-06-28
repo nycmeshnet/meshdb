@@ -1,13 +1,16 @@
 import datetime
+import json
 import uuid
-from unittest.mock import call, patch
+from unittest.mock import MagicMock, call, patch
 
 import pytest
 from dateutil.tz import tzutc
-from django.test import TestCase, TransactionTestCase
+from django.contrib.auth.models import User
+from django.test import Client, TestCase, TransactionTestCase
 
 from meshapi.models import LOS, AccessPoint, Building, Device, Link, Node, Sector
 from meshapi.serializers import AccessPointSerializer, DeviceSerializer, LinkSerializer, SectorSerializer
+from meshapi.tasks import run_uisp_on_demand_import
 from meshapi.util.uisp_import.sync_handlers import (
     import_and_sync_uisp_devices,
     import_and_sync_uisp_links,
@@ -22,6 +25,8 @@ from meshapi.util.uisp_import.utils import (
     notify_admins_of_changes,
     parse_uisp_datetime,
 )
+
+from .sample_data import uisp_devices, uisp_links
 
 
 class TestUISPImportUtils(TestCase):
@@ -170,7 +175,7 @@ class TestUISPImportUtils(TestCase):
         node2.save()
 
         node3 = Node(
-            network_number=9012,
+            network_number=7012,
             status=Node.NodeStatus.ACTIVE,
             type=Node.NodeType.STANDARD,
             latitude=0,
@@ -374,7 +379,7 @@ class TestUISPImportUpdateObjects(TransactionTestCase):
         self.node2.save()
 
         self.node3 = Node(
-            network_number=9012,
+            network_number=7012,
             status=Node.NodeStatus.ACTIVE,
             type=Node.NodeType.STANDARD,
             latitude=0,
@@ -399,7 +404,7 @@ class TestUISPImportUpdateObjects(TransactionTestCase):
         self.device3 = Device(
             node=self.node3,
             status=Device.DeviceStatus.ACTIVE,
-            name="nycmesh-9012-dev3",
+            name="nycmesh-7012-dev3",
         )
         self.device3.save()
 
@@ -439,7 +444,7 @@ class TestUISPImportUpdateObjects(TransactionTestCase):
         self.assertEqual(
             change_messages,
             [
-                "Changed connected device pair from [nycmesh-1234-dev1, nycmesh-5678-dev2] to [nycmesh-1234-dev1, nycmesh-9012-dev3]",
+                "Changed connected device pair from [nycmesh-1234-dev1, nycmesh-5678-dev2] to [nycmesh-1234-dev1, nycmesh-7012-dev3]",
                 "Marked as Inactive due to it being offline in UISP for more than 30 days",
             ],
         )
@@ -911,7 +916,7 @@ class TestUISPImportHandlers(TransactionTestCase):
         self.node2.save()
 
         self.node3 = Node(
-            network_number=9012,
+            network_number=7012,
             status=Node.NodeStatus.ACTIVE,
             type=Node.NodeType.STANDARD,
             latitude=0,
@@ -963,7 +968,7 @@ class TestUISPImportHandlers(TransactionTestCase):
         self.device3 = Device(
             node=self.node3,
             status=Device.DeviceStatus.ACTIVE,
-            name="nycmesh-9012-dev3",
+            name="nycmesh-7012-dev3",
             uisp_id="uisp-uuid3",
         )
         self.device3.save()
@@ -1064,6 +1069,169 @@ class TestUISPImportHandlers(TransactionTestCase):
         )
         self.link6b.save()
 
+    @patch("meshapi.views.uisp_import.run_uisp_on_demand_import")
+    def test_uisp_import_for_nn_view_raises_exception(
+        self,
+        mock_run_uisp_on_demand_import,
+    ):
+        mock_run_uisp_on_demand_import.delay.side_effect = Exception()
+
+        # Create a client
+        self.admin_user = User.objects.create_superuser(
+            username="admin", password="admin_password", email="admin@example.com"
+        )
+        c = Client()
+
+        c.login(username="admin", password="admin_password")
+        response = c.post("/api/v1/uisp-import/nn/100/")
+
+        self.assertEqual(500, response.status_code)
+
+    @patch("meshapi.tasks.notify_admins")
+    @patch("meshapi.tasks.get_uisp_devices")
+    def test_import_by_nn_raises_exception(
+        self,
+        mock_get_uisp_devices,
+        mock_notify_admins,
+    ):
+        mock_get_uisp_devices.side_effect = Exception()
+        with self.assertRaises(Exception):
+            run_uisp_on_demand_import(1234)
+            self.assert_called(mock_notify_admins)
+
+    @patch("meshapi.views.uisp_import.run_uisp_on_demand_import.delay")
+    def test_uisp_import_for_nn_view(
+        self,
+        mock_run_uisp_on_demand_import,
+    ):
+        test_uuid = "mock-uuid-12345"
+
+        mock_result = MagicMock()
+        mock_result.id = test_uuid
+
+        mock_run_uisp_on_demand_import.side_effect = [mock_result]
+
+        # Create a client
+        self.admin_user = User.objects.create_superuser(
+            username="admin", password="admin_password", email="admin@example.com"
+        )
+        c = Client()
+        c.login(username="admin", password="admin_password")
+
+        # Call the per-nn UISP import endpoint
+        response = c.post("/api/v1/uisp-import/nn/1234/")
+        self.assertEqual(200, response.status_code)
+
+        self.assertEqual({"detail": "success", "task_id": test_uuid}, json.loads(response.content))
+
+    @patch("meshapi.util.uisp_import.fetch_uisp.get_uisp_session")
+    @patch("meshapi.util.uisp_import.sync_handlers.update_link_from_uisp_data")
+    @patch("meshapi.util.uisp_import.sync_handlers.get_uisp_session")
+    @patch("meshapi.tasks.get_uisp_devices")
+    @patch("meshapi.tasks.get_uisp_links")
+    @patch("meshapi.util.uisp_import.sync_handlers.notify_admins_of_changes")
+    @patch("meshapi.util.uisp_import.sync_handlers.update_device_from_uisp_data")
+    def test_import_by_nn(
+        self,
+        mock_update_device,
+        mock_notify_admins,
+        mock_get_uisp_links,
+        mock_get_uisp_devices,
+        mock_get_uisp_session,
+        mock_update_link,
+        mock_get_uisp_session2,
+    ):
+        """
+        This test ensures that when calling the uisp import per nn endpoint, we only
+        import devices related to the specified endpoint.
+        """
+        mock_update_device.side_effect = [
+            [],
+            [],
+            ["Mock update 3"],
+        ]
+
+        mock_update_link.side_effect = [
+            [],  # self.link1
+            ["Mock update 2"],  # self.link2
+        ]
+
+        mock_get_uisp_links.return_value = uisp_links
+        mock_get_uisp_devices.return_value = uisp_devices
+        mock_get_uisp_session.return_value = "mock_uisp_session"
+        mock_get_uisp_session2.return_value = "mock_uisp_session"
+
+        # Create a client
+        self.admin_user = User.objects.create_superuser(
+            username="admin", password="admin_password", email="admin@example.com"
+        )
+        c = Client()
+        c.login(username="admin", password="admin_password")
+
+        # Call the per-nn UISP import endpoint
+        # response = c.post("/api/v1/uisp-import/nn/1234/")
+        # self.assertEqual(200, response.status_code)
+
+        run_uisp_on_demand_import(1234)
+
+        self.device5.refresh_from_db()
+        self.assertEqual(self.device5.status, Device.DeviceStatus.INACTIVE)
+
+        created_sector1 = Sector.objects.get(uisp_id="uisp-uuid99")
+        created_sector2 = Sector.objects.get(uisp_id="uisp-uuid999")
+
+        last_seen_date = datetime.datetime(2024, 8, 12, 2, 4, 35, 335000, tzinfo=tzutc())
+        mock_update_device.assert_called_once_with(
+            self.device1, self.node1, "nycmesh-1234-dev1", Device.DeviceStatus.ACTIVE, last_seen_date
+        )
+
+        created_device = Device.objects.get(uisp_id="uisp-uuid9")
+        self.assertEqual(created_device.node, self.node1)
+        self.assertEqual(created_device.name, "nycmesh-1234-dev9")
+        self.assertEqual(created_device.status, Device.DeviceStatus.ACTIVE)
+        self.assertEqual(created_device.install_date, datetime.date(2018, 11, 14))
+        self.assertEqual(created_device.abandon_date, None)
+        self.assertTrue(created_device.notes.startswith("Automatically imported from UISP on"))
+
+        self.assertEqual(created_sector1.node, self.node1)
+        self.assertEqual(created_sector1.name, "nycmesh-1234-east")
+        self.assertEqual(created_sector1.status, Device.DeviceStatus.ACTIVE)
+        self.assertEqual(created_sector1.install_date, datetime.date(2018, 11, 14))
+        self.assertEqual(created_sector1.abandon_date, None)
+        self.assertEqual(created_sector1.width, 120)  # From device model
+        self.assertEqual(created_sector1.azimuth, 90)  # From device name ("east")
+        self.assertEqual(created_sector1.radius, 1)  # Default for airmax sectors
+        self.assertTrue(created_sector1.notes.startswith("Automatically imported from UISP on"))
+
+        self.assertEqual(created_sector2.node, self.node1)
+        self.assertEqual(created_sector2.name, "nycmesh-1234-northsouth")
+        self.assertEqual(created_sector2.status, Device.DeviceStatus.ACTIVE)
+        self.assertEqual(created_sector2.install_date, datetime.date(2018, 11, 14))
+        self.assertEqual(created_sector2.abandon_date, None)
+        self.assertEqual(created_sector2.width, 120)  # From device model
+        self.assertEqual(created_sector2.azimuth, 0)  # Default for nonsense device name
+        self.assertEqual(created_sector2.radius, 1)  # Default for airmax sectors
+        self.assertTrue(created_sector2.notes.startswith("Automatically imported from UISP on"))
+
+        self.assertIsNone(Device.objects.filter(uisp_id="uisp-uuid5").first())
+
+        # Also ensure that invalid entries don't work
+
+        response = c.post("/api/v1/uisp-import/nn/-1200/")
+        self.assertEqual(404, response.status_code)
+
+        response = c.post("/api/v1/uisp-import/nn/999999999999/")
+        self.assertEqual(404, response.status_code)
+
+        response = c.post("/api/v1/uisp-import/nn/")
+        self.assertEqual(404, response.status_code)
+
+        response = c.post("/api/v1/uisp-import/nn/chom")
+        self.assertEqual(404, response.status_code)
+
+        response = c.post("/api/v1/uisp-import/nn/chom/")
+        self.assertEqual(404, response.status_code)
+
     @patch("meshapi.util.uisp_import.sync_handlers.notify_admins_of_changes")
     @patch("meshapi.util.uisp_import.sync_handlers.update_device_from_uisp_data")
     def test_import_and_sync_devices(self, mock_update_device, mock_notify_admins):
@@ -1071,136 +1239,6 @@ class TestUISPImportHandlers(TransactionTestCase):
             [],
             [],
             ["Mock update 3"],
-        ]
-
-        uisp_devices = [
-            {
-                "overview": {
-                    "status": "active",
-                    "createdAt": "2018-11-14T15:20:32.004Z",
-                    "lastSeen": "2024-08-12T02:04:35.335Z",
-                    "wirelessMode": "sta-ptmp",
-                },
-                "identification": {
-                    "id": "uisp-uuid1",
-                    "name": "nycmesh-1234-dev1",
-                    "category": "wireless",
-                    "type": "airMax",
-                },
-            },
-            {
-                "overview": {
-                    "status": None,
-                    "createdAt": "2018-11-14T15:20:32.004Z",
-                    "lastSeen": "2024-08-12T02:04:35.335Z",
-                    "wirelessMode": "sta-ptmp",
-                },
-                "identification": {
-                    "id": "uisp-uuid2",
-                    "name": "nycmesh-5678-dev2",
-                    "category": "wireless",
-                    "type": "airMax",
-                },
-            },
-            {
-                "overview": {
-                    "status": "inactive",
-                    "createdAt": "2018-11-14T15:20:32.004Z",
-                    "lastSeen": "2024-08-12T02:04:35.335Z",
-                    "wirelessMode": "sta-ptmp",
-                },
-                "identification": {
-                    "id": "uisp-uuid3",
-                    "name": "nycmesh-9012-dev3",
-                    "category": "wireless",
-                    "type": "airMax",
-                },
-            },
-            {
-                "overview": {
-                    "status": "active",
-                    "createdAt": "2018-11-14T15:20:32.004Z",
-                    "lastSeen": "2024-08-12T02:04:35.335Z",
-                    "wirelessMode": "sta-ptmp",
-                },
-                "identification": {
-                    "id": "uisp-uuid9",
-                    "name": "nycmesh-1234-dev9",
-                    "category": "wireless",
-                    "type": "airMax",
-                },
-            },
-            {
-                "overview": {
-                    "status": "active",
-                    "createdAt": "2018-11-14T15:20:32.004Z",
-                    "lastSeen": "2024-08-12T02:04:35.335Z",
-                    "wirelessMode": "ap-ptmp",
-                },
-                "identification": {
-                    "id": "uisp-uuid99",
-                    "name": "nycmesh-1234-east",
-                    "model": "LAP-120",
-                    "category": "wireless",
-                    "type": "airMax",
-                },
-            },
-            {
-                "overview": {
-                    "status": "active",
-                    "createdAt": "2018-11-14T15:20:32.004Z",
-                    "lastSeen": "2024-08-12T02:04:35.335Z",
-                    "wirelessMode": "sta-ptmp",
-                },
-                "identification": {
-                    "id": "uisp-uuid5",
-                    "name": "nycmesh-7777-abc",
-                    "category": "optical",  # Causes it to be excluded
-                },
-            },
-            {
-                "overview": {
-                    "status": "active",
-                    "createdAt": "2018-11-14T15:20:32.004Z",
-                    "lastSeen": "2024-08-12T02:04:35.335Z",
-                    "wirelessMode": "sta-ptmp",
-                },
-                "identification": {
-                    "id": "uisp-uuid5",
-                    "name": "nycmesh-abc-def",  # Causes it to be excluded, no NN
-                    "category": "wireless",
-                    "type": "airMax",
-                },
-            },
-            {
-                "overview": {
-                    "status": "active",
-                    "createdAt": "2018-11-14T15:20:32.004Z",
-                    "lastSeen": "2024-08-12T02:04:35.335Z",
-                    "wirelessMode": "sta-ptmp",
-                },
-                "identification": {
-                    "id": "uisp-uuid5",
-                    "name": "nycmesh-888-def",  # Causes it to be excluded, no NN 888 in the DB
-                    "category": "wireless",
-                    "type": "airMax",
-                },
-            },
-            {
-                "overview": {
-                    "status": "active",
-                    "createdAt": "2018-11-14T15:20:32.004Z",
-                    "lastSeen": "2024-08-12T02:04:35.335Z",
-                    "wirelessMode": "ap-ptmp",
-                },
-                "identification": {
-                    "id": "uisp-uuid999",
-                    "name": "nycmesh-1234-northsouth",  # this direction makes no sense, causes guess of 0 deg
-                    "model": "LAP-120",
-                    "category": "wireless",
-                    "type": "airMax",
-                },
-            },
         ]
 
         import_and_sync_uisp_devices(uisp_devices)
@@ -1216,7 +1254,7 @@ class TestUISPImportHandlers(TransactionTestCase):
             [
                 call(self.device1, self.node1, "nycmesh-1234-dev1", Device.DeviceStatus.ACTIVE, last_seen_date),
                 call(self.device2, self.node2, "nycmesh-5678-dev2", Device.DeviceStatus.ACTIVE, last_seen_date),
-                call(self.device3, self.node3, "nycmesh-9012-dev3", Device.DeviceStatus.INACTIVE, last_seen_date),
+                call(self.device3, self.node3, "nycmesh-7012-dev3", Device.DeviceStatus.INACTIVE, last_seen_date),
             ]
         )
 
@@ -1409,7 +1447,7 @@ class TestUISPImportHandlers(TransactionTestCase):
                         "identification": {
                             "id": "uisp-uuid3",
                             "category": "wireless",
-                            "name": "nycmesh-9012-dev3",
+                            "name": "nycmesh-7012-dev3",
                         }
                     }
                 },
@@ -1481,7 +1519,7 @@ class TestUISPImportHandlers(TransactionTestCase):
                         "identification": {
                             "id": "uisp-uuid3",
                             "category": "wireless",
-                            "name": "nycmesh-9012-dev3",
+                            "name": "nycmesh-7012-dev3",
                         }
                     }
                 },
@@ -1651,7 +1689,7 @@ class TestUISPImportHandlers(TransactionTestCase):
                         "identification": {
                             "id": "uisp-uuid3",
                             "category": "wireless",
-                            "name": "nycmesh-9012-dev3",
+                            "name": "nycmesh-7012-dev3",
                         }
                     }
                 },
@@ -1674,7 +1712,7 @@ class TestUISPImportHandlers(TransactionTestCase):
                         "identification": {
                             "id": "uisp-uuid3",
                             "category": "wireless",
-                            "name": "nycmesh-9012-dev3",
+                            "name": "nycmesh-7012-dev3",
                         }
                     }
                 },
@@ -1934,13 +1972,13 @@ class TestUISPImportHandlers(TransactionTestCase):
         new_los = LOS.objects.get(from_building=self.building1, to_building=self.building3)
         self.assertEqual(new_los.source, LOS.LOSSource.EXISTING_LINK)
         self.assertEqual(new_los.analysis_date, datetime.date.today())
-        self.assertEqual(new_los.notes, f"Created automatically from Link ID {self.link2.id} (NN1234 ↔ NN9012)\n\n")
+        self.assertEqual(new_los.notes, f"Created automatically from Link ID {self.link2.id} (NN1234 ↔ NN7012)\n\n")
 
     def test_sync_same_building_link_with_los(self):
         self.device3b = Device(
             node=self.node3,
             status=Device.DeviceStatus.ACTIVE,
-            name="nycmesh-9012-dev3b",
+            name="nycmesh-7012-dev3b",
         )
         self.device3b.save()
 
@@ -1992,3 +2030,101 @@ class TestUISPImportHandlers(TransactionTestCase):
 
         # Fiber, ethernet, and VPN links should not generate LOS entries
         self.assertEqual(0, len(LOS.objects.all()))
+
+    @patch("meshapi.views.uisp_import.app.control.inspect")
+    def test_view_uisp_on_demand_import_status(self, mock_celery_app):
+        class MockInspect(MagicMock):
+            def scheduled(self):
+                return {}
+
+            def reserved(self):
+                return {}
+
+            def active(self):
+                return {
+                    "mock-worker": [
+                        {
+                            "id": "mock-uuid",
+                            "args": [1234],
+                            "name": "run_uisp_on_demand_import",
+                        },
+                        {  # Shouldn't show up
+                            "id": "mock-uuid-2",
+                            "args": ["fifty-five"],
+                            "name": "some-other-task",
+                        },
+                    ]
+                }
+
+        mock_celery_app.side_effect = MockInspect()
+
+        # Create a client
+        self.admin_user = User.objects.create_superuser(
+            username="admin", password="admin_password", email="admin@example.com"
+        )
+        c = Client()
+        c.login(username="admin", password="admin_password")
+        response = c.get("/api/v1/uisp-import/status/")
+
+        self.assertEqual(200, response.status_code)
+
+        self.assertEqual(
+            json.loads(response.content), {"tasks": [{"id": "mock-uuid", "nn": 1234, "status": "running"}]}
+        )
+
+    @patch("meshapi.views.uisp_import.app.control.inspect")
+    def test_view_uisp_on_demand_import_status_unauthorized(self, mock_celery_app):
+        class MockInspect(MagicMock):
+            def scheduled(self):
+                return {}
+
+            def reserved(self):
+                return {}
+
+            def active(self):
+                return {
+                    "mock-worker": [
+                        {
+                            "id": "mock-uuid",
+                            "args": [1234],
+                            "name": "run_uisp_on_demand_import",
+                        },
+                        {  # Shouldn't show up
+                            "id": "mock-uuid-2",
+                            "args": ["fifty-five"],
+                            "name": "some-other-task",
+                        },
+                    ]
+                }
+
+        mock_celery_app.side_effect = MockInspect()
+
+        # Create a client
+        c = Client()
+        response = c.get("/api/v1/uisp-import/status/")
+
+        self.assertEqual(403, response.status_code)
+
+    @patch("meshapi.views.uisp_import.app.control.inspect")
+    def test_view_uisp_on_demand_import_status_exception(self, mock_celery_app):
+        class BrokenMockInspect(MagicMock):
+            def scheduled(self):
+                raise Exception
+
+            def reserved(self):
+                raise Exception
+
+            def active(self):
+                raise Exception
+
+        mock_celery_app.side_effect = BrokenMockInspect()
+
+        # Create a client
+        self.admin_user = User.objects.create_superuser(
+            username="admin", password="admin_password", email="admin@example.com"
+        )
+        c = Client()
+        c.login(username="admin", password="admin_password")
+        response = c.get("/api/v1/uisp-import/status/")
+
+        self.assertEqual(500, response.status_code)

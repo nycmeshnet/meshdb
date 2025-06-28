@@ -18,6 +18,7 @@ class Link(models.Model):
 
     class LinkType(models.TextChoices):
         FIVE_GHZ = "5 GHz", "5 GHz"
+        SIX_GHZ = "6 GHz", "6 GHz"
         TWENTYFOUR_GHZ = "24 GHz", "24 GHz"
         SIXTY_GHZ = "60 GHz", "60 GHz"
         SEVENTY_EIGHTY_GHZ = "70-80 GHz", "70-80 GHz"

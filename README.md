@@ -10,12 +10,14 @@
 [![Deployment Status](https://github.com/WillNilges/meshdb/actions/workflows/publish-and-deploy.yaml/badge.svg)](https://github.com/WillNilges/meshdb/actions/workflows/publish-and-deploy.yaml)
 [![codecov](https://codecov.io/github/nycmeshnet/meshdb/graph/badge.svg?token=9PK9R0H6ZO)](https://codecov.io/github/nycmeshnet/meshdb)
 
-We use `MeshDB` to track information about Buildings, Members, Installs, Nodes, 
+We use `MeshDB` to track information about Buildings, Members, Installs, Nodes,
 Devices, and Links; Any info we need in order to get hardware on a rooftop near you lives in here.
 
 This project aims to provide a convenient, stable, and sane interface for use with
 robots and humans. For more information, [check the
 wiki](https://wiki.nycmesh.net/books/6-services-software/chapter/meshdb)
+
+To start contributing, find a [good first issue](https://github.com/nycmeshnet/meshdb/issues?q=is%3Aissue%20state%3Aopen%20label%3A%22good%20first%20issue%22).
 
 ## Setup
 
@@ -46,7 +48,7 @@ If you would like to develop in a [Dev Container](https://code.visualstudio.com/
 
 ##### Advanced - MinIO for Local Dev
 If you are going to use [minio](https://min.io/) for local S3 bucket emulation (not required for most tasks), also
-start the minio related containers with `docker compose up -d minio createbuckets`. To have your local DB instance 
+start the minio related containers with `docker compose up -d minio createbuckets`. To have your local DB instance
 use Minio, you will also need to set `S3_ENDPOINT="http://127.0.0.1:9000"` in your `.env` file.
 
 > [!NOTE]
@@ -131,6 +133,14 @@ celery -A meshdb worker -l INFO
 celery -A meshdb beat -s /tmp/celerybeat-schedule -l DEBUG
 ```
 
+You can also run the celery containers with this command. Copy your `.env` to
+`.env.container` and update the Redis and Postgres URLs according to the
+comments in the file.
+
+```
+docker compose up -d celery-worker celery-beat
+```
+
 > [!NOTE]
 > On Apple silicon macs, you may need to run the worker with the `--pool=solo` to avoid segfaults. I.e.
 > ```
@@ -164,7 +174,7 @@ Clone the package with git and create the expected `.env` file (or otherwise
 configure the environment variables specified in `.env.sample` as appropriate
 to your environment).
 
-```sh 
+```sh
 git clone https://github.com/andybaumgar/nycmesh-database
 cp .env.sample .env
 nano .env # Fill in any missing values
@@ -180,7 +190,7 @@ docker compose up
 ```
 
 After a few minutes for image download & database setup, the development server
-should be available at `127.0.0.1:8080`: 
+should be available at `127.0.0.1:8080`:
 
 ```sh
 # Should return "We're meshin'."
@@ -203,7 +213,7 @@ To determine what permissions the user has, add them to one of the pre-existing 
 (Superuser and Staff are DRF-specific and should be restricted to people maintaining
 the instance)
 
-For software apps, create a new users for each application with the format 
+For software apps, create a new users for each application with the format
 `PersonName-ApplicationName`. Grant the minimum neccessary permissions directly on the user
 object using the admin UI.
 
@@ -214,11 +224,11 @@ To use them, you can include them as an HTTP header like so:
 curl -X GET http://127.0.0.1:8000/api/v1/members/ -H 'Authorization: Token <auth_token>'
 ```
 
-## Unit Tests 
+## Unit Tests
 
 We use django's testing framework, based on `unittest`
 
-To run the unit tests, first create a virtual environment and install the dependencies as specified 
+To run the unit tests, first create a virtual environment and install the dependencies as specified
 under [Dev Environment](#dev-environment) above
 
 Django's tests should spin up and tear down a mock database for us, but it's
@@ -245,13 +255,13 @@ To run coverage, set up your venv, then wrap the testing command like so:
 coverage run --source='.' src/manage.py test meshapi meshapi_hooks
 ```
 
-To see the report, 
+To see the report,
 
 ```sh
 coverage report
 ```
 
-## Adding Tests 
+## Adding Tests
 
 Tests live in `src/meshapi/tests/`. It might make sense to add your test to
 an existing file within that directory, depending on what it's doing, or you
@@ -302,7 +312,7 @@ psql -U meshdb
 
 ## Admin Map
 In `.env.sample`, the admin map frontend assets are configured to pull from the production endpoint.
-(map data will still be pulled from your local database). If you wish to pull the admin map assets 
+(map data will still be pulled from your local database). If you wish to pull the admin map assets
 from a local endpoint, host the map locally with:
 ```sh
 # In the map repo on the meshdb-admin branch
@@ -321,7 +331,7 @@ Follow this PR: https://github.com/nycmeshnet/meshdb/pull/617/files
 
 ### Making Exports for New Devs
 
-To make importable data exports for new devs, first obtain a local copy of the data you want to 
+To make importable data exports for new devs, first obtain a local copy of the data you want to
 share (see Backups below). Then:
 
 Run the scramble script to obfuscate PII:
@@ -333,8 +343,9 @@ Clear the data from the historical tables (so that we don't leak the data we jus
 ```sh
 scripts/clear_history_tables.sh
 ```
-[!WARNING]
-Be sure that you spot check the data to make sure the scramble process worked as expected.
+
+> [!WARNING]
+> Be sure that you spot check the data to make sure the scramble process worked as expected.
 
 Finally, create an importable datadump with:
 ```sh
@@ -376,7 +387,7 @@ $ echo 'drop database meshdb; create database meshdb;' | docker exec -i meshdb-p
 
 4. Restore the backup
 ```
-root@eefdc57a46c2:/opt/meshdb# python manage.py dbrestore -i default-bd0acc253775-2024-03-31-163520.psql.bin --database default   
+root@eefdc57a46c2:/opt/meshdb# python manage.py dbrestore -i default-bd0acc253775-2024-03-31-163520.psql.bin --database default
 ```
 
 **The Quick 'n Dirty Way**
@@ -405,7 +416,7 @@ invoke format
 Will automatically apply `black` formatting and `isort` import sorting in a
 single command.
 
-You can also quickly peform all the relevant lint checks locally using 
+You can also quickly peform all the relevant lint checks locally using
 ```sh
 invoke lint
 ```

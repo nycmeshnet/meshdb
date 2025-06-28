@@ -7,7 +7,7 @@ on:
       environment:
         required: true
         type: string
-      useTag:
+      image_digest:
         required: true
         type: string
 
@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Check out the repo
-      uses: actions/checkout@v4
+      uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
 
     - name: Install SSH key
       uses: shimataro/ssh-key-action@d4fffb50872869abe2d9a9098a6d9c5aa7d16be4 # v2
@@ -87,11 +87,8 @@ jobs:
         --set imageCredentials.username="${{ secrets.PULL_SECRET_USERNAME }}" \
         --set imageCredentials.password="${{ secrets.PULL_SECRET_PASSWORD }}" \
         --set imageCredentials.email="${{ secrets.PULL_SECRET_EMAIL }}" \
-        --set meshweb.image.tag="${{ inputs.useTag }}"
+        --set meshweb.image.digest="${{ inputs.image_digest }}" \
+        --set celery.image.digest="${{ inputs.image_digest }}"
 
-        # Rolling restart
-        kubectl --kubeconfig ./config --server https://${{ secrets.SSH_TARGET_IP }}:6443 -n ${{ vars.APP_NAMESPACE }} rollout restart deploy
-        kubectl --kubeconfig ./config --server https://${{ secrets.SSH_TARGET_IP }}:6443 -n ${{ vars.APP_NAMESPACE }} rollout restart statefulset
-        
         # Wait for deploy to complete
         kubectl --kubeconfig ./config --server https://${{ secrets.SSH_TARGET_IP }}:6443 -n ${{ vars.APP_NAMESPACE }} rollout status deployment --timeout 30m

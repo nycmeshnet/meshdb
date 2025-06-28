@@ -1,0 +1,74 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "meshdb.fullname" . }}-celery-worker
+  namespace: meshdb
+  labels:
+    {{- include "meshdb.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.celery.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "meshdb.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        admission.datadoghq.com/python-lib.version: v2.17
+      {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "meshdb.labels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: node-role.kubernetes.io/control-plane
+                operator: NotIn
+                values:
+                - "true"
+      {{- if .Values.imageCredentials }}
+      imagePullSecrets:
+        - name: pull-secret
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.celery.podSecurityContext | nindent 8 }}
+      containers:
+        {{- range .Values.celery.containers }}
+        - name: {{ .name }}
+          securityContext:
+            {{- toYaml $.Values.celery.securityContext | nindent 12 }}
+          {{- if $.Values.celery.image.digest }}
+          image: "{{ $.Values.celery.image.repository }}@{{ $.Values.celery.image.digest }}"
+          {{- else }}
+          image: "{{ $.Values.celery.image.repository }}:{{ $.Values.celery.image.tag | default $.Chart.AppVersion }}"
+          {{- end }}
+          imagePullPolicy: {{ $.Values.celery.image.pullPolicy }}
+          resources:
+            {{- toYaml .resources | nindent 12 }}
+          command: {{ toJson .command }}
+          env:
+          - name: DD_SERVICE
+            value: celery
+          # TODO (willnilges): Fix this in a later PR.
+          #  https://github.com/nycmeshnet/meshdb/issues/519
+          envFrom:
+            - configMapRef:
+                name: meshdbconfig
+            - secretRef:
+                name: meshdb-secrets
+          {{- if .livenessProbe }}
+          livenessProbe:
+            {{- toYaml .livenessProbe | nindent 12 }}
+          {{- end }}
+          {{- if .readinessProbe }}
+          readinessProbe:
+            {{- toYaml .readinessProbe | nindent 12 }}
+          {{- end }}
+      {{- end }}

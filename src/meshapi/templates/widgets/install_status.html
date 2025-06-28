@@ -1,0 +1,15 @@
+{% load i18n static %}
+<div class="related-widget-wrapper">
+    {% include "django/forms/widgets/select.html" %}
+    {% if reassigned_node_id %}
+        {% block links %}
+        {% spaceless %}
+        <a class="related-widget-wrapper-link view-related"
+           href="/admin/meshapi/node/{{ reassigned_node_id }}"
+            title="{% blocktranslate %}Show the node that got this install's number{% endblocktranslate %}">
+            <img src="{% static 'admin/img/icon-viewlink.svg' %}" alt="{% translate 'Navigate' %}">
+        </a>
+        {% endspaceless %}
+        {% endblock %}
+    {% endif %}
+</div>

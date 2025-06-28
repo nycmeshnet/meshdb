@@ -4,54 +4,11 @@
 <html lang="en-US">
 
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Welcome to MeshDB</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"
-    integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
-  <link rel="shortcut icon" href="{% static 'meshweb/favicon.png' %}" />
-  <link rel="stylesheet" href="{% static 'meshweb/styles.css' %}" />
+{% include "meshweb/head.html" %}
 </head>
 
 <body>
-  <nav class="navbar navbar-expand-lg py-3">
-    <div class="container-fluid max-width-container">
-      <img src="{% static 'meshweb/logo.svg' %}" width="45px" style="padding-right: 10px" />
-      <a class="navbar-brand collapse navbar-collapse" href="https://www.nycmesh.net/"><strong>NYCMesh</strong>
-        <div class="vr" style="top: 0.1em; position: relative; margin: 0 0.3em;"></div>
-        MeshDB
-      </a>
-      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent"
-        aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
-        <span class="navbar-toggler-icon"></span>
-      </button>
-      <div class="collapse navbar-collapse" id="navbarSupportedContent">
-        <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
-          <li class="nav-item">
-            <a class="nav-link" href="https://nycmesh.net/map">Map</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="https://nycmesh.net/faq">FAQ</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="https://nycmesh.net/docs">Docs</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="https://nycmesh.net/blog">Blog</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="https://nycmesh.net/support">Get Support</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="https://nycmesh.net/donate">Donate</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="https://nycmesh.net/join">Get Connected</a>
-          </li>
-        </ul>
-      </div>
-    </div>
-  </nav>
+  {% include "meshweb/nav.html" %}
     <div class="meshDbHeader">
       <img
         src="{% static 'meshweb/meshdb.png' %}"
@@ -79,9 +36,11 @@
           <h5>{{ category.1 }}</h5>
         </div>
         {% for link, description in tools %}
+        <a class="toolListLink" href={{ link }}>
         <div class="toolListItem">
-        <a href={{ link }}><h6>{{ description }}</h6></a>
+        <h6>{{ description }}</h6>
         </div>
+        </a>
         {% endfor %}
       </div>
       {% endfor %}
@@ -91,102 +50,5 @@
     crossorigin="anonymous"></script>
 </body>
 
-<footer style="margin-top: auto; flex-grow: 0;">
-  <div class="container-fluid max-width-container pt-5">
-    <div class="row">
-      <div class="col-md-3 mb-5">
-        <img src="{% static logo %}" width="45px" style="padding-right: 10px" />
-        <a class="navbar-brand" href="https://www.nycmesh.net/"><strong>NYC Mesh</strong></a>
-      </div>
-      <div class="col-md-2">
-        <h5 class="footer-heading">Community</h5>
-        <ul class="list-unstyled">
-          <li>
-            <a href="https://slack.nycmesh.net" class="text-muted">Slack</a>
-          </li>
-          <li>
-            <a href="https://meetup.com/nycmesh" class="text-muted">Meetup</a>
-          </li>
-          <li>
-            <a href="https://www.nycmesh.net/volunteer" class="text-muted">Volunteer</a>
-          </li>
-          <li>
-            <a href="https://us9.campaign-archive.com/home/?u=cf667149616fd293afa115f5a&amp;id=ebe72854f3"
-              class="text-muted">Newsletter</a>
-          </li>
-          <li>
-            <a href="https://www.nycmesh.net/blog" class="text-muted">Blog</a>
-          </li>
-          <li>
-            <a href="https://www.nycmesh.net/coc" class="text-muted">Code of Conduct</a>
-          </li>
-        </ul>
-      </div>
-      <div class="col-md-2">
-        <h5 class="footer-heading">Network</h5>
-        <ul class="list-unstyled">
-          <li>
-            <a href="https://stats.nycmesh.net" class="text-muted">Stats</a>
-          </li>
-          <li>
-            <a href="https://wiki.nycmesh.net/books/5-networking/page/peering#bkmrk-page-title" class="text-muted">Peering</a>
-          </li>
-          <li>
-            <a href="https://www.nycmesh.net/sponsors" class="text-muted">Sponsors</a>
-          </li>
-        </ul>
-      </div>
-      <div class="col-md-2">
-        <h5 class="footer-heading">Resources</h5>
-        <ul class="list-unstyled">
-          <li>
-            <a href="https://www.nycmesh.net/faq" class="text-muted">FAQ</a>
-          </li>
-          <li>
-            <a href="https://wiki.nycmesh.net" class="text-muted" target="_">Docs/Wiki</a>
-          </li>
-          <li>
-            <a href="https://los.nycmesh.net" class="text-muted" target="_">Line of Sight</a>
-          </li>
-          <li>
-            <a href="https://www.nycmesh.net/presentations" class="text-muted">Presentations</a>
-          </li>
-          <li>
-            <a href="https://wiki.nycmesh.net/books/4-organization-mission/page/outreach-materials#bkmrk-page-title" class="text-muted" target="_">Outreach</a>
-          </li>
-          <li>
-            <a href="https://www.nycmesh.net/pay" class="text-muted" target="_">Install Payment</a>
-          </li>
-          <li>
-            <a href="https://github.com/WillNilges/cursed-status-page" class="text-muted">GitHub</a>
-          </li>
-        </ul>
-      </div>
-      <div class="col-md-2">
-        <h5 class="footer-heading">Social</h5>
-        <ul class="list-unstyled">
-          <li>
-            <a href="https://mastodon.nycmesh.net/@mesh" class="text-muted">Mastodon</a>
-          </li>
-          <li>
-            <a href="https://bsky.app/profile/nycmesh.bsky.social" class="text-muted">Bluesky</a>
-          </li>
-          <li>
-            <a href="https://www.threads.net/@nycmesh" class="text-muted">Threads</a>
-          </li>
-          <li>
-            <a href="https://www.youtube.com/@nycmesh" class="text-muted">YouTube</a>
-          </li>
-          <li>
-            <a href="https://www.facebook.com/nycmesh" class="text-muted">Facebook</a>
-          </li>
-          <li>
-            <a href="https://www.instagram.com/nycmesh" class="text-muted">Instagram</a>
-          </li>
-        </ul>
-      </div>
-    </div>
-  </div>
-</footer>
-
+{% include "meshweb/footer.html" %}
 </html>

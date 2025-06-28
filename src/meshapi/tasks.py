@@ -6,6 +6,7 @@ from datadog import statsd
 from django.core import management
 from flags.state import disable_flag, enable_flag
 
+from meshapi.util.admin_notifications import notify_admins
 from meshapi.util.django_flag_decorator import skip_if_flag_disabled
 from meshapi.util.panoramas import sync_github_panoramas
 from meshapi.util.uisp_import.fetch_uisp import get_uisp_devices, get_uisp_links
@@ -19,10 +20,25 @@ from meshdb.settings import MESHDB_ENVIRONMENT
 
 
 @celery_app.task
+def run_uisp_on_demand_import(target_nn: int) -> None:
+    try:
+        import_and_sync_uisp_devices(get_uisp_devices(), target_nn)
+        import_and_sync_uisp_links(get_uisp_links(), target_nn)
+        sync_link_table_into_los_objects(target_nn)
+    except Exception as e:
+        logging.exception(e)
+        statsd.increment("meshdb.tasks.run_uisp_on_demand", tags=["status:failure"])
+        notify_admins(f"Failed to run USIP On Demand import for NN{target_nn}:\n{e}")
+        raise e
+
+    statsd.increment("meshdb.tasks.run_uisp_on_demand", tags=["status:success"])
+
+
+@celery_app.task
 @skip_if_flag_disabled("TASK_ENABLED_RUN_DATABASE_BACKUP")
 def run_database_backup() -> None:
     # Don't run a backup unless it's prod
-    if MESHDB_ENVIRONMENT != "prod2":
+    if MESHDB_ENVIRONMENT != "prod":  # This is bad but this is a temporary change
         raise EnvironmentError(f'Not running database backup. This environment is: "{MESHDB_ENVIRONMENT}"')
 
     logging.info(f'Running database backup task. This environment is "{MESHDB_ENVIRONMENT}"')

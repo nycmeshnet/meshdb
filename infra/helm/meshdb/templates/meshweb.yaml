@@ -6,12 +6,16 @@ metadata:
   labels:
     {{- include "meshdb.labels" . | nindent 4 }}
 spec:
+  {{- if contains "prod" .Values.meshweb.environment }}
   replicas: 3
+  {{- else }}
+  replicas: 1
+  {{- end }}
   strategy:
     type: RollingUpdate
     rollingUpdate:
       maxSurge: 1
-      maxUnavailable: 1
+      maxUnavailable: 0
   selector:
     matchLabels:
       {{- include "meshdb.selectorLabels" . | nindent 6 }}
@@ -40,12 +44,19 @@ spec:
         - name: {{ .Chart.Name }}-meshweb
           securityContext:
             {{- toYaml .Values.meshweb.securityContext | nindent 12 }}
+          {{- if .Values.meshweb.image.digest }}
+          image: "{{ .Values.meshweb.image.repository }}@{{ .Values.meshweb.image.digest }}"
+          {{- else }}
           image: "{{ .Values.meshweb.image.repository }}:{{ .Values.meshweb.image.tag }}"
-          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- end }}
+          imagePullPolicy: {{ .Values.meshweb.image.pullPolicy }}
           ports:
             - name: http
               containerPort: {{ .Values.meshweb.port }}
               protocol: TCP
+          env:
+          - name: DD_SERVICE
+            value: {{ include "meshdb.fullname" . }}
           envFrom:
             - configMapRef:
                 name: meshdbconfig
@@ -62,10 +73,10 @@ spec:
                 - -c
                 - 'curl http://127.0.0.1:{{ .Values.meshweb.port }}/api/v1/ -H "Host: db.nycmesh.net" -s | grep meshin'
             periodSeconds: 10
-            initialDelaySeconds: 30
+            initialDelaySeconds: 60
             timeoutSeconds: 3
           {{ end }}
-          {{ if eq .Values.meshweb.readiness_probe "true" }} 
+          {{ if eq .Values.meshweb.readiness_probe "true" }}
           readinessProbe:
             exec:
               command:
@@ -73,10 +84,10 @@ spec:
                 - -c
                 - 'curl http://127.0.0.1:{{ .Values.meshweb.port }}/api/v1/ -H "Host: db.nycmesh.net" -s | grep meshin'
             periodSeconds: 3
-            initialDelaySeconds: 10
+            initialDelaySeconds: 60
             timeoutSeconds: 3
           {{ end }}
-          {{ if eq .Values.meshweb.startup_probe "true" }} 
+          {{ if eq .Values.meshweb.startup_probe "true" }}
           startupProbe:
             exec:
               command:
@@ -84,7 +95,7 @@ spec:
                 - -c
                 - 'curl http://127.0.0.1:{{ .Values.meshweb.port }}/api/v1/ -H "Host: db.nycmesh.net" -s | grep meshin'
             periodSeconds: 3
-            initialDelaySeconds: 20
+            initialDelaySeconds: 60
             timeoutSeconds: 3
             failureThreshold: 20
           {{ end }}

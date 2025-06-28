@@ -1,0 +1,59 @@
+{% load static %}
+
+<!DOCTYPE html>
+<head>
+  {% include "meshweb/head.html" %}
+  <link rel="stylesheet" href="{% static 'meshweb/uisp_on_demand_form.css' %}" />
+  <script src="{% static 'meshweb/uisp_on_demand_form.js' %}"></script>
+</head>
+<body>
+    {% include "meshweb/nav.html" %}
+    <div class="mainContent">
+        <img src="{% static 'meshweb/uispondemand.png' %}" width="256px"/>
+        <p>Use this form to trigger an import of UISP objects for a given Network Number. This is typically an expensive operation, so we only import objects from UISP hourly. However, if you need the latest data, <strong>a single NN will take ~5 minutes.</strong>
+        </p>
+
+        <div class="sideBySide">
+            <div>
+                  <div style="padding: 0px 16px;">
+                  <div id="loadingBanner" class="banner alert alert-primary alert-dismissible" style="display:none;">
+                    <h6>Loading...</h6>
+                    <div class="spinner-border" role="status">
+                      <span class="sr-only"></span>
+                    </div>
+                  </div>
+                  <div id="successBanner" class="banner alert alert-success alert-dismissible" style="display:none;">
+                    <h6>Job Submitted</h6>
+                    <p id="successDetail"></p>
+                  </div>
+                  <div id="errorBanner" class="banner alert alert-danger alert-dismissible"  style="display:none;">
+                    <h6 id="errorDetail">Error:</h6>
+                  </div>
+                </div>
+            <form id="numberForm" class="row-auto" onsubmit="submitForm(event)">
+                <label for="numberInput" class="form-label">Network Number:</label>
+                <input type="number" class="form-control" id="numberInput" name="numberInput" required>
+                <br>
+                <button id="submitButton" type="submit" class="btn btn-dark">Submit</button>
+            </form>
+            </div>
+
+            <div id="taskStatusTable">
+                <p>Running Tasks</p>
+                <table id='taskStatusTable'>
+                    <tr>
+                        <th>ID</th><th>NN</th><th>Status</th>
+                    </tr>
+                </table>
+                <div id="loadingTaskStatusTable" style="display: none;">
+                    <div class="spinner-border spinner-border-sm text-secondary" role="status">
+                            <span class="sr-only"></span>
+                    </div>
+                    <p>Fetching Task Status</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+  {% include "meshweb/footer.html" %}
+</html>

@@ -11,7 +11,7 @@ from import_export.admin import ExportActionMixin, ImportExportMixin
 from simple_history.admin import SimpleHistoryAdmin
 
 from meshapi.models import AddressTruthSource, Building
-from meshapi.widgets import AutoPopulateLocationWidget, PanoramaViewer
+from meshapi.widgets import AutoPopulateLocationWidget, DOBIdentifierWidget, PanoramaViewer
 
 from ..inlines import BuildingLOSInline, InstallInline
 from ..ranked_search import RankedSearchMixin
@@ -55,7 +55,7 @@ class BuildingAdminForm(forms.ModelForm):
         fields = "__all__"
         widgets = {
             "panoramas": PanoramaViewer(schema={"type": "array", "items": {"type": "string"}}),
-            "bin": forms.NumberInput(attrs={"style": "width:21ch"}),
+            "bin": DOBIdentifierWidget,
         }
 
 

@@ -8,7 +8,19 @@ from django.test import Client, TestCase
 from flags.state import disable_flag, enable_flag
 from rest_framework.authtoken.models import TokenProxy
 
-from meshapi.models import LOS, AccessPoint, AddressTruthSource, Building, Device, Install, Link, Member, Node, Sector
+from meshapi.models import (
+    LOS,
+    AccessPoint,
+    AddressTruthSource,
+    Building,
+    Device,
+    Install,
+    InstallFeeBillingDatum,
+    Link,
+    Member,
+    Node,
+    Sector,
+)
 from meshapi_hooks.hooks import CelerySerializerHook
 
 from .sample_data import sample_building, sample_device, sample_install, sample_member, sample_node
@@ -57,6 +69,11 @@ class TestAdminChangeView(TestCase):
 
         self.install = Install(**sample_install_copy)
         self.install.save()
+
+        self.billing_datum = InstallFeeBillingDatum(
+            install=self.install,
+        )
+        self.billing_datum.save()
 
         self.node1 = Node(**sample_node)
         self.node1.save()
@@ -268,6 +285,13 @@ class TestAdminChangeView(TestCase):
         change_url = f"/admin/meshapi/install/{self.install.id}/change/"
         response = self._call(change_url, 200)
         self._submit_form(change_url, bs4.BeautifulSoup(response.content.decode()).find(id="install_form"), 302)
+
+    def test_change_installfeebillingdatum(self):
+        change_url = f"/admin/meshapi/installfeebillingdatum/{self.billing_datum.id}/change/"
+        response = self._call(change_url, 200)
+        self._submit_form(
+            change_url, bs4.BeautifulSoup(response.content.decode()).find(id="installfeebillingdatum_form"), 302
+        )
 
     def test_change_link(self):
         change_url = f"/admin/meshapi/link/{self.link.id}/change/"
@@ -642,6 +666,25 @@ class TestAdminChangeView(TestCase):
         self.assertEqual(building.primary_node, self.node1)
         self.assertEqual(list(building.nodes.all()), [self.node1])
 
+    def test_install_hyperlinks_to_nn_assigned_node(self):
+        old_install = Install(**sample_install)
+        old_install.install_number = 741
+        old_install.member = self.member
+        old_install.building = self.building_1
+        old_install.status = Install.InstallStatus.NN_REASSIGNED
+        old_install.save()
+
+        new_node = Node(**sample_node)
+        new_node.network_number = old_install.install_number
+        new_node.save()
+
+        change_url = f"/admin/meshapi/install/{old_install.id}/change/"
+        response = self._call(change_url, 200)
+        form_soup = bs4.BeautifulSoup(response.content.decode()).find(id="install_form")
+        link_tag = form_soup.find("select", {"id": "id_status"}).parent.find("a")
+        self.assertEqual(link_tag.attrs["href"], f"/admin/meshapi/node/{new_node.id}")
+        self.assertEqual(link_tag.attrs["title"], "Show the node that got this install's number")
+
 
 class TestAdminAddView(TestCase):
     def setUp(self):
@@ -669,3 +712,4 @@ class TestAdminAddView(TestCase):
         self._call("/admin/meshapi/device/add/", 200)
         self._call("/admin/meshapi/accesspoint/add/", 200)
         self._call("/admin/meshapi/node/add/", 200)
+        self._call("/admin/meshapi/installfeebillingdatum/add/", 200)

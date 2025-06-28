@@ -57,3 +57,312 @@ sample_address_response = {
         }
     ]
 }
+
+sample_new_buildings_response = [
+    {
+        "borough": "MANHATTAN",  # IDK if this is accurate
+        "bin__": "1234",
+        "house__": "151",
+        "street_name": "BROOME ST",
+        "job__": "0",
+        "job_doc___": "0",
+        "job_type": "NONBINARY",
+        "self_cert": "N",
+        "block": "420",
+        "lot": "69",
+        "community_board": "420",
+        "zip_code": "10002",
+        "bldg_type": "69",
+        "residential": "YES",
+        "permit_status": "ISSUED",
+        "filing_status": "RENEWAL",
+        "permit_type": "FOMO",
+        "permit_sequence__": "420",
+        "permit_subtype": "E",
+        "site_fill": "USE UNDER 69 CU.YD",
+        "permittee_s_first_name": "SOME",
+        "permittee_s_last_name": "GUY",
+        "permittee_s_business_name": "E E E EEEE",
+        "permittee_s_license_type": "GC",
+        "owner_s_business_type": "CORPORATION",
+        "non_profit": "Y",
+        "owner_s_business_name": "E LLC",
+        "owner_s_first_name": "HOMIE",
+        "owner_s_last_name": "FLEXIBLE",
+    }
+]
+uisp_devices = [
+    {
+        "overview": {
+            "status": "active",
+            "createdAt": "2018-11-14T15:20:32.004Z",
+            "lastSeen": "2024-08-12T02:04:35.335Z",
+            "wirelessMode": "sta-ptmp",
+        },
+        "identification": {
+            "id": "uisp-uuid1",
+            "name": "nycmesh-1234-dev1",
+            "category": "wireless",
+            "type": "airMax",
+        },
+    },
+    {
+        "overview": {
+            "status": None,
+            "createdAt": "2018-11-14T15:20:32.004Z",
+            "lastSeen": "2024-08-12T02:04:35.335Z",
+            "wirelessMode": "sta-ptmp",
+        },
+        "identification": {
+            "id": "uisp-uuid2",
+            "name": "nycmesh-5678-dev2",
+            "category": "wireless",
+            "type": "airMax",
+        },
+    },
+    {
+        "overview": {
+            "status": "inactive",
+            "createdAt": "2018-11-14T15:20:32.004Z",
+            "lastSeen": "2024-08-12T02:04:35.335Z",
+            "wirelessMode": "sta-ptmp",
+        },
+        "identification": {
+            "id": "uisp-uuid3",
+            "name": "nycmesh-7012-dev3",
+            "category": "wireless",
+            "type": "airMax",
+        },
+    },
+    {
+        "overview": {
+            "status": "active",
+            "createdAt": "2018-11-14T15:20:32.004Z",
+            "lastSeen": "2024-08-12T02:04:35.335Z",
+            "wirelessMode": "sta-ptmp",
+        },
+        "identification": {
+            "id": "uisp-uuid9",
+            "name": "nycmesh-1234-dev9",
+            "category": "wireless",
+            "type": "airMax",
+        },
+    },
+    {
+        "overview": {
+            "status": "active",
+            "createdAt": "2018-11-14T15:20:32.004Z",
+            "lastSeen": "2024-08-12T02:04:35.335Z",
+            "wirelessMode": "ap-ptmp",
+        },
+        "identification": {
+            "id": "uisp-uuid99",
+            "name": "nycmesh-1234-east",
+            "model": "LAP-120",
+            "category": "wireless",
+            "type": "airMax",
+        },
+    },
+    {
+        "overview": {
+            "status": "active",
+            "createdAt": "2018-11-14T15:20:32.004Z",
+            "lastSeen": "2024-08-12T02:04:35.335Z",
+            "wirelessMode": "sta-ptmp",
+        },
+        "identification": {
+            "id": "uisp-uuid5",
+            "name": "nycmesh-7777-abc",
+            "category": "optical",  # Causes it to be excluded
+        },
+    },
+    {
+        "overview": {
+            "status": "active",
+            "createdAt": "2018-11-14T15:20:32.004Z",
+            "lastSeen": "2024-08-12T02:04:35.335Z",
+            "wirelessMode": "sta-ptmp",
+        },
+        "identification": {
+            "id": "uisp-uuid5",
+            "name": "nycmesh-abc-def",  # Causes it to be excluded, no NN
+            "category": "wireless",
+            "type": "airMax",
+        },
+    },
+    {
+        "overview": {
+            "status": "active",
+            "createdAt": "2018-11-14T15:20:32.004Z",
+            "lastSeen": "2024-08-12T02:04:35.335Z",
+            "wirelessMode": "sta-ptmp",
+        },
+        "identification": {
+            "id": "uisp-uuid5",
+            "name": "nycmesh-888-def",  # Causes it to be excluded, no NN 888 in the DB
+            "category": "wireless",
+            "type": "airMax",
+        },
+    },
+    {
+        "overview": {
+            "status": "active",
+            "createdAt": "2018-11-14T15:20:32.004Z",
+            "lastSeen": "2024-08-12T02:04:35.335Z",
+            "wirelessMode": "ap-ptmp",
+        },
+        "identification": {
+            "id": "uisp-uuid999",
+            "name": "nycmesh-1234-northsouth",  # this direction makes no sense, causes guess of 0 deg
+            "model": "LAP-120",
+            "category": "wireless",
+            "type": "airMax",
+        },
+    },
+]
+
+uisp_links = [
+    {
+        "from": {
+            "device": {
+                "identification": {
+                    "id": "uisp-uuid1",
+                    "category": "wireless",
+                    "name": "nycmesh-1234-dev1",
+                }
+            }
+        },
+        "to": {
+            "device": {
+                "identification": {
+                    "id": "uisp-uuid2",
+                    "category": "wireless",
+                    "name": "nycmesh-5678-dev2",
+                }
+            }
+        },
+        "state": "active",
+        "id": "uisp-uuid1",
+        "type": "wireless",
+        "frequency": 5_000,
+    },
+    {
+        "from": {
+            "device": {
+                "identification": {
+                    "id": "uisp-uuid1",
+                    "category": "wireless",
+                    "name": "nycmesh-1234-dev1",
+                }
+            }
+        },
+        "to": {
+            "device": {
+                "identification": {
+                    "id": "uisp-uuid3",
+                    "category": "wireless",
+                    "name": "nycmesh-7012-dev3",
+                }
+            }
+        },
+        "state": "inactive",
+        "id": "uisp-uuid2",
+        "type": "wireless",
+        "frequency": 60_000,
+    },
+    {
+        "from": {
+            "device": {
+                "identification": {
+                    "id": "uisp-uuid2",
+                    "category": "wireless",
+                    "name": "nycmesh-5678-dev2",
+                }
+            }
+        },
+        "to": {
+            "device": {
+                "identification": {
+                    "id": "uisp-uuid4",
+                    "category": "wireless",
+                    "name": "nycmesh-7890-dev4",
+                }
+            }
+        },
+        "state": "active",
+        "id": "uisp-uuid3",
+        "type": "wireless",
+        "frequency": 5_000,
+    },
+    {
+        "from": {
+            "device": {
+                "identification": {
+                    "id": "uisp-uuid2",
+                    "category": "wireless",
+                    "name": "nycmesh-5678-dev2",
+                }
+            }
+        },
+        "to": {
+            "device": {
+                "identification": {
+                    "id": "uisp-uuid-non-existent",  # Causes this link to be excluded
+                    "category": "wireless",
+                    "name": "nycmesh-3456-dev4",
+                }
+            }
+        },
+        "state": "active",
+        "id": "uisp-uuid4",
+        "type": "wireless",
+        "frequency": 5_000,
+    },
+    {
+        "from": {
+            "device": {
+                "identification": {
+                    "id": "uisp-uuid-non-existent",  # Causes this link to be excluded
+                    "category": "wireless",
+                    "name": "nycmesh-5678-dev2",
+                }
+            }
+        },
+        "to": {
+            "device": {
+                "identification": {
+                    "id": "uisp-uuid3",
+                    "category": "wireless",
+                    "name": "nycmesh-7012-dev3",
+                }
+            }
+        },
+        "state": "active",
+        "id": "uisp-uuid4",
+        "type": "wireless",
+        "frequency": 5_000,
+    },
+    {
+        "from": {
+            "device": {
+                "identification": {
+                    "id": "uisp-uuid1",
+                    "category": "wireless",
+                    "name": "nycmesh-1234-dev1",
+                }
+            }
+        },
+        "to": {
+            "device": {
+                "identification": {
+                    "id": "uisp-uuid4",
+                    "category": "wireless",
+                    "name": "nycmesh-3456-dev4",
+                }
+            }
+        },
+        "state": "active",
+        "id": "uisp-uuid5",
+        "type": "ethernet",
+    },
+]

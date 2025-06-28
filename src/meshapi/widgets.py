@@ -9,6 +9,8 @@ from django.utils.safestring import SafeString, mark_safe
 from django_jsonform.widgets import JSONFormWidget
 from flags.state import flag_enabled
 
+from meshapi.models import Install, Node
+
 
 class PanoramaViewer(JSONFormWidget):
     pano_template_name = "widgets/panorama_viewer.html"
@@ -89,8 +91,28 @@ class DeviceIPAddressWidget(widgets.TextInput):
     template_name = "widgets/ip_address.html"
 
 
+class DOBIdentifierWidget(forms.NumberInput):
+    template_name = "widgets/dob_identifier.html"
+
+
 class UISPHyperlinkWidget(widgets.TextInput):
     template_name = "widgets/uisp_link.html"
+
+
+class InstallStatusWidget(widgets.Select):
+    template_name = "widgets/install_status.html"
+    form_instance: "InstallAdminForm"
+
+    def get_context(self, name: str, value: str, attrs: Optional[dict] = None) -> dict:
+        context = super().get_context(name, value, attrs)
+        if self.form_instance:
+            install = self.form_instance.instance
+            if install and install.status == Install.InstallStatus.NN_REASSIGNED:
+                recycled_as_node = Node.objects.filter(network_number=install.install_number).first()
+                if recycled_as_node:
+                    context["reassigned_node_id"] = str(recycled_as_node.id)
+
+        return context
 
 
 class AutoPopulateLocationWidget(forms.Widget):
@@ -121,3 +143,7 @@ class WarnAboutDatesWidget(forms.Widget):
             "all": ("widgets/warn_about_date.css",),
         }
         js = ["widgets/warn_about_date.js"]
+
+
+# Down here to resolve circular imports
+from meshapi.admin.models.install import InstallAdminForm  # noqa: E402

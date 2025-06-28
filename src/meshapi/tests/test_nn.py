@@ -131,7 +131,7 @@ class TestNN(TestCase):
 
     def test_building_already_has_nn(self):
         node = Node(
-            network_number=9999,
+            network_number=999,
             status=Node.NodeStatus.ACTIVE,
             type=Node.NodeType.STANDARD,
             latitude=0,
@@ -156,7 +156,7 @@ class TestNN(TestCase):
         )
 
         resp_nn = json.loads(response.content.decode("utf-8"))["network_number"]
-        expected_nn = 9999
+        expected_nn = 999
         self.assertEqual(
             expected_nn,
             resp_nn,
@@ -429,25 +429,26 @@ class TestNN(TestCase):
             content_type="application/json",
         )
 
-        code = 201
+        code = 409
         self.assertEqual(
             code,
             response.status_code,
             f"status code incorrect for test_nn_valid_install_number. Should be {code}, but got {response.status_code}",
         )
 
-        resp_nn = json.loads(response.content.decode("utf-8"))["network_number"]
-        expected_nn = 101
         self.assertEqual(
-            expected_nn,
-            resp_nn,
-            f"nn incorrect for test_nn_valid_install_number. Should be {expected_nn}, but got {resp_nn}",
+            json.loads(response.content.decode("utf-8")),
+            {
+                "detail": "Invalid install status for NN Assignment. "
+                "Re-submit the join form to create a new install number"
+            },
         )
 
-        node_object = Node.objects.get(network_number=expected_nn)
+        self.assertEqual(1, len(Node.objects.all()))
+
         self.install_obj_low.refresh_from_db()
-        self.assertEqual(self.install_obj_low.node, node_object)
-        self.assertEqual(node_object.status, Node.NodeStatus.PLANNED)
+        self.assertEqual(self.install_obj_low.node, None)
+        self.assertEqual(self.install_obj_low.status, Install.InstallStatus.NN_REASSIGNED)
 
     @parameterized.expand(
         [
@@ -469,25 +470,26 @@ class TestNN(TestCase):
             content_type="application/json",
         )
 
-        code = 201
+        code = 409
         self.assertEqual(
             code,
             response.status_code,
             f"status code incorrect for test_nn_valid_install_number. Should be {code}, but got {response.status_code}",
         )
 
-        resp_nn = json.loads(response.content.decode("utf-8"))["network_number"]
-        expected_nn = 101
         self.assertEqual(
-            expected_nn,
-            resp_nn,
-            f"nn incorrect for test_nn_valid_install_number. Should be {expected_nn}, but got {resp_nn}",
+            json.loads(response.content.decode("utf-8")),
+            {
+                "detail": "Invalid install status for NN Assignment. "
+                "Re-submit the join form to create a new install number"
+            },
         )
 
-        node_object = Node.objects.get(network_number=expected_nn)
+        self.assertEqual(0, len(Node.objects.all()))
+
         self.install_obj_low.refresh_from_db()
-        self.assertEqual(self.install_obj_low.node, node_object)
-        self.assertEqual(node_object.status, Node.NodeStatus.PLANNED)
+        self.assertEqual(self.install_obj_low.node, None)
+        self.assertEqual(self.install_obj_low.status, status_to_eval)
 
     @parameterized.expand(
         [
