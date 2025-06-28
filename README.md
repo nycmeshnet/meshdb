@@ -6,7 +6,7 @@
 
 ## A Database for Tracking NYCMesh Member Installs
 
-[![Python 3.11](https://img.shields.io/badge/python-3.11-blue.svg?logo=python)](https://www.python.org/downloads/release/python-3115/)
+[![Python 3.13](https://img.shields.io/badge/python-3.13-blue.svg?logo=python)](https://www.python.org/downloads/release/python-3135/)
 [![Deployment Status](https://github.com/WillNilges/meshdb/actions/workflows/publish-and-deploy.yaml/badge.svg)](https://github.com/WillNilges/meshdb/actions/workflows/publish-and-deploy.yaml)
 [![codecov](https://codecov.io/github/nycmeshnet/meshdb/graph/badge.svg?token=9PK9R0H6ZO)](https://codecov.io/github/nycmeshnet/meshdb)
 
@@ -24,7 +24,7 @@ To start contributing, find a [good first issue](https://github.com/nycmeshnet/m
 ### Dev Environment
 
 The production environment relies on Nginx and Gunicorn, but for development,
-you can use Django's tools. You'll also need Python 3.11, and pip, of course.
+you can use Django's tools. You'll also need Python 3.13, and pip, of course.
 
 Firstly, fork this repo.
 
@@ -59,7 +59,7 @@ use Minio, you will also need to set `S3_ENDPOINT="http://127.0.0.1:9000"` in yo
 If you are not using a Dev Container, for safety, create a venv
 
 ```
-python --version # Make sure this is python 3.11.x before continuing
+python --version # Make sure this is python 3.13.x before continuing
 python -m venv .venv
 source .venv/bin/activate
 ```
