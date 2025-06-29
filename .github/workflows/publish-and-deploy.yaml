@@ -22,6 +22,19 @@ jobs:
     with:
       environment: prod
       image_tag: willnilges/meshdb:main
+      dockerfile: ./
+      image_metadata: willnilges/meshdb
+    secrets: inherit
+    if: github.ref == 'refs/heads/main'
+
+  push_to_registry_prod:
+    name: Push custom postgres image
+    uses: ./.github/workflows/build-push-image.yaml
+    with:
+      environment: prod
+      image_tag: willnilges/postgres-pgsql-http:main
+      dockerfile: ./scripts/postgres-pgsql-http/Dockerfile
+      image_metadata: willnilges/postgres-pgsql-http
     secrets: inherit
     if: github.ref == 'refs/heads/main'
 
