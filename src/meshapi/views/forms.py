@@ -24,7 +24,7 @@ from meshapi.models import AddressTruthSource, Building, Install, Member, Node
 from meshapi.permissions import HasNNAssignPermission, LegacyNNAssignmentPassword
 from meshapi.serializers import MemberSerializer
 from meshapi.util.admin_notifications import notify_administrators_of_data_issue
-from meshapi.util.constants import RECAPTCHA_CHECKBOX_TOKEN_HEADER, RECAPTCHA_INVISIBLE_TOKEN_HEADER
+from meshapi.util.constants import INVALID_ALTITUDE, RECAPTCHA_CHECKBOX_TOKEN_HEADER, RECAPTCHA_INVISIBLE_TOKEN_HEADER
 from meshapi.util.django_pglocks import advisory_lock
 from meshapi.util.network_number import NETWORK_NUMBER_ASSIGN_MIN, NETWORK_NUMBER_MAX, get_next_available_network_number
 from meshapi.validation import (
@@ -230,6 +230,20 @@ def process_join_form(r: JoinFormRequest, request: Optional[Request] = None) -> 
                 },
                 status=status.HTTP_409_CONFLICT,
             )
+
+    # If their address is different and they replied, "trust me bro", then _override_
+    # whatever NYCAddressInfo did to their info.
+    if r.trust_me_bro:
+        nyc_addr_info.street_address = r.street_address
+        nyc_addr_info.city = r.city
+        nyc_addr_info.state = r.state
+        nyc_addr_info.zip = r.zip_code
+        nyc_addr_info.longitude = 0.0
+        nyc_addr_info.latitude = 0.0
+        nyc_addr_info.altitude = INVALID_ALTITUDE
+        nyc_addr_info.bin = None
+
+        logging.warning("Overrode nyc_addr_info because trust_me_bro = True")
 
     # A member can have multiple install requests, if they move apartments for example, so we
     # check if there's an existing member. Group members by matching only on primary email address
