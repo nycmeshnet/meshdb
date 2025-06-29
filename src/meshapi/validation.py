@@ -3,6 +3,7 @@ import logging
 import os
 import time
 from dataclasses import dataclass
+from datadog import statsd
 from typing import List, Optional
 
 import phonenumbers
@@ -198,23 +199,34 @@ class NYCAddressInfo:
             if len(nyc_dataset_resp) == 0:
                 logging.warning(f"Empty response from nyc open data about altitude of ({self.bin})")
                 raise OpenDataAPIError
-            else:
-                # Convert relative to ground altitude to absolute altitude AMSL,
-                # convert feet to meters, and round to the nearest 0.1 m
-                FEET_PER_METER = 3.28084
-                self.altitude = round(
-                    (float(nyc_dataset_resp[0]["heightroof"]) + float(nyc_dataset_resp[0]["groundelev"]))
-                    / FEET_PER_METER,
-                    1,
-                )
+
+            # Convert relative to ground altitude to absolute altitude AMSL,
+            # convert feet to meters, and round to the nearest 0.1 m
+            FEET_PER_METER = 3.28084
+            heightroof = nyc_dataset_resp[0].get("heightroof")
+            groundelev = nyc_dataset_resp[0].get("groundelev")
+            if not heightroof or not groundelev:
+                raise ValueError(f"Could not determine altitude of building. heightroof={heightroof}, groundelev={groundelev}")
+
+            self.altitude = round(
+                (float(heightroof) + float(groundelev))
+                / FEET_PER_METER,
+                1,
+            )
         except OpenDataAPIError:
             self.altitude = INVALID_ALTITUDE
             logging.warning(
                 f"(NYC) DOB BIN ({self.bin}) not found in NYC OpenData while trying to query for altitude information"
             )
+            statsd.increment("meshdb.validation.error")
+        except ValueError as e:
+            self.altitude = INVALID_ALTITUDE
+            logging.error(e)
+            statsd.increment("meshdb.validation.error")
         except Exception:
             self.altitude = INVALID_ALTITUDE
             logging.exception(f"An error occurred while trying to find DOB BIN ({self.bin}) in NYC OpenData")
+            statsd.increment("meshdb.validation.error")
 
 
 def validate_multi_phone_number_field(phone_number_list: List[str]) -> None:
