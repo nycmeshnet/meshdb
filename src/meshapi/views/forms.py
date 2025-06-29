@@ -214,6 +214,15 @@ def process_join_form(r: JoinFormRequest, request: Optional[Request] = None) -> 
                 f"(email: {r.email_address}, changed_info: {changed_info}). "
                 "Proceeding with install request submission."
             )
+            nyc_addr_info.street_address = r.street_address
+            nyc_addr_info.city = r.city
+            nyc_addr_info.state = r.state
+            nyc_addr_info.zip = r.zip_code
+            nyc_addr_info.longitude = 0.0
+            nyc_addr_info.latitude = 0.0
+            nyc_addr_info.altitude = INVALID_ALTITUDE
+            nyc_addr_info.bin = None
+
         else:
             logging.warning("Please confirm a few details")
             return Response(
@@ -230,20 +239,6 @@ def process_join_form(r: JoinFormRequest, request: Optional[Request] = None) -> 
                 },
                 status=status.HTTP_409_CONFLICT,
             )
-
-    # If their address is different and they replied, "trust me bro", then _override_
-    # whatever NYCAddressInfo did to their info.
-    if r.trust_me_bro:
-        nyc_addr_info.street_address = r.street_address
-        nyc_addr_info.city = r.city
-        nyc_addr_info.state = r.state
-        nyc_addr_info.zip = r.zip_code
-        nyc_addr_info.longitude = 0.0
-        nyc_addr_info.latitude = 0.0
-        nyc_addr_info.altitude = INVALID_ALTITUDE
-        nyc_addr_info.bin = None
-
-        logging.warning("Overrode nyc_addr_info because trust_me_bro = True")
 
     # A member can have multiple install requests, if they move apartments for example, so we
     # check if there's an existing member. Group members by matching only on primary email address
@@ -425,7 +420,7 @@ def process_join_form(r: JoinFormRequest, request: Optional[Request] = None) -> 
                 request,
             )
 
-    success_message = f"""JoinForm submission success {"(trust_me_bro)" if r.trust_me_bro else ""}. \
+    success_message = f"""JoinForm submission success {"(changed_info)" if changed_info else ""} {"(trust_me_bro)" if r.trust_me_bro else ""}. \
 building_id: {join_form_building.id}, member_id: {join_form_member.id}, \
 install_number: {join_form_install.install_number}"""
 
