@@ -223,6 +223,8 @@ def process_join_form(r: JoinFormRequest, request: Optional[Request] = None) -> 
             nyc_addr_info.altitude = INVALID_ALTITUDE
             nyc_addr_info.bin = None
 
+            formatted_phone_number = r.phone_number
+
         else:
             logging.warning("Please confirm a few details")
             return Response(
@@ -358,7 +360,10 @@ def process_join_form(r: JoinFormRequest, request: Optional[Request] = None) -> 
     )
 
     try:
-        join_form_member.save()
+        if r.trust_me_bro:
+            join_form_member.save_without_phone_number_validation()
+        else:
+            join_form_member.save()
     except IntegrityError:
         logging.exception("Error saving member from join form")
         return Response(

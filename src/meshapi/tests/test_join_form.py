@@ -225,7 +225,7 @@ class TestJoinForm(TestCase):
                 },
             )
             self.assertEqual(response.status_code, 201)
-            validate_successful_join_form_submission(self, "Valid Join Form", s, response)
+            validate_successful_join_form_submission(self, "Valid Join Form", request, s, response)
             validate_captcha_tokens.assert_called_once_with("mock_invisible_token", "mock_checkbox_token", "1.1.1.1")
 
     @parameterized.expand(
@@ -271,13 +271,13 @@ class TestJoinForm(TestCase):
             response.status_code,
             f"status code incorrect for Valid Join Form. Should be {code}, but got {response.status_code}.\n Response is: {response.content.decode('utf-8')}",
         )
-        validate_successful_join_form_submission(self, "Valid Join Form", s, response)
+        validate_successful_join_form_submission(self, "Valid Join Form", request, s, response)
 
     def test_valid_join_form_use_original_with_results_from_geosearch(self):
         submission = valid_join_form_submission
         submission["street_address"] = "151 B Street"
         submission["city"] = "NYC"
-        submission["phone_number"] = "1111111111"
+        submission["phone_number"] = "111 111 1111"
 
         self.requests_mocker.get(
             NYC_PLANNING_LABS_GEOCODE_URL,
@@ -309,9 +309,9 @@ class TestJoinForm(TestCase):
         install = Install.objects.get(id=response.json()["install_id"])
         self.assertEqual(install.building.street_address, "151 B Street")
         self.assertEqual(install.building.city, "NYC")
-        self.assertEqual(install.member.phone_number, "+1 111 111 1111")
+        self.assertEqual(install.member.phone_number, "111 111 1111")
 
-        validate_successful_join_form_submission(self, "Valid Join Form", s, response)
+        validate_successful_join_form_submission(self, "Valid Join Form", request, s, response)
 
     def test_valid_join_form_use_original_without_results_from_geosearch(self):
         submission = valid_join_form_submission
@@ -348,7 +348,7 @@ class TestJoinForm(TestCase):
         self.assertEqual(install.building.city, "NYC")
         self.assertEqual(install.member.phone_number, "+1 111 111 1111")
 
-        validate_successful_join_form_submission(self, "Valid Join Form", s, response)
+        validate_successful_join_form_submission(self, "Valid Join Form", request, s, response)
 
     def test_valid_trust_me_bro_bad_zip(self):
         submission = valid_join_form_submission
@@ -402,7 +402,7 @@ class TestJoinForm(TestCase):
             response.status_code,
             f"status code incorrect for Valid Join Form. Should be {code}, but got {response.status_code}.\n Response is: {response.content.decode('utf-8')}",
         )
-        validate_successful_join_form_submission(self, "Valid Join Form", s, response)
+        validate_successful_join_form_submission(self, "Valid Join Form", request, s, response)
 
         self.assertEqual(
             "+61 3 9669 4916",  # Australian bureau of meteorology (Aussie formatted)
@@ -421,7 +421,7 @@ class TestJoinForm(TestCase):
             response.status_code,
             f"status code incorrect for Valid Join Form. Should be {code}, but got {response.status_code}.\n Response is: {response.content.decode('utf-8')}",
         )
-        validate_successful_join_form_submission(self, "Valid Join Form", s, response)
+        validate_successful_join_form_submission(self, "Valid Join Form", request, s, response)
 
         self.assertEqual(
             "+502 2354 0000",  # US Embassy in Guatemala (Properly formatted)
@@ -440,7 +440,7 @@ class TestJoinForm(TestCase):
             response.status_code,
             f"status code incorrect for Valid Join Form. Should be {code}, but got {response.status_code}.\n Response is: {response.content.decode('utf-8')}",
         )
-        validate_successful_join_form_submission(self, "Valid Join Form", s, response)
+        validate_successful_join_form_submission(self, "Valid Join Form", request, s, response)
 
         self.assertEqual(
             "+1 212-555-5555",
@@ -730,7 +730,7 @@ class TestJoinForm(TestCase):
             f"status code incorrect for Valid Join Form. Should be {code}, but got {response1.status_code}.\n Response is: {response1.content.decode('utf-8')}",
         )
 
-        validate_successful_join_form_submission(self, "Valid Join Form", s, response1)
+        validate_successful_join_form_submission(self, "Valid Join Form", form, s, response1)
 
         # Now test that the member can "move" and still access the join form
         v_sub_2 = valid_join_form_submission.copy()
@@ -755,7 +755,7 @@ class TestJoinForm(TestCase):
             f"status code incorrect for Valid Join Form. Should be {code}, but got {response2.status_code}.\n Response is: {response2.content.decode('utf-8')}",
         )
 
-        validate_successful_join_form_submission(self, "Valid Join Form", s, response2)
+        validate_successful_join_form_submission(self, "Valid Join Form", form, s, response2)
 
         self.assertEqual(
             json.loads(
@@ -779,7 +779,7 @@ class TestJoinForm(TestCase):
             f"status code incorrect for Valid Join Form. Should be {code}, but got {response1.status_code}.\n Response is: {response1.content.decode('utf-8')}",
         )
 
-        validate_successful_join_form_submission(self, "Valid Join Form", s, response1)
+        validate_successful_join_form_submission(self, "Valid Join Form", form, s, response1)
 
         pre_existing_duplicate_member = Member(
             name="John Smith",
@@ -846,7 +846,7 @@ class TestJoinForm(TestCase):
             f"status code incorrect for Valid Join Form. Should be {code}, but got {response1.status_code}.\n Response is: {response1.content.decode('utf-8')}",
         )
 
-        validate_successful_join_form_submission(self, "Valid Join Form", s, response1)
+        validate_successful_join_form_submission(self, "Valid Join Form", form, s, response1)
 
         # Now test that the member can "move", change their name and still access the join form
         v_sub_2 = valid_join_form_submission.copy()
@@ -866,7 +866,7 @@ class TestJoinForm(TestCase):
             f"status code incorrect for Valid Join Form. Should be {code}, but got {response2.status_code}.\n Response is: {response2.content.decode('utf-8')}",
         )
 
-        validate_successful_join_form_submission(self, "Valid Join Form", s, response2)
+        validate_successful_join_form_submission(self, "Valid Join Form", form, s, response2)
 
         # Make sure it uses the same member ID
         self.assertEqual(
@@ -910,7 +910,7 @@ class TestJoinForm(TestCase):
             f"status code incorrect for Valid Join Form. Should be {code}, but got {response1.status_code}.\n Response is: {response1.content.decode('utf-8')}",
         )
 
-        validate_successful_join_form_submission(self, "Valid Join Form", s, response1)
+        validate_successful_join_form_submission(self, "Valid Join Form", form, s, response1)
 
         # Now test that the member can "move" and still access the join form
         v_sub_2 = valid_join_form_submission.copy()
@@ -930,7 +930,7 @@ class TestJoinForm(TestCase):
             f"status code incorrect for Valid Join Form. Should be {code}, but got {response2.status_code}.\n Response is: {response2.content.decode('utf-8')}",
         )
 
-        validate_successful_join_form_submission(self, "Valid Join Form", s, response2)
+        validate_successful_join_form_submission(self, "Valid Join Form", form, s, response2)
 
         # Make sure it uses the same member ID
         self.assertEqual(
@@ -967,7 +967,7 @@ class TestJoinForm(TestCase):
             f"status code incorrect for Valid Join Form. Should be {code}, but got {response1.status_code}.\n Response is: {response1.content.decode('utf-8')}",
         )
 
-        validate_successful_join_form_submission(self, "Valid Join Form", s, response1)
+        validate_successful_join_form_submission(self, "Valid Join Form", form, s, response1)
 
         # Add the email we're going to use below (jsmith1234@yahoo.com) as an additional email
         # to confirm that we don't de-duplicate on these additional addresses
@@ -997,7 +997,7 @@ class TestJoinForm(TestCase):
             f"status code incorrect for Valid Join Form. Should be {code}, but got {response2.status_code}.\n Response is: {response2.content.decode('utf-8')}",
         )
 
-        validate_successful_join_form_submission(self, "Valid Join Form", s, response2, expected_member_count=2)
+        validate_successful_join_form_submission(self, "Valid Join Form", form, s, response2, expected_member_count=2)
 
         # Ensure we created a new member ID for the second request, since the primary email address
         # doesn't match
@@ -1030,7 +1030,7 @@ class TestJoinForm(TestCase):
             f"status code incorrect for Valid Join Form. Should be {code}, but got {response1.status_code}.\n Response is: {response1.content.decode('utf-8')}",
         )
 
-        validate_successful_join_form_submission(self, "Valid Join Form", s, response1)
+        validate_successful_join_form_submission(self, "Valid Join Form", form, s, response1)
 
         # Now test that the member can "move" and still access the join form
         # (even with a new phone number, so long as they use the same email)
@@ -1050,7 +1050,7 @@ class TestJoinForm(TestCase):
             f"status code incorrect for Valid Join Form. Should be {code}, but got {response2.status_code}.\n Response is: {response2.content.decode('utf-8')}",
         )
 
-        validate_successful_join_form_submission(self, "Valid Join Form", s, response2)
+        validate_successful_join_form_submission(self, "Valid Join Form", form, s, response2)
 
         self.assertEqual(
             json.loads(
@@ -1196,7 +1196,7 @@ class TestJoinForm(TestCase):
             f"status code incorrect for Valid Join Form. Should be {code}, but got {response1.status_code}.\n Response is: {response1.content.decode('utf-8')}",
         )
 
-        validate_successful_join_form_submission(self, "Valid Join Form", s, response1)
+        validate_successful_join_form_submission(self, "Valid Join Form", form, s, response1)
 
         # Now test that the member can "move" and still access the join form
         v_sub_2 = jefferson_join_form_submission.copy()
@@ -1254,7 +1254,7 @@ class TestJoinForm(TestCase):
             f"status code incorrect for Valid Join Form. Should be {code}, but got {response2.status_code}.\n Response is: {response2.content.decode('utf-8')}",
         )
 
-        validate_successful_join_form_submission(self, "Valid Join Form", s, response2)
+        validate_successful_join_form_submission(self, "Valid Join Form", form, s, response2)
 
         building_id_2 = json.loads(
             response2.content.decode("utf-8"),
@@ -1363,7 +1363,7 @@ class TestJoinForm(TestCase):
             f"but got {response3.status_code}.\n Response is: {response3.content.decode('utf-8')}",
         )
 
-        validate_successful_join_form_submission(self, "Valid Join Form", s, response3, expected_member_count=3)
+        validate_successful_join_form_submission(self, "Valid Join Form", form, s, response3, expected_member_count=3)
 
         self.assertNotEqual(
             str(member_object.id),
@@ -1429,7 +1429,7 @@ class TestJoinForm(TestCase):
             response.status_code,
             f"status code incorrect for Valid Join Form. Should be {code}, but got {response.status_code}.\n Response is: {response.content.decode('utf-8')}",
         )
-        validate_successful_join_form_submission(self, "Valid Join Form", s, response)
+        validate_successful_join_form_submission(self, "Valid Join Form", request, s, response)
 
         install_number = json.loads(response.content.decode("utf-8"))["install_number"]
         install = Install.objects.get(install_number=install_number)
@@ -1487,7 +1487,7 @@ class TestJoinFormInstallEventHooks(TestCase):
             response.status_code,
             f"status code incorrect for Valid Join Form. Should be {code}, but got {response.status_code}.\n Response is: {response.content.decode('utf-8')}",
         )
-        validate_successful_join_form_submission(self, "Valid Join Form", s, response)
+        validate_successful_join_form_submission(self, "Valid Join Form", request, s, response)
 
 
 def slow_install_init(*args, **kwargs):

@@ -107,3 +107,6 @@ class Member(models.Model):
                 normalize_phone_number(num) for num in self.additional_phone_numbers if num
             ]
         super().save(*args, **kwargs)
+
+    def save_without_phone_number_validation(self, *args: Any, **kwargs: Any) -> None:
+        super().save(*args, **kwargs)
