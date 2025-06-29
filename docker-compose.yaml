@@ -11,7 +11,9 @@ services:
       - api
     ports:
       - 5432:5432
-    image: docker.io/postgres:15-bookworm
+    build:
+      context: .
+      dockerfile: ./scripts/postgres-pgsql-http/Dockerfile
     environment:
       POSTGRES_DB: ${DB_NAME}
       POSTGRES_USER: ${DB_USER}
