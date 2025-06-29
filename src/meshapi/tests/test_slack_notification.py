@@ -269,6 +269,7 @@ class TestSlackNotification(TestCase):
 
     @requests_mock.Mocker()
     @patch("meshapi.util.admin_notifications.SLACK_ADMIN_NOTIFICATIONS_WEBHOOK_URL", "https://mock-slack-url")
+    @patch("meshapi.util.admin_notifications.SLACK_ADMIN_NOTIFICATIONS_RETRY_COUNT", 2)
     def test_slack_notification_for_name_change_slack_failure(self, requests_mocker):
         member = Member(
             name="Stacy Maidenname",
@@ -293,6 +294,7 @@ class TestSlackNotification(TestCase):
             )
 
         self.assertEqual(requests_mocker.request_history[0].url, "https://mock-slack-url/")
+        self.assertEqual(len(requests_mocker.request_history), 3)
 
     @requests_mock.Mocker()
     @patch("meshapi.util.admin_notifications.SLACK_ADMIN_NOTIFICATIONS_WEBHOOK_URL", "https://mock-slack-url")
