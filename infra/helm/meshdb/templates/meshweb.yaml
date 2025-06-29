@@ -44,8 +44,12 @@ spec:
         - name: {{ .Chart.Name }}-meshweb
           securityContext:
             {{- toYaml .Values.meshweb.securityContext | nindent 12 }}
+          {{- if .Values.meshweb.image.digest }}
+          image: "{{ .Values.meshweb.image.repository }}@{{ .Values.meshweb.image.digest }}"
+          {{- else }}
           image: "{{ .Values.meshweb.image.repository }}:{{ .Values.meshweb.image.tag }}"
-          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- end }}
+          imagePullPolicy: {{ .Values.meshweb.image.pullPolicy }}
           ports:
             - name: http
               containerPort: {{ .Values.meshweb.port }}

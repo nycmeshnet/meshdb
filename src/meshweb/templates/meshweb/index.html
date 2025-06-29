@@ -36,9 +36,11 @@
           <h5>{{ category.1 }}</h5>
         </div>
         {% for link, description in tools %}
+        <a class="toolListLink" href={{ link }}>
         <div class="toolListItem">
-        <a href={{ link }}><h6>{{ description }}</h6></a>
+        <h6>{{ description }}</h6>
         </div>
+        </a>
         {% endfor %}
       </div>
       {% endfor %}

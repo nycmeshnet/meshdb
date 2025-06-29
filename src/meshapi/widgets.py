@@ -91,6 +91,10 @@ class DeviceIPAddressWidget(widgets.TextInput):
     template_name = "widgets/ip_address.html"
 
 
+class DOBIdentifierWidget(forms.NumberInput):
+    template_name = "widgets/dob_identifier.html"
+
+
 class UISPHyperlinkWidget(widgets.TextInput):
     template_name = "widgets/uisp_link.html"
 

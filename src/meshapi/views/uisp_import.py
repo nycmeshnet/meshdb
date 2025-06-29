@@ -7,13 +7,60 @@ from rest_framework.permissions import IsAdminUser
 from rest_framework.request import Request
 from rest_framework.response import Response
 
+from meshapi.tasks import run_uisp_on_demand_import
 from meshapi.util.network_number import NETWORK_NUMBER_MAX, NETWORK_NUMBER_MIN
-from meshapi.util.uisp_import.fetch_uisp import get_uisp_devices, get_uisp_links
-from meshapi.util.uisp_import.sync_handlers import (
-    import_and_sync_uisp_devices,
-    import_and_sync_uisp_links,
-    sync_link_table_into_los_objects,
+from meshdb.celery import app
+
+
+@extend_schema_view(
+    summary="View status for UISP Import jobs.",
+    post=extend_schema(tags=["UISP Import"]),
+    responses={
+        "200": OpenApiResponse(
+            description="API is up and serving traffic",
+            response=OpenApiTypes.STR,
+        ),
+        "500": OpenApiResponse(
+            description="Server error, probbaly a misconfigured environment variable.",
+            response=OpenApiTypes.STR,
+        ),
+    },
 )
+@api_view(["GET"])
+@permission_classes([IsAdminUser])
+def view_uisp_on_demand_import_status(request: Request) -> Response:
+    try:
+        # Inspect all nodes.
+        i = app.control.inspect()
+
+        # Show the items that have an ETA or are scheduled for later processing
+        scheduled = i.scheduled()
+
+        # Show tasks that are currently active.
+        active = i.active()
+
+        # Show tasks that have been claimed by workers
+        reserved = i.reserved()
+
+        tasks = []
+
+        def parse_tasks(tasks_by_worker: dict[str, list], status: str) -> list[dict[str, str]]:
+            parsed_tasks = []
+            for _, tasks in tasks_by_worker.items():
+                for t in tasks:
+                    if "run_uisp_on_demand_import" in t.get("name"):
+                        parsed_tasks.append({"id": t.get("id"), "nn": t.get("args")[0], "status": status})
+            return parsed_tasks
+
+        tasks.extend(parse_tasks(active, "running"))
+        tasks.extend(parse_tasks(reserved, "claimed"))
+        tasks.extend(parse_tasks(scheduled, "scheduled"))
+
+    except Exception as e:
+        logging.exception(e)
+        return Response({"detail": "An error occurred trying to fetch task status"}, status=500)
+
+    return Response({"tasks": tasks}, status=200)
 
 
 @extend_schema_view(
@@ -62,14 +109,13 @@ def uisp_import_for_nn(request: Request, network_number: int) -> Response:
         return Response({"detail": m}, status=status)
 
     try:
-        import_and_sync_uisp_devices(get_uisp_devices(), target_nn)
-        import_and_sync_uisp_links(get_uisp_links(), target_nn)
-        sync_link_table_into_los_objects(target_nn)
+        import_result = run_uisp_on_demand_import.delay(target_nn)
     except Exception as e:
         logging.exception(e)
-        status = 500
-        m = "An error ocurred while running the import. Please try again later."
-        return Response({"detail": m}, status=status)
+        return Response({"detail": "error", "task_id": None}, status=500)
 
-    logging.info(f"Successfully ran uisp import for NN{network_number}")
-    return Response({"detail": "success"}, status=200)
+    logging.info(
+        f"UISP Import for NN{network_number} is now running with Task ID {import_result.id}."
+        " Check the object in a few minutes to see updates."
+    )
+    return Response({"detail": "success", "task_id": import_result.id}, status=200)
