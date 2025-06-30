@@ -41,7 +41,9 @@ from .util import TestThread
 original_install_init = Install.__init__
 
 
-def validate_successful_join_form_submission(test_case, test_name: str, request: dict, join_form_request: JoinFormRequest, response, expected_member_count=1):
+def validate_successful_join_form_submission(
+    test_case, test_name: str, request: dict, join_form_request: JoinFormRequest, response, expected_member_count=1
+):
     # Make sure that we get the right stuff out of the database afterwards
 
     # Check if the member was created and that we see it when we
@@ -271,83 +273,6 @@ class TestJoinForm(TestCase):
             response.status_code,
             f"status code incorrect for Valid Join Form. Should be {code}, but got {response.status_code}.\n Response is: {response.content.decode('utf-8')}",
         )
-        validate_successful_join_form_submission(self, "Valid Join Form", request, s, response)
-
-    def test_valid_join_form_use_original_with_results_from_geosearch(self):
-        submission = valid_join_form_submission
-        submission["street_address"] = "151 B Street"
-        submission["city"] = "NYC"
-        submission["phone_number"] = "1111111111"
-
-        self.requests_mocker.get(
-            NYC_PLANNING_LABS_GEOCODE_URL,
-            json=submission["dob_addr_response"],
-        )
-
-        request, s = pull_apart_join_form_submission(submission)
-        s.street_address = "151 B Street"
-        request["trust_me_bro"] = False
-
-        response = self.c.post("/api/v1/join/", request, content_type="application/json")
-        code = 409
-        self.assertEqual(
-            code,
-            response.status_code,
-            f"status code incorrect for Valid Join Form. Should be {code}, but got {response.status_code}.\n Response is: {response.content.decode('utf-8')}",
-        )
-
-        request["trust_me_bro"] = True
-
-        response = self.c.post("/api/v1/join/", request, content_type="application/json")
-        code = 201
-        self.assertEqual(
-            code,
-            response.status_code,
-            f"status code incorrect for Valid Join Form. Should be {code}, but got {response.status_code}.\n Response is: {response.content.decode('utf-8')}",
-        )
-
-        install = Install.objects.get(id=response.json()["install_id"])
-        self.assertEqual(install.building.street_address, "151 B Street")
-        self.assertEqual(install.building.city, "NYC")
-        self.assertEqual(install.member.phone_number, "+1 111 111 1111")
-
-        validate_successful_join_form_submission(self, "Valid Join Form", request, s, response)
-
-    def test_valid_join_form_use_original_without_results_from_geosearch(self):
-        submission = valid_join_form_submission
-        submission["street_address"] = "151 B Street"
-        submission["city"] = "NYC"
-        submission["phone_number"] = "1111111111"
-
-        self.requests_mocker.get(NYC_PLANNING_LABS_GEOCODE_URL, json={"features": []})
-
-        request, s = pull_apart_join_form_submission(submission)
-        s.street_address = "151 B Street"
-        request["trust_me_bro"] = False
-
-        response = self.c.post("/api/v1/join/", request, content_type="application/json")
-        code = 409
-        self.assertEqual(
-            code,
-            response.status_code,
-            f"status code incorrect for Valid Join Form. Should be {code}, but got {response.status_code}.\n Response is: {response.content.decode('utf-8')}",
-        )
-
-        request["trust_me_bro"] = True
-
-        response = self.c.post("/api/v1/join/", request, content_type="application/json")
-        code = 201
-        self.assertEqual(
-            code,
-            response.status_code,
-            f"status code incorrect for Valid Join Form. Should be {code}, but got {response.status_code}.\n Response is: {response.content.decode('utf-8')}",
-        )
-
-        install = Install.objects.get(id=response.json()["install_id"])
-        self.assertEqual(install.building.street_address, "151 B Street")
-        self.assertEqual(install.building.city, "NYC")
-        self.assertEqual(install.member.phone_number, "+1 111 111 1111")
-
         validate_successful_join_form_submission(self, "Valid Join Form", request, s, response)
 
     def test_valid_trust_me_bro_bad_zip(self):

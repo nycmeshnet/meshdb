@@ -417,9 +417,10 @@ def process_join_form(r: JoinFormRequest, request: Optional[Request] = None) -> 
                 request,
             )
 
-    success_message = f"""JoinForm submission success {"(changed_info)" if changed_info else ""} {"(trust_me_bro)" if r.trust_me_bro else ""}. \
-building_id: {join_form_building.id}, member_id: {join_form_member.id}, \
-install_number: {join_form_install.install_number}"""
+    success_message = f"""JoinForm submission success {"(changed_info)" if changed_info else ""} \
+    {"(trust_me_bro)" if r.trust_me_bro else ""}. \
+    building_id: {join_form_building.id}, member_id: {join_form_member.id}, \
+    install_number: {join_form_install.install_number}"""
 
     if r.trust_me_bro:
         logging.warning(success_message)
