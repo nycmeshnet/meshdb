@@ -41,16 +41,17 @@ from .util import TestThread
 original_install_init = Install.__init__
 
 
-def validate_successful_join_form_submission(test_case, test_name, s, response, expected_member_count=1):
+
+def validate_successful_join_form_submission(test_case, test_name, request, join_form_request, response, expected_member_count=1):
     # Make sure that we get the right stuff out of the database afterwards
 
     # Check if the member was created and that we see it when we
     # filter for it.
     existing_members = Member.objects.filter(
-        Q(phone_number=s.phone_number)
-        | Q(primary_email_address=s.email_address)
-        | Q(stripe_email_address=s.email_address)
-        | Q(additional_email_addresses__contains=[s.email_address])
+        Q(phone_number=join_form_request.phone_number)
+        | Q(primary_email_address=join_form_request.email_address)
+        | Q(stripe_email_address=join_form_request.email_address)
+        | Q(additional_email_addresses__contains=[join_form_request.email_address])
     )
 
     test_case.assertEqual(
@@ -61,12 +62,20 @@ def validate_successful_join_form_submission(test_case, test_name, s, response, 
 
     # Check if the building was created and that we see it when we
     # filter for it.
-    existing_buildings = Building.objects.filter(
-        street_address=s.street_address,
-        city=s.city,
-        state=s.state,
-        zip_code=s.zip_code,
-    )
+    if join_form_request.trust_me_bro:
+        existing_buildings = Building.objects.filter(
+            street_address=request.get("street_address"),
+            city=request.get("city"),
+            state=request.get("state"),
+            zip_code=request.get("zip_code"),
+        )
+    else:
+        existing_buildings = Building.objects.filter(
+            street_address=join_form_request.street_address,
+            city=join_form_request.city,
+            state=join_form_request.state,
+            zip_code=join_form_request.zip_code,
+        )
 
     length = 1
     test_case.assertEqual(
@@ -85,7 +94,6 @@ def validate_successful_join_form_submission(test_case, test_name, s, response, 
         length,
         f"Didn't find created install for {test_name}. Should be {length}, but got {len(join_form_installs)}",
     )
-
 
 # Pulls the parsed_street_address out of the test data so that we don't have to later
 # Returns JSON and a JoinFormRequest in the correct format to be given to the above function

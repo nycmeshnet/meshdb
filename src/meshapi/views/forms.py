@@ -24,7 +24,7 @@ from meshapi.models import AddressTruthSource, Building, Install, Member, Node
 from meshapi.permissions import HasNNAssignPermission, LegacyNNAssignmentPassword
 from meshapi.serializers import MemberSerializer
 from meshapi.util.admin_notifications import notify_administrators_of_data_issue
-from meshapi.util.constants import RECAPTCHA_CHECKBOX_TOKEN_HEADER, RECAPTCHA_INVISIBLE_TOKEN_HEADER
+from meshapi.util.constants import INVALID_ALTITUDE, RECAPTCHA_CHECKBOX_TOKEN_HEADER, RECAPTCHA_INVISIBLE_TOKEN_HEADER
 from meshapi.util.django_pglocks import advisory_lock
 from meshapi.util.network_number import NETWORK_NUMBER_ASSIGN_MIN, NETWORK_NUMBER_MAX, get_next_available_network_number
 from meshapi.validation import (
@@ -210,6 +210,16 @@ def process_join_form(r: JoinFormRequest, request: Optional[Request] = None) -> 
                 f"(email: {r.email_address}, changed_info: {changed_info}). "
                 "Proceeding with install request submission."
             )
+
+            nyc_addr_info.street_address = r.street_address
+            nyc_addr_info.city = r.city
+            nyc_addr_info.state = r.state
+            nyc_addr_info.zip = r.zip_code
+            nyc_addr_info.longitude = 0.0
+            nyc_addr_info.latitude = 0.0
+            nyc_addr_info.altitude = INVALID_ALTITUDE
+            nyc_addr_info.bin = None
+
         else:
             logging.warning("Please confirm a few details")
             return Response(
@@ -407,7 +417,7 @@ def process_join_form(r: JoinFormRequest, request: Optional[Request] = None) -> 
                 request,
             )
 
-    success_message = f"""JoinForm submission success {"(trust_me_bro)" if r.trust_me_bro else ""}. \
+    success_message = f"""JoinForm submission success {"(changed_info)" if changed_info else ""} {"(trust_me_bro)" if r.trust_me_bro else ""}. \
 building_id: {join_form_building.id}, member_id: {join_form_member.id}, \
 install_number: {join_form_install.install_number}"""
 
