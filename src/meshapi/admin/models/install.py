@@ -57,7 +57,9 @@ class InstallAdminForm(forms.ModelForm):
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
-        self.fields["status"].widget.form_instance = self
+
+        if "status" in self.fields:
+            self.fields["status"].widget.form_instance = self
 
 
 @admin.register(Install)
@@ -107,7 +109,7 @@ class InstallAdmin(RankedSearchMixin, ImportExportMixin, ExportActionMixin, Simp
         + SearchVector("referral", weight="D")
         + SearchVector("notes", weight="D")
     )
-    autocomplete_fields = ["building", "member"]
+    autocomplete_fields = ["building", "member", "node"]
     readonly_fields = ["install_number"]
     fieldsets = [
         (
