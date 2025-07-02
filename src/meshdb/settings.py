@@ -294,9 +294,7 @@ DBBACKUP_FILENAME_TEMPLATE = "{datetime}.{extension}"
 
 if local_backup_file:
     DBBACKUP_STORAGE = "django.core.files.storage.FileSystemStorage"
-    DBBACKUP_STORAGE_OPTIONS ={
-        "location": local_backup_file
-    }
+    DBBACKUP_STORAGE_OPTIONS = {"location": local_backup_file}
 else:
     DBBACKUP_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
     DBBACKUP_STORAGE_OPTIONS = {
