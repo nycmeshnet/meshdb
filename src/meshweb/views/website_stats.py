@@ -53,6 +53,8 @@ def cors_allow_website_stats_to_all(sender: None, request: HttpRequest, **kwargs
 
 
 def compute_graph_stats(data_source: str, start_datetime: datetime, end_datetime: datetime) -> List[int]:
+    # GRAPH_X_AXIS_DATAPOINT_COUNT = 100
+    # buckets is a zero indexed array of length 100.
     buckets = [0 for _ in range(GRAPH_X_AXIS_DATAPOINT_COUNT)]
 
     total_duration_seconds = (end_datetime - start_datetime).total_seconds()
@@ -82,7 +84,13 @@ def compute_graph_stats(data_source: str, start_datetime: datetime, end_datetime
 
         relative_seconds = (counting_date - start_datetime.date()).total_seconds()
         bucket_index = math.floor((relative_seconds / total_duration_seconds) * GRAPH_X_AXIS_DATAPOINT_COUNT)
-        buckets[bucket_index] += 1
+
+        if bucket_index < 100:
+            buckets[bucket_index] += 1
+        elif bucket_index == 100:
+            buckets[99] += 1
+        else:
+            raise Exception('Bucket index #{bucket_index} is out of range')
 
     # Make cumulative
     for i in range(GRAPH_X_AXIS_DATAPOINT_COUNT):
