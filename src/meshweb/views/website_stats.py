@@ -58,6 +58,7 @@ def compute_graph_stats(data_source: str, start_datetime: datetime, end_datetime
     else:
         return compute_graph_stats_for_all_installs(start_datetime, end_datetime)
 
+
 def compute_graph_stats_for_active_installs(start_datetime: datetime, end_datetime: datetime) -> List[int]:
     # GRAPH_X_AXIS_DATAPOINT_COUNT = 100
     # buckets is a zero indexed array of length 100.
@@ -86,7 +87,7 @@ def compute_graph_stats_for_active_installs(start_datetime: datetime, end_dateti
         elif bucket_index == 100:
             buckets[99] += 1
         else:
-            raise Exception('Bucket index #{bucket_index} is out of range')
+            raise Exception("Bucket index #{bucket_index} is out of range")
 
     # Make cumulative
     for i in range(GRAPH_X_AXIS_DATAPOINT_COUNT):
@@ -94,6 +95,7 @@ def compute_graph_stats_for_active_installs(start_datetime: datetime, end_dateti
             buckets[i] += buckets[i - 1]
 
     return buckets
+
 
 def compute_graph_stats_for_all_installs(start_datetime: datetime, end_datetime: datetime) -> List[int]:
     # GRAPH_X_AXIS_DATAPOINT_COUNT = 100
@@ -120,7 +122,7 @@ def compute_graph_stats_for_all_installs(start_datetime: datetime, end_datetime:
         elif bucket_index == 100:
             buckets[99] += 1
         else:
-            raise Exception('Bucket index #{bucket_index} is out of range')
+            raise Exception("Bucket index #{bucket_index} is out of range")
 
     # Make cumulative
     for i in range(GRAPH_X_AXIS_DATAPOINT_COUNT):
@@ -128,6 +130,7 @@ def compute_graph_stats_for_all_installs(start_datetime: datetime, end_datetime:
             buckets[i] += buckets[i - 1]
 
     return buckets
+
 
 def render_graph(
     data_source: str,
