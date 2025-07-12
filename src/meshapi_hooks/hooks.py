@@ -14,12 +14,12 @@ class CelerySerializerHook(AbstractHook):
 
     MAX_CONSECUTIVE_FAILURES_BEFORE_DISABLE = 5
 
-    enabled = models.BooleanField(
+    enabled: models.BooleanField = models.BooleanField(
         default=True,
         help_text="Should this webhook be used? This field be automatically changed by the system "
         "when too many consecutive failures are detected at the recipient",
     )
-    consecutive_failures = models.IntegerField(
+    consecutive_failures: models.IntegerField = models.IntegerField(
         default=0,
         help_text="The number of consecutive failures detected for this endpoint. "
         "This should not be modified by administrators",
