@@ -1,4 +1,5 @@
 import datetime
+import io
 import json
 
 from django.contrib.auth.models import User
@@ -135,3 +136,35 @@ class TestInstallFeeBillingDatum(TestCase):
 
         billing_datum.refresh_from_db()
         self.assertEqual(InstallFeeBillingDatum.BillingStatus.BILLED, billing_datum.status)
+
+    def test_import_csv(self):
+        csv_data = f"""id,install,status,billing_date,invoice_number,notes
+,{self.install.install_number},Billed,4/7/22,10010,Foo bar baz"""
+
+        import_response = self.client.post(
+            "/admin/meshapi/installfeebillingdatum/import/",
+            data={
+                "format": "0",
+                "resource": "",
+                "import_file": io.StringIO(csv_data),
+            },
+        )
+
+        self.client.post(
+            "/admin/meshapi/installfeebillingdatum/process_import/",
+            data={
+                "import_file_name": import_response.context_data["confirm_form"].initial["import_file_name"],
+                "original_file_name": "test.csv",
+                "format": "0",
+                "resource": "",
+                "confirm": "Confirm import",
+            },
+        )
+
+        billing_datum = InstallFeeBillingDatum.objects.first()
+        self.assertIsNotNone(billing_datum)
+        self.assertEqual(InstallFeeBillingDatum.BillingStatus.BILLED, billing_datum.status)
+        self.assertEqual("Foo bar baz", billing_datum.notes)
+        self.assertEqual(datetime.date(2022, 4, 7), billing_datum.billing_date)
+        self.assertEqual("10010", billing_datum.invoice_number)
+        self.assertEqual(billing_datum.install_id, self.install.id)
