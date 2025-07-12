@@ -17,6 +17,7 @@ def index(request: HttpRequest) -> HttpResponse:
         ("meshweb/volunteer.png", "Volunteer Tools"): [
             ("/admin", "Admin Panel"),
             ("/static/meshweb/meshdb.kml", "KML Download"),
+            ("/api/v1/geography/whole-mesh.kml", "KML Download (Offline)"),
             ("/explorer/play", "SQL Explorer"),
             (f"{settings.FORMS_URL}/nn-assign/", "NN Assign Form"),
             (f"{settings.FORMS_URL}/query/", "Query Form"),
