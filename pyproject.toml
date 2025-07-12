@@ -22,8 +22,6 @@ dependencies = [
     "geopy==2.4.*",
     "django-cors-headers==4.3.*",
     "inflect==7.0.*",
-    # FIXME: Update me to stable, once 1.0 is released officially
-    #  https://github.com/nycmeshnet/meshdb/issues/525
     "fastkml[lxml]==1.1.0",
     "drf-spectacular==0.27.*",
     "djangorestframework-dataclasses==1.3.*",
