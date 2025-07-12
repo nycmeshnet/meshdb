@@ -356,6 +356,8 @@ The file will be written to `data/full_dump.sql`, share this with the new devs
 
 ### Backups
 
+***note for local backups set environment variable `LOCALBACKUP_FILE` to the path of the backup directory***
+
 **The Proper Way**
 
 We have a Celery job that runs hourly in production to back up to an S3 bucket.

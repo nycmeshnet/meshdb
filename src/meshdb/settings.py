@@ -289,13 +289,18 @@ DATABASES = {
 
 # django-dbbackup
 # https://django-dbbackup.readthedocs.io/en/master/installation.html
-
-DBBACKUP_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
+local_backup_file = os.environ.get("LOCALBACKUP_FILE")
 DBBACKUP_FILENAME_TEMPLATE = "{datetime}.{extension}"
-DBBACKUP_STORAGE_OPTIONS = {
-    "bucket_name": "meshdb-data-backups",
-    "location": "meshdb-backups/prod/",
-}
+
+if local_backup_file:
+    DBBACKUP_STORAGE = "django.core.files.storage.FileSystemStorage"
+    DBBACKUP_STORAGE_OPTIONS = {"location": local_backup_file}
+else:
+    DBBACKUP_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
+    DBBACKUP_STORAGE_OPTIONS = {
+        "bucket_name": "meshdb-data-backups",
+        "location": "meshdb-backups/prod/",
+    }
 
 DBBACKUP_CONNECTORS = {
     "default": {
