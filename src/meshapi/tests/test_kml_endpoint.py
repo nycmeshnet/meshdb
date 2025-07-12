@@ -203,7 +203,7 @@ class TestKMLEndpoint(TestCase):
         self.maxDiff = None
         response = self.c.get("/api/v1/geography/whole-mesh.kml")
 
-        kml_doc = kml.KML.class_from_string(response.content.decode("UTF8")).features[0]
+        kml_doc = kml.KML.from_string(response.content.decode("UTF8")).features[0]
 
         self.assertEqual(len(kml_doc.styles), 5)
         self.assertEqual(len(kml_doc.features), 2)
