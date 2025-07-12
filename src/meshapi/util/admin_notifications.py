@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+import time
 from typing import Optional, Sequence, Type
 
 import requests
@@ -12,6 +13,8 @@ from meshapi.admin.utils import get_admin_url
 
 SLACK_ADMIN_NOTIFICATIONS_WEBHOOK_URL = os.environ.get("SLACK_ADMIN_NOTIFICATIONS_WEBHOOK_URL")
 SITE_BASE_URL = os.environ.get("SITE_BASE_URL")
+
+SLACK_ADMIN_NOTIFICATIONS_RETRY_COUNT = int(os.environ.get("SLACK_ADMIN_NOTIFICATIONS_RETRY_COUNT", 3))
 
 
 def escape_slack_text(text: str) -> str:
@@ -69,13 +72,21 @@ def notify_admins(
         )
         return
 
-    response = requests.post(SLACK_ADMIN_NOTIFICATIONS_WEBHOOK_URL, json=slack_message)
-
-    if raise_exception_on_failure:
-        response.raise_for_status()
-    elif response.status_code != 200:
-        logging.error(
-            f"Got HTTP {response.status_code} while sending slack notification to slack admin. "
-            f"HTTP response was {response.text}. Unable to notify admins of "
-            f"the following message: {slack_message}"
-        )
+    for i in range(0, SLACK_ADMIN_NOTIFICATIONS_RETRY_COUNT + 1):
+        response = requests.post(SLACK_ADMIN_NOTIFICATIONS_WEBHOOK_URL, json=slack_message)
+        try:
+            response.raise_for_status()
+            return
+        except requests.exceptions.RequestException as e:
+            if i == SLACK_ADMIN_NOTIFICATIONS_RETRY_COUNT:
+                if raise_exception_on_failure:
+                    raise e
+                else:
+                    logging.error(
+                        f"Got HTTP {response.status_code} while sending slack notification to slack admin. "
+                        f"HTTP response was {response.text}. Unable to notify admins of "
+                        f"the following message: {slack_message}"
+                    )
+            else:
+                # Exponential backoff to try to avoid triggering Slack's rate limiting logic
+                time.sleep(2**i)
