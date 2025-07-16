@@ -1,4 +1,4 @@
-FROM python:3.11-bookworm
+FROM python:3.13-bookworm
 
 # For healthcheck
 RUN apt-get -y update; apt-get -y install netcat-openbsd postgresql-client-15
