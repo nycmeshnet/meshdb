@@ -45,7 +45,7 @@ class TestValidationNYCAddressInfo(TestCase):
         mock_2.content = "{}".encode("utf-8")
 
         mock_3 = MagicMock()
-        mock_3.content = '[{"heightroof":123.456, "groundelev":76.544}]'.encode("utf-8")
+        mock_3.content = '[{"height_roof":123.456, "ground_elevation":76.544}]'.encode("utf-8")
 
         mock_requests.side_effect = [mock_1, mock_2, mock_3]
 
@@ -79,7 +79,7 @@ class TestValidationNYCAddressInfo(TestCase):
         mock_2.content = "{}".encode("utf-8")
 
         mock_3 = MagicMock()
-        mock_3.content = '[{"heightroof":123.456, "groundelev":76.544}]'.encode("utf-8")
+        mock_3.content = '[{"height_roof":123.456, "ground_elevation":76.544}]'.encode("utf-8")
 
         mock_requests.side_effect = [mock_1, mock_2, mock_4, mock_3]
 
@@ -117,7 +117,7 @@ class TestValidationNYCAddressInfo(TestCase):
         mock_2.content = "{}".encode("utf-8")
 
         mock_3 = MagicMock()
-        mock_3.content = '[{"heightroof":123.456, "groundelev":76.544}]'.encode("utf-8")
+        mock_3.content = '[{"height_roof":123.456, "ground_elevation":76.544}]'.encode("utf-8")
 
         mock_requests.side_effect = [mock_1, mock_2, mock_4, mock_3]
 
@@ -146,7 +146,7 @@ class TestValidationNYCAddressInfo(TestCase):
         mock_2.content = "{}".encode("utf-8")
 
         mock_3 = MagicMock()
-        mock_3.content = '[{"heightroof":123.456, "groundelev":76.544}]'.encode("utf-8")
+        mock_3.content = '[{"height_roof":123.456, "ground_elevation":76.544}]'.encode("utf-8")
 
         mock_requests.side_effect = [mock_1, mock_2, mock_4, mock_3]
 
@@ -180,16 +180,16 @@ class TestValidationNYCAddressInfo(TestCase):
         mock_series_of_tubes.content = "a series of tubes".encode("utf-8")
 
         mock_no_list = MagicMock()
-        mock_no_list.content = '{"heightroof":123, "groundelev":456}'.encode("utf-8")
+        mock_no_list.content = '{"height_roof":123, "ground_elevation":456}'.encode("utf-8")
 
         mock_no_value = MagicMock()
-        mock_no_value.content = '[{"heightroof":123}]'.encode("utf-8")
+        mock_no_value.content = '[{"height_roof":123}]'.encode("utf-8")
 
         mock_null_value = MagicMock()
-        mock_null_value.content = '[{"heightroof":null, "groundelev":null}]'.encode("utf-8")
+        mock_null_value.content = '[{"height_roof":null, "ground_elevation":null}]'.encode("utf-8")
 
         mock_wrong_type = MagicMock()
-        mock_wrong_type.content = '[{"heightroof":"a series", "groundelev":"of tubes"}]'.encode("utf-8")
+        mock_wrong_type.content = '[{"height_roof":"a series", "ground_elevation":"of tubes"}]'.encode("utf-8")
 
         test_cases = [
             mock_series_of_tubes,
