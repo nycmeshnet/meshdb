@@ -214,7 +214,7 @@ To determine what permissions the user has, add them to one of the pre-existing 
 the instance)
 
 For software apps, create a new users for each application with the format
-`PersonName-ApplicationName`. Grant the minimum neccessary permissions directly on the user
+`PersonName-ApplicationName`. Grant the minimum necessary permissions directly on the user
 object using the admin UI.
 
 Auth tokens can be created at `/admin/authtoken/tokenproxy/`.
