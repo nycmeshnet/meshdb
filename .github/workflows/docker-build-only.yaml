@@ -1,0 +1,19 @@
+name: Docker build only
+
+on: [pull_request]
+
+permissions: read-all
+
+jobs:
+  docker_build_only:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+      - name: Build and push Docker image
+        id: build
+        uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83
+        with:
+          context: .
+          file: ./Dockerfile
+          push: false
+          tags: "test:latest"
