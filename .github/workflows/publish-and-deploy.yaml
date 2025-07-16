@@ -1,5 +1,5 @@
 name: Publish and Deploy
-# Combined these two workflows for visbility
+# Combined these two workflows for visibility
 
 on:
   push:
