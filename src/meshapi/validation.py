@@ -185,7 +185,7 @@ class NYCAddressInfo:
         try:
             query_params = {
                 "$where": f"bin={self.bin}",
-                "$select": "heightroof,groundelev",
+                "$select": "height_roof,ground_elevation",
                 "$limit": "1",
             }
             nyc_dataset_req = requests.get(
@@ -203,7 +203,7 @@ class NYCAddressInfo:
                 # convert feet to meters, and round to the nearest 0.1 m
                 FEET_PER_METER = 3.28084
                 self.altitude = round(
-                    (float(nyc_dataset_resp[0]["heightroof"]) + float(nyc_dataset_resp[0]["groundelev"]))
+                    (float(nyc_dataset_resp[0]["height_roof"]) + float(nyc_dataset_resp[0]["ground_elevation"]))
                     / FEET_PER_METER,
                     1,
                 )
