@@ -185,7 +185,7 @@ class NYCAddressInfo:
         try:
             query_params = {
                 "$where": f"bin={self.bin}",
-                "$select": "heightroof,groundelev",
+                "$select": "height_roof,ground_elevation",
                 "$limit": "1",
             }
             nyc_dataset_req = requests.get(
