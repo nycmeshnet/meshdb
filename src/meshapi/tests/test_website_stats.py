@@ -11,12 +11,16 @@ from meshweb.views import cors_allow_website_stats_to_all
 class TestWebsiteStatsGraph(TestCase):
     def setUp(self):
         self.sample_install_copy = sample_install.copy()
+
+        # Building
         self.building_1 = Building(**sample_building)
         self.building_1.save()
 
+        # Member
         self.member = Member(**sample_member)
         self.member.save()
 
+        # Install - Status = Request Received
         self.install1 = Install(
             **self.sample_install_copy,
             building=self.building_1,
@@ -25,6 +29,29 @@ class TestWebsiteStatsGraph(TestCase):
         self.install1.status = Install.InstallStatus.REQUEST_RECEIVED
         self.install1.save()
 
+        # Install - Status = Request Received, Created before 31 days
+        self.install29 = Install(
+            **self.sample_install_copy,
+            install_number=29,
+            building=self.building_1,
+            member=self.member,
+        )
+        self.install29.status = Install.InstallStatus.REQUEST_RECEIVED
+        self.install29.request_date = '2024-10-15T00:00:00Z'
+        self.install29.save()
+
+        # Install - Status = Request Received, Created before 365 days
+        self.install30 = Install(
+            **self.sample_install_copy,
+            install_number=30,
+            building=self.building_1,
+            member=self.member,
+        )
+        self.install30.status = Install.InstallStatus.REQUEST_RECEIVED
+        self.install30.request_date = '2023-11-16T00:00:00Z'
+        self.install30.save()
+
+        # Install - Status = Active
         self.install28 = Install(
             **self.sample_install_copy,
             install_number=28,
@@ -36,6 +63,8 @@ class TestWebsiteStatsGraph(TestCase):
     def test_empty_db(self):
         self.install1.delete()
         self.install28.delete()
+        self.install29.delete()
+        self.install30.delete()
         svg_response = self.client.get("/website-embeds/stats-graph.svg")
         self.assertContains(svg_response, "No installs found, is the database empty?", status_code=500)
 
@@ -78,13 +107,15 @@ class TestWebsiteStatsGraph(TestCase):
     def test_graph_svg_looks_roughly_right(self):
         svg_response = self.client.get("/website-embeds/stats-graph.svg?data=active_installs&days=365")
         self.assertEqual(svg_response.status_code, 200)
+
         self.assertContains(svg_response, ">1</text>")
         self.assertContains(svg_response, ">Nov 17, 2023</text>")
         self.assertContains(svg_response, ">Nov 16, 2024</text>")
 
         svg_response = self.client.get("/website-embeds/stats-graph.svg?data=install_requests&days=31")
         self.assertEqual(svg_response.status_code, 200)
-        self.assertContains(svg_response, ">2</text>")
+
+        self.assertContains(svg_response, ">4</text>")
         self.assertContains(svg_response, ">Oct 16, 2024</text>")
         self.assertContains(svg_response, ">Nov 16, 2024</text>")
 
