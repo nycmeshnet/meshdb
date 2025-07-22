@@ -44,68 +44,68 @@ class TestWebsiteStatsGraph(TestCase):
         self.install2.save()
 
         # Install - Status = Request Received at last day of period
-        self.install10 = Install(
-            **self.sample_install_copy,
-            install_number=10,
-            building=self.building_1,
-            member=self.member,
-        )
-        self.install10.status = Install.InstallStatus.REQUEST_RECEIVED
-        self.install10.request_date = '2024-11-16T00:00:00Z'
-        self.install10.save()
-
-        # Install - Status = Request Received after period
-        self.install11 = Install(
-            **self.sample_install_copy,
-            install_number=11,
-            building=self.building_1,
-            member=self.member,
-        )
-        self.install11.status = Install.InstallStatus.REQUEST_RECEIVED
-        self.install11.request_date = '2024-11-17T00:00:00Z'
-        self.install11.save()
-
-        # ----------------------Active----------------------
-
-        # Install - Status = Active, Created before 365 days
         self.install3 = Install(
             **self.sample_install_copy,
             install_number=3,
             building=self.building_1,
             member=self.member,
         )
-        self.install3.install_date = '2023-11-15'
+        self.install3.status = Install.InstallStatus.REQUEST_RECEIVED
+        self.install3.request_date = '2024-11-16T00:00:00Z'
         self.install3.save()
 
-        # Install - Status = Active, Created during period
+        # Install - Status = Request Received after period
         self.install4 = Install(
             **self.sample_install_copy,
             install_number=4,
             building=self.building_1,
             member=self.member,
         )
-        self.install4.install_date = '2024-11-12'
+        self.install4.status = Install.InstallStatus.REQUEST_RECEIVED
+        self.install4.request_date = '2024-11-17T00:00:00Z'
         self.install4.save()
 
-        # Install - Status = Active, Created at last day of period
+        # ----------------------Active----------------------
+
+        # Install - Status = Active, Created before 365 days
         self.install5 = Install(
             **self.sample_install_copy,
             install_number=5,
             building=self.building_1,
             member=self.member,
         )
-        self.install5.install_date = '2024-11-16'
+        self.install5.install_date = '2023-11-15'
         self.install5.save()
 
-        # Install - Status = Active, Created after period
+        # Install - Status = Active, Created during period
         self.install6 = Install(
             **self.sample_install_copy,
             install_number=6,
             building=self.building_1,
             member=self.member,
         )
-        self.install6.install_date = '2024-11-17'
+        self.install6.install_date = '2024-11-12'
         self.install6.save()
+
+        # Install - Status = Active, Created at last day of period
+        self.install7 = Install(
+            **self.sample_install_copy,
+            install_number=7,
+            building=self.building_1,
+            member=self.member,
+        )
+        self.install7.install_date = '2024-11-16'
+        self.install7.save()
+
+        # Install - Status = Active, Created after period
+        self.install8 = Install(
+            **self.sample_install_copy,
+            install_number=8,
+            building=self.building_1,
+            member=self.member,
+        )
+        self.install8.install_date = '2024-11-17'
+        self.install8.save()
 
     def test_empty_db(self):
         self.install1.delete()
@@ -114,6 +114,8 @@ class TestWebsiteStatsGraph(TestCase):
         self.install4.delete()
         self.install5.delete()
         self.install6.delete()
+        self.install7.delete()
+        self.install8.delete()
         svg_response = self.client.get("/website-embeds/stats-graph.svg")
         self.assertContains(svg_response, "No installs found, is the database empty?", status_code=500)
 
