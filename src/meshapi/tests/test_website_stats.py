@@ -40,7 +40,30 @@ class TestWebsiteStatsGraph(TestCase):
             member=self.member,
         )
         self.install2.status = Install.InstallStatus.REQUEST_RECEIVED
+        self.install2.request_date = '2024-11-15T00:00:00Z'
         self.install2.save()
+
+        # Install - Status = Request Received at last day of period
+        self.install10 = Install(
+            **self.sample_install_copy,
+            install_number=10,
+            building=self.building_1,
+            member=self.member,
+        )
+        self.install10.status = Install.InstallStatus.REQUEST_RECEIVED
+        self.install10.request_date = '2024-11-16T00:00:00Z'
+        self.install10.save()
+
+        # Install - Status = Request Received after period
+        self.install11 = Install(
+            **self.sample_install_copy,
+            install_number=11,
+            building=self.building_1,
+            member=self.member,
+        )
+        self.install11.status = Install.InstallStatus.REQUEST_RECEIVED
+        self.install11.request_date = '2024-11-17T00:00:00Z'
+        self.install11.save()
 
         # ----------------------Active----------------------
 
@@ -155,7 +178,7 @@ class TestWebsiteStatsGraph(TestCase):
         svg_response = self.client.get("/website-embeds/stats-graph.svg?data=install_requests&days=31")
         self.assertEqual(svg_response.status_code, 200)
 
-        self.assertContains(svg_response, ">6</text>")
+        self.assertContains(svg_response, ">7</text>")
         self.assertContains(svg_response, ">Oct 16, 2024</text>")
         self.assertContains(svg_response, ">Nov 16, 2024</text>")
 
