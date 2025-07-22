@@ -33,89 +33,89 @@ class TestWebsiteStatsGraph(TestCase):
         self.install1.save()
 
         # Install - Status = Request Received during period
-        self.install2 = Install(
+        self.install32 = Install(
             **self.sample_install_copy,
-            install_number=2,
+            install_number=32,
             building=self.building_1,
             member=self.member,
         )
-        self.install2.status = Install.InstallStatus.REQUEST_RECEIVED
-        self.install2.request_date = "2024-11-15T00:00:00Z"
-        self.install2.save()
+        self.install32.status = Install.InstallStatus.REQUEST_RECEIVED
+        self.install32.request_date = "2024-11-15T00:00:00Z"
+        self.install32.save()
 
         # Install - Status = Request Received at last day of period
-        self.install3 = Install(
+        self.install33 = Install(
             **self.sample_install_copy,
-            install_number=3,
+            install_number=33,
             building=self.building_1,
             member=self.member,
         )
-        self.install3.status = Install.InstallStatus.REQUEST_RECEIVED
-        self.install3.request_date = "2024-11-16T00:00:00Z"
-        self.install3.save()
+        self.install33.status = Install.InstallStatus.REQUEST_RECEIVED
+        self.install33.request_date = "2024-11-16T00:00:00Z"
+        self.install33.save()
 
         # Install - Status = Request Received after period
-        self.install4 = Install(
+        self.install34 = Install(
             **self.sample_install_copy,
-            install_number=4,
+            install_number=34,
             building=self.building_1,
             member=self.member,
         )
-        self.install4.status = Install.InstallStatus.REQUEST_RECEIVED
-        self.install4.request_date = "2024-11-17T00:00:00Z"
-        self.install4.save()
+        self.install34.status = Install.InstallStatus.REQUEST_RECEIVED
+        self.install34.request_date = "2024-11-17T00:00:00Z"
+        self.install34.save()
 
         # ----------------------Active----------------------
 
         # Install - Status = Active, Created before 365 days
-        self.install5 = Install(
+        self.install35 = Install(
             **self.sample_install_copy,
-            install_number=5,
+            install_number=35,
             building=self.building_1,
             member=self.member,
         )
-        self.install5.install_date = "2023-11-15"
-        self.install5.save()
+        self.install35.install_date = "2023-11-15"
+        self.install35.save()
 
         # Install - Status = Active, Created during period
-        self.install6 = Install(
+        self.install36 = Install(
             **self.sample_install_copy,
-            install_number=6,
+            install_number=36,
             building=self.building_1,
             member=self.member,
         )
-        self.install6.install_date = "2024-11-12"
-        self.install6.save()
+        self.install36.install_date = "2024-11-12"
+        self.install36.save()
 
         # Install - Status = Active, Created at last day of period
-        self.install7 = Install(
+        self.install37 = Install(
             **self.sample_install_copy,
-            install_number=7,
+            install_number=37,
             building=self.building_1,
             member=self.member,
         )
-        self.install7.install_date = "2024-11-16"
-        self.install7.save()
+        self.install37.install_date = "2024-11-16"
+        self.install37.save()
 
         # Install - Status = Active, Created after period
-        self.install8 = Install(
+        self.install38 = Install(
             **self.sample_install_copy,
-            install_number=8,
+            install_number=38,
             building=self.building_1,
             member=self.member,
         )
-        self.install8.install_date = "2024-11-17"
-        self.install8.save()
+        self.install38.install_date = "2024-11-17"
+        self.install38.save()
 
     def test_empty_db(self):
         self.install1.delete()
-        self.install2.delete()
-        self.install3.delete()
-        self.install4.delete()
-        self.install5.delete()
-        self.install6.delete()
-        self.install7.delete()
-        self.install8.delete()
+        self.install32.delete()
+        self.install33.delete()
+        self.install34.delete()
+        self.install35.delete()
+        self.install36.delete()
+        self.install37.delete()
+        self.install38.delete()
         svg_response = self.client.get("/website-embeds/stats-graph.svg")
         self.assertContains(svg_response, "No installs found, is the database empty?", status_code=500)
 
