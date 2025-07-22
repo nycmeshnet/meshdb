@@ -29,7 +29,7 @@ class TestWebsiteStatsGraph(TestCase):
             member=self.member,
         )
         self.install1.status = Install.InstallStatus.REQUEST_RECEIVED
-        self.install1.request_date = '2024-10-15T00:00:00Z'
+        self.install1.request_date = "2024-10-15T00:00:00Z"
         self.install1.save()
 
         # Install - Status = Request Received during period
@@ -40,7 +40,7 @@ class TestWebsiteStatsGraph(TestCase):
             member=self.member,
         )
         self.install2.status = Install.InstallStatus.REQUEST_RECEIVED
-        self.install2.request_date = '2024-11-15T00:00:00Z'
+        self.install2.request_date = "2024-11-15T00:00:00Z"
         self.install2.save()
 
         # Install - Status = Request Received at last day of period
@@ -51,7 +51,7 @@ class TestWebsiteStatsGraph(TestCase):
             member=self.member,
         )
         self.install3.status = Install.InstallStatus.REQUEST_RECEIVED
-        self.install3.request_date = '2024-11-16T00:00:00Z'
+        self.install3.request_date = "2024-11-16T00:00:00Z"
         self.install3.save()
 
         # Install - Status = Request Received after period
@@ -62,7 +62,7 @@ class TestWebsiteStatsGraph(TestCase):
             member=self.member,
         )
         self.install4.status = Install.InstallStatus.REQUEST_RECEIVED
-        self.install4.request_date = '2024-11-17T00:00:00Z'
+        self.install4.request_date = "2024-11-17T00:00:00Z"
         self.install4.save()
 
         # ----------------------Active----------------------
@@ -74,7 +74,7 @@ class TestWebsiteStatsGraph(TestCase):
             building=self.building_1,
             member=self.member,
         )
-        self.install5.install_date = '2023-11-15'
+        self.install5.install_date = "2023-11-15"
         self.install5.save()
 
         # Install - Status = Active, Created during period
@@ -84,7 +84,7 @@ class TestWebsiteStatsGraph(TestCase):
             building=self.building_1,
             member=self.member,
         )
-        self.install6.install_date = '2024-11-12'
+        self.install6.install_date = "2024-11-12"
         self.install6.save()
 
         # Install - Status = Active, Created at last day of period
@@ -94,7 +94,7 @@ class TestWebsiteStatsGraph(TestCase):
             building=self.building_1,
             member=self.member,
         )
-        self.install7.install_date = '2024-11-16'
+        self.install7.install_date = "2024-11-16"
         self.install7.save()
 
         # Install - Status = Active, Created after period
@@ -104,7 +104,7 @@ class TestWebsiteStatsGraph(TestCase):
             building=self.building_1,
             member=self.member,
         )
-        self.install8.install_date = '2024-11-17'
+        self.install8.install_date = "2024-11-17"
         self.install8.save()
 
     def test_empty_db(self):
