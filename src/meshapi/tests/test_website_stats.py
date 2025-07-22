@@ -159,7 +159,8 @@ class TestWebsiteStatsGraph(TestCase):
         svg_response = self.client.get("/website-embeds/stats-graph.svg?data=active_installs&days=0")
         self.assertEqual(svg_response.status_code, 200)
 
-        self.assertContains(svg_response, ">3</text>")
+        self.assertContains(svg_response, ">0</text>")
+        self.assertContains(svg_response, ">2</text>")
         self.assertContains(svg_response, ">Feb 27, 2022</text>")
         self.assertContains(svg_response, ">Nov 16, 2024</text>")
 
@@ -167,6 +168,7 @@ class TestWebsiteStatsGraph(TestCase):
         self.assertEqual(svg_response.status_code, 200)
 
         self.assertContains(svg_response, ">1</text>")
+        self.assertContains(svg_response, ">2</text>")
         self.assertContains(svg_response, ">Nov 17, 2023</text>")
         self.assertContains(svg_response, ">Nov 16, 2024</text>")
 
@@ -174,13 +176,15 @@ class TestWebsiteStatsGraph(TestCase):
         self.assertEqual(svg_response.status_code, 200)
 
         self.assertContains(svg_response, ">4</text>")
+        self.assertContains(svg_response, ">6</text>")
         self.assertContains(svg_response, ">Feb 27, 2022</text>")
         self.assertContains(svg_response, ">Nov 16, 2024</text>")
 
         svg_response = self.client.get("/website-embeds/stats-graph.svg?data=install_requests&days=31")
         self.assertEqual(svg_response.status_code, 200)
 
-        self.assertContains(svg_response, ">7</text>")
+        self.assertContains(svg_response, ">5</text>")
+        self.assertContains(svg_response, ">6</text>")
         self.assertContains(svg_response, ">Oct 16, 2024</text>")
         self.assertContains(svg_response, ">Nov 16, 2024</text>")
 

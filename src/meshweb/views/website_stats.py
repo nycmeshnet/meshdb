@@ -72,7 +72,7 @@ def compute_graph_stats_for_active_installs(start_datetime: datetime, end_dateti
     base_object_queryset = base_object_queryset.filter(status=Install.InstallStatus.ACTIVE)
     object_queryset = base_object_queryset.filter(
         install_date__gte=start_datetime.date(),
-        install_date__lte=end_datetime.date(),
+        install_date__lt=end_datetime.date(),
     )
     buckets[0] = base_object_queryset.filter(install_date__lt=start_datetime).count()
 
@@ -82,12 +82,12 @@ def compute_graph_stats_for_active_installs(start_datetime: datetime, end_dateti
         relative_seconds = (counting_date - start_datetime.date()).total_seconds()
         bucket_index = math.floor((relative_seconds / total_duration_seconds) * GRAPH_X_AXIS_DATAPOINT_COUNT)
 
-        if bucket_index >= 0 and bucket_index < 100:
+        if bucket_index > 0 and bucket_index < 100:
             buckets[bucket_index] += 1
         elif bucket_index == 100:
-            buckets[99] += 1
+            continue
         else:
-            raise Exception("Bucket index #{bucket_index} is out of range")
+            raise Exception(f"Bucket index {bucket_index} is out of range")
 
     # Make cumulative
     for i in range(GRAPH_X_AXIS_DATAPOINT_COUNT):
@@ -107,7 +107,7 @@ def compute_graph_stats_for_all_installs(start_datetime: datetime, end_datetime:
 
     object_queryset = base_object_queryset.filter(
         request_date__gte=start_datetime.date(),
-        request_date__lte=end_datetime.date(),
+        request_date__lt=end_datetime.date(),
     )
     buckets[0] = base_object_queryset.filter(request_date__lt=start_datetime).count()
 
@@ -117,12 +117,12 @@ def compute_graph_stats_for_all_installs(start_datetime: datetime, end_datetime:
         relative_seconds = (counting_date - start_datetime.date()).total_seconds()
         bucket_index = math.floor((relative_seconds / total_duration_seconds) * GRAPH_X_AXIS_DATAPOINT_COUNT)
 
-        if bucket_index >= 0 and bucket_index < 100:
+        if bucket_index > 0 and bucket_index < 100:
             buckets[bucket_index] += 1
         elif bucket_index == 100:
-            buckets[99] += 1
+            continue
         else:
-            raise Exception("Bucket index #{bucket_index} is out of range")
+            raise Exception(f"Bucket index {bucket_index} is out of range")
 
     # Make cumulative
     for i in range(GRAPH_X_AXIS_DATAPOINT_COUNT):
