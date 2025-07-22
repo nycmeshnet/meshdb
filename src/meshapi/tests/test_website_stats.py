@@ -32,7 +32,7 @@ class TestWebsiteStatsGraph(TestCase):
         self.install1.request_date = "2024-10-15T00:00:00Z"
         self.install1.save()
 
-        # Install - Status = Request Received during period
+        # Install - Status = Request Received, Created during period
         self.install32 = Install(
             **self.sample_install_copy,
             install_number=32,
@@ -43,7 +43,7 @@ class TestWebsiteStatsGraph(TestCase):
         self.install32.request_date = "2024-11-15T00:00:00Z"
         self.install32.save()
 
-        # Install - Status = Request Received at last day of period
+        # Install - Status = Request Received, Created at last day of period
         self.install33 = Install(
             **self.sample_install_copy,
             install_number=33,
@@ -54,7 +54,7 @@ class TestWebsiteStatsGraph(TestCase):
         self.install33.request_date = "2024-11-16T00:00:00Z"
         self.install33.save()
 
-        # Install - Status = Request Received after period
+        # Install - Status = Request Received, Created after period
         self.install34 = Install(
             **self.sample_install_copy,
             install_number=34,
