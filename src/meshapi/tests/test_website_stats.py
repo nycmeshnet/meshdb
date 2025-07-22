@@ -20,51 +20,77 @@ class TestWebsiteStatsGraph(TestCase):
         self.member = Member(**sample_member)
         self.member.save()
 
-        # Install - Status = Request Received
+        # -----------------Request Received-----------------
+
+        # Install - Status = Request Received, Created before 31 days
         self.install1 = Install(
             **self.sample_install_copy,
             building=self.building_1,
             member=self.member,
         )
         self.install1.status = Install.InstallStatus.REQUEST_RECEIVED
+        self.install1.request_date = '2024-10-15T00:00:00Z'
         self.install1.save()
 
-        # Install - Status = Request Received, Created before 31 days
-        self.install29 = Install(
+        # Install - Status = Request Received during period
+        self.install2 = Install(
             **self.sample_install_copy,
-            install_number=29,
+            install_number=2,
             building=self.building_1,
             member=self.member,
         )
-        self.install29.status = Install.InstallStatus.REQUEST_RECEIVED
-        self.install29.request_date = '2024-10-15T00:00:00Z'
-        self.install29.save()
+        self.install2.status = Install.InstallStatus.REQUEST_RECEIVED
+        self.install2.save()
 
-        # Install - Status = Request Received, Created before 365 days
-        self.install30 = Install(
-            **self.sample_install_copy,
-            install_number=30,
-            building=self.building_1,
-            member=self.member,
-        )
-        self.install30.status = Install.InstallStatus.REQUEST_RECEIVED
-        self.install30.request_date = '2023-11-16T00:00:00Z'
-        self.install30.save()
+        # ----------------------Active----------------------
 
-        # Install - Status = Active
-        self.install28 = Install(
+        # Install - Status = Active, Created before 365 days
+        self.install3 = Install(
             **self.sample_install_copy,
-            install_number=28,
+            install_number=3,
             building=self.building_1,
             member=self.member,
         )
-        self.install28.save()
+        self.install3.install_date = '2023-11-15'
+        self.install3.save()
+
+        # Install - Status = Active, Created during period
+        self.install4 = Install(
+            **self.sample_install_copy,
+            install_number=4,
+            building=self.building_1,
+            member=self.member,
+        )
+        self.install4.install_date = '2024-11-12'
+        self.install4.save()
+
+        # Install - Status = Active, Created at last day of period
+        self.install5 = Install(
+            **self.sample_install_copy,
+            install_number=5,
+            building=self.building_1,
+            member=self.member,
+        )
+        self.install5.install_date = '2024-11-16'
+        self.install5.save()
+
+        # Install - Status = Active, Created after period
+        self.install6 = Install(
+            **self.sample_install_copy,
+            install_number=6,
+            building=self.building_1,
+            member=self.member,
+        )
+        self.install6.install_date = '2024-11-17'
+        self.install6.save()
 
     def test_empty_db(self):
         self.install1.delete()
-        self.install28.delete()
-        self.install29.delete()
-        self.install30.delete()
+        self.install2.delete()
+        self.install3.delete()
+        self.install4.delete()
+        self.install5.delete()
+        self.install6.delete()
         svg_response = self.client.get("/website-embeds/stats-graph.svg")
         self.assertContains(svg_response, "No installs found, is the database empty?", status_code=500)
 
@@ -105,6 +131,13 @@ class TestWebsiteStatsGraph(TestCase):
         self.assertEqual(svg_response.status_code, 400)
 
     def test_graph_svg_looks_roughly_right(self):
+        # svg_response = self.client.get("/website-embeds/stats-graph.svg?data=active_installs&days=0")
+        # self.assertEqual(svg_response.status_code, 200)
+
+        # self.assertContains(svg_response, ">3</text>")
+        # self.assertContains(svg_response, ">Nov 15, 2023</text>")
+        # self.assertContains(svg_response, ">Nov 16, 2024</text>")
+
         svg_response = self.client.get("/website-embeds/stats-graph.svg?data=active_installs&days=365")
         self.assertEqual(svg_response.status_code, 200)
 
@@ -112,10 +145,17 @@ class TestWebsiteStatsGraph(TestCase):
         self.assertContains(svg_response, ">Nov 17, 2023</text>")
         self.assertContains(svg_response, ">Nov 16, 2024</text>")
 
+        # svg_response = self.client.get("/website-embeds/stats-graph.svg?data=install_requests&days=0")
+        # self.assertEqual(svg_response.status_code, 200)
+
+        # self.assertContains(svg_response, ">4</text>")
+        # self.assertContains(svg_response, ">Oct 16, 2024</text>")
+        # self.assertContains(svg_response, ">Nov 16, 2024</text>")
+
         svg_response = self.client.get("/website-embeds/stats-graph.svg?data=install_requests&days=31")
         self.assertEqual(svg_response.status_code, 200)
 
-        self.assertContains(svg_response, ">4</text>")
+        self.assertContains(svg_response, ">6</text>")
         self.assertContains(svg_response, ">Oct 16, 2024</text>")
         self.assertContains(svg_response, ">Nov 16, 2024</text>")
 
