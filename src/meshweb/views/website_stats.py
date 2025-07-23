@@ -85,7 +85,9 @@ def compute_graph_stats_for_active_installs(start_datetime: datetime, end_dateti
         relative_seconds = (counting_date - start_datetime.date()).total_seconds()
         bucket_index = math.floor((relative_seconds / total_duration_seconds) * GRAPH_X_AXIS_DATAPOINT_COUNT)
 
-        if bucket_index > 0 and bucket_index < 100:
+        if bucket_index == 0:
+            continue
+        elif bucket_index > 0 and bucket_index < 100:
             buckets[bucket_index] += 1
         elif bucket_index == 100:
             continue
@@ -120,7 +122,9 @@ def compute_graph_stats_for_all_installs(start_datetime: datetime, end_datetime:
         relative_seconds = (counting_date - start_datetime.date()).total_seconds()
         bucket_index = math.floor((relative_seconds / total_duration_seconds) * GRAPH_X_AXIS_DATAPOINT_COUNT)
 
-        if bucket_index > 0 and bucket_index < 100:
+        if bucket_index == 0:
+            continue
+        elif bucket_index > 0 and bucket_index < 100:
             buckets[bucket_index] += 1
         elif bucket_index == 100:
             continue
