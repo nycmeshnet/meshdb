@@ -79,7 +79,7 @@ def compute_graph_stats_for_active_installs(start_datetime: datetime, end_dateti
     for install in object_queryset:
         counting_date = install.install_date
 
-        if counting_date == None:
+        if counting_date is None:
             raise Exception(f"No counting date for install {install.id}")
 
         relative_seconds = (counting_date - start_datetime.date()).total_seconds()
