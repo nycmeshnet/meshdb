@@ -29,7 +29,10 @@ def index(request: HttpRequest) -> HttpResponse:
             ("/api/v1/", "MeshDB Data API"),
             ("/api-docs/swagger/", "API Docs (Swagger)"),
             ("/api-docs/redoc/", "API Docs (Redoc)"),
-            ("https://raw.githubusercontent.com/nycmeshnet/meshdb/refs/heads/main/sampledata/meshdb_local.kml", "KML Download (Localdev)"),
+            (
+                "https://raw.githubusercontent.com/nycmeshnet/meshdb/refs/heads/main/sampledata/meshdb_local.kml",
+                "KML Download (Localdev)",
+            ),
         ],
     }
     context = {"links": links, "logo": "meshweb/logo.svg"}
