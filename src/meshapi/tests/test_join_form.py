@@ -124,7 +124,7 @@ class TestJoinForm(TestCase):
         self.requests_mocker = requests_mock.Mocker(real_http=True)
         self.requests_mocker.start()
 
-        self.requests_mocker.get(DOB_BUILDING_HEIGHT_API_URL, json=[{"heightroof": 0, "groundelev": 0}])
+        self.requests_mocker.get(DOB_BUILDING_HEIGHT_API_URL, json=[{"height_roof": 0, "ground_elevation": 0}])
 
     def tearDown(self):
         self.requests_mocker.stop()
@@ -1342,7 +1342,7 @@ class TestJoinFormInstallEventHooks(TestCase):
         self.requests_mocker = requests_mock.Mocker(real_http=True)
         self.requests_mocker.start()
 
-        self.requests_mocker.get(DOB_BUILDING_HEIGHT_API_URL, json=[{"heightroof": 0, "groundelev": 0}])
+        self.requests_mocker.get(DOB_BUILDING_HEIGHT_API_URL, json=[{"height_roof": 0, "ground_elevation": 0}])
 
     def tearDown(self):
         self.requests_mocker.stop()

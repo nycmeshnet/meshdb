@@ -214,7 +214,7 @@ To determine what permissions the user has, add them to one of the pre-existing 
 the instance)
 
 For software apps, create a new users for each application with the format
-`PersonName-ApplicationName`. Grant the minimum neccessary permissions directly on the user
+`PersonName-ApplicationName`. Grant the minimum necessary permissions directly on the user
 object using the admin UI.
 
 Auth tokens can be created at `/admin/authtoken/tokenproxy/`.
@@ -355,6 +355,8 @@ scripts/create_importable_datadump.sh
 The file will be written to `data/full_dump.sql`, share this with the new devs
 
 ### Backups
+
+***note for local backups set environment variable `LOCALBACKUP_FILE` to the path of the backup directory***
 
 **The Proper Way**
 
