@@ -23,7 +23,7 @@ from meshapi.exceptions import AddressError
 from meshapi.models import AddressTruthSource, Building, Install, Member, Node
 from meshapi.permissions import HasNNAssignPermission, LegacyNNAssignmentPassword
 from meshapi.serializers import MemberSerializer
-from meshapi.util.admin_notifications import notify_administrators_of_data_issue
+from meshapi.util.admin_notifications import notify_administrators_of_data_issue, notify_admins
 from meshapi.util.constants import RECAPTCHA_CHECKBOX_TOKEN_HEADER, RECAPTCHA_INVISIBLE_TOKEN_HEADER
 from meshapi.util.django_pglocks import advisory_lock
 from meshapi.util.network_number import NETWORK_NUMBER_ASSIGN_MIN, NETWORK_NUMBER_MAX, get_next_available_network_number
@@ -208,7 +208,7 @@ def process_join_form(r: JoinFormRequest, request: Optional[Request] = None) -> 
             logging.warning(
                 "Got trust_me_bro, even though info was still updated "
                 f"(email: {r.email_address}, changed_info: {changed_info}). "
-                "Proceeding with install request submission."
+                "Notifying admins and proceeding with install request submission."
             )
         else:
             logging.warning("Please confirm a few details")
@@ -413,6 +413,18 @@ install_number: {join_form_install.install_number}"""
 
     if r.trust_me_bro:
         logging.warning(success_message)
+        if changed_info:
+            notify_string = "Join form was just submitted with trust_me_bro, even though info was still updated.\n"
+            "Please review the submission and ensure building information is accurate.\n"
+            f"email: {r.email_address}\n"
+            f"building_id: {join_form_building.id}, member_id: {join_form_member.id}\n"
+            f"install_number: {join_form_install.install_number}\n"
+            if r.street_address != nyc_addr_info.street_address:
+                notify_string += f"Changed street_address: {r.street_address} != {nyc_addr_info.street_address}\n"
+            if r.city != nyc_addr_info.city:
+                notify_string += f"Changed street_address: {r.street_address} != {nyc_addr_info.street_address}"
+            logging.warning(f"Changed city: {r.city} != {nyc_addr_info.city}")
+            notify_admins(notify_string)
     else:
         logging.info(success_message)
 
