@@ -414,16 +414,16 @@ install_number: {join_form_install.install_number}"""
     if r.trust_me_bro:
         logging.warning(success_message)
         if changed_info:
-            notify_string = "Join form was just submitted with trust_me_bro, even though info was still updated.\n"
+            notify_string = "A new member rejected our changes to their address.\n"
             "Please review the submission and ensure building information is accurate.\n"
+            "You might need to reach out to them and confirm their details\n"
             f"email: {r.email_address}\n"
             f"building_id: {join_form_building.id}, member_id: {join_form_member.id}\n"
             f"install_number: {join_form_install.install_number}\n"
             if r.street_address != nyc_addr_info.street_address:
                 notify_string += f"Changed street_address: {r.street_address} != {nyc_addr_info.street_address}\n"
             if r.city != nyc_addr_info.city:
-                notify_string += f"Changed street_address: {r.street_address} != {nyc_addr_info.street_address}"
-            logging.warning(f"Changed city: {r.city} != {nyc_addr_info.city}")
+                notify_string += f"Changed city: {r.city} != {nyc_addr_info.city}"
             notify_admins(notify_string)
     else:
         logging.info(success_message)
