@@ -13,8 +13,10 @@ from meshapi.admin.utils import get_admin_url
 SLACK_ADMIN_NOTIFICATIONS_WEBHOOK_URL = os.environ.get("SLACK_ADMIN_NOTIFICATIONS_WEBHOOK_URL")
 SITE_BASE_URL = os.environ.get("SITE_BASE_URL")
 
+
 def get_slack_link_to_model(m: Model, site_base_url: str) -> str:
     return f"<{get_admin_url(m, site_base_url)}|{escape_slack_text(str(m))}>"
+
 
 def escape_slack_text(text: str) -> str:
     return text.replace("↔", "<->").replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")

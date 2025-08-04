@@ -19,12 +19,16 @@ from rest_framework.response import Response
 from rest_framework_dataclasses.serializers import DataclassSerializer
 from validate_email.exceptions import EmailValidationError
 
-from meshapi.admin.utils import get_admin_url
 from meshapi.exceptions import AddressError
 from meshapi.models import AddressTruthSource, Building, Install, Member, Node
 from meshapi.permissions import HasNNAssignPermission, LegacyNNAssignmentPassword
 from meshapi.serializers import MemberSerializer
-from meshapi.util.admin_notifications import SITE_BASE_URL, escape_slack_text, get_slack_link_to_model, notify_administrators_of_data_issue, notify_admins
+from meshapi.util.admin_notifications import (
+    SITE_BASE_URL,
+    get_slack_link_to_model,
+    notify_administrators_of_data_issue,
+    notify_admins,
+)
 from meshapi.util.constants import RECAPTCHA_CHECKBOX_TOKEN_HEADER, RECAPTCHA_INVISIBLE_TOKEN_HEADER
 from meshapi.util.django_pglocks import advisory_lock
 from meshapi.util.network_number import NETWORK_NUMBER_ASSIGN_MIN, NETWORK_NUMBER_MAX, get_next_available_network_number
@@ -422,7 +426,8 @@ install_number: {join_form_install.install_number}"""
             install_url = get_slack_link_to_model(join_form_install, SITE_BASE_URL)
 
             notify_string = "A new member rejected our changes to their address.\n"
-            "**This is most likely due to a bug in MeshDB. Human intervention is required to ensure data correctness.**\n"
+            "**This is most likely due to a bug in MeshDB. Human intervention is "
+            "required to ensure data correctness.**\n"
             "Please review the submission and verify building information.\n"
             "If necessary, please reach out to the member and confirm their details.\n"
             f"email: {r.email_address}\n"
