@@ -23,11 +23,7 @@ from meshapi.exceptions import AddressError
 from meshapi.models import AddressTruthSource, Building, Install, Member, Node
 from meshapi.permissions import HasNNAssignPermission, LegacyNNAssignmentPassword
 from meshapi.serializers import MemberSerializer
-from meshapi.util.admin_notifications import (
-    get_slack_link_to_model,
-    notify_administrators_of_data_issue,
-    notify_admins,
-)
+from meshapi.util.admin_notifications import get_slack_link_to_model, notify_administrators_of_data_issue, notify_admins
 from meshapi.util.constants import RECAPTCHA_CHECKBOX_TOKEN_HEADER, RECAPTCHA_INVISIBLE_TOKEN_HEADER
 from meshapi.util.django_pglocks import advisory_lock
 from meshapi.util.network_number import NETWORK_NUMBER_ASSIGN_MIN, NETWORK_NUMBER_MAX, get_next_available_network_number
