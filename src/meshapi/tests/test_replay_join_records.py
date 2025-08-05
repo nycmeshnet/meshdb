@@ -283,6 +283,7 @@ class TestReplayJoinRecords(TestCase):
 
 # codecov moment
 @mock_aws
+@patch("meshapi.util.admin_notifications.SITE_BASE_URL", "http://localhost")
 @patch("meshapi.util.join_records.JOIN_RECORD_PREFIX", MOCK_JOIN_RECORD_PREFIX)
 class TestReplayNoJoinRecords(TestCase):
     p = JoinRecordProcessor()
