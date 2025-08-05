@@ -14,6 +14,14 @@ SLACK_ADMIN_NOTIFICATIONS_WEBHOOK_URL = os.environ.get("SLACK_ADMIN_NOTIFICATION
 SITE_BASE_URL = os.environ.get("SITE_BASE_URL")
 
 
+def get_slack_link_to_model(m: Model, site_base_url: str | None = SITE_BASE_URL) -> str:
+    if not site_base_url:
+        raise EnvironmentError(
+            "Please provide a site_base_url, or ensure the SITE_BASE_URL environment variable is set"
+        )
+    return f"<{get_admin_url(m, site_base_url)}|{escape_slack_text(str(m))}>"
+
+
 def escape_slack_text(text: str) -> str:
     return text.replace("↔", "<->").replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 
@@ -41,7 +49,7 @@ def notify_administrators_of_data_issue(
     if "\n" not in message:
         message = f"*{message}*. "
 
-    urls = ", ".join(f"<{get_admin_url(m, site_base_url)}|{escape_slack_text(str(m))}>" for m in model_instances)
+    urls = ", ".join(get_slack_link_to_model(m, site_base_url) for m in model_instances)
 
     templated_message = (
         f"Encountered the following data issue which may require admin attention: {escape_slack_text(message)}"
