@@ -17,7 +17,7 @@ SITE_BASE_URL = os.environ.get("SITE_BASE_URL")
 def get_slack_link_to_model(m: Model, site_base_url: str | None = SITE_BASE_URL) -> str:
     if not site_base_url:
         raise EnvironmentError(
-            "Please provide a site_base_url, or ensure the" "SITE_BASE_URL environment variable is set"
+            "Please provide a site_base_url, or ensure the SITE_BASE_URL environment variable is set"
         )
     return f"<{get_admin_url(m, site_base_url)}|{escape_slack_text(str(m))}>"
 

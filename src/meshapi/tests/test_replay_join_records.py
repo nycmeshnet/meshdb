@@ -300,7 +300,6 @@ class TestReplayNoJoinRecords(TestCase):
 
 # Skipping or rejecting changes
 @mock_aws
-@patch("meshapi.util.admin_notifications.SITE_BASE_URL", "http://localhost")
 @patch("meshapi.util.join_records.JOIN_RECORD_PREFIX", MOCK_JOIN_RECORD_PREFIX)
 class TestDontReplayJoinRecords(TestCase):
     p = JoinRecordProcessor()
@@ -319,7 +318,6 @@ class TestDontReplayJoinRecords(TestCase):
     def tearDown(self) -> None:
         self.p.flush_test_data()
 
-    @patch("meshapi.util.admin_notifications.SITE_BASE_URL", "http://localhost")
     @patch("meshapi.management.commands.replay_join_records.Command.past_week")
     @patch("builtins.input")
     def test_replay_join_records_skip(self, mocked_input, past_week_function):
