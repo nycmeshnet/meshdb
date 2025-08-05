@@ -24,7 +24,6 @@ from meshapi.models import AddressTruthSource, Building, Install, Member, Node
 from meshapi.permissions import HasNNAssignPermission, LegacyNNAssignmentPassword
 from meshapi.serializers import MemberSerializer
 from meshapi.util.admin_notifications import (
-    SITE_BASE_URL,
     get_slack_link_to_model,
     notify_administrators_of_data_issue,
     notify_admins,
@@ -419,11 +418,9 @@ install_number: {join_form_install.install_number}"""
     if r.trust_me_bro:
         logging.warning(success_message)
         if changed_info:
-            if not SITE_BASE_URL:
-                raise EnvironmentError("SITE_BASE_URL is not set ")
-            building_url = get_slack_link_to_model(join_form_building, SITE_BASE_URL)
-            member_url = get_slack_link_to_model(join_form_member, SITE_BASE_URL)
-            install_url = get_slack_link_to_model(join_form_install, SITE_BASE_URL)
+            building_url = get_slack_link_to_model(join_form_building)
+            member_url = get_slack_link_to_model(join_form_member)
+            install_url = get_slack_link_to_model(join_form_install)
 
             notify_string = "A new member rejected our changes to their address.\n"
             "**This is most likely due to a bug in MeshDB. Human intervention is "
