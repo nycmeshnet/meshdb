@@ -166,12 +166,7 @@ def process_join_form(r: JoinFormRequest, request: Optional[Request] = None) -> 
     formatted_phone_number = normalize_phone_number(r.phone_number) if r.phone_number else None
 
     try:
-        try:
-            nyc_addr_info: Optional[NYCAddressInfo] = geocode_nyc_address(r.street_address, r.city, r.state, r.zip_code)
-        except Exception as e:
-            # Ensure this gets logged
-            logging.exception(e)
-            raise e
+        nyc_addr_info: Optional[NYCAddressInfo] = geocode_nyc_address(r.street_address, r.city, r.state, r.zip_code)
     except ValueError:
         logging.debug(r.street_address, r.city, r.state, r.zip_code)
         return Response(
@@ -185,6 +180,7 @@ def process_join_form(r: JoinFormRequest, request: Optional[Request] = None) -> 
         return Response({"detail": e.args[0]}, status=status.HTTP_400_BAD_REQUEST)
 
     if not nyc_addr_info:
+        logging.error("Unable to validate user address.")
         return Response(
             {"detail": "Your address could not be validated."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
