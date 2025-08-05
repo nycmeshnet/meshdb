@@ -18,7 +18,7 @@ from validate_email.exceptions import (
     TLSNegotiationError,
 )
 
-from meshapi.exceptions import AddressAPIError, AddressError, OpenDataAPIError
+from meshapi.exceptions import AddressAPIError, AddressError, OpenDataAPIError, UnsupportedAddressError
 from meshapi.util.constants import DEFAULT_EXTERNAL_API_TIMEOUT_SECONDS, INVALID_ALTITUDE
 from meshapi.zips import NYCZipCodes
 
@@ -96,11 +96,11 @@ class NYCAddressInfo:
 
     def __init__(self, street_address: str, city: str, state: str, zip_code: str):
         if state != "New York" and state != "NY":
-            raise ValueError(f"(NYC) State '{state}' is not New York.")
+            raise UnsupportedAddressError(f"(NYC) State '{state}' is not New York.")
 
         # We only support the five boroughs of NYC at this time
         if not NYCZipCodes.match_zip(zip_code):
-            raise ValueError(f"Non-NYC zip code detected: {zip_code}")
+            raise UnsupportedAddressError(f"Non-NYC zip code detected: {zip_code}")
 
         self.address = f"{street_address}, {city}, {state} {zip_code}"
 
@@ -118,8 +118,9 @@ class NYCAddressInfo:
             )
             nyc_planning_resp = json.loads(nyc_planning_req.content.decode("utf-8"))
         except Exception:
-            logging.exception("Got exception querying geosearch.planninglabs.nyc")
-            raise AddressAPIError
+            e = "Got exception querying geosearch.planninglabs.nyc"
+            logging.exception(e)
+            raise AddressAPIError(e)
 
         if len(nyc_planning_resp["features"]) == 0:
             raise AddressError(f"(NYC) Address '{self.address}' not found in geosearch.planninglabs.nyc.")
@@ -133,7 +134,7 @@ class NYCAddressInfo:
         if found_zip != zip_code:
             raise AddressError(
                 f"(NYC) Could not find address '{street_address}, {city}, {state} {zip_code}'. "
-                f"Zip code ({zip_code}) is incorrect or not within city limits"
+                f"Zip code ({zip_code}) is incorrect or not within city limits. Please contact support@nycmesh.net if you believe this was in error."
             )
 
         addr_props = nyc_planning_resp["features"][0]["properties"]
@@ -236,8 +237,8 @@ def geocode_nyc_address(street_address: str, city: str, state: str, zip_code: st
             return nyc_addr_info
         # If the user has given us an invalid address. Tell them to buzz
         # off.
-        except (AddressError, ValueError) as e:
-            # Raise to next level
+        except (AddressError, UnsupportedAddressError) as e:
+            # These errors are not retryable. Break out of the retry loop
             raise e
 
         # If we get any other error, then there was probably an issue

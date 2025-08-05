@@ -19,7 +19,7 @@ from rest_framework.response import Response
 from rest_framework_dataclasses.serializers import DataclassSerializer
 from validate_email.exceptions import EmailValidationError
 
-from meshapi.exceptions import AddressError
+from meshapi.exceptions import AddressError, UnsupportedAddressError
 from meshapi.models import AddressTruthSource, Building, Install, Member, Node
 from meshapi.permissions import HasNNAssignPermission, LegacyNNAssignmentPassword
 from meshapi.serializers import MemberSerializer
@@ -167,8 +167,7 @@ def process_join_form(r: JoinFormRequest, request: Optional[Request] = None) -> 
 
     try:
         nyc_addr_info: Optional[NYCAddressInfo] = geocode_nyc_address(r.street_address, r.city, r.state, r.zip_code)
-    except ValueError:
-        logging.debug(r.street_address, r.city, r.state, r.zip_code)
+    except UnsupportedAddressError:
         return Response(
             {
                 "detail": "Non-NYC registrations are not supported at this time. Please double check your zip code, "
@@ -177,10 +176,14 @@ def process_join_form(r: JoinFormRequest, request: Optional[Request] = None) -> 
             status=status.HTTP_400_BAD_REQUEST,
         )
     except AddressError as e:
-        return Response({"detail": e.args[0]}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"detail": f"There was a problem validating your address: {e.args[0]}"}, status=status.HTTP_400_BAD_REQUEST)
+    except Exception:
+        return Response(
+            {"detail": "Your address could not be validated."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
 
     if not nyc_addr_info:
-        logging.error("Unable to validate user address.")
+        logging.error("nyc_addr_info is None? This should never happen!")
         return Response(
             {"detail": "Your address could not be validated."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
