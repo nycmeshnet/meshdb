@@ -418,7 +418,7 @@ install_number: {join_form_install.install_number}"""
             member_url = get_slack_link_to_model(join_form_member)
             install_url = get_slack_link_to_model(join_form_install)
 
-            notify_string = "A new member rejected our changes to their address.\n"
+            notify_string = "[join_form_bug] A new member rejected our changes to their address.\n"
             "**This is most likely due to a bug in MeshDB. Human intervention is "
             "required to ensure data correctness.**\n"
             "Please review the submission and verify building information.\n"
