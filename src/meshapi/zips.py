@@ -1,6 +1,5 @@
 from typing import Optional
 
-
 bronx = [
     "10466",
     "10468",
@@ -238,13 +237,8 @@ KINGS = "kings"
 QUEENS = "queens"
 RICHMOND = "richmond"
 
-zips = {
-    BRONX: bronx,
-    NEW_YORK: new_york,
-    KINGS: kings,
-    QUEENS: queens,
-    RICHMOND: richmond
-}
+zips = {BRONX: bronx, NEW_YORK: new_york, KINGS: kings, QUEENS: queens, RICHMOND: richmond}
+
 
 class NYCZipCodes:
     @staticmethod
@@ -257,4 +251,3 @@ class NYCZipCodes:
             if zip_code in z:
                 return borough
         return None
-

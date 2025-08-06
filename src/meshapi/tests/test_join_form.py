@@ -32,6 +32,7 @@ from .sample_join_form_data import (
     valid_join_form_submission_city_needs_expansion,
     valid_join_form_submission_phone_needs_expansion,
     valid_join_form_submission_street_needs_expansion,
+    valid_join_form_submission_zip_is_updated,
     valid_join_form_submission_with_apartment_in_address,
 )
 from .util import TestThread
@@ -94,6 +95,9 @@ def pull_apart_join_form_submission(submission):
     del request["parsed_street_address"]
     del request["dob_addr_response"]
     del request["parsed_phone"]
+
+    if "parsed_zip_code" in request:
+        del request["parsed_zip_code"]
     if "parsed_city" in request:
         del request["parsed_city"]
 
@@ -105,6 +109,7 @@ def pull_apart_join_form_submission(submission):
     s.street_address = submission["parsed_street_address"]
     s.city = submission["parsed_city"] if "parsed_city" in submission else submission["city"]
     s.state = submission["state"]
+    s.zip_code = submission["parsed_zip_code"] if "parsed_zip_code" in submission else submission["zip_code"]
     s.phone_number = submission["parsed_phone"]
 
     return request, s
@@ -225,6 +230,7 @@ class TestJoinForm(TestCase):
             [valid_join_form_submission_phone_needs_expansion],
             [valid_join_form_submission_city_needs_expansion],
             [valid_join_form_submission_street_needs_expansion],
+            [valid_join_form_submission_zip_is_updated],
             [richmond_join_form_submission],
             [kings_join_form_submission],
             [queens_join_form_submission],
@@ -261,9 +267,9 @@ class TestJoinForm(TestCase):
         self.assertEqual(
             code,
             response.status_code,
-            f"status code incorrect for Valid Join Form. Should be {code}, but got {response.status_code}.\n Response is: {response.content.decode('utf-8')}",
+            f"status code incorrect for test_valid_join_form_with_member_confirmation. Should be {code}, but got {response.status_code}.\n Response is: {response.content.decode('utf-8')}",
         )
-        validate_successful_join_form_submission(self, "Valid Join Form", s, response)
+        validate_successful_join_form_submission(self, "test_valid_join_form_with_member_confirmation", s, response)
 
     def test_phone_number_is_silently_corrected(self):
         self.requests_mocker.get(
