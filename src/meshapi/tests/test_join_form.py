@@ -32,8 +32,8 @@ from .sample_join_form_data import (
     valid_join_form_submission_city_needs_expansion,
     valid_join_form_submission_phone_needs_expansion,
     valid_join_form_submission_street_needs_expansion,
-    valid_join_form_submission_zip_is_updated,
     valid_join_form_submission_with_apartment_in_address,
+    valid_join_form_submission_zip_is_updated,
 )
 from .util import TestThread
 
