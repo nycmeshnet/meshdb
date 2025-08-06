@@ -165,9 +165,11 @@ def process_join_form(r: JoinFormRequest, request: Optional[Request] = None) -> 
 
     formatted_phone_number = normalize_phone_number(r.phone_number) if r.phone_number else None
 
+    # Attempt to parse the address with a handful of NYC APIs
     try:
         nyc_addr_info: Optional[NYCAddressInfo] = geocode_nyc_address(r.street_address, r.city, r.state, r.zip_code)
     except UnsupportedAddressError:
+        logging.exception("Unsupported address")
         return Response(
             {
                 "detail": "Non-NYC registrations are not supported at this time. Please double check your zip code, "
@@ -176,8 +178,10 @@ def process_join_form(r: JoinFormRequest, request: Optional[Request] = None) -> 
             status=status.HTTP_400_BAD_REQUEST,
         )
     except AddressError as e:
+        logging.exception("There was a problem validating your address")
         return Response({"detail": f"There was a problem validating your address: {e.args[0]}"}, status=status.HTTP_400_BAD_REQUEST)
     except Exception:
+        logging.exception("An unknown error occurred while parsing address")
         return Response(
             {"detail": "Your address could not be validated."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )

@@ -38,6 +38,7 @@ RECAPTCHA_TOKEN_VALIDATION_URL = "https://www.google.com/recaptcha/api/siteverif
 
 INVALID_BIN_NUMBERS = [-2, -1, 0, 1000000, 2000000, 3000000, 4000000]
 
+MAX_NYC_GEOCODE_ATTEMPTS = 3
 
 def validate_email_address(email_address: str) -> Optional[bool]:
     try:
@@ -229,6 +230,14 @@ def validate_phone_number_field(phone_number: str) -> None:
 
 
 def geocode_nyc_address(street_address: str, city: str, state: str, zip_code: str) -> Optional[NYCAddressInfo]:
+    for retries in range(0, MAX_NYC_GEOCODE_ATTEMPTS-1):
+        try:
+            return NYCAddressInfo(street_address, city, state, zip_code)
+        except Exception:
+            # Log whatever went wrong.
+            logging.exception(f"(NYC) An error occurred while geocoding {(street_address, city, state, zip_code)}.")
+
+
     attempts_remaining = 2
     while attempts_remaining > 0:
         attempts_remaining -= 1
@@ -248,8 +257,7 @@ def geocode_nyc_address(street_address: str, city: str, state: str, zip_code: st
             time.sleep(3)
 
     # If we run out of tries, bail.
-    logging.warning(f"Could not parse address: {street_address}, {city}, {state}, {zip_code}")
-    return None
+    raise Exception(f"unknown error: {street_address}, {city}, {state}, {zip_code}")
 
 
 def check_recaptcha_token(token: Optional[str], server_secret: str, remote_ip: Optional[str]) -> float:
