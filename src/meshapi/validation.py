@@ -9,6 +9,7 @@ import phonenumbers
 import requests
 from django.core.exceptions import ValidationError
 from flags.state import flag_state
+from requests.adapters import HTTPAdapter, Retry
 from validate_email import validate_email_or_fail
 from validate_email.exceptions import (
     DNSTimeoutError,
@@ -30,7 +31,7 @@ RECAPTCHA_INVISIBLE_TOKEN_SCORE_THRESHOLD = float(os.environ.get("RECAPTCHA_INVI
 
 NYC_PLANNING_LABS_GEOCODE_URL = "https://geosearch.planninglabs.nyc/v2/search"
 # "Building Footprint" Dataset (https://data.cityofnewyork.us/City-Government/Building-Footprints/5zhs-2jue/about_data)
-DOB_BUILDING_HEIGHT_API_URL = "https://data.cityofnewyork.us/resource/5zhs-2jue.json"
+BUILDING_FOOTPRINTS_API = "https://data.cityofnewyork.us/resource/5zhs-2jue.json"
 # https://data.cityofnewyork.us/Housing-Development/DOB-NYC-New-Buildings/6xbh-bxki/data_preview
 DOB_NEW_BUILDINGS_API_URL = "https://data.cityofnewyork.us/resource/6xbh-bxki.json"
 RECAPTCHA_TOKEN_VALIDATION_URL = "https://www.google.com/recaptcha/api/siteverify"
@@ -85,6 +86,7 @@ def validate_phone_number(phone_number: str) -> Optional[phonenumbers.PhoneNumbe
 # is gated by OSMAddressInfo.
 @dataclass
 class NYCAddressInfo:
+    sesssion: requests.Session # For all the HTTP requests we have to do
     street_address: str
     city: str
     state: str
@@ -95,6 +97,16 @@ class NYCAddressInfo:
     bin: int | None
 
     def __init__(self, street_address: str, city: str, state: str, zip_code: str):
+        # We're going to be making a lot of HTTP requests. It would be better
+        # to retry them
+        retries = Retry(total=3,  # Total number of retries
+                        backoff_factor=1,  # Wait time between retries
+                        status_forcelist=[500, 502, 503, 504])  # HTTP status codes to retry
+
+        self.session = requests.Session()
+        self.session.mount('http://', HTTPAdapter(max_retries=retries))
+        self.session.mount('https://', HTTPAdapter(max_retries=retries))
+
         full_address = f"{street_address}, {city}, {state} {zip_code}"
         if state != "New York" and state != "NY":
             raise ValueError(f"(NYC) Address '{full_address}' is unsupported: State '{state}' is not New York.")
@@ -189,49 +201,45 @@ class NYCAddressInfo:
 
         self.longitude, self.latitude = nyc_planning_resp["features"][0]["geometry"]["coordinates"]
 
-        # TODO: (wdn) Move this to separate function 'get_height_from_building_footprints_api'
-        # for clarity + organization
+        self.altitude = self.get_height_from_building_footprints_api(self.bin)
 
+
+    def get_height_from_building_footprints_api(self, bin: str) -> Optional[float]:
         # Now that we have the bin, we can definitively get the height from
         # NYC OpenData Building Footprints
         try:
             query_params = {
-                "$where": f"bin={self.bin}",
+                "$where": f"bin={bin}",
                 "$select": "height_roof,ground_elevation",
                 "$limit": "1",
             }
-            nyc_dataset_req = requests.get(
-                DOB_BUILDING_HEIGHT_API_URL,
+            nyc_dataset_req = self.session.get(
+                BUILDING_FOOTPRINTS_API,
                 params=query_params,
                 timeout=DEFAULT_EXTERNAL_API_TIMEOUT_SECONDS,
             )
-            nyc_dataset_resp = json.loads(nyc_dataset_req.content.decode("utf-8"))
-
-            if len(nyc_dataset_resp) == 0:
-                logging.warning(
-                    f"[NYC OpenData Building Footprints API] Empty response about altitude of BIN '{self.bin}'"
-                )
-                raise OpenDataAPIError
-            else:
-                # Convert relative to ground altitude to absolute altitude AMSL,
-                # convert feet to meters, and round to the nearest 0.1 m
-                FEET_PER_METER = 3.28084
-                self.altitude = round(
-                    (float(nyc_dataset_resp[0]["height_roof"]) + float(nyc_dataset_resp[0]["ground_elevation"]))
-                    / FEET_PER_METER,
-                    1,
-                )
-        except OpenDataAPIError:
-            self.altitude = INVALID_ALTITUDE
-            logging.warning(
-                f"[NYC OpenData Building Footprints API] BIN '{self.bin}' not"
-                + "found while trying to query for altitude information"
-            )
         except Exception:
-            self.altitude = INVALID_ALTITUDE
-            logging.exception(
-                f"[NYC OpenData Building Footprints API] An error occurred while trying to find BIN '{self.bin}'"
+            logging.exception("[BUILDING_FOOTPRINTS] Exception raised during HTTP Request.")
+            return INVALID_ALTITUDE
+
+        nyc_dataset_resp = json.loads(nyc_dataset_req.content.decode("utf-8"))
+
+        if len(nyc_dataset_resp) == 0:
+            logging.warning(
+                f"[BUILDING_FOOTPRINTS] Empty response for BIN '{bin}'. Setting Altitude to 0"
             )
+            return INVALID_ALTITUDE
+
+        # Convert relative to ground altitude to absolute altitude AMSL,
+        # convert feet to meters, and round to the nearest 0.1 m
+        FEET_PER_METER = 3.28084
+        altitude = round(
+            (float(nyc_dataset_resp[0]["height_roof"]) + float(nyc_dataset_resp[0]["ground_elevation"]))
+            / FEET_PER_METER,
+            1,
+        )
+
+        return altitude
 
 
 def validate_multi_phone_number_field(phone_number_list: List[str]) -> None:
@@ -242,7 +250,6 @@ def validate_multi_phone_number_field(phone_number_list: List[str]) -> None:
 def validate_phone_number_field(phone_number: str) -> None:
     if not validate_phone_number(phone_number):
         raise ValidationError(f"Invalid phone number: {phone_number}")
-
 
 def geocode_nyc_address(street_address: str, city: str, state: str, zip_code: str) -> Optional[NYCAddressInfo]:
     attempts_remaining = 2
