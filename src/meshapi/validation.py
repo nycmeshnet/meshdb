@@ -29,7 +29,11 @@ RECAPTCHA_SECRET_KEY_V2 = os.environ.get("RECAPTCHA_SERVER_SECRET_KEY_V2")
 RECAPTCHA_SECRET_KEY_V3 = os.environ.get("RECAPTCHA_SERVER_SECRET_KEY_V3")
 RECAPTCHA_INVISIBLE_TOKEN_SCORE_THRESHOLD = float(os.environ.get("RECAPTCHA_INVISIBLE_TOKEN_SCORE_THRESHOLD", 0.5))
 
-NYC_PLANNING_LABS_GEOCODE_URL = "https://geosearch.planninglabs.nyc/v2/search"
+# This API sits in front of an elasticsearch database based off the Property Address Directory (PAD)
+# It is our main source of truth for NYC-based addresses.
+# https://geosearch.planninglabs.nyc
+# https://www.nyc.gov/content/planning/pages/resources/datasets/pad
+NYC_GEOSEARCH_API = "https://geosearch.planninglabs.nyc/v2/search"
 # "Building Footprint" Dataset (https://data.cityofnewyork.us/City-Government/Building-Footprints/5zhs-2jue/about_data)
 BUILDING_FOOTPRINTS_API = "https://data.cityofnewyork.us/resource/5zhs-2jue.json"
 # https://data.cityofnewyork.us/Housing-Development/DOB-NYC-New-Buildings/6xbh-bxki/data_preview
@@ -130,7 +134,7 @@ class NYCAddressInfo:
                 "size": "1",
             }
             nyc_planning_req = requests.get(
-                NYC_PLANNING_LABS_GEOCODE_URL,
+                NYC_GEOSEARCH_API,
                 params=query_params,
                 timeout=DEFAULT_EXTERNAL_API_TIMEOUT_SECONDS,
             )
@@ -172,8 +176,8 @@ class NYCAddressInfo:
 
         # If geosearch.planninglabs.nyc did not return the BIN, we can check the New Buildings data set
         # based on work permits from the DOB to try backfilling.
-        nyc_planning_bin = addr_props["addendum"]["pad"]["bin"]
-        if int(nyc_planning_bin) in INVALID_BIN_NUMBERS:
+        self.bin = addr_props["addendum"]["pad"]["bin"]
+        if self.bin in INVALID_BIN_NUMBERS:
             dob_warning_message = (
                 f"geosearch.planninglabs.nyc returned invalid BIN: {addr_props['addendum']['pad']['bin']}"
             )
@@ -196,14 +200,12 @@ class NYCAddressInfo:
                 )
 
             self.bin = open_data_bin
-        else:
-            self.bin = nyc_planning_bin
 
         self.longitude, self.latitude = nyc_planning_resp["features"][0]["geometry"]["coordinates"]
 
         self.altitude = self.get_height_from_building_footprints_api(self.bin)
 
-    def get_height_from_building_footprints_api(self, bin: str) -> Optional[float]:
+    def get_height_from_building_footprints_api(self, bin: int) -> Optional[float]:
         # Now that we have the bin, we can definitively get the height from
         # NYC OpenData Building Footprints
         try:
