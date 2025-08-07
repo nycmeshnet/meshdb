@@ -6,6 +6,8 @@ class MeshDBError(Exception):
 class AddressError(MeshDBError):
     pass
 
+class UnsupportedAddressError(MeshDBError):
+    pass
 
 # Used in Validation to warn that one of the APIs we depend on might be
 # borked.

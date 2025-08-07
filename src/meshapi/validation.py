@@ -19,7 +19,7 @@ from validate_email.exceptions import (
     TLSNegotiationError,
 )
 
-from meshapi.exceptions import AddressAPIError, AddressError
+from meshapi.exceptions import AddressAPIError, AddressError, UnsupportedAddressError
 from meshapi.util.constants import DEFAULT_EXTERNAL_API_TIMEOUT_SECONDS, INVALID_ALTITUDE
 from meshapi.zips import NYCZipCodes
 
@@ -115,11 +115,13 @@ class NYCAddressInfo:
 
         full_address = f"{street_address}, {city}, {state} {zip_code}"
         if state != "New York" and state != "NY":
-            raise ValueError(f"(NYC) Address '{full_address}' is unsupported: State '{state}' is not New York.")
+            raise UnsupportedAddressError(
+                f"[NYCAddressInfo] Address '{full_address}' is unsupported: State '{state}' is not New York."
+            )
 
         # We only support the five boroughs of NYC at this time
         if not NYCZipCodes.match_zip(zip_code):
-            raise ValueError(
+            raise UnsupportedAddressError(
                 f"(NYC) Address '{full_address}' is unsupported:"
                 + f"Zip code '{zip_code}' does not appear in our zip code database."
             )
@@ -162,14 +164,11 @@ class NYCAddressInfo:
 
         # Get the rest of the address info
         self.street_address = humanify_street_address(f"{addr_props['housenumber']} {addr_props['street']}")
-
         self.city = addr_props["borough"].replace("Manhattan", "New York")
-
-        # Queens addresses are special and different, but it seems the neighborhood name
-        # that the city gives us is always a good value for "City"
         if self.city == "Queens":
+            # Queens addresses are special and different, but it seems the neighborhood name
+            # that the city gives us is always a good value for "City"
             self.city = addr_props.get("neighbourhood", "Queens")
-
         self.state = addr_props["region_a"]
         self.zip = str(addr_props["postalcode"])
 
@@ -296,7 +295,7 @@ def geocode_nyc_address(street_address: str, city: str, state: str, zip_code: st
             return nyc_addr_info
         # If the user has given us an invalid address. Tell them to buzz
         # off.
-        except (AddressError, ValueError) as e:
+        except (AddressError, UnsupportedAddressError) as e:
             logging.exception("AddressError when validating address")
             # Raise to next level
             raise e

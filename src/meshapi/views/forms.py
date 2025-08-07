@@ -19,7 +19,7 @@ from rest_framework.response import Response
 from rest_framework_dataclasses.serializers import DataclassSerializer
 from validate_email.exceptions import EmailValidationError
 
-from meshapi.exceptions import AddressError
+from meshapi.exceptions import AddressError, UnsupportedAddressError
 from meshapi.models import AddressTruthSource, Building, Install, Member, Node
 from meshapi.permissions import HasNNAssignPermission, LegacyNNAssignmentPassword
 from meshapi.serializers import MemberSerializer
@@ -172,7 +172,7 @@ def process_join_form(r: JoinFormRequest, request: Optional[Request] = None) -> 
             # Ensure this gets logged
             logging.exception(e)
             raise e
-    except ValueError:
+    except UnsupportedAddressError:
         logging.debug(r.street_address, r.city, r.state, r.zip_code)
         return Response(
             {
