@@ -133,33 +133,32 @@ class NYCAddressInfo:
                 "text": self.address,
                 "size": "1",
             }
-            nyc_planning_req = requests.get(
+            nyc_planning_req = self.session.get(
                 NYC_GEOSEARCH_API,
                 params=query_params,
                 timeout=DEFAULT_EXTERNAL_API_TIMEOUT_SECONDS,
             )
-            nyc_planning_resp = json.loads(nyc_planning_req.content.decode("utf-8"))
+            nyc_geosearch_resp = json.loads(nyc_planning_req.content.decode("utf-8"))
         except Exception:
             logging.exception("(NYC) An exception occurred while querying geosearch.planninglabs.nyc")
             raise AddressAPIError
 
-        if len(nyc_planning_resp["features"]) == 0:
+        if len(nyc_geosearch_resp["features"]) == 0:
             raise AddressError(f"(NYC) Address '{full_address}' not found in geosearch.planninglabs.nyc.")
+
+        addr_props = nyc_geosearch_resp["features"][0]["properties"]
 
         # If we enter something not within NYC, the API will still give us
         # the closest matching street address it can find, so check that
         # the ZIP of what we entered matches what we got.
 
-        # For some insane reason this is an integer, so we have to cast it to a string
-        found_zip = str(nyc_planning_resp["features"][0]["properties"]["postalcode"])
+        found_zip = str(addr_props["postalcode"])
         if found_zip != zip_code:
             raise AddressError(
                 f"(NYC) Address '{full_address}' is invalid:"
                 + f"Zip code '{zip_code}' does not match zip code"
                 + f"'{found_zip}' returned from geosearch.planninglabs.nyc"
             )
-
-        addr_props = nyc_planning_resp["features"][0]["properties"]
 
         # Get the rest of the address info
         self.street_address = humanify_street_address(f"{addr_props['housenumber']} {addr_props['street']}")
@@ -201,7 +200,7 @@ class NYCAddressInfo:
 
             self.bin = open_data_bin
 
-        self.longitude, self.latitude = nyc_planning_resp["features"][0]["geometry"]["coordinates"]
+        self.longitude, self.latitude = nyc_geosearch_resp["features"][0]["geometry"]["coordinates"]
 
         self.altitude = self.get_height_from_building_footprints_api(self.bin)
 
