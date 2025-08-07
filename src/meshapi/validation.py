@@ -95,12 +95,16 @@ class NYCAddressInfo:
     bin: int | None
 
     def __init__(self, street_address: str, city: str, state: str, zip_code: str):
+        full_address = f"{street_address}, {city}, {state} {zip_code}"
         if state != "New York" and state != "NY":
-            raise ValueError(f"(NYC) Address '{(street_address, city, state, zip_code)}' is unsupported: State '{state}' is not New York.")
+            raise ValueError(f"(NYC) Address '{full_address}' is unsupported: State '{state}' is not New York.")
 
         # We only support the five boroughs of NYC at this time
         if not NYCZipCodes.match_zip(zip_code):
-            raise ValueError(f"(NYC) Address '{(street_address, city, state, zip_code)}' is unsupported: Zip code '{zip_code}' does not appear in our zip code database.")
+            raise ValueError(
+                f"(NYC) Address '{full_address}' is unsupported:"
+                + f"Zip code '{zip_code}' does not appear in our zip code database."
+            )
 
         self.address = f"{street_address}, {city}, {state} {zip_code}"
 
@@ -122,7 +126,7 @@ class NYCAddressInfo:
             raise AddressAPIError
 
         if len(nyc_planning_resp["features"]) == 0:
-            raise AddressError(f"(NYC) Address '{(street_address, city, state, zip_code)}' not found in geosearch.planninglabs.nyc.")
+            raise AddressError(f"(NYC) Address '{full_address}' not found in geosearch.planninglabs.nyc.")
 
         # If we enter something not within NYC, the API will still give us
         # the closest matching street address it can find, so check that
@@ -131,7 +135,11 @@ class NYCAddressInfo:
         # For some insane reason this is an integer, so we have to cast it to a string
         found_zip = str(nyc_planning_resp["features"][0]["properties"]["postalcode"])
         if found_zip != zip_code:
-            raise AddressError(f"(NYC) Address '{(street_address, city, state, zip_code)}' is invalid: Zip code '{zip_code}' does not match zip code '{found_zip}' returned from geosearch.planninglabs.nyc")
+            raise AddressError(
+                f"(NYC) Address '{full_address}' is invalid:"
+                + f"Zip code '{zip_code}' does not match zip code"
+                + f"'{found_zip}' returned from geosearch.planninglabs.nyc"
+            )
 
         addr_props = nyc_planning_resp["features"][0]["properties"]
 
@@ -154,7 +162,9 @@ class NYCAddressInfo:
             not addr_props.get("addendum", {}).get("pad", {}).get("bin")
             or int(addr_props["addendum"]["pad"]["bin"]) in INVALID_BIN_NUMBERS
         ):
-            dob_warning_message = f"geosearch.planninglabs.nyc returned invalid BIN: {addr_props['addendum']['pad']['bin']}"
+            dob_warning_message = (
+                f"geosearch.planninglabs.nyc returned invalid BIN: {addr_props['addendum']['pad']['bin']}"
+            )
             logging.warning(dob_warning_message)
             logging.warning("Falling back to NYC OpenData New Buildings dataset")
             # We're using the addr_props returned from DOB API because
@@ -168,7 +178,7 @@ class NYCAddressInfo:
 
             if not open_data_bin:
                 raise AddressError(
-                    f"(NYC) Address '{(street_address, city, state, zip_code)}' is invalid. "
+                    f"(NYC) Address '{full_address}' is invalid. "
                     + dob_warning_message
                     + ". NYC OpenData New Buildings returned no data."
                 )
@@ -179,7 +189,8 @@ class NYCAddressInfo:
 
         self.longitude, self.latitude = nyc_planning_resp["features"][0]["geometry"]["coordinates"]
 
-        # TODO: (wdn) Move this to separate function 'get_height_from_building_footprints_api' for clarity + organization
+        # TODO: (wdn) Move this to separate function 'get_height_from_building_footprints_api'
+        # for clarity + organization
 
         # Now that we have the bin, we can definitively get the height from
         # NYC OpenData Building Footprints
@@ -197,7 +208,9 @@ class NYCAddressInfo:
             nyc_dataset_resp = json.loads(nyc_dataset_req.content.decode("utf-8"))
 
             if len(nyc_dataset_resp) == 0:
-                logging.warning(f"[NYC OpenData Building Footprints API] Empty response about altitude of BIN '{self.bin}'")
+                logging.warning(
+                    f"[NYC OpenData Building Footprints API] Empty response about altitude of BIN '{self.bin}'"
+                )
                 raise OpenDataAPIError
             else:
                 # Convert relative to ground altitude to absolute altitude AMSL,
@@ -211,11 +224,14 @@ class NYCAddressInfo:
         except OpenDataAPIError:
             self.altitude = INVALID_ALTITUDE
             logging.warning(
-                f"[NYC OpenData Building Footprints API] BIN '{self.bin}' not found while trying to query for altitude information"
+                f"[NYC OpenData Building Footprints API] BIN '{self.bin}' not"
+                + "found while trying to query for altitude information"
             )
         except Exception:
             self.altitude = INVALID_ALTITUDE
-            logging.exception(f"[NYC OpenData Building Footprints API] An error occurred while trying to find BIN '{self.bin}'")
+            logging.exception(
+                f"[NYC OpenData Building Footprints API] An error occurred while trying to find BIN '{self.bin}'"
+            )
 
 
 def validate_multi_phone_number_field(phone_number_list: List[str]) -> None:
@@ -340,5 +356,8 @@ def lookup_address_nyc_open_data_new_buildings(
             logging.error("[NYC OpenData New Buildings] No data found for the specified address.")
             return None
     else:
-        logging.error(f"[NYC OpenData New Buildings] Error retrieving data from NYC OpenData New Buildings: {response.status_code}")
+        logging.error(
+            "[NYC OpenData New Buildings] Error retrieving data"
+            + f"from NYC OpenData New Buildings: {response.status_code}"
+        )
         return None
