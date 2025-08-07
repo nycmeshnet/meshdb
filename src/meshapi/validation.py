@@ -172,10 +172,8 @@ class NYCAddressInfo:
 
         # If geosearch.planninglabs.nyc did not return the BIN, we can check the New Buildings data set
         # based on work permits from the DOB to try backfilling.
-        if (
-            not addr_props.get("addendum", {}).get("pad", {}).get("bin")
-            or int(addr_props["addendum"]["pad"]["bin"]) in INVALID_BIN_NUMBERS
-        ):
+        nyc_planning_bin = addr_props["addendum"]["pad"]["bin"]
+        if int(nyc_planning_bin) in INVALID_BIN_NUMBERS:
             dob_warning_message = (
                 f"geosearch.planninglabs.nyc returned invalid BIN: {addr_props['addendum']['pad']['bin']}"
             )
@@ -199,7 +197,7 @@ class NYCAddressInfo:
 
             self.bin = open_data_bin
         else:
-            self.bin = addr_props["addendum"]["pad"]["bin"]
+            self.bin = nyc_planning_bin
 
         self.longitude, self.latitude = nyc_planning_resp["features"][0]["geometry"]["coordinates"]
 
