@@ -19,7 +19,7 @@ from validate_email.exceptions import (
     TLSNegotiationError,
 )
 
-from meshapi.exceptions import AddressAPIError, AddressError, OpenDataAPIError
+from meshapi.exceptions import AddressAPIError, AddressError
 from meshapi.util.constants import DEFAULT_EXTERNAL_API_TIMEOUT_SECONDS, INVALID_ALTITUDE
 from meshapi.zips import NYCZipCodes
 
@@ -86,7 +86,7 @@ def validate_phone_number(phone_number: str) -> Optional[phonenumbers.PhoneNumbe
 # is gated by OSMAddressInfo.
 @dataclass
 class NYCAddressInfo:
-    sesssion: requests.Session # For all the HTTP requests we have to do
+    sesssion: requests.Session  # For all the HTTP requests we have to do
     street_address: str
     city: str
     state: str
@@ -99,13 +99,15 @@ class NYCAddressInfo:
     def __init__(self, street_address: str, city: str, state: str, zip_code: str):
         # We're going to be making a lot of HTTP requests. It would be better
         # to retry them
-        retries = Retry(total=3,  # Total number of retries
-                        backoff_factor=1,  # Wait time between retries
-                        status_forcelist=[500, 502, 503, 504])  # HTTP status codes to retry
+        retries = Retry(
+            total=3,  # Total number of retries
+            backoff_factor=1,  # Wait time between retries
+            status_forcelist=[500, 502, 503, 504],
+        )  # HTTP status codes to retry
 
         self.session = requests.Session()
-        self.session.mount('http://', HTTPAdapter(max_retries=retries))
-        self.session.mount('https://', HTTPAdapter(max_retries=retries))
+        self.session.mount("http://", HTTPAdapter(max_retries=retries))
+        self.session.mount("https://", HTTPAdapter(max_retries=retries))
 
         full_address = f"{street_address}, {city}, {state} {zip_code}"
         if state != "New York" and state != "NY":
@@ -181,7 +183,7 @@ class NYCAddressInfo:
             logging.warning("Falling back to NYC OpenData New Buildings dataset")
             # We're using the addr_props returned from DOB API because
             # they should be in the same format required by NYC Open Data
-            open_data_bin = lookup_address_nyc_open_data_new_buildings(
+            open_data_bin = self.lookup_address_nyc_open_data_new_buildings(
                 addr_props["street"],
                 addr_props["housenumber"],
                 addr_props["borough"].upper(),
@@ -203,7 +205,6 @@ class NYCAddressInfo:
 
         self.altitude = self.get_height_from_building_footprints_api(self.bin)
 
-
     def get_height_from_building_footprints_api(self, bin: str) -> Optional[float]:
         # Now that we have the bin, we can definitively get the height from
         # NYC OpenData Building Footprints
@@ -218,6 +219,7 @@ class NYCAddressInfo:
                 params=query_params,
                 timeout=DEFAULT_EXTERNAL_API_TIMEOUT_SECONDS,
             )
+            nyc_dataset_req.raise_for_status()
         except Exception:
             logging.exception("[BUILDING_FOOTPRINTS] Exception raised during HTTP Request.")
             return INVALID_ALTITUDE
@@ -225,9 +227,7 @@ class NYCAddressInfo:
         nyc_dataset_resp = json.loads(nyc_dataset_req.content.decode("utf-8"))
 
         if len(nyc_dataset_resp) == 0:
-            logging.warning(
-                f"[BUILDING_FOOTPRINTS] Empty response for BIN '{bin}'. Setting Altitude to 0"
-            )
+            logging.warning(f"[BUILDING_FOOTPRINTS] Empty response for BIN '{bin}'. Setting Altitude to 0")
             return INVALID_ALTITUDE
 
         # Convert relative to ground altitude to absolute altitude AMSL,
@@ -241,6 +241,42 @@ class NYCAddressInfo:
 
         return altitude
 
+    def lookup_address_nyc_open_data_new_buildings(
+        self, street_name: str, house_number: str, borough: str, zip_code: str
+    ) -> Optional[int]:
+        try:
+            params = {
+                "street_name": street_name,
+                "house__": house_number,
+                "borough": borough,
+                "zip_code": zip_code,
+            }
+            response = self.session.get(DOB_NEW_BUILDINGS_API_URL, params=params)
+            response.raise_for_status()
+            # TODO: (wdn) Run the tests and make sure this is accounted for
+            # This should be redundant, but we want to preserve previous behavior
+            # if response.status_code != 200:
+            #     raise HTTPException
+        except Exception:
+            logging.exception("[NEW_BUILDINGS] Exception raised during HTTP Request.")
+            return None
+
+        data = response.json()
+
+        if not data:
+            logging.error("[NEW_BUILDINGS] No data found for the specified address.")
+            return None
+
+        open_data_bin = data[0].get("bin__")
+
+        # Make sure we get only one BIN
+        for d in data:
+            if d.get("bin__") != open_data_bin:
+                logging.error("[NYC OpenData New Buildings] Returned multiple BINs. I don't know which one is correct!")
+                return None
+
+        return int(open_data_bin)
+
 
 def validate_multi_phone_number_field(phone_number_list: List[str]) -> None:
     for num in phone_number_list:
@@ -250,6 +286,7 @@ def validate_multi_phone_number_field(phone_number_list: List[str]) -> None:
 def validate_phone_number_field(phone_number: str) -> None:
     if not validate_phone_number(phone_number):
         raise ValidationError(f"Invalid phone number: {phone_number}")
+
 
 def geocode_nyc_address(street_address: str, city: str, state: str, zip_code: str) -> Optional[NYCAddressInfo]:
     attempts_remaining = 2
@@ -334,37 +371,3 @@ def validate_recaptcha_tokens(
             "Feature flag JOIN_FORM_FAIL_ALL_INVISIBLE_RECAPTCHAS enabled, failing validation "
             "even though this request should have succeeded"
         )
-
-
-def lookup_address_nyc_open_data_new_buildings(
-    street_name: str, house_number: str, borough: str, zip_code: str
-) -> Optional[int]:
-    params = {
-        "street_name": street_name,
-        "house__": house_number,
-        "borough": borough,
-        "zip_code": zip_code,
-    }
-
-    response = requests.get(DOB_NEW_BUILDINGS_API_URL, params=params)
-
-    if response.status_code == 200:
-        data = response.json()
-        if data:
-            open_data_bin = data[0].get("bin__")
-
-            # Make sure we get only one BIN
-            for d in data:
-                if d.get("bin__") != open_data_bin:
-                    raise AddressAPIError("[NYC OpenData New Buildings] Returned multiple BINs")
-
-            return int(open_data_bin)
-        else:
-            logging.error("[NYC OpenData New Buildings] No data found for the specified address.")
-            return None
-    else:
-        logging.error(
-            "[NYC OpenData New Buildings] Error retrieving data"
-            + f"from NYC OpenData New Buildings: {response.status_code}"
-        )
-        return None
