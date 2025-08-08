@@ -200,7 +200,6 @@ class NYCAddressInfo:
             self.bin = open_data_bin
 
         self.longitude, self.latitude = nyc_geosearch_resp["features"][0]["geometry"]["coordinates"]
-
         self.altitude = self.get_height_from_building_footprints_api(self.bin)
 
     def get_height_from_building_footprints_api(self, bin: int) -> Optional[float]:
@@ -287,26 +286,19 @@ def validate_phone_number_field(phone_number: str) -> None:
 
 
 def geocode_nyc_address(street_address: str, city: str, state: str, zip_code: str) -> Optional[NYCAddressInfo]:
-    attempts_remaining = 2
-    while attempts_remaining > 0:
-        attempts_remaining -= 1
-        try:
-            nyc_addr_info = NYCAddressInfo(street_address, city, state, zip_code)
-            return nyc_addr_info
-        # If the user has given us an invalid address. Tell them to buzz
-        # off.
-        except (AddressError, UnsupportedAddressError) as e:
-            logging.exception("AddressError when validating address")
-            # Raise to next level
-            raise e
+    try:
+        nyc_addr_info = NYCAddressInfo(street_address, city, state, zip_code)
+        return nyc_addr_info
+    # If the user has given us an invalid address. Tell them to buzz
+    # off.
+    except (AddressError, UnsupportedAddressError) as e:
+        logging.exception("AddressError when validating address")
+        # Raise to next level
+        raise e
+    except (AddressAPIError, Exception):
+        logging.warning(f"Could not parse address: {street_address}, {city}, {state}, {zip_code}")
+        return None
 
-        # If we get any other error, then there was probably an issue
-        # using the API, and we should wait a bit and re-try
-        except (AddressAPIError, Exception):
-            logging.exception("(NYC) Something went wrong validating the address. Re-trying...")
-            time.sleep(3)
-
-    # If we run out of tries, bail.
     logging.warning(f"Could not parse address: {street_address}, {city}, {state}, {zip_code}")
     return None
 
