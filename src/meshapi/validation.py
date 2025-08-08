@@ -19,7 +19,7 @@ from validate_email.exceptions import (
     TLSNegotiationError,
 )
 
-from meshapi.exceptions import AddressAPIError, AddressError, UnsupportedAddressError
+from meshapi.exceptions import AddressAPIError, InvalidAddressError, UnsupportedAddressError
 from meshapi.util.constants import DEFAULT_EXTERNAL_API_TIMEOUT_SECONDS, INVALID_ALTITUDE
 from meshapi.zips import NYCZipCodes
 
@@ -101,13 +101,11 @@ class NYCAddressInfo:
     bin: int | None
 
     def __init__(self, street_address: str, city: str, state: str, zip_code: str):
-        # We're going to be making a lot of HTTP requests. It would be better
-        # to retry them
         retries = Retry(
-            total=3,  # Total number of retries
-            backoff_factor=1,  # Wait time between retries
+            total=3,
+            backoff_factor=1,
             status_forcelist=[500, 502, 503, 504],
-        )  # HTTP status codes to retry
+        )
 
         self.session = requests.Session()
         self.session.mount("http://", HTTPAdapter(max_retries=retries))
@@ -119,7 +117,7 @@ class NYCAddressInfo:
                 f"[NYCAddressInfo] Address '{full_address}' is unsupported: State '{state}' is not New York."
             )
 
-        # We only support the five boroughs of NYC at this time
+        # This method is only compatible with the 5 boroughs of NYC
         if not NYCZipCodes.match_zip(zip_code):
             raise UnsupportedAddressError(
                 f"(NYC) Address '{full_address}' is unsupported:"
@@ -146,7 +144,7 @@ class NYCAddressInfo:
             raise AddressAPIError
 
         if len(nyc_geosearch_resp["features"]) == 0:
-            raise AddressError(f"(NYC) Address '{full_address}' not found in geosearch.planninglabs.nyc.")
+            raise InvalidAddressError(f"(NYC) Address '{full_address}' not found in geosearch.planninglabs.nyc.")
 
         addr_props = nyc_geosearch_resp["features"][0]["properties"]
 
@@ -156,7 +154,7 @@ class NYCAddressInfo:
 
         found_zip = str(addr_props["postalcode"])
         if found_zip != zip_code:
-            raise AddressError(
+            raise InvalidAddressError(
                 f"(NYC) Address '{full_address}' is invalid:"
                 + f"Zip code '{zip_code}' does not match zip code"
                 + f"'{found_zip}' returned from geosearch.planninglabs.nyc"
@@ -191,7 +189,7 @@ class NYCAddressInfo:
             )
 
             if not open_data_bin:
-                raise AddressError(
+                raise InvalidAddressError(
                     f"(NYC) Address '{full_address}' is invalid. "
                     + dob_warning_message
                     + ". NYC OpenData New Buildings returned no data."
@@ -291,7 +289,7 @@ def geocode_nyc_address(street_address: str, city: str, state: str, zip_code: st
         return nyc_addr_info
     # If the user has given us an invalid address. Tell them to buzz
     # off.
-    except (AddressError, UnsupportedAddressError) as e:
+    except (InvalidAddressError, UnsupportedAddressError) as e:
         logging.exception("AddressError when validating address")
         # Raise to next level
         raise e

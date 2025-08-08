@@ -19,7 +19,7 @@ from rest_framework.response import Response
 from rest_framework_dataclasses.serializers import DataclassSerializer
 from validate_email.exceptions import EmailValidationError
 
-from meshapi.exceptions import AddressError, UnsupportedAddressError
+from meshapi.exceptions import InvalidAddressError, UnsupportedAddressError
 from meshapi.models import AddressTruthSource, Building, Install, Member, Node
 from meshapi.permissions import HasNNAssignPermission, LegacyNNAssignmentPassword
 from meshapi.serializers import MemberSerializer
@@ -181,7 +181,7 @@ def process_join_form(r: JoinFormRequest, request: Optional[Request] = None) -> 
             },
             status=status.HTTP_400_BAD_REQUEST,
         )
-    except AddressError as e:
+    except InvalidAddressError as e:
         return Response({"detail": e.args[0]}, status=status.HTTP_400_BAD_REQUEST)
 
     if not nyc_addr_info:
