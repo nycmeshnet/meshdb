@@ -199,6 +199,10 @@ def process_join_form(r: JoinFormRequest, request: Optional[Request] = None) -> 
         logging.warning(f"Changed city: {r.city} != {nyc_addr_info.city}")
         changed_info["city"] = nyc_addr_info.city
 
+    if r.zip_code != nyc_addr_info.zip:
+        logging.warning(f"Changed zip_code (still in the same borough): {r.zip_code} != {nyc_addr_info.zip}")
+        changed_info["zip_code"] = nyc_addr_info.zip
+
     # Let the member know we need to confirm some info with them. We'll send
     # back a dictionary with the info that needs confirming.
     # This is not a rejection. We expect another join form submission with all
@@ -431,6 +435,8 @@ install_number: {join_form_install.install_number}"""
                 notify_string += f"Changed street_address: {r.street_address} != {nyc_addr_info.street_address}\n"
             if r.city != nyc_addr_info.city:
                 notify_string += f"Changed city: {r.city} != {nyc_addr_info.city}"
+            if r.zip_code != nyc_addr_info.zip:
+                notify_string += f"Changed zip code: {r.zip_code} != {nyc_addr_info.zip}"
             notify_admins(notify_string)
     else:
         logging.info(success_message)

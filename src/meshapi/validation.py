@@ -134,12 +134,19 @@ class NYCAddressInfo:
 
         # For some insane reason this is an integer, so we have to cast it to a string
         found_zip = str(nyc_planning_resp["features"][0]["properties"]["postalcode"])
-        if found_zip != zip_code:
+
+        # There's a chance the zip code the member is familiar with has changed.
+        # To mitigate this, we're gonna continue processing the record as long
+        # as the zip code is in the same borough.
+        if NYCZipCodes.get_borough(found_zip) != NYCZipCodes.get_borough(zip_code):
             raise AddressError(
                 f"(NYC) Address '{full_address}' is invalid:"
                 + f"Zip code '{zip_code}' does not match zip code"
                 + f"'{found_zip}' returned from geosearch.planninglabs.nyc"
             )
+
+        if found_zip != zip_code:
+            logging.warning(f"Got a different zip code from geosearch.planninglabs.nyc. {found_zip} != {zip_code}")
 
         addr_props = nyc_planning_resp["features"][0]["properties"]
 

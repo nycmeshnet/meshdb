@@ -1,3 +1,5 @@
+from typing import Optional
+
 bronx = [
     "10466",
     "10468",
@@ -229,8 +231,23 @@ richmond = [
     "10306",
 ]
 
+BRONX = "bronx"
+NEW_YORK = "new_york"
+KINGS = "kings"
+QUEENS = "queens"
+RICHMOND = "richmond"
+
+zips = {BRONX: bronx, NEW_YORK: new_york, KINGS: kings, QUEENS: queens, RICHMOND: richmond}
+
 
 class NYCZipCodes:
     @staticmethod
     def match_zip(zip: str) -> bool:
         return any(zip in a for a in [bronx, new_york, kings, queens, richmond])
+
+    @staticmethod
+    def get_borough(zip_code: str) -> Optional[str]:
+        for borough, z in zips.items():
+            if zip_code in z:
+                return borough
+        return None
