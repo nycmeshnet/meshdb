@@ -19,7 +19,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_dataclasses.serializers import DataclassSerializer
 
-from meshapi.exceptions import AddressError
+from meshapi.exceptions import InvalidAddressError
 from meshapi.models import LOS, Install, Link
 from meshapi.validation import geocode_nyc_address
 
@@ -449,8 +449,8 @@ class NYCGeocodeWrapper(APIView):
                 },
                 status=status.HTTP_404_NOT_FOUND,
             )
-        except AddressError as e:
-            logging.exception("AddressError when validating address")
+        except InvalidAddressError as e:
+            logging.exception("InvalidAddressError when validating address")
             return Response({"detail": e.args[0]}, status=status.HTTP_404_NOT_FOUND)
 
         if not nyc_addr_info:

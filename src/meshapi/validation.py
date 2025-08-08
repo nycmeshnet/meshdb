@@ -1,7 +1,6 @@
 import json
 import logging
 import os
-import time
 from dataclasses import dataclass
 from typing import List, Optional
 
@@ -111,18 +110,14 @@ class NYCAddressInfo:
         self.session.mount("http://", HTTPAdapter(max_retries=retries))
         self.session.mount("https://", HTTPAdapter(max_retries=retries))
 
-        full_address = f"{street_address}, {city}, {state} {zip_code}"
         if state != "New York" and state != "NY":
-            raise UnsupportedAddressError(
-                f"[NYCAddressInfo] Address '{full_address}' is unsupported: State '{state}' is not New York."
-            )
+            logging.error(f"State '{state}' is not New York.")
+            raise UnsupportedAddressError
 
         # This method is only compatible with the 5 boroughs of NYC
         if not NYCZipCodes.match_zip(zip_code):
-            raise UnsupportedAddressError(
-                f"(NYC) Address '{full_address}' is unsupported:"
-                + f"Zip code '{zip_code}' does not appear in our zip code database."
-            )
+            logging.error(f"Zip code '{zip_code}' does not appear in our zip code database.")
+            raise UnsupportedAddressError
 
         self.address = f"{street_address}, {city}, {state} {zip_code}"
 
@@ -140,11 +135,12 @@ class NYCAddressInfo:
             )
             nyc_geosearch_resp = json.loads(nyc_planning_req.content.decode("utf-8"))
         except Exception:
-            logging.exception("(NYC) An exception occurred while querying geosearch.planninglabs.nyc")
+            logging.exception("An exception occurred while querying geosearch.planninglabs.nyc")
             raise AddressAPIError
 
         if len(nyc_geosearch_resp["features"]) == 0:
-            raise InvalidAddressError(f"(NYC) Address '{full_address}' not found in geosearch.planninglabs.nyc.")
+            logging.error("Address not found in geosearch.planninglabs.nyc.")
+            raise InvalidAddressError
 
         addr_props = nyc_geosearch_resp["features"][0]["properties"]
 
@@ -154,11 +150,11 @@ class NYCAddressInfo:
 
         found_zip = str(addr_props["postalcode"])
         if found_zip != zip_code:
-            raise InvalidAddressError(
-                f"(NYC) Address '{full_address}' is invalid:"
-                + f"Zip code '{zip_code}' does not match zip code"
-                + f"'{found_zip}' returned from geosearch.planninglabs.nyc"
+            logging.error(
+                f"Zip code '{zip_code}' does not match zip code '{found_zip}'"
+                "returned from geosearch.planninglabs.nyc"
             )
+            raise InvalidAddressError
 
         # Get the rest of the address info
         self.street_address = humanify_street_address(f"{addr_props['housenumber']} {addr_props['street']}")
@@ -173,12 +169,11 @@ class NYCAddressInfo:
         # If geosearch.planninglabs.nyc did not return the BIN, we can check the New Buildings data set
         # based on work permits from the DOB to try backfilling.
         self.bin = addr_props["addendum"]["pad"]["bin"]
-        if self.bin in INVALID_BIN_NUMBERS:
+        if not self.bin or self.bin in INVALID_BIN_NUMBERS:
             dob_warning_message = (
                 f"geosearch.planninglabs.nyc returned invalid BIN: {addr_props['addendum']['pad']['bin']}"
             )
-            logging.warning(dob_warning_message)
-            logging.warning("Falling back to NYC OpenData New Buildings dataset")
+            logging.warning(dob_warning_message + "Falling back to NYC OpenData New Buildings dataset")
             # We're using the addr_props returned from DOB API because
             # they should be in the same format required by NYC Open Data
             open_data_bin = self.lookup_address_nyc_open_data_new_buildings(
@@ -189,11 +184,8 @@ class NYCAddressInfo:
             )
 
             if not open_data_bin:
-                raise InvalidAddressError(
-                    f"(NYC) Address '{full_address}' is invalid. "
-                    + dob_warning_message
-                    + ". NYC OpenData New Buildings returned no data."
-                )
+                logging.error("NYC OpenData New Buildings returned no data.")
+                raise InvalidAddressError
 
             self.bin = open_data_bin
 
@@ -220,7 +212,6 @@ class NYCAddressInfo:
             return INVALID_ALTITUDE
 
         nyc_dataset_resp = json.loads(nyc_dataset_req.content.decode("utf-8"))
-
         if len(nyc_dataset_resp) == 0:
             logging.warning(f"[BUILDING_FOOTPRINTS] Empty response for BIN '{bin}'. Setting Altitude to 0")
             return INVALID_ALTITUDE
@@ -283,22 +274,16 @@ def validate_phone_number_field(phone_number: str) -> None:
         raise ValidationError(f"Invalid phone number: {phone_number}")
 
 
-def geocode_nyc_address(street_address: str, city: str, state: str, zip_code: str) -> Optional[NYCAddressInfo]:
+def geocode_nyc_address(street_address: str, city: str, state: str, zip_code: str) -> NYCAddressInfo:
+    logging.info(f"Running NYC geocode for '{street_address}, {city}, {state} {zip_code}'...")
     try:
-        nyc_addr_info = NYCAddressInfo(street_address, city, state, zip_code)
-        return nyc_addr_info
-    # If the user has given us an invalid address. Tell them to buzz
-    # off.
-    except (InvalidAddressError, UnsupportedAddressError) as e:
-        logging.exception("AddressError when validating address")
-        # Raise to next level
+        return NYCAddressInfo(street_address, city, state, zip_code)
+    except (UnsupportedAddressError, InvalidAddressError, AddressAPIError) as e:
         raise e
-    except (AddressAPIError, Exception):
-        logging.warning(f"Could not parse address: {street_address}, {city}, {state}, {zip_code}")
-        return None
-
-    logging.warning(f"Could not parse address: {street_address}, {city}, {state}, {zip_code}")
-    return None
+    except Exception as e:
+        # If we get some unknown exception, make sure the exception gets logged
+        logging.exception("An exception occurred while running NYC geocode")
+        raise e
 
 
 def check_recaptcha_token(token: Optional[str], server_secret: str, remote_ip: Optional[str]) -> float:

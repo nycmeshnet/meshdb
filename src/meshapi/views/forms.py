@@ -135,6 +135,7 @@ def join_form(request: Request) -> Response:
     return response
 
 
+@tracer.wrap()
 def process_join_form(r: JoinFormRequest, request: Optional[Request] = None) -> Response:
     if not r.ncl:
         return Response(
@@ -166,27 +167,32 @@ def process_join_form(r: JoinFormRequest, request: Optional[Request] = None) -> 
     formatted_phone_number = normalize_phone_number(r.phone_number) if r.phone_number else None
 
     try:
-        try:
-            nyc_addr_info: Optional[NYCAddressInfo] = geocode_nyc_address(r.street_address, r.city, r.state, r.zip_code)
-        except Exception as e:
-            # Ensure this gets logged
-            logging.exception(e)
-            raise e
+        nyc_addr_info: NYCAddressInfo = geocode_nyc_address(r.street_address, r.city, r.state, r.zip_code)
     except UnsupportedAddressError:
-        logging.debug(r.street_address, r.city, r.state, r.zip_code)
         return Response(
             {
-                "detail": "Non-NYC registrations are not supported at this time. Please double check your zip code, "
-                "or send an email to support@nycmesh.net"
+                "detail": "Non-NYC registrations are not supported at this time. "
+                "Please double-check your address, or contact support@nycmesh.net"
             },
             status=status.HTTP_400_BAD_REQUEST,
         )
-    except InvalidAddressError as e:
-        return Response({"detail": e.args[0]}, status=status.HTTP_400_BAD_REQUEST)
-
-    if not nyc_addr_info:
+    except InvalidAddressError:
         return Response(
-            {"detail": "Your address could not be validated."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            {
+                "detail": "Your address is invalid. Please double-check your address "
+                "or contact support@nycmesh.net for assistance."
+            },
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+    except Exception:
+        # Either an API is down, or we have no idea what went wrong. It was probably our fault.
+        # It was logged though, so we'll check.
+        return Response(
+            {
+                "detail": "Your address could not be validated at this time. "
+                "Please try again later, or contact support@nycmesh.net"
+            },
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
 
     changed_info: dict[str, str | int] = {}
