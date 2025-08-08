@@ -3,7 +3,7 @@ from unittest.mock import MagicMock, patch
 
 from django.test import TestCase
 
-from meshapi.exceptions import AddressAPIError, AddressError
+from meshapi.exceptions import AddressAPIError, InvalidAddressError
 from meshapi.tests.sample_data import sample_address_response, sample_new_buildings_response
 from meshapi.validation import NYCAddressInfo, lookup_address_nyc_open_data_new_buildings
 
@@ -22,7 +22,7 @@ class TestValidationNYCAddressInfo(TestCase):
         mock_2.content = "the number 4".encode("utf-8")
 
         test_cases = [
-            {"mock": mock_1, "exception": AddressError},
+            {"mock": mock_1, "exception": InvalidAddressError},
             {"mock": mock_2, "exception": AddressAPIError},
         ]
 
@@ -150,7 +150,7 @@ class TestValidationNYCAddressInfo(TestCase):
 
         mock_requests.side_effect = [mock_1, mock_2, mock_4, mock_3]
 
-        with self.assertRaises(AddressError):
+        with self.assertRaises(InvalidAddressError):
             _ = NYCAddressInfo("151 Broome St", "New York", "NY", "10002")
 
     @patch("meshapi.validation.requests.get")
