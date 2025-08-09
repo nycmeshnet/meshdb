@@ -169,7 +169,7 @@ class NYCAddressInfo:
             dob_warning_message = (
                 f"geosearch.planninglabs.nyc returned invalid BIN: {addr_props['addendum']['pad']['bin']}"
             )
-            logging.warning(dob_warning_message + "Falling back to NYC OpenData New Buildings dataset")
+            logging.warning(dob_warning_message + ". Falling back to NYC OpenData New Buildings dataset")
             # We're using the addr_props returned from DOB API because
             # they should be in the same format required by NYC Open Data
             open_data_bin = lookup_address_nyc_open_data_new_buildings(
@@ -204,23 +204,29 @@ def get_height_from_building_footprints_api(bin: int) -> Optional[float]:
             timeout=DEFAULT_EXTERNAL_API_TIMEOUT_SECONDS,
         )
         nyc_dataset_req.raise_for_status()
+        nyc_dataset_resp = json.loads(nyc_dataset_req.content.decode("utf-8"))
     except Exception:
         logging.exception("[BUILDING_FOOTPRINTS] Exception raised during HTTP Request.")
         return INVALID_ALTITUDE
 
-    nyc_dataset_resp = json.loads(nyc_dataset_req.content.decode("utf-8"))
     if len(nyc_dataset_resp) == 0:
         logging.warning(f"[BUILDING_FOOTPRINTS] Empty response for BIN '{bin}'. Setting Altitude to 0")
         return INVALID_ALTITUDE
 
-    # Convert relative to ground altitude to absolute altitude AMSL,
-    # convert feet to meters, and round to the nearest 0.1 m
-    FEET_PER_METER = 3.28084
-    altitude = round(
-        (float(nyc_dataset_resp[0]["height_roof"]) + float(nyc_dataset_resp[0]["ground_elevation"]))
-        / FEET_PER_METER,
-        1,
-    )
+    try:
+        # Convert relative to ground altitude to absolute altitude AMSL,
+        # convert feet to meters, and round to the nearest 0.1 m
+        FEET_PER_METER = 3.28084
+        altitude = round(
+            (float(nyc_dataset_resp[0]["height_roof"]) + float(nyc_dataset_resp[0]["ground_elevation"]))
+            / FEET_PER_METER,
+            1,
+        )
+    except Exception:
+        # This is defensiveness edging on paranoia, but the tests demand that we
+        # check for this case and are able to gracefully handle it.
+        logging.exception("[BUILDING_FOOTPRINTS] Exception raised while computing altitude")
+        return INVALID_ALTITUDE
 
     return altitude
 
@@ -253,7 +259,7 @@ def lookup_address_nyc_open_data_new_buildings(
     for d in data:
         if d.get("bin__") != open_data_bin:
             logging.error("[NYC OpenData New Buildings] Returned multiple BINs. I don't know which one is correct!")
-            return None
+            raise AddressAPIError
 
     return int(open_data_bin)
 

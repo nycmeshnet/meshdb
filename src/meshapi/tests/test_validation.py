@@ -1,4 +1,5 @@
 import json
+import logging
 from unittest.mock import MagicMock, patch
 
 from django.test import TestCase
@@ -195,16 +196,17 @@ class TestValidationNYCAddressInfo(TestCase):
         mock_wrong_type = MagicMock()
         mock_wrong_type.content = '[{"height_roof":"a series", "ground_elevation":"of tubes"}]'.encode("utf-8")
 
-        test_cases = [
-            mock_series_of_tubes,
-            mock_no_list,
-            mock_no_value,
-            mock_null_value,
-            mock_wrong_type,
-            Exception("Pretend this is a network issue"),
-        ]
+        test_cases = {
+            "a series of tubes": mock_series_of_tubes,
+            "no list": mock_no_list,
+            "no value": mock_no_value,
+            "null value": mock_null_value,
+            "wrong type": mock_wrong_type,
+            "network issue": Exception("Pretend this is a network issue"),
+        }
 
-        for mock_test_case in test_cases:
+        for title, mock_test_case in test_cases.items():
+            logging.info(title)
             mock_1 = MagicMock()
             mock_1.content = json.dumps(sample_address_response).encode("utf-8")
 
@@ -215,12 +217,12 @@ class TestValidationNYCAddressInfo(TestCase):
 
             nyc_addr_info = NYCAddressInfo("151 Broome St", "New York", "NY", "10002")
 
-            assert nyc_addr_info is not None
-            assert nyc_addr_info.street_address == "151 Broome St"
-            assert nyc_addr_info.city == "New York"
-            assert nyc_addr_info.state == "NY"
-            assert nyc_addr_info.zip == "10002"
-            assert nyc_addr_info.longitude == -73.98492
-            assert nyc_addr_info.latitude == 40.716245
-            assert nyc_addr_info.altitude is None
-            assert nyc_addr_info.bin == 1234
+            self.assertIsNotNone(nyc_addr_info)
+            self.assertEqual(nyc_addr_info.street_address, "151 Broome St")
+            self.assertEqual(nyc_addr_info.city, "New York")
+            self.assertEqual(nyc_addr_info.state, "NY")
+            self.assertEqual(nyc_addr_info.zip, "10002")
+            self.assertEqual(nyc_addr_info.longitude, -73.98492)
+            self.assertEqual(nyc_addr_info.latitude, 40.716245)
+            self.assertEqual(nyc_addr_info.altitude, None)
+            self.assertEqual(nyc_addr_info.bin, 1234)
