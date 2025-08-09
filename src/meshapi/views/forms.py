@@ -40,6 +40,15 @@ logging.basicConfig()
 
 DISABLE_RECAPTCHA_VALIDATION = os.environ.get("RECAPTCHA_DISABLE_VALIDATION", "").lower() == "true"
 
+INVALID_ADDRESS_RESPONSE = "Your address is invalid. Please double-check your address "
+"or contact support@nycmesh.net for assistance."
+
+UNSUPPORTED_ADDRESS_RESPONSE = "Non-NYC registrations are not supported at this time. "
+"Please double-check your address, or contact support@nycmesh.net"
+
+VALIDATION_500_RESPONSE = "Your address could not be validated at this time. "
+"Please try again later, or contact support@nycmesh.net"
+
 
 # Join Form
 @dataclass
@@ -170,28 +179,19 @@ def process_join_form(r: JoinFormRequest, request: Optional[Request] = None) -> 
         nyc_addr_info: NYCAddressInfo = geocode_nyc_address(r.street_address, r.city, r.state, r.zip_code)
     except UnsupportedAddressError:
         return Response(
-            {
-                "detail": "Non-NYC registrations are not supported at this time. "
-                "Please double-check your address, or contact support@nycmesh.net"
-            },
+            {"detail": UNSUPPORTED_ADDRESS_RESPONSE},
             status=status.HTTP_400_BAD_REQUEST,
         )
     except InvalidAddressError:
         return Response(
-            {
-                "detail": "Your address is invalid. Please double-check your address "
-                "or contact support@nycmesh.net for assistance."
-            },
+            {"detail": INVALID_ADDRESS_RESPONSE},
             status=status.HTTP_400_BAD_REQUEST,
         )
     except Exception:
         # Either an API is down, or we have no idea what went wrong. It was probably our fault.
         # It was logged though, so we'll check.
         return Response(
-            {
-                "detail": "Your address could not be validated at this time. "
-                "Please try again later, or contact support@nycmesh.net"
-            },
+            {"detail": VALIDATION_500_RESPONSE},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
 

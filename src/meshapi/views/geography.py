@@ -22,6 +22,7 @@ from rest_framework_dataclasses.serializers import DataclassSerializer
 from meshapi.exceptions import InvalidAddressError
 from meshapi.models import LOS, Install, Link
 from meshapi.validation import geocode_nyc_address
+from meshapi.views.forms import INVALID_ADDRESS_RESPONSE, UNSUPPORTED_ADDRESS_RESPONSE, VALIDATION_500_RESPONSE
 
 KML_CONTENT_TYPE = "application/vnd.google-earth.kml+xml"
 KML_CONTENT_TYPE_WITH_CHARSET = f"{KML_CONTENT_TYPE}; charset=utf-8"
@@ -443,21 +444,16 @@ class NYCGeocodeWrapper(APIView):
             nyc_addr_info = geocode_nyc_address(raw_addr.street_address, raw_addr.city, raw_addr.state, raw_addr.zip)
         except ValueError:
             return Response(
-                {
-                    "detail": "Non-NYC registrations are not supported at this time. "
-                    "Please email support@nycmesh.net for more information"
-                },
+                {"detail": UNSUPPORTED_ADDRESS_RESPONSE},
                 status=status.HTTP_404_NOT_FOUND,
             )
-        except InvalidAddressError as e:
+        except InvalidAddressError:
             logging.exception("InvalidAddressError when validating address")
-            return Response({"detail": e.args[0]}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"detail": INVALID_ADDRESS_RESPONSE}, status=status.HTTP_404_NOT_FOUND)
 
-        if not nyc_addr_info:
+        except Exception:
             # We failed to contact the city, this is probably a retryable error, return 500
-            return Response(
-                {"detail": "Your address could not be validated."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
+            return Response({"detail": VALIDATION_500_RESPONSE}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         return Response(
             {

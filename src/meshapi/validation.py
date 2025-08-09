@@ -218,6 +218,7 @@ class NYCAddressInfo:
 
         return altitude
 
+
 def lookup_address_nyc_open_data_new_buildings(
     street_name: str, house_number: str, borough: str, zip_code: str
 ) -> Optional[int]:
@@ -336,6 +337,7 @@ def validate_recaptcha_tokens(
             "Feature flag JOIN_FORM_FAIL_ALL_INVISIBLE_RECAPTCHAS enabled, failing validation "
             "even though this request should have succeeded"
         )
+
 
 def get_requests_session_with_retries():
     retries = Retry(
