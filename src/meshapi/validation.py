@@ -20,6 +20,7 @@ from validate_email.exceptions import (
 
 from meshapi.exceptions import AddressAPIError, InvalidAddressError, UnsupportedAddressError
 from meshapi.util.constants import DEFAULT_EXTERNAL_API_TIMEOUT_SECONDS, INVALID_ALTITUDE
+from meshapi.util.requests import get_requests_session_with_retries
 from meshapi.zips import NYCZipCodes
 
 from .pelias import humanify_street_address
@@ -148,7 +149,11 @@ class NYCAddressInfo:
             raise InvalidAddressError
 
         # Get the rest of the address info
-        self.street_address = humanify_street_address(f"{addr_props['housenumber']} {addr_props['street']}")
+        try:
+            self.street_address = humanify_street_address(f"{addr_props['housenumber']} {addr_props['street']}")
+        except Exception:
+            logging.exception("An exception occurred while calling humanify_street_address. Is Pelias reachable?")
+            raise AddressAPIError
         self.city = addr_props["borough"].replace("Manhattan", "New York")
         if self.city == "Queens":
             # Queens addresses are special and different, but it seems the neighborhood name
@@ -181,42 +186,43 @@ class NYCAddressInfo:
             self.bin = open_data_bin
 
         self.longitude, self.latitude = nyc_geosearch_resp["features"][0]["geometry"]["coordinates"]
-        self.altitude = self.get_height_from_building_footprints_api(self.bin)
+        self.altitude = get_height_from_building_footprints_api(self.bin)
 
-    def get_height_from_building_footprints_api(self, bin: int) -> Optional[float]:
-        # Now that we have the bin, we can definitively get the height from
-        # NYC OpenData Building Footprints
-        try:
-            query_params = {
-                "$where": f"bin={bin}",
-                "$select": "height_roof,ground_elevation",
-                "$limit": "1",
-            }
-            nyc_dataset_req = self.session.get(
-                BUILDING_FOOTPRINTS_API,
-                params=query_params,
-                timeout=DEFAULT_EXTERNAL_API_TIMEOUT_SECONDS,
-            )
-            nyc_dataset_req.raise_for_status()
-        except Exception:
-            logging.exception("[BUILDING_FOOTPRINTS] Exception raised during HTTP Request.")
-            return INVALID_ALTITUDE
-
-        nyc_dataset_resp = json.loads(nyc_dataset_req.content.decode("utf-8"))
-        if len(nyc_dataset_resp) == 0:
-            logging.warning(f"[BUILDING_FOOTPRINTS] Empty response for BIN '{bin}'. Setting Altitude to 0")
-            return INVALID_ALTITUDE
-
-        # Convert relative to ground altitude to absolute altitude AMSL,
-        # convert feet to meters, and round to the nearest 0.1 m
-        FEET_PER_METER = 3.28084
-        altitude = round(
-            (float(nyc_dataset_resp[0]["height_roof"]) + float(nyc_dataset_resp[0]["ground_elevation"]))
-            / FEET_PER_METER,
-            1,
+def get_height_from_building_footprints_api(bin: int) -> Optional[float]:
+    # Now that we have the bin, we can definitively get the height from
+    # NYC OpenData Building Footprints
+    try:
+        session = get_requests_session_with_retries()
+        query_params = {
+            "$where": f"bin={bin}",
+            "$select": "height_roof,ground_elevation",
+            "$limit": "1",
+        }
+        nyc_dataset_req = session.get(
+            BUILDING_FOOTPRINTS_API,
+            params=query_params,
+            timeout=DEFAULT_EXTERNAL_API_TIMEOUT_SECONDS,
         )
+        nyc_dataset_req.raise_for_status()
+    except Exception:
+        logging.exception("[BUILDING_FOOTPRINTS] Exception raised during HTTP Request.")
+        return INVALID_ALTITUDE
 
-        return altitude
+    nyc_dataset_resp = json.loads(nyc_dataset_req.content.decode("utf-8"))
+    if len(nyc_dataset_resp) == 0:
+        logging.warning(f"[BUILDING_FOOTPRINTS] Empty response for BIN '{bin}'. Setting Altitude to 0")
+        return INVALID_ALTITUDE
+
+    # Convert relative to ground altitude to absolute altitude AMSL,
+    # convert feet to meters, and round to the nearest 0.1 m
+    FEET_PER_METER = 3.28084
+    altitude = round(
+        (float(nyc_dataset_resp[0]["height_roof"]) + float(nyc_dataset_resp[0]["ground_elevation"]))
+        / FEET_PER_METER,
+        1,
+    )
+
+    return altitude
 
 
 def lookup_address_nyc_open_data_new_buildings(
@@ -338,15 +344,3 @@ def validate_recaptcha_tokens(
             "even though this request should have succeeded"
         )
 
-
-def get_requests_session_with_retries():
-    retries = Retry(
-        total=3,
-        backoff_factor=1,
-        status_forcelist=[500, 502, 503, 504],
-    )
-
-    session = requests.Session()
-    session.mount("http://", HTTPAdapter(max_retries=retries))
-    session.mount("https://", HTTPAdapter(max_retries=retries))
-    return session

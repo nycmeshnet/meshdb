@@ -2,19 +2,20 @@ import json
 from unittest.mock import MagicMock, patch
 
 from django.test import TestCase
+from requests import Session
 
-from meshapi.exceptions import AddressAPIError, InvalidAddressError
+from meshapi.exceptions import AddressAPIError, InvalidAddressError, UnsupportedAddressError
 from meshapi.tests.sample_data import sample_address_response, sample_new_buildings_response
 from meshapi.validation import NYCAddressInfo, lookup_address_nyc_open_data_new_buildings
 
 
 class TestValidationNYCAddressInfo(TestCase):
     def test_invalid_state(self):
-        with self.assertRaises(ValueError):
+        with self.assertRaises(UnsupportedAddressError):
             NYCAddressInfo("151 Broome St", "New York", "ny", "10002")
 
-    @patch("meshapi.validation.requests.get")
-    def test_validate_address_geosearch_unexpected_responses(self, mock_requests):
+    @patch.object(Session, 'get')
+    def test_validate_address_geosearch_unexpected_responses(self, mock_session):
         mock_1 = MagicMock()
         mock_1.content = '{"features":[]}'.encode("utf-8")
 
@@ -28,7 +29,7 @@ class TestValidationNYCAddressInfo(TestCase):
 
         for test_case in test_cases:
             with self.assertRaises(test_case["exception"]):
-                mock_requests.return_value = test_case["mock"]
+                mock_session.return_value = test_case["mock"]
                 NYCAddressInfo("151 Broome St", "New York", "NY", "10002")
 
     @patch("meshapi.validation.requests.get", side_effect=Exception("Pretend this is a network issue"))
@@ -36,8 +37,8 @@ class TestValidationNYCAddressInfo(TestCase):
         with self.assertRaises(AddressAPIError):
             NYCAddressInfo("151 Broome St", "New York", "NY", "10002")
 
-    @patch("meshapi.validation.requests.get")
-    def test_validate_address_good(self, mock_requests):
+    @patch.object(Session, 'get')
+    def test_validate_address_good(self, mock_session):
         mock_1 = MagicMock()
         mock_1.content = json.dumps(sample_address_response).encode("utf-8")
 
@@ -47,7 +48,7 @@ class TestValidationNYCAddressInfo(TestCase):
         mock_3 = MagicMock()
         mock_3.content = '[{"height_roof":123.456, "ground_elevation":76.544}]'.encode("utf-8")
 
-        mock_requests.side_effect = [mock_1, mock_2, mock_3]
+        mock_session.side_effect = [mock_1, mock_2, mock_3]
 
         nyc_addr_info = NYCAddressInfo("151 Broome St", "New York", "NY", "10002")
 
