@@ -3,7 +3,11 @@ class MeshDBError(Exception):
 
 
 # Used in Validation to warn of an invalid address
-class AddressError(MeshDBError):
+class InvalidAddressError(MeshDBError):
+    pass
+
+
+class UnsupportedAddressError(MeshDBError):
     pass
 
 

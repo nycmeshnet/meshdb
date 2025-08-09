@@ -3,9 +3,9 @@ import os
 import re
 
 import inflect
-import requests
 
 from meshapi.util.constants import DEFAULT_EXTERNAL_API_TIMEOUT_SECONDS
+from meshapi.util.requests import get_requests_session_with_retries
 
 PELIAS_ADDRESS_PARSER_URL = os.environ.get("PELIAS_ADDRESS_PARSER_URL", "http://localhost:6800/parser/parse")
 
@@ -22,7 +22,8 @@ def humanify_street_address(dob_address_str: str) -> str:
     :param dob_address_str: The address (line 1 only) string to convert
     :return: A softened version of the input string
     """
-    response = requests.get(
+    session = get_requests_session_with_retries()
+    response = session.get(
         PELIAS_ADDRESS_PARSER_URL, params={"text": dob_address_str}, timeout=DEFAULT_EXTERNAL_API_TIMEOUT_SECONDS
     )
 

@@ -18,7 +18,7 @@ from meshapi.views import JoinFormRequest
 
 from ..serializers import MemberSerializer
 from ..util.constants import RECAPTCHA_CHECKBOX_TOKEN_HEADER, RECAPTCHA_INVISIBLE_TOKEN_HEADER
-from ..validation import DOB_BUILDING_HEIGHT_API_URL, NYC_PLANNING_LABS_GEOCODE_URL, NYCAddressInfo
+from ..validation import BUILDING_FOOTPRINTS_API, NYC_GEOSEARCH_API, NYCAddressInfo
 from .sample_data import sample_building, sample_node
 from .sample_join_form_data import (
     bronx_join_form_submission,
@@ -124,7 +124,7 @@ class TestJoinForm(TestCase):
         self.requests_mocker = requests_mock.Mocker(real_http=True)
         self.requests_mocker.start()
 
-        self.requests_mocker.get(DOB_BUILDING_HEIGHT_API_URL, json=[{"height_roof": 0, "ground_elevation": 0}])
+        self.requests_mocker.get(BUILDING_FOOTPRINTS_API, json=[{"height_roof": 0, "ground_elevation": 0}])
 
     def tearDown(self):
         self.requests_mocker.stop()
@@ -141,7 +141,7 @@ class TestJoinForm(TestCase):
     )
     def test_valid_join_form(self, submission):
         self.requests_mocker.get(
-            NYC_PLANNING_LABS_GEOCODE_URL,
+            NYC_GEOSEARCH_API,
             json=submission["dob_addr_response"],
         )
 
@@ -162,7 +162,7 @@ class TestJoinForm(TestCase):
 
         with patch("meshapi.views.forms.DISABLE_RECAPTCHA_VALIDATION", False):
             self.requests_mocker.get(
-                NYC_PLANNING_LABS_GEOCODE_URL,
+                NYC_GEOSEARCH_API,
                 json=valid_join_form_submission["dob_addr_response"],
             )
 
@@ -186,7 +186,7 @@ class TestJoinForm(TestCase):
 
         with patch("meshapi.views.forms.DISABLE_RECAPTCHA_VALIDATION", False):
             self.requests_mocker.get(
-                NYC_PLANNING_LABS_GEOCODE_URL,
+                NYC_GEOSEARCH_API,
                 json=valid_join_form_submission["dob_addr_response"],
             )
 
@@ -201,7 +201,7 @@ class TestJoinForm(TestCase):
         mock_get_client_ip.return_value = ("1.1.1.1", True)
         with patch("meshapi.views.forms.DISABLE_RECAPTCHA_VALIDATION", False):
             self.requests_mocker.get(
-                NYC_PLANNING_LABS_GEOCODE_URL,
+                NYC_GEOSEARCH_API,
                 json=valid_join_form_submission["dob_addr_response"],
             )
 
@@ -234,7 +234,7 @@ class TestJoinForm(TestCase):
     )
     def test_valid_join_form_with_member_confirmation(self, submission):
         self.requests_mocker.get(
-            NYC_PLANNING_LABS_GEOCODE_URL,
+            NYC_GEOSEARCH_API,
             json=submission["dob_addr_response"],
         )
 
@@ -267,7 +267,7 @@ class TestJoinForm(TestCase):
 
     def test_phone_number_is_silently_corrected(self):
         self.requests_mocker.get(
-            NYC_PLANNING_LABS_GEOCODE_URL,
+            NYC_GEOSEARCH_API,
             json=valid_join_form_submission["dob_addr_response"],
         )
 
@@ -347,7 +347,7 @@ class TestJoinForm(TestCase):
 
     def test_no_ncl(self):
         self.requests_mocker.get(
-            NYC_PLANNING_LABS_GEOCODE_URL,
+            NYC_GEOSEARCH_API,
             json=valid_join_form_submission["dob_addr_response"],
         )
 
@@ -435,7 +435,7 @@ class TestJoinForm(TestCase):
 
     def test_non_nyc_join_form(self):
         self.requests_mocker.get(
-            NYC_PLANNING_LABS_GEOCODE_URL,
+            NYC_GEOSEARCH_API,
             json=non_nyc_join_form_submission["dob_addr_response"],
         )
 
@@ -452,7 +452,7 @@ class TestJoinForm(TestCase):
 
     def test_new_jersey_join_form(self):
         self.requests_mocker.get(
-            NYC_PLANNING_LABS_GEOCODE_URL,
+            NYC_GEOSEARCH_API,
             json=new_jersey_join_form_submission["dob_addr_response"],
         )
 
@@ -469,7 +469,7 @@ class TestJoinForm(TestCase):
 
     def test_new_jersey_but_nyc_zip_join_form(self):
         self.requests_mocker.get(
-            NYC_PLANNING_LABS_GEOCODE_URL,
+            NYC_GEOSEARCH_API,
             json=new_jersey_join_form_submission["dob_addr_response"],
         )
 
@@ -487,7 +487,7 @@ class TestJoinForm(TestCase):
 
     def test_nyc_join_form_but_new_jersey_zip(self):
         self.requests_mocker.get(
-            NYC_PLANNING_LABS_GEOCODE_URL,
+            NYC_GEOSEARCH_API,
             json=valid_join_form_submission["dob_addr_response"],
         )
 
@@ -505,7 +505,7 @@ class TestJoinForm(TestCase):
 
     def test_empty_join_form(self):
         self.requests_mocker.get(
-            NYC_PLANNING_LABS_GEOCODE_URL,
+            NYC_GEOSEARCH_API,
             json={},
         )
 
@@ -539,7 +539,7 @@ class TestJoinForm(TestCase):
 
     def test_bad_phone_join_form(self):
         self.requests_mocker.get(
-            NYC_PLANNING_LABS_GEOCODE_URL,
+            NYC_GEOSEARCH_API,
             json=valid_join_form_submission["dob_addr_response"],
         )
 
@@ -561,7 +561,7 @@ class TestJoinForm(TestCase):
 
     def test_bad_email_join_form(self):
         self.requests_mocker.get(
-            NYC_PLANNING_LABS_GEOCODE_URL,
+            NYC_GEOSEARCH_API,
             json=valid_join_form_submission["dob_addr_response"],
         )
 
@@ -587,7 +587,7 @@ class TestJoinForm(TestCase):
 
     def test_bad_address_join_form(self):
         self.requests_mocker.get(
-            NYC_PLANNING_LABS_GEOCODE_URL,
+            NYC_GEOSEARCH_API,
             json={"features": []},
         )
 
@@ -613,7 +613,7 @@ class TestJoinForm(TestCase):
 
     def test_member_moved_join_form(self):
         self.requests_mocker.get(
-            NYC_PLANNING_LABS_GEOCODE_URL,
+            NYC_GEOSEARCH_API,
             json=valid_join_form_submission["dob_addr_response"],
         )
 
@@ -637,7 +637,7 @@ class TestJoinForm(TestCase):
         v_sub_2["dob_addr_response"]["features"][0]["properties"]["housenumber"] = "152"
 
         self.requests_mocker.get(
-            NYC_PLANNING_LABS_GEOCODE_URL,
+            NYC_GEOSEARCH_API,
             json=v_sub_2["dob_addr_response"],
         )
 
@@ -976,7 +976,7 @@ class TestJoinForm(TestCase):
         submission["apartment"] = "22"
 
         self.requests_mocker.get(
-            NYC_PLANNING_LABS_GEOCODE_URL,
+            NYC_GEOSEARCH_API,
             json=submission["dob_addr_response"],
         )
 
@@ -1035,7 +1035,7 @@ class TestJoinForm(TestCase):
         submission["apartment"] = "22"
 
         self.requests_mocker.get(
-            NYC_PLANNING_LABS_GEOCODE_URL,
+            NYC_GEOSEARCH_API,
             json=submission["dob_addr_response"],
         )
 
@@ -1079,7 +1079,7 @@ class TestJoinForm(TestCase):
         make sure we handle the multi-address multi-node structures correctly
         """
         self.requests_mocker.get(
-            NYC_PLANNING_LABS_GEOCODE_URL,
+            NYC_GEOSEARCH_API,
             json=jefferson_join_form_submission["dob_addr_response"],
         )
 
@@ -1105,7 +1105,7 @@ class TestJoinForm(TestCase):
         v_sub_2["dob_addr_response"]["features"][0]["properties"]["street"] = "Cypress Avenue"
 
         self.requests_mocker.get(
-            NYC_PLANNING_LABS_GEOCODE_URL,
+            NYC_GEOSEARCH_API,
             json=v_sub_2["dob_addr_response"],
         )
 
@@ -1169,7 +1169,7 @@ class TestJoinForm(TestCase):
 
     def test_member_moved_and_used_non_primary_email_join_form(self):
         self.requests_mocker.get(
-            NYC_PLANNING_LABS_GEOCODE_URL,
+            NYC_GEOSEARCH_API,
             json=valid_join_form_submission["dob_addr_response"],
         )
 
@@ -1200,7 +1200,7 @@ class TestJoinForm(TestCase):
         v_sub_2["dob_addr_response"]["features"][0]["properties"]["housenumber"] = "152"
 
         self.requests_mocker.get(
-            NYC_PLANNING_LABS_GEOCODE_URL,
+            NYC_GEOSEARCH_API,
             json=v_sub_2["dob_addr_response"],
         )
 
@@ -1244,7 +1244,7 @@ class TestJoinForm(TestCase):
         v_sub_3["dob_addr_response"]["features"][0]["properties"]["housenumber"] = "178"
 
         self.requests_mocker.get(
-            NYC_PLANNING_LABS_GEOCODE_URL,
+            NYC_GEOSEARCH_API,
             json=v_sub_3["dob_addr_response"],
         )
 
@@ -1297,7 +1297,7 @@ class TestJoinForm(TestCase):
 
     def test_pre_existing_building_and_node(self):
         self.requests_mocker.get(
-            NYC_PLANNING_LABS_GEOCODE_URL,
+            NYC_GEOSEARCH_API,
             json=valid_join_form_submission["dob_addr_response"],
         )
 
@@ -1342,7 +1342,7 @@ class TestJoinFormInstallEventHooks(TestCase):
         self.requests_mocker = requests_mock.Mocker(real_http=True)
         self.requests_mocker.start()
 
-        self.requests_mocker.get(DOB_BUILDING_HEIGHT_API_URL, json=[{"height_roof": 0, "ground_elevation": 0}])
+        self.requests_mocker.get(BUILDING_FOOTPRINTS_API, json=[{"height_roof": 0, "ground_elevation": 0}])
 
     def tearDown(self):
         self.requests_mocker.stop()
@@ -1364,7 +1364,7 @@ class TestJoinFormInstallEventHooks(TestCase):
         enable_flag("INTEGRATION_ENABLED_CREATE_OSTICKET_TICKETS")
 
         self.requests_mocker.get(
-            NYC_PLANNING_LABS_GEOCODE_URL,
+            NYC_GEOSEARCH_API,
             json=valid_join_form_submission["dob_addr_response"],
         )
         self.requests_mocker.post(
