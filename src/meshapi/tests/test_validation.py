@@ -3,6 +3,7 @@ from unittest.mock import MagicMock, patch
 
 from django.test import TestCase
 from requests import Session
+import requests
 
 from meshapi.exceptions import AddressAPIError, InvalidAddressError, UnsupportedAddressError
 from meshapi.tests.sample_data import sample_address_response, sample_new_buildings_response
@@ -32,8 +33,8 @@ class TestValidationNYCAddressInfo(TestCase):
                 mock_session.return_value = test_case["mock"]
                 NYCAddressInfo("151 Broome St", "New York", "NY", "10002")
 
-    @patch("meshapi.validation.requests.get", side_effect=Exception("Pretend this is a network issue"))
-    def test_validate_address_geosearch_network(self, mock_requests):
+    @patch.object(Session, 'get', side_effect=Exception("Pretend this is a network issue"))
+    def test_validate_address_geosearch_network(self, mock_session):
         with self.assertRaises(AddressAPIError):
             NYCAddressInfo("151 Broome St", "New York", "NY", "10002")
 
@@ -52,18 +53,18 @@ class TestValidationNYCAddressInfo(TestCase):
 
         nyc_addr_info = NYCAddressInfo("151 Broome St", "New York", "NY", "10002")
 
-        assert nyc_addr_info is not None
-        assert nyc_addr_info.street_address == "151 Broome St"
-        assert nyc_addr_info.city == "New York"
-        assert nyc_addr_info.state == "NY"
-        assert nyc_addr_info.zip == "10002"
-        assert nyc_addr_info.longitude == -73.98492
-        assert nyc_addr_info.latitude == 40.716245
-        assert nyc_addr_info.altitude == 61.0
-        assert nyc_addr_info.bin == 1234
+        self.assertIsNotNone(nyc_addr_info)
+        self.assertEqual(nyc_addr_info.street_address, "151 Broome St")
+        self.assertEqual(nyc_addr_info.city, "New York")
+        self.assertEqual(nyc_addr_info.state, "NY")
+        self.assertEqual(nyc_addr_info.zip, "10002")
+        self.assertEqual(nyc_addr_info.longitude, -73.98492)
+        self.assertEqual(nyc_addr_info.latitude, 40.716245)
+        self.assertEqual(nyc_addr_info.altitude, 61.0)
+        self.assertEqual(nyc_addr_info.bin, 1234)
 
-    @patch("meshapi.validation.requests.get")
-    def test_validate_address_with_nyc_open_data_new_buildings(self, mock_requests):
+    @patch.object(Session, 'get')
+    def test_validate_address_with_nyc_open_data_new_buildings(self, mock_session):
         sample_address_response_invalid_bin = sample_address_response
 
         # zero out that bin
@@ -82,22 +83,22 @@ class TestValidationNYCAddressInfo(TestCase):
         mock_3 = MagicMock()
         mock_3.content = '[{"height_roof":123.456, "ground_elevation":76.544}]'.encode("utf-8")
 
-        mock_requests.side_effect = [mock_1, mock_2, mock_4, mock_3]
+        mock_session.side_effect = [mock_1, mock_2, mock_4, mock_3]
 
         nyc_addr_info = NYCAddressInfo("151 Broome St", "New York", "NY", "10002")
 
-        assert nyc_addr_info is not None
-        assert nyc_addr_info.street_address == "151 Broome St"
-        assert nyc_addr_info.city == "New York"
-        assert nyc_addr_info.state == "NY"
-        assert nyc_addr_info.zip == "10002"
-        assert nyc_addr_info.longitude == -73.98492
-        assert nyc_addr_info.latitude == 40.716245
-        assert nyc_addr_info.altitude == 61.0
-        assert nyc_addr_info.bin == 1234
+        self.assertIsNotNone(nyc_addr_info)
+        self.assertEqual(nyc_addr_info.street_address, "151 Broome St")
+        self.assertEqual(nyc_addr_info.city, "New York")
+        self.assertEqual(nyc_addr_info.state, "NY")
+        self.assertEqual(nyc_addr_info.zip, "10002")
+        self.assertEqual(nyc_addr_info.longitude, -73.98492)
+        self.assertEqual(nyc_addr_info.latitude, 40.716245)
+        self.assertEqual(nyc_addr_info.altitude, 61.0)
+        self.assertEqual(nyc_addr_info.bin, 1234)
 
-    @patch("meshapi.validation.requests.get")
-    def test_validate_address_with_nyc_open_data_new_buildings_different_bin(self, mock_requests):
+    @patch.object(Session, 'get')
+    def test_validate_address_with_nyc_open_data_new_buildings_different_bin(self, mock_session):
         sample_address_response_invalid_bin = sample_address_response
 
         # zero out that bin
@@ -120,13 +121,13 @@ class TestValidationNYCAddressInfo(TestCase):
         mock_3 = MagicMock()
         mock_3.content = '[{"height_roof":123.456, "ground_elevation":76.544}]'.encode("utf-8")
 
-        mock_requests.side_effect = [mock_1, mock_2, mock_4, mock_3]
+        mock_session.side_effect = [mock_1, mock_2, mock_4, mock_3]
 
         with self.assertRaises(AddressAPIError):
             _ = NYCAddressInfo("151 Broome St", "New York", "NY", "10002")
 
-    @patch("meshapi.validation.requests.get")
-    def test_validate_address_with_nyc_open_data_new_buildings_none_response(self, mock_requests):
+    @patch.object(Session, 'get')
+    def test_validate_address_with_nyc_open_data_new_buildings_none_response(self, mock_session):
         sample_address_response_invalid_bin = sample_address_response
 
         # zero out that bin
@@ -149,13 +150,13 @@ class TestValidationNYCAddressInfo(TestCase):
         mock_3 = MagicMock()
         mock_3.content = '[{"height_roof":123.456, "ground_elevation":76.544}]'.encode("utf-8")
 
-        mock_requests.side_effect = [mock_1, mock_2, mock_4, mock_3]
+        mock_session.side_effect = [mock_1, mock_2, mock_4, mock_3]
 
         with self.assertRaises(InvalidAddressError):
             _ = NYCAddressInfo("151 Broome St", "New York", "NY", "10002")
 
-    @patch("meshapi.validation.requests.get")
-    def test_lookup_address_nyc_open_data_new_buildings_with_no_response(self, mock_requests):
+    @patch.object(Session, 'get')
+    def test_lookup_address_nyc_open_data_new_buildings_with_no_response(self, mock_session):
         sample_new_buildings_response_different_bin = sample_new_buildings_response.copy()
         sample_new_buildings_response_different_bin.append(sample_new_buildings_response_different_bin[0].copy())
         sample_new_buildings_response_different_bin[1]["bin__"] = "5678"
@@ -164,19 +165,21 @@ class TestValidationNYCAddressInfo(TestCase):
         mock_1.json.side_effect = [[]]
         mock_1.status_code = 200
 
-        mock_2 = MagicMock()
+        # This has to be a Response and not a MagicMock because we're using
+        # raise_for_status
+        mock_2 = requests.Response()
         mock_2.status_code = 503
 
-        mock_requests.side_effect = [mock_1, mock_2]
+        mock_session.side_effect = [mock_1, mock_2]
 
         open_data_bin = lookup_address_nyc_open_data_new_buildings("chom", "skz", "skal", "sklad")
-        self.assertIsNone(open_data_bin)
+        self.assertIsNone(open_data_bin, "Did not get None response when receiving an empty response from New Buildings API.")
 
         open_data_bin = lookup_address_nyc_open_data_new_buildings("chom", "skz", "skal", "sklad")
-        self.assertIsNone(open_data_bin)
+        self.assertIsNone(open_data_bin, "Did not get None response when receiving a 503 from New Buildings API.")
 
-    @patch("meshapi.validation.requests.get")
-    def test_validate_address_open_data_invalid_response(self, mock_requests):
+    @patch.object(Session, 'get')
+    def test_validate_address_open_data_invalid_response(self, mock_session):
         mock_series_of_tubes = MagicMock()
         mock_series_of_tubes.content = "a series of tubes".encode("utf-8")
 
@@ -208,7 +211,7 @@ class TestValidationNYCAddressInfo(TestCase):
             mock_2 = MagicMock()
             mock_2.content = "{}".encode("utf-8")
 
-            mock_requests.side_effect = [mock_1, mock_2, mock_test_case]
+            mock_session.side_effect = [mock_1, mock_2, mock_test_case]
 
             nyc_addr_info = NYCAddressInfo("151 Broome St", "New York", "NY", "10002")
 

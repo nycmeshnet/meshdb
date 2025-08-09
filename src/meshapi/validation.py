@@ -238,16 +238,11 @@ def lookup_address_nyc_open_data_new_buildings(
         }
         response = session.get(DOB_NEW_BUILDINGS_API_URL, params=params)
         response.raise_for_status()
-        # TODO: (wdn) Run the tests and make sure this is accounted for
-        # This should be redundant, but we want to preserve previous behavior
-        # if response.status_code != 200:
-        #     raise HTTPException
     except Exception:
         logging.exception("[NEW_BUILDINGS] Exception raised during HTTP Request.")
         return None
 
     data = response.json()
-
     if not data:
         logging.error("[NEW_BUILDINGS] No data found for the specified address.")
         return None
