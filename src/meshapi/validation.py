@@ -100,16 +100,7 @@ class NYCAddressInfo:
     bin: int | None
 
     def __init__(self, street_address: str, city: str, state: str, zip_code: str):
-        retries = Retry(
-            total=3,
-            backoff_factor=1,
-            status_forcelist=[500, 502, 503, 504],
-        )
-
-        self.session = requests.Session()
-        self.session.mount("http://", HTTPAdapter(max_retries=retries))
-        self.session.mount("https://", HTTPAdapter(max_retries=retries))
-
+        self.session = get_requests_session_with_retries()
         if state != "New York" and state != "NY":
             logging.error(f"State '{state}' is not New York.")
             raise UnsupportedAddressError
@@ -176,7 +167,7 @@ class NYCAddressInfo:
             logging.warning(dob_warning_message + "Falling back to NYC OpenData New Buildings dataset")
             # We're using the addr_props returned from DOB API because
             # they should be in the same format required by NYC Open Data
-            open_data_bin = self.lookup_address_nyc_open_data_new_buildings(
+            open_data_bin = lookup_address_nyc_open_data_new_buildings(
                 addr_props["street"],
                 addr_props["housenumber"],
                 addr_props["borough"].upper(),
@@ -227,41 +218,42 @@ class NYCAddressInfo:
 
         return altitude
 
-    def lookup_address_nyc_open_data_new_buildings(
-        self, street_name: str, house_number: str, borough: str, zip_code: str
-    ) -> Optional[int]:
-        try:
-            params = {
-                "street_name": street_name,
-                "house__": house_number,
-                "borough": borough,
-                "zip_code": zip_code,
-            }
-            response = self.session.get(DOB_NEW_BUILDINGS_API_URL, params=params)
-            response.raise_for_status()
-            # TODO: (wdn) Run the tests and make sure this is accounted for
-            # This should be redundant, but we want to preserve previous behavior
-            # if response.status_code != 200:
-            #     raise HTTPException
-        except Exception:
-            logging.exception("[NEW_BUILDINGS] Exception raised during HTTP Request.")
+def lookup_address_nyc_open_data_new_buildings(
+    street_name: str, house_number: str, borough: str, zip_code: str
+) -> Optional[int]:
+    try:
+        session = get_requests_session_with_retries()
+        params = {
+            "street_name": street_name,
+            "house__": house_number,
+            "borough": borough,
+            "zip_code": zip_code,
+        }
+        response = session.get(DOB_NEW_BUILDINGS_API_URL, params=params)
+        response.raise_for_status()
+        # TODO: (wdn) Run the tests and make sure this is accounted for
+        # This should be redundant, but we want to preserve previous behavior
+        # if response.status_code != 200:
+        #     raise HTTPException
+    except Exception:
+        logging.exception("[NEW_BUILDINGS] Exception raised during HTTP Request.")
+        return None
+
+    data = response.json()
+
+    if not data:
+        logging.error("[NEW_BUILDINGS] No data found for the specified address.")
+        return None
+
+    open_data_bin = data[0].get("bin__")
+
+    # Make sure we get only one BIN
+    for d in data:
+        if d.get("bin__") != open_data_bin:
+            logging.error("[NYC OpenData New Buildings] Returned multiple BINs. I don't know which one is correct!")
             return None
 
-        data = response.json()
-
-        if not data:
-            logging.error("[NEW_BUILDINGS] No data found for the specified address.")
-            return None
-
-        open_data_bin = data[0].get("bin__")
-
-        # Make sure we get only one BIN
-        for d in data:
-            if d.get("bin__") != open_data_bin:
-                logging.error("[NYC OpenData New Buildings] Returned multiple BINs. I don't know which one is correct!")
-                return None
-
-        return int(open_data_bin)
+    return int(open_data_bin)
 
 
 def validate_multi_phone_number_field(phone_number_list: List[str]) -> None:
@@ -344,3 +336,15 @@ def validate_recaptcha_tokens(
             "Feature flag JOIN_FORM_FAIL_ALL_INVISIBLE_RECAPTCHAS enabled, failing validation "
             "even though this request should have succeeded"
         )
+
+def get_requests_session_with_retries():
+    retries = Retry(
+        total=3,
+        backoff_factor=1,
+        status_forcelist=[500, 502, 503, 504],
+    )
+
+    session = requests.Session()
+    session.mount("http://", HTTPAdapter(max_retries=retries))
+    session.mount("https://", HTTPAdapter(max_retries=retries))
+    return session
