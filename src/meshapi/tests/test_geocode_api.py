@@ -7,7 +7,7 @@ from meshapi.tests.sample_geocode_response import (
     VALID_ADDRESS_GEOCODE_RESPONSE,
     VALID_BUILDING_HEIGHT_RESPONSE,
 )
-from meshapi.validation import DOB_BUILDING_HEIGHT_API_URL, NYC_PLANNING_LABS_GEOCODE_URL
+from meshapi.validation import BUILDING_FOOTPRINTS_API, NYC_GEOSEARCH_API
 
 
 class TestGeocodeProxy(TestCase):
@@ -34,8 +34,8 @@ class TestGeocodeProxy(TestCase):
 
     @requests_mock.Mocker(real_http=True)
     def test_geocode_good_addr(self, request_mocker):
-        request_mocker.get(NYC_PLANNING_LABS_GEOCODE_URL, json=VALID_ADDRESS_GEOCODE_RESPONSE)
-        request_mocker.get(DOB_BUILDING_HEIGHT_API_URL, json=VALID_BUILDING_HEIGHT_RESPONSE)
+        request_mocker.get(NYC_GEOSEARCH_API, json=VALID_ADDRESS_GEOCODE_RESPONSE)
+        request_mocker.get(BUILDING_FOOTPRINTS_API, json=VALID_BUILDING_HEIGHT_RESPONSE)
 
         response = self.client.get(
             "/api/v1/geography/nyc-geocode/v2/search?street_address=151+Broome+St&city=New+York&state=NY&zip=10002"
@@ -51,7 +51,7 @@ class TestGeocodeProxy(TestCase):
 
     @requests_mock.Mocker()
     def test_geocode_bad_addr(self, request_mocker):
-        request_mocker.get(NYC_PLANNING_LABS_GEOCODE_URL, json=INVALID_ADDRESS_GEOCODE_RESPONSE)
+        request_mocker.get(NYC_GEOSEARCH_API, json=INVALID_ADDRESS_GEOCODE_RESPONSE)
 
         response = self.client.get(
             "/api/v1/geography/nyc-geocode/v2/search?street_address=12341+Whackadoole+Ave&city=New+York&state=NY&zip=10002"
@@ -75,7 +75,7 @@ class TestGeocodeProxy(TestCase):
 
     @requests_mock.Mocker()
     def test_geocode_city_api_down(self, request_mocker):
-        request_mocker.get(NYC_PLANNING_LABS_GEOCODE_URL, status_code=502)
+        request_mocker.get(NYC_GEOSEARCH_API, status_code=502)
 
         response = self.client.get(
             "/api/v1/geography/nyc-geocode/v2/search?street_address=151+Broome+St&city=New+York&state=NY&zip=10002"
@@ -88,8 +88,8 @@ class TestGeocodeProxy(TestCase):
 
     @requests_mock.Mocker(real_http=True)
     def test_geocode_city_height_api_down(self, request_mocker):
-        request_mocker.get(NYC_PLANNING_LABS_GEOCODE_URL, json=VALID_ADDRESS_GEOCODE_RESPONSE)
-        request_mocker.get(DOB_BUILDING_HEIGHT_API_URL, status_code=502)
+        request_mocker.get(NYC_GEOSEARCH_API, json=VALID_ADDRESS_GEOCODE_RESPONSE)
+        request_mocker.get(BUILDING_FOOTPRINTS_API, status_code=502)
 
         response = self.client.get(
             "/api/v1/geography/nyc-geocode/v2/search?street_address=151+Broome+St&city=New+York&state=NY&zip=10002"

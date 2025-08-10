@@ -19,7 +19,7 @@ from rest_framework.response import Response
 from rest_framework_dataclasses.serializers import DataclassSerializer
 from validate_email.exceptions import EmailValidationError
 
-from meshapi.exceptions import AddressError
+from meshapi.exceptions import InvalidAddressError, UnsupportedAddressError
 from meshapi.models import AddressTruthSource, Building, Install, Member, Node
 from meshapi.permissions import HasNNAssignPermission, LegacyNNAssignmentPassword
 from meshapi.serializers import MemberSerializer
@@ -39,6 +39,19 @@ from meshapi.validation import (
 logging.basicConfig()
 
 DISABLE_RECAPTCHA_VALIDATION = os.environ.get("RECAPTCHA_DISABLE_VALIDATION", "").lower() == "true"
+
+INVALID_ADDRESS_RESPONSE = (
+    "Your address is invalid. Please double-check your address or contact support@nycmesh.net for assistance."
+)
+
+UNSUPPORTED_ADDRESS_RESPONSE = (
+    "Non-NYC registrations are not supported at this time. "
+    "Please double-check your address, or contact support@nycmesh.net"
+)
+
+VALIDATION_500_RESPONSE = (
+    "Your address could not be validated at this time. Please try again later, or contact support@nycmesh.net"
+)
 
 
 # Join Form
@@ -135,6 +148,7 @@ def join_form(request: Request) -> Response:
     return response
 
 
+@tracer.wrap()
 def process_join_form(r: JoinFormRequest, request: Optional[Request] = None) -> Response:
     if not r.ncl:
         return Response(
@@ -166,27 +180,22 @@ def process_join_form(r: JoinFormRequest, request: Optional[Request] = None) -> 
     formatted_phone_number = normalize_phone_number(r.phone_number) if r.phone_number else None
 
     try:
-        try:
-            nyc_addr_info: Optional[NYCAddressInfo] = geocode_nyc_address(r.street_address, r.city, r.state, r.zip_code)
-        except Exception as e:
-            # Ensure this gets logged
-            logging.exception(e)
-            raise e
-    except ValueError:
-        logging.debug(r.street_address, r.city, r.state, r.zip_code)
+        nyc_addr_info: NYCAddressInfo = geocode_nyc_address(r.street_address, r.city, r.state, r.zip_code)
+    except UnsupportedAddressError:
         return Response(
-            {
-                "detail": "Non-NYC registrations are not supported at this time. Please double check your zip code, "
-                "or send an email to support@nycmesh.net"
-            },
+            {"detail": UNSUPPORTED_ADDRESS_RESPONSE},
             status=status.HTTP_400_BAD_REQUEST,
         )
-    except AddressError as e:
-        return Response({"detail": e.args[0]}, status=status.HTTP_400_BAD_REQUEST)
-
-    if not nyc_addr_info:
+    except InvalidAddressError:
         return Response(
-            {"detail": "Your address could not be validated."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            {"detail": INVALID_ADDRESS_RESPONSE},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+    except Exception:
+        # Either an API is down, or we have no idea what went wrong. It was probably our fault.
+        return Response(
+            {"detail": VALIDATION_500_RESPONSE},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
 
     changed_info: dict[str, str | int] = {}
