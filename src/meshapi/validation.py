@@ -100,6 +100,7 @@ class NYCAddressInfo:
     bin: int | None
 
     def __init__(self, street_address: str, city: str, state: str, zip_code: str):
+        logging.info(f"Constructing NYCAddressInfo for '{street_address}, {city}, {state} {zip_code}'...")
         self.session = get_requests_session_with_retries()
         if state != "New York" and state != "NY":
             logging.error(f"State '{state}' is not New York.")
@@ -275,7 +276,6 @@ def validate_phone_number_field(phone_number: str) -> None:
 
 
 def geocode_nyc_address(street_address: str, city: str, state: str, zip_code: str) -> NYCAddressInfo:
-    logging.info(f"Running NYC geocode for '{street_address}, {city}, {state} {zip_code}'...")
     try:
         return NYCAddressInfo(street_address, city, state, zip_code)
     except (UnsupportedAddressError, InvalidAddressError, AddressAPIError) as e:

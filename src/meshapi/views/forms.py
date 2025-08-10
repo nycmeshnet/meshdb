@@ -193,7 +193,6 @@ def process_join_form(r: JoinFormRequest, request: Optional[Request] = None) -> 
         )
     except Exception:
         # Either an API is down, or we have no idea what went wrong. It was probably our fault.
-        # It was logged though, so we'll check.
         return Response(
             {"detail": VALIDATION_500_RESPONSE},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR,
