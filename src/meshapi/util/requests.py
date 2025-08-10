@@ -1,7 +1,8 @@
 from requests import Session
 from requests.adapters import HTTPAdapter, Retry
 
-def get_requests_session_with_retries():
+
+def get_requests_session_with_retries() -> Session:
     retries = Retry(
         total=3,
         backoff_factor=1,

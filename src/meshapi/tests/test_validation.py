@@ -2,9 +2,9 @@ import json
 import logging
 from unittest.mock import MagicMock, patch
 
+import requests
 from django.test import TestCase
 from requests import Session
-import requests
 
 from meshapi.exceptions import AddressAPIError, InvalidAddressError, UnsupportedAddressError
 from meshapi.tests.sample_data import sample_address_response, sample_new_buildings_response
@@ -16,7 +16,7 @@ class TestValidationNYCAddressInfo(TestCase):
         with self.assertRaises(UnsupportedAddressError):
             NYCAddressInfo("151 Broome St", "New York", "ny", "10002")
 
-    @patch.object(Session, 'get')
+    @patch.object(Session, "get")
     def test_validate_address_geosearch_unexpected_responses(self, mock_session):
         mock_1 = MagicMock()
         mock_1.content = '{"features":[]}'.encode("utf-8")
@@ -34,12 +34,12 @@ class TestValidationNYCAddressInfo(TestCase):
                 mock_session.return_value = test_case["mock"]
                 NYCAddressInfo("151 Broome St", "New York", "NY", "10002")
 
-    @patch.object(Session, 'get', side_effect=Exception("Pretend this is a network issue"))
+    @patch.object(Session, "get", side_effect=Exception("Pretend this is a network issue"))
     def test_validate_address_geosearch_network(self, mock_session):
         with self.assertRaises(AddressAPIError):
             NYCAddressInfo("151 Broome St", "New York", "NY", "10002")
 
-    @patch.object(Session, 'get')
+    @patch.object(Session, "get")
     def test_validate_address_good(self, mock_session):
         mock_1 = MagicMock()
         mock_1.content = json.dumps(sample_address_response).encode("utf-8")
@@ -64,7 +64,7 @@ class TestValidationNYCAddressInfo(TestCase):
         self.assertEqual(nyc_addr_info.altitude, 61.0)
         self.assertEqual(nyc_addr_info.bin, 1234)
 
-    @patch.object(Session, 'get')
+    @patch.object(Session, "get")
     def test_validate_address_with_nyc_open_data_new_buildings(self, mock_session):
         sample_address_response_invalid_bin = sample_address_response
 
@@ -98,7 +98,7 @@ class TestValidationNYCAddressInfo(TestCase):
         self.assertEqual(nyc_addr_info.altitude, 61.0)
         self.assertEqual(nyc_addr_info.bin, 1234)
 
-    @patch.object(Session, 'get')
+    @patch.object(Session, "get")
     def test_validate_address_with_nyc_open_data_new_buildings_different_bin(self, mock_session):
         sample_address_response_invalid_bin = sample_address_response
 
@@ -127,7 +127,7 @@ class TestValidationNYCAddressInfo(TestCase):
         with self.assertRaises(AddressAPIError):
             _ = NYCAddressInfo("151 Broome St", "New York", "NY", "10002")
 
-    @patch.object(Session, 'get')
+    @patch.object(Session, "get")
     def test_validate_address_with_nyc_open_data_new_buildings_none_response(self, mock_session):
         sample_address_response_invalid_bin = sample_address_response
 
@@ -156,7 +156,7 @@ class TestValidationNYCAddressInfo(TestCase):
         with self.assertRaises(InvalidAddressError):
             _ = NYCAddressInfo("151 Broome St", "New York", "NY", "10002")
 
-    @patch.object(Session, 'get')
+    @patch.object(Session, "get")
     def test_lookup_address_nyc_open_data_new_buildings_with_no_response(self, mock_session):
         sample_new_buildings_response_different_bin = sample_new_buildings_response.copy()
         sample_new_buildings_response_different_bin.append(sample_new_buildings_response_different_bin[0].copy())
@@ -174,12 +174,14 @@ class TestValidationNYCAddressInfo(TestCase):
         mock_session.side_effect = [mock_1, mock_2]
 
         open_data_bin = lookup_address_nyc_open_data_new_buildings("chom", "skz", "skal", "sklad")
-        self.assertIsNone(open_data_bin, "Did not get None response when receiving an empty response from New Buildings API.")
+        self.assertIsNone(
+            open_data_bin, "Did not get None response when receiving an empty response from New Buildings API."
+        )
 
         open_data_bin = lookup_address_nyc_open_data_new_buildings("chom", "skz", "skal", "sklad")
         self.assertIsNone(open_data_bin, "Did not get None response when receiving a 503 from New Buildings API.")
 
-    @patch.object(Session, 'get')
+    @patch.object(Session, "get")
     def test_validate_address_open_data_invalid_response(self, mock_session):
         mock_series_of_tubes = MagicMock()
         mock_series_of_tubes.content = "a series of tubes".encode("utf-8")

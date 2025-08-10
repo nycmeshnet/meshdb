@@ -40,14 +40,18 @@ logging.basicConfig()
 
 DISABLE_RECAPTCHA_VALIDATION = os.environ.get("RECAPTCHA_DISABLE_VALIDATION", "").lower() == "true"
 
-INVALID_ADDRESS_RESPONSE = "Your address is invalid. Please double-check your address "
-"or contact support@nycmesh.net for assistance."
+INVALID_ADDRESS_RESPONSE = (
+    "Your address is invalid. Please double-check your address or contact support@nycmesh.net for assistance."
+)
 
-UNSUPPORTED_ADDRESS_RESPONSE = "Non-NYC registrations are not supported at this time. "
-"Please double-check your address, or contact support@nycmesh.net"
+UNSUPPORTED_ADDRESS_RESPONSE = (
+    "Non-NYC registrations are not supported at this time. "
+    "Please double-check your address, or contact support@nycmesh.net"
+)
 
-VALIDATION_500_RESPONSE = "Your address could not be validated at this time. "
-"Please try again later, or contact support@nycmesh.net"
+VALIDATION_500_RESPONSE = (
+    "Your address could not be validated at this time. Please try again later, or contact support@nycmesh.net"
+)
 
 
 # Join Form

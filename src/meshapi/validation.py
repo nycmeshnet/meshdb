@@ -8,7 +8,6 @@ import phonenumbers
 import requests
 from django.core.exceptions import ValidationError
 from flags.state import flag_state
-from requests.adapters import HTTPAdapter, Retry
 from validate_email import validate_email_or_fail
 from validate_email.exceptions import (
     DNSTimeoutError,
@@ -188,6 +187,7 @@ class NYCAddressInfo:
         self.longitude, self.latitude = nyc_geosearch_resp["features"][0]["geometry"]["coordinates"]
         self.altitude = get_height_from_building_footprints_api(self.bin)
 
+
 def get_height_from_building_footprints_api(bin: int) -> Optional[float]:
     # Now that we have the bin, we can definitively get the height from
     # NYC OpenData Building Footprints
@@ -344,4 +344,3 @@ def validate_recaptcha_tokens(
             "Feature flag JOIN_FORM_FAIL_ALL_INVISIBLE_RECAPTCHAS enabled, failing validation "
             "even though this request should have succeeded"
         )
-
