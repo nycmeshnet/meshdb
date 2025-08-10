@@ -606,7 +606,7 @@ class TestJoinForm(TestCase):
         con = json.loads(response.content.decode("utf-8"))
 
         self.assertEqual(
-            f"Your address is invalid. Please double-check your address or contact support@nycmesh.net for assistance.",
+            "Your address is invalid. Please double-check your address or contact support@nycmesh.net for assistance.",
             con["detail"],
             f"Did not get correct response content for bad address join form: {response.content.decode('utf-8')}",
         )
