@@ -36,6 +36,8 @@ class NodeImportExportResource(resources.ModelResource):
     class Meta:
         model = Node
         import_id_fields = ("network_number",)
+        fields = ('id', 'network_number', 'name', 'status', 'type', 'placement', 
+                 'latitude', 'longitude', 'altitude', 'install_date', 'abandon_date', 'notes')
 
 
 class NodeAdminForm(forms.ModelForm):
@@ -62,16 +64,18 @@ class NodeAdmin(RankedSearchMixin, ExportActionMixin, ImportExportModelAdmin, Si
         "network_number__iexact",
         "name__icontains",
         "buildings__street_address__icontains",
+        "placement__iexact",
         "@notes",
     ]
     search_vector = (
         SearchVector("network_number", weight="A")
         + SearchVector("name", weight="B")
+        + SearchVector("placement", weight="C")
         + SearchVector("buildings__street_address", weight="D")
         + SearchVector("notes", weight="D")
     )
-    list_filter = ["status", ("name", admin.EmptyFieldListFilter), "install_date", "abandon_date"]
-    list_display = ["__network_number__", "name", "status", "address", "install_date"]
+    list_filter = ["status", "placement", ("name", admin.EmptyFieldListFilter), "install_date", "abandon_date"]
+    list_display = ["__network_number__", "name", "status", "placement", "address", "install_date"]
     fieldsets = [
         (
             "Details",
@@ -80,6 +84,7 @@ class NodeAdmin(RankedSearchMixin, ExportActionMixin, ImportExportModelAdmin, Si
                     "network_number",
                     "status",
                     "type",
+                    "placement",
                     "name",
                 ]
             },

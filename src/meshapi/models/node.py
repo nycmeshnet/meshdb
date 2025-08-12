@@ -41,6 +41,12 @@ class Node(models.Model):
         POP = "POP", "POP"
         AP = "AP", "AP"
         REMOTE = "Remote", "Remote"
+        
+    class NodePlacement(models.TextChoices):
+        ROOFTOP = "Rooftop", "Rooftop"
+        BALCONY = "Balcony", "Balcony"
+        WINDOW = "Window", "Window"
+        INDOOR = "Indoor", "Indoor (Fiber Sites, non-rooftop Supernodes, etc)"
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4)
 
@@ -64,6 +70,15 @@ class Node(models.Model):
         choices=NodeType.choices,
         help_text="The type of node this is, controls the icon used on the network map",
         default=NodeType.STANDARD,
+    )
+    
+    placement = models.CharField(
+        choices=NodePlacement.choices,
+        blank=True,
+        null=True,
+        help_text="The placement of this node within the building it is located on. "
+        "Used to filter out balcony installs in some queries, such as when automatically "
+        "determining if a join request can skip the panorama step of the intake process.",
     )
 
     latitude = models.FloatField(
