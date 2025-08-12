@@ -1,0 +1,6 @@
+---
+extends: relaxed 
+
+rules:
+  indentation:
+    level: error
