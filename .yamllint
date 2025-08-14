@@ -1,6 +1,9 @@
 ---
-extends: relaxed 
+extends: relaxed
 
 rules:
   indentation:
     level: error
+  line-length:
+    level: error
+    max: 120
