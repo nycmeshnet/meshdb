@@ -103,13 +103,15 @@ class NYCAddressInfo:
         logging.info(f"Constructing NYCAddressInfo for '{street_address}, {city}, {state} {zip_code}'...")
         self.session = get_requests_session_with_retries()
         if state != "New York" and state != "NY":
-            logging.error(f"State '{state}' is not New York.")
-            raise UnsupportedAddressError
+            error = f"State '{state}' is not New York."
+            logging.error(error)
+            raise UnsupportedAddressError(error)
 
         # This method is only compatible with the 5 boroughs of NYC
         if not NYCZipCodes.match_zip(zip_code):
-            logging.error(f"Zip code '{zip_code}' does not appear in our zip code database.")
-            raise UnsupportedAddressError
+            error = f"Zip code '{zip_code}' does not appear in our zip code database."
+            logging.error(error)
+            raise UnsupportedAddressError(error)
 
         self.address = f"{street_address}, {city}, {state} {zip_code}"
 
@@ -127,12 +129,14 @@ class NYCAddressInfo:
             )
             nyc_geosearch_resp = json.loads(nyc_planning_req.content.decode("utf-8"))
         except Exception:
-            logging.exception("An exception occurred while querying geosearch.planninglabs.nyc")
-            raise AddressAPIError
+            error = "An exception occurred while querying geosearch.planninglabs.nyc"
+            logging.exception(error)
+            raise AddressAPIError(error)
 
         if len(nyc_geosearch_resp["features"]) == 0:
-            logging.error("Address not found in geosearch.planninglabs.nyc.")
-            raise InvalidAddressError
+            error = "Address not found in geosearch.planninglabs.nyc."
+            logging.error(error)
+            raise InvalidAddressError(error)
 
         addr_props = nyc_geosearch_resp["features"][0]["properties"]
 
@@ -142,18 +146,20 @@ class NYCAddressInfo:
 
         found_zip = str(addr_props["postalcode"])
         if found_zip != zip_code:
-            logging.error(
+            error = (
                 f"Zip code '{zip_code}' does not match zip code '{found_zip}'"
                 "returned from geosearch.planninglabs.nyc"
             )
-            raise InvalidAddressError
+            logging.error(error)
+            raise InvalidAddressError(error)
 
         # Get the rest of the address info
         try:
             self.street_address = humanify_street_address(f"{addr_props['housenumber']} {addr_props['street']}")
         except Exception:
-            logging.exception("An exception occurred while calling humanify_street_address. Is Pelias reachable?")
-            raise AddressAPIError
+            error = "An exception occurred while calling humanify_street_address. Is Pelias reachable?"
+            logging.exception(error)
+            raise AddressAPIError(error)
         self.city = addr_props["borough"].replace("Manhattan", "New York")
         if self.city == "Queens":
             # Queens addresses are special and different, but it seems the neighborhood name
@@ -180,8 +186,9 @@ class NYCAddressInfo:
             )
 
             if not open_data_bin:
-                logging.error("NYC OpenData New Buildings returned no data.")
-                raise InvalidAddressError
+                error = "NYC OpenData New Buildings returned no data."
+                logging.error(error)
+                raise InvalidAddressError(error)
 
             self.bin = open_data_bin
 
@@ -259,8 +266,9 @@ def lookup_address_nyc_open_data_new_buildings(
     # Make sure we get only one BIN
     for d in data:
         if d.get("bin__") != open_data_bin:
-            logging.error("[NYC OpenData New Buildings] Returned multiple BINs. I don't know which one is correct!")
-            raise AddressAPIError
+            error = "[NYC OpenData New Buildings] Returned multiple BINs. I don't know which one is correct!"
+            logging.error(error)
+            raise AddressAPIError(error)
 
     return int(open_data_bin)
 
