@@ -20,11 +20,11 @@ jobs:
     name: checkov-action
     steps:
       - name: Checkout repo
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v4
 
       - name: Run Checkov action
         id: checkov
-        uses: bridgecrewio/checkov-action@649c937994abeb41d49eb821f09f110ff721dd2e
+        uses: bridgecrewio/checkov-action@3d6f50764327724508da94449e67225a2a24e51e
         with:
           skip_check: CKV_DOCKER_2,CKV_DOCKER_3,CKV_SECRET_6
           quiet: true
@@ -34,7 +34,7 @@ jobs:
           skip_path: infra/helm/meshdb/charts
 
       - name: Upload SARIF file
-        uses: github/codeql-action/upload-sarif@51f77329afa6477de8c49fc9c7046c15b9a4e79d # v3
+        uses: github/codeql-action/upload-sarif@96f518a34f7a870018057716cc4d7a5c014bd61c # v3
         if: success() || failure()
         with:
           sarif_file: results.sarif

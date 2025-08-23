@@ -6,6 +6,7 @@ from django.core import management
 from django.test import TestCase
 from moto import mock_aws
 
+from meshapi.exceptions import InvalidAddressError
 from meshapi.models.install import Install
 from meshapi.tests.sample_join_records import (
     MOCK_JOIN_RECORD_PREFIX,
@@ -184,7 +185,7 @@ class TestReplayJoinRecords(TestCase):
         # Mock return variables from Geocode API
         mock_geocode_func.side_effect = [
             NYCAddressInfo("197 Prospect Place", "Brooklyn", "NY", "11238"),
-            ValueError("NJ not allowed yet!"),
+            InvalidAddressError("NJ not allowed yet!"),
             NYCAddressInfo("99 Kane Street", "Brooklyn", "NY", "11231"),
             # These next two are both for the 4th join record (Rachel Doe) that got 409'ed
             NYCAddressInfo("99 Kane Street", "Brooklyn", "NY", "11231"),
