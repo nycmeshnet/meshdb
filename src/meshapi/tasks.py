@@ -127,11 +127,10 @@ celery_app.conf.beat_schedule = {
     },
 }
 
-if MESHDB_ENVIRONMENT == "prod2":
-    celery_app.conf.beat_schedule["run-database-backup-hourly"] = {
-        "task": "meshapi.tasks.run_database_backup",
-        "schedule": crontab(minute="40", hour="*/1"),
-    }
+celery_app.conf.beat_schedule["run-database-backup-hourly"] = {
+    "task": "meshapi.tasks.run_database_backup",
+    "schedule": crontab(minute="40", hour="*/1"),
+}
 
 if MESHDB_ENVIRONMENT == "dev3":
     celery_app.conf.beat_schedule["run-reset-dev-database-daily"] = {
