@@ -37,10 +37,6 @@ def run_uisp_on_demand_import(target_nn: int) -> None:
 @celery_app.task
 @skip_if_flag_disabled("TASK_ENABLED_RUN_DATABASE_BACKUP")
 def run_database_backup() -> None:
-    # Don't run a backup unless it's prod
-    if MESHDB_ENVIRONMENT != "prod":  # This is bad but this is a temporary change
-        raise EnvironmentError(f'Not running database backup. This environment is: "{MESHDB_ENVIRONMENT}"')
-
     logging.info(f'Running database backup task. This environment is "{MESHDB_ENVIRONMENT}"')
     if not os.environ.get("AWS_ACCESS_KEY_ID") or not os.environ.get("AWS_SECRET_ACCESS_KEY"):
         raise ValueError("Could not run backup. Missing AWS credentials!")
@@ -127,11 +123,10 @@ celery_app.conf.beat_schedule = {
     },
 }
 
-if MESHDB_ENVIRONMENT == "prod2":
-    celery_app.conf.beat_schedule["run-database-backup-hourly"] = {
-        "task": "meshapi.tasks.run_database_backup",
-        "schedule": crontab(minute="40", hour="*/1"),
-    }
+celery_app.conf.beat_schedule["run-database-backup-hourly"] = {
+    "task": "meshapi.tasks.run_database_backup",
+    "schedule": crontab(minute="40", hour="*/1"),
+}
 
 if MESHDB_ENVIRONMENT == "dev3":
     celery_app.conf.beat_schedule["run-reset-dev-database-daily"] = {
