@@ -31,6 +31,7 @@ DEFAULT_ALTITUDE = 5  # Meters (absolute)
 ACTIVE_COLOR = "#F00"
 INACTIVE_COLOR = "#777"
 POTENTIAL_COLOR = "#CCC"
+HUB_COLOR = "#00F"
 
 CITY_FOLDER_MAP = {
     "New York": "Manhattan",
@@ -73,20 +74,36 @@ class IgnoreClientContentNegotiation(BaseContentNegotiation):
         return renderers[0], renderers[0].media_type
 
 
-def create_placemark(identifier: str, point: Point, active: bool, status: str, roof_access: bool) -> kml.Placemark:
+def create_placemark(identifier: str, point: Point, active: bool, status: str, roof_access: bool, node_type: str = None) -> kml.Placemark:
+    # Determine the appropriate style based on node type and active status
+    if node_type == "Hub":
+        style_url_value = "#blue_dot"
+    elif active:
+        style_url_value = "#red_dot"
+    else:
+        style_url_value = "#grey_dot"
+    
     placemark = kml.Placemark(
         name=identifier,
-        style_url=styles.StyleUrl(url="#red_dot" if active else "#grey_dot"),
+        style_url=styles.StyleUrl(url=style_url_value),
         kml_geometry=geometry.Point(
             geometry=point,
             altitude_mode=AltitudeMode.absolute,
         ),
     )
 
+    # Determine the marker color based on node type and active status
+    if node_type == "Hub":
+        marker_color = HUB_COLOR
+    elif active:
+        marker_color = ACTIVE_COLOR
+    else:
+        marker_color = INACTIVE_COLOR
+
     extended_data = {
         "name": identifier,
         "roofAccess": str(roof_access),
-        "marker-color": ACTIVE_COLOR if active else INACTIVE_COLOR,
+        "marker-color": marker_color,
         "id": identifier,
         "status": status,
         # Leave disabled, notes can leak a lot of information & this endpoint is public
@@ -137,6 +154,16 @@ class WholeMeshKML(APIView):
             ],
         )
 
+        blue_dot = styles.Style(
+            id="blue_dot",
+            styles=[
+                styles.IconStyle(
+                    icon=styles.Icon(href="http://maps.google.com/mapfiles/kml/paddle/blu-circle.png"),
+                    hot_spot=styles.HotSpot(x=0.5, y=0.5, xunits=styles.Units.fraction, yunits=styles.Units.fraction),
+                )
+            ],
+        )
+
         red_line = styles.Style(
             id="red_line",
             styles=[
@@ -161,7 +188,7 @@ class WholeMeshKML(APIView):
             ],
         )
 
-        kml_document = kml.Document(ns, styles=[grey_dot, red_dot, red_line, grey_line, dark_grey_line])
+        kml_document = kml.Document(ns, styles=[grey_dot, red_dot, blue_dot, red_line, grey_line, dark_grey_line])
         kml_root.append(kml_document)
 
         nodes_folder = kml.Folder(name="Nodes")
@@ -217,6 +244,7 @@ class WholeMeshKML(APIView):
                 install.status == Install.InstallStatus.ACTIVE,
                 install.status,
                 install.roof_access,
+                install.node.type if install.node else None,
             )
             folder.append(install_placemark)
 
@@ -233,6 +261,7 @@ class WholeMeshKML(APIView):
                     False,
                     install.node.status,
                     roof_access=False,
+                    node_type=install.node.type,
                 )
                 folder.append(node_placemark)
                 mapped_nns.add(install.node.network_number)
