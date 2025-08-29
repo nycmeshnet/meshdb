@@ -16,6 +16,11 @@ class Member(models.Model):
         ("cash", "Cash"),
         ("stripe", "Stripe"),
     )
+    contact_preference_choices = (
+        (None, "None"),
+        ("email", "Email"),
+        ("phone", "Phone"),
+    )
 
     class Meta:
         ordering = ["id"]
@@ -64,6 +69,13 @@ class Member(models.Model):
         "time and should not be relied on by automated systems. ",
     )
     payment_preference = models.CharField(default=None, choices=payment_preference_choices, blank=True, null=True)
+    contact_preference = models.CharField(
+        default=None,
+        choices=contact_preference_choices,
+        blank=True,
+        null=True,
+        help_text="The member's preferred contact method, likely indicated when they submitted the join form"
+    )
 
     def __str__(self) -> str:
         if self.name:
