@@ -30,7 +30,7 @@ services:
     networks:
       - api
     image:
-      redis
+      docker.io/redis
     ports:
       - 6379:6379
 
@@ -40,7 +40,7 @@ services:
       - api
     ports:
       - 6800:3000
-    image: pelias/parser
+    image: docker.io/pelias/parser
 
   meshdb:
     container_name: meshdb-meshdb-1
@@ -135,7 +135,7 @@ services:
     #ports:
     #  - 80:80
     #  - 443:443
-    image: nginx
+    image: docker.io/nginx
     volumes:
       - ./nginx:/etc/nginx/conf.d
       - static_files:/var/www/html/static
@@ -178,5 +178,3 @@ volumes:
 
 networks:
   api:
-    external: $COMPOSE_EXTERNAL_NETWORK
-    name: $COMPOSE_NETWORK_NAME
