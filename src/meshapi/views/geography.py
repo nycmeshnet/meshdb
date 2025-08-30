@@ -199,6 +199,17 @@ class WholeMeshKML(APIView):
         inactive_nodes_folder = kml.Folder(name="Inactive")
         nodes_folder.append(inactive_nodes_folder)
 
+        # Create hub/standard subfolders under active/inactive
+        active_hub_folder = kml.Folder(name="Hub Nodes")
+        active_nodes_folder.append(active_hub_folder)
+        active_standard_folder = kml.Folder(name="Standard Nodes")
+        active_nodes_folder.append(active_standard_folder)
+
+        inactive_hub_folder = kml.Folder(name="Hub Nodes")
+        inactive_nodes_folder.append(inactive_hub_folder)
+        inactive_standard_folder = kml.Folder(name="Standard Nodes")
+        inactive_nodes_folder.append(inactive_standard_folder)
+
         links_folder = kml.Folder(name="Links")
         kml_document.append(links_folder)
 
@@ -207,14 +218,23 @@ class WholeMeshKML(APIView):
         inactive_links_folder = kml.Folder(name="Inactive")
         links_folder.append(inactive_links_folder)
 
-        active_folder_map: Dict[Optional[str], kml.Folder] = {}
-        inactive_folder_map: Dict[Optional[str], kml.Folder] = {}
+        active_hub_folder_map: Dict[Optional[str], kml.Folder] = {}
+        active_standard_folder_map: Dict[Optional[str], kml.Folder] = {}
+        inactive_hub_folder_map: Dict[Optional[str], kml.Folder] = {}
+        inactive_standard_folder_map: Dict[Optional[str], kml.Folder] = {}
 
         for city_name, folder_name in CITY_FOLDER_MAP.items():
-            active_folder_map[city_name] = kml.Folder(name=folder_name)
-            inactive_folder_map[city_name] = kml.Folder(name=folder_name)
-            active_nodes_folder.append(active_folder_map[city_name])
-            inactive_nodes_folder.append(inactive_folder_map[city_name])
+            # Create city folders under hub nodes
+            active_hub_folder_map[city_name] = kml.Folder(name=folder_name)
+            inactive_hub_folder_map[city_name] = kml.Folder(name=folder_name)
+            active_hub_folder.append(active_hub_folder_map[city_name])
+            inactive_hub_folder.append(inactive_hub_folder_map[city_name])
+
+            # Create city folders under standard nodes
+            active_standard_folder_map[city_name] = kml.Folder(name=folder_name)
+            inactive_standard_folder_map[city_name] = kml.Folder(name=folder_name)
+            active_standard_folder.append(active_standard_folder_map[city_name])
+            inactive_standard_folder.append(inactive_standard_folder_map[city_name])
 
         mapped_nns = set()
         for install in (
@@ -227,12 +247,17 @@ class WholeMeshKML(APIView):
             )
             .order_by("install_number")
         ):
-            if install.status == Install.InstallStatus.ACTIVE:
-                folder_map = active_folder_map
-            else:
-                folder_map = inactive_folder_map
+            # Determine which folder map to use based on node type and install status
+            node_type = install.node.type if install.node else None
+            is_hub = node_type == "Hub"
+            city_key = install.building.city if install.building.city in CITY_FOLDER_MAP.keys() else None
 
-            folder = folder_map[install.building.city if install.building.city in folder_map.keys() else None]
+            if install.status == Install.InstallStatus.ACTIVE:
+                folder_map = active_hub_folder_map if is_hub else active_standard_folder_map
+            else:
+                folder_map = inactive_hub_folder_map if is_hub else inactive_standard_folder_map
+
+            folder = folder_map[city_key]
 
             install_placemark = create_placemark(
                 str(install.install_number),
@@ -251,6 +276,11 @@ class WholeMeshKML(APIView):
             # Add an extra placemark for the Node, once for each NN
             # this makes searching much easier
             if install.node and install.node.network_number and install.node.network_number not in mapped_nns:
+                # Determine folder for the node placemark (nodes are always inactive in this context)
+                node_is_hub = install.node.type == "Hub"
+                node_folder_map = inactive_hub_folder_map if node_is_hub else inactive_standard_folder_map
+                node_folder = node_folder_map[city_key]
+
                 node_placemark = create_placemark(
                     str(install.node.network_number),
                     Point(
@@ -263,7 +293,7 @@ class WholeMeshKML(APIView):
                     roof_access=False,
                     node_type=install.node.type,
                 )
-                folder.append(node_placemark)
+                node_folder.append(node_placemark)
                 mapped_nns.add(install.node.network_number)
 
         all_links_set = set()
