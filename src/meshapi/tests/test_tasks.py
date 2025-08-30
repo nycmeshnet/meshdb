@@ -22,11 +22,13 @@ class TestRunDatabaseBackupTask(TestCase):
     @mock.patch("django.core.management.call_command")
     @mock.patch("meshapi.tasks.MESHDB_ENVIRONMENT", "dev3")
     def test_run_database_backup_not_prod(self, mock_call_command_func):
+        # This test will pass because dev is allowed to run backups. We should
+        # be careful to keep that flag turned off in dev.
         os.environ["AWS_ACCESS_KEY_ID"] = "fake"
         os.environ["AWS_SECRET_ACCESS_KEY"] = "alsofake"
         enable_flag("TASK_ENABLED_RUN_DATABASE_BACKUP")
-        with self.assertRaises(EnvironmentError):
-            run_database_backup()
+        run_database_backup()
+        mock_call_command_func.assert_has_calls([mock.call("dbbackup")])
 
     @mock.patch("django.core.management.call_command")
     @mock.patch("meshapi.tasks.MESHDB_ENVIRONMENT", "prod")
