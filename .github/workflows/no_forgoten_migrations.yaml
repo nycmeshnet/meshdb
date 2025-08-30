@@ -27,7 +27,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v4
         with:
-          python-version: '3.11'
+          python-version: "3.11"
       - name: "Upgrade pip"
         run: "pip install --upgrade pip"
       - name: "Install package"
@@ -43,4 +43,3 @@ jobs:
         run: |
           python src/manage.py makemigrations meshapi meshapi_hooks --dry-run # Run extra time for debug output
           python src/manage.py makemigrations meshapi meshapi_hooks --dry-run | grep "No changes detected in apps"
-          
