@@ -17,78 +17,78 @@ jobs:
     environment: ${{ inputs.environment }}
     runs-on: ubuntu-latest
     steps:
-    - name: Check out the repo
-      uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v4
+      - name: Check out the repo
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v4
 
-    - name: Install SSH key
-      uses: shimataro/ssh-key-action@d4fffb50872869abe2d9a9098a6d9c5aa7d16be4 # v2
-      with:
-        key: ${{ secrets.SSH_PRIVATE_KEY }}
-        name: id_ed25519 # optional
-        known_hosts: ${{ secrets.SSH_KNOWN_HOSTS }}
-        if_key_exists: fail # replace / ignore / fail; optional (defaults to fail)
-    
-    - name: Setup WireGuard
-      run:  |
-        sudo apt install wireguard
-        echo "${{ secrets.WIREGUARD_PRIVATE_KEY }}" > privatekey
-        sudo ip link add dev wg1 type wireguard
-        sudo ip address add dev wg1 ${{ secrets.WIREGUARD_OVERLAY_NETWORK_IP }} peer ${{ secrets.SSH_TARGET_IP }}
-        sudo wg set wg1 listen-port 48123 private-key privatekey peer ${{ secrets.WIREGUARD_PEER_PUBLIC_KEY }} allowed-ips 0.0.0.0/0 endpoint ${{ secrets.WIREGUARD_ENDPOINT }}
-        sudo ip link set up dev wg1
-        
-        # Ensure we can contact the target
-        ping ${{ secrets.SSH_TARGET_IP }} -w 4 || exit 1
+      - name: Install SSH key
+        uses: shimataro/ssh-key-action@d4fffb50872869abe2d9a9098a6d9c5aa7d16be4 # v2
+        with:
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          name: id_ed25519 # optional
+          known_hosts: ${{ secrets.SSH_KNOWN_HOSTS }}
+          if_key_exists: fail # replace / ignore / fail; optional (defaults to fail)
 
-    - name: Deploy Helm Chart
-      run: |
-        # Get the kubeconfig
-        scp ${{ secrets.SSH_USER }}@${{ secrets.SSH_TARGET_IP }}:~/.kube/config ./
+      - name: Setup WireGuard
+        run: |
+          sudo apt install wireguard
+          echo "${{ secrets.WIREGUARD_PRIVATE_KEY }}" > privatekey
+          sudo ip link add dev wg1 type wireguard
+          sudo ip address add dev wg1 ${{ secrets.WIREGUARD_OVERLAY_NETWORK_IP }} peer ${{ secrets.SSH_TARGET_IP }}
+          sudo wg set wg1 listen-port 48123 private-key privatekey peer ${{ secrets.WIREGUARD_PEER_PUBLIC_KEY }} allowed-ips 0.0.0.0/0 endpoint ${{ secrets.WIREGUARD_ENDPOINT }}
+          sudo ip link set up dev wg1
 
-        # Install the chart with helm
-        helm upgrade --install --kubeconfig ./config --kube-apiserver https://${{ secrets.SSH_TARGET_IP }}:6443 -n ${{ vars.APP_NAMESPACE }} --create-namespace ${{ vars.APP_NAMESPACE }} infra/helm/${{ vars.APP_NAMESPACE }}/ \
-        --set meshdb_app_namespace="${{ vars.APP_NAMESPACE }}" \
-        --set nginx.server_name="${{ vars.SERVER_NAME }}" \
-        --set pg.password="${{ secrets.PG_PASSWORD}}" \
-        --set pg.password_ro="${{ secrets.PG_PASSWORD_RO}}" \
-        --set aws.access_key_id="${{ secrets.ACCESS_KEY_ID }}" \
-        --set aws.secret_access_key="${{ secrets.SECRET_ACCESS_KEY }}" \
-        --set email.smtp_host="${{ vars.SMTP_HOST }}" \
-        --set email.smtp_port="${{ vars.SMTP_PORT }}" \
-        --set email.smtp_user="${{ vars.SMTP_USER }}" \
-        --set email.smtp_password="${{ secrets.SMTP_PASSWORD }}" \
-        --set meshweb.backup_s3_base_folder="${{ vars.BACKUP_S3_BASE_FOLDER }}" \
-        --set meshweb.backup_s3_bucket_name="${{ secrets.BACKUP_S3_BUCKET_NAME }}" \
-        --set meshweb.join_record_bucket_name="${{ secrets.JOIN_RECORD_BUCKET_NAME }}" \
-        --set meshweb.join_record_prefix="${{ secrets.JOIN_RECORD_PREFIX }}" \
-        --set meshweb.django_secret_key="${{ secrets.DJANGO_SECRET_KEY }}" \
-        --set meshweb.nn_assign_psk="${{ secrets.NN_ASSIGN_PSK }}" \
-        --set meshweb.query_psk="${{ secrets.QUERY_PSK }}" \
-        --set meshweb.pano_github_token="${{ secrets.GH_TOKEN }}" \
-        --set meshweb.recaptcha_disable="${{ vars.RECAPTCHA_DISABLE_VALIDATION }}" \
-        --set meshweb.recaptcha_v2_secret="${{ secrets.RECAPTCHA_SERVER_SECRET_KEY_V2 }}" \
-        --set meshweb.recaptcha_v3_secret="${{ secrets.RECAPTCHA_SERVER_SECRET_KEY_V3 }}" \
-        --set meshweb.recaptcha_score_threshold="${{ vars.RECAPTCHA_INVISIBLE_TOKEN_SCORE_THRESHOLD }}" \
-        --set uisp.url="${{ secrets.UISP_URL }}" \
-        --set uisp.user="${{ secrets.UISP_USER }}" \
-        --set uisp.psk="${{ secrets.UISP_PSK }}" \
-        --set adminmap.base_url="${{ vars.ADMIN_MAP_BASE_URL }}" \
-        --set map.base_url="${{ vars.MAP_BASE_URL }}" \
-        --set meshweb.los_url="${{ vars.LOS_URL }}" \
-        --set meshweb.forms_url="${{ vars.FORMS_URL }}" \
-        --set meshdb.site_base_url="${{ vars.SITE_BASE_URL }}" \
-        --set meshweb.slack_webhook="${{ secrets.SLACK_ADMIN_NOTIFICATIONS_WEBHOOK_URL }}" \
-        --set meshweb.slack_join_webhook="${{ secrets.SLACK_JOIN_REQUESTS_CHANNEL_WEBHOOK_URL }}" \
-        --set meshweb.osticket_api_token="${{ secrets.OSTICKET_API_TOKEN }}" \
-        --set meshweb.osticket_new_ticket_endpoint="${{ vars.OSTICKET_NEW_TICKET_ENDPOINT }}" \
-        --set meshweb.environment="${{ inputs.environment }}" \
-        --set ingress.hosts[0].host="${{ vars.INGRESS_HOST }}",ingress.hosts[0].paths[0].path=/,ingress.hosts[0].paths[0].pathType=Prefix \
-        --set ingress.hosts[1].host="${{ vars.INGRESS_HOST_LEGACY }}",ingress.hosts[1].paths[0].path=/,ingress.hosts[1].paths[0].pathType=Prefix \
-        --set imageCredentials.username="${{ secrets.PULL_SECRET_USERNAME }}" \
-        --set imageCredentials.password="${{ secrets.PULL_SECRET_PASSWORD }}" \
-        --set imageCredentials.email="${{ secrets.PULL_SECRET_EMAIL }}" \
-        --set meshweb.image.digest="${{ inputs.image_digest }}" \
-        --set celery.image.digest="${{ inputs.image_digest }}"
+          # Ensure we can contact the target
+          ping ${{ secrets.SSH_TARGET_IP }} -w 4 || exit 1
 
-        # Wait for deploy to complete
-        kubectl --kubeconfig ./config --server https://${{ secrets.SSH_TARGET_IP }}:6443 -n ${{ vars.APP_NAMESPACE }} rollout status deployment --timeout 30m
+      - name: Deploy Helm Chart
+        run: |
+          # Get the kubeconfig
+          scp ${{ secrets.SSH_USER }}@${{ secrets.SSH_TARGET_IP }}:~/.kube/config ./
+
+          # Install the chart with helm
+          helm upgrade --install --kubeconfig ./config --kube-apiserver https://${{ secrets.SSH_TARGET_IP }}:6443 -n ${{ vars.APP_NAMESPACE }} --create-namespace ${{ vars.APP_NAMESPACE }} infra/helm/${{ vars.APP_NAMESPACE }}/ \
+          --set meshdb_app_namespace="${{ vars.APP_NAMESPACE }}" \
+          --set nginx.server_name="${{ vars.SERVER_NAME }}" \
+          --set pg.password="${{ secrets.PG_PASSWORD}}" \
+          --set pg.password_ro="${{ secrets.PG_PASSWORD_RO}}" \
+          --set aws.access_key_id="${{ secrets.ACCESS_KEY_ID }}" \
+          --set aws.secret_access_key="${{ secrets.SECRET_ACCESS_KEY }}" \
+          --set email.smtp_host="${{ vars.SMTP_HOST }}" \
+          --set email.smtp_port="${{ vars.SMTP_PORT }}" \
+          --set email.smtp_user="${{ vars.SMTP_USER }}" \
+          --set email.smtp_password="${{ secrets.SMTP_PASSWORD }}" \
+          --set meshweb.backup_s3_base_folder="${{ vars.BACKUP_S3_BASE_FOLDER }}" \
+          --set meshweb.backup_s3_bucket_name="${{ secrets.BACKUP_S3_BUCKET_NAME }}" \
+          --set meshweb.join_record_bucket_name="${{ secrets.JOIN_RECORD_BUCKET_NAME }}" \
+          --set meshweb.join_record_prefix="${{ secrets.JOIN_RECORD_PREFIX }}" \
+          --set meshweb.django_secret_key="${{ secrets.DJANGO_SECRET_KEY }}" \
+          --set meshweb.nn_assign_psk="${{ secrets.NN_ASSIGN_PSK }}" \
+          --set meshweb.query_psk="${{ secrets.QUERY_PSK }}" \
+          --set meshweb.pano_github_token="${{ secrets.GH_TOKEN }}" \
+          --set meshweb.recaptcha_disable="${{ vars.RECAPTCHA_DISABLE_VALIDATION }}" \
+          --set meshweb.recaptcha_v2_secret="${{ secrets.RECAPTCHA_SERVER_SECRET_KEY_V2 }}" \
+          --set meshweb.recaptcha_v3_secret="${{ secrets.RECAPTCHA_SERVER_SECRET_KEY_V3 }}" \
+          --set meshweb.recaptcha_score_threshold="${{ vars.RECAPTCHA_INVISIBLE_TOKEN_SCORE_THRESHOLD }}" \
+          --set uisp.url="${{ secrets.UISP_URL }}" \
+          --set uisp.user="${{ secrets.UISP_USER }}" \
+          --set uisp.psk="${{ secrets.UISP_PSK }}" \
+          --set adminmap.base_url="${{ vars.ADMIN_MAP_BASE_URL }}" \
+          --set map.base_url="${{ vars.MAP_BASE_URL }}" \
+          --set meshweb.los_url="${{ vars.LOS_URL }}" \
+          --set meshweb.forms_url="${{ vars.FORMS_URL }}" \
+          --set meshdb.site_base_url="${{ vars.SITE_BASE_URL }}" \
+          --set meshweb.slack_webhook="${{ secrets.SLACK_ADMIN_NOTIFICATIONS_WEBHOOK_URL }}" \
+          --set meshweb.slack_join_webhook="${{ secrets.SLACK_JOIN_REQUESTS_CHANNEL_WEBHOOK_URL }}" \
+          --set meshweb.osticket_api_token="${{ secrets.OSTICKET_API_TOKEN }}" \
+          --set meshweb.osticket_new_ticket_endpoint="${{ vars.OSTICKET_NEW_TICKET_ENDPOINT }}" \
+          --set meshweb.environment="${{ inputs.environment }}" \
+          --set ingress.hosts[0].host="${{ vars.INGRESS_HOST }}",ingress.hosts[0].paths[0].path=/,ingress.hosts[0].paths[0].pathType=Prefix \
+          --set ingress.hosts[1].host="${{ vars.INGRESS_HOST_LEGACY }}",ingress.hosts[1].paths[0].path=/,ingress.hosts[1].paths[0].pathType=Prefix \
+          --set imageCredentials.username="${{ secrets.PULL_SECRET_USERNAME }}" \
+          --set imageCredentials.password="${{ secrets.PULL_SECRET_PASSWORD }}" \
+          --set imageCredentials.email="${{ secrets.PULL_SECRET_EMAIL }}" \
+          --set meshweb.image.digest="${{ inputs.image_digest }}" \
+          --set celery.image.digest="${{ inputs.image_digest }}"
+
+          # Wait for deploy to complete
+          kubectl --kubeconfig ./config --server https://${{ secrets.SSH_TARGET_IP }}:6443 -n ${{ vars.APP_NAMESPACE }} rollout status deployment --timeout 30m
