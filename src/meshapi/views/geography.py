@@ -223,18 +223,19 @@ class WholeMeshKML(APIView):
         inactive_hub_folder_map: Dict[Optional[str], kml.Folder] = {}
         inactive_standard_folder_map: Dict[Optional[str], kml.Folder] = {}
 
-        for city_name, folder_name in CITY_FOLDER_MAP.items():
-            # Create city folders under hub nodes
-            active_hub_folder_map[city_name] = kml.Folder(name=folder_name)
-            inactive_hub_folder_map[city_name] = kml.Folder(name=folder_name)
-            active_hub_folder.append(active_hub_folder_map[city_name])
-            inactive_hub_folder.append(inactive_hub_folder_map[city_name])
+        # for city_name, folder_name in CITY_FOLDER_MAP.items():
+        #     # Create city folders under hub nodes
+        #     active_hub_folder_map[city_name] = kml.Folder(name=folder_name)
+        #     inactive_hub_folder_map[city_name] = kml.Folder(name=folder_name)
+        #     active_hub_folder.append(active_hub_folder_map[city_name])
+        #     inactive_hub_folder.append(inactive_hub_folder_map[city_name])
 
-            # Create city folders under standard nodes
-            active_standard_folder_map[city_name] = kml.Folder(name=folder_name)
-            inactive_standard_folder_map[city_name] = kml.Folder(name=folder_name)
-            active_standard_folder.append(active_standard_folder_map[city_name])
-            inactive_standard_folder.append(inactive_standard_folder_map[city_name])
+        #     # Create city folders under standard nodes
+        #     active_standard_folder_map[city_name] = kml.Folder(name=folder_name)
+        #     inactive_standard_folder_map[city_name] = kml.Folder(name=folder_name)
+        #     active_standard_folder.append(active_standard_folder_map[city_name])
+        #     inactive_standard_folder.append(inactive_standard_folder_map[city_name])
+        ## No city-based subfolders - nodes go directly into hub/standard folders
 
         mapped_nns = set()
         for install in (
@@ -247,17 +248,14 @@ class WholeMeshKML(APIView):
             )
             .order_by("install_number")
         ):
-            # Determine which folder map to use based on node type and install status
+            # Determine which folder to use based on node type and install status
             node_type = install.node.type if install.node else None
             is_hub = node_type == "Hub"
-            city_key = install.building.city if install.building.city in CITY_FOLDER_MAP.keys() else None
 
             if install.status == Install.InstallStatus.ACTIVE:
-                folder_map = active_hub_folder_map if is_hub else active_standard_folder_map
+                folder = active_hub_folder if is_hub else active_standard_folder
             else:
-                folder_map = inactive_hub_folder_map if is_hub else inactive_standard_folder_map
-
-            folder = folder_map[city_key]
+                folder = inactive_hub_folder if is_hub else inactive_standard_folder
 
             install_placemark = create_placemark(
                 str(install.install_number),
@@ -278,8 +276,7 @@ class WholeMeshKML(APIView):
             if install.node and install.node.network_number and install.node.network_number not in mapped_nns:
                 # Determine folder for the node placemark (nodes are always inactive in this context)
                 node_is_hub = install.node.type == "Hub"
-                node_folder_map = inactive_hub_folder_map if node_is_hub else inactive_standard_folder_map
-                node_folder = node_folder_map[city_key]
+                node_folder = inactive_hub_folder if node_is_hub else inactive_standard_folder
 
                 node_placemark = create_placemark(
                     str(install.node.network_number),
