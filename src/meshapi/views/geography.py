@@ -10,7 +10,7 @@ from drf_spectacular.utils import OpenApiResponse, extend_schema, extend_schema_
 from fastkml import Data, ExtendedData, geometry, kml, styles
 from fastkml.enums import AltitudeMode
 from pygeoif import LineString, Point
-from rest_framework import permissions, serializers, status
+from rest_framework import permissions, serializers, status as http_status
 from rest_framework.negotiation import BaseContentNegotiation
 from rest_framework.parsers import BaseParser
 from rest_framework.renderers import BaseRenderer
@@ -621,7 +621,7 @@ class WholeMeshKML(APIView):
         return HttpResponse(
             kml_root.to_string(),
             content_type=KML_CONTENT_TYPE_WITH_CHARSET,
-            status=status.HTTP_200_OK,
+            status=http_status.HTTP_200_OK,
         )
 
 
@@ -679,7 +679,7 @@ class NYCGeocodeWrapper(APIView):
     def get(self, request: Request) -> Response:
         serializer = GeocodeSerializer(data=request.query_params)
         if not serializer.is_valid():
-            return Response({"detail": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"detail": serializer.errors}, status=http_status.HTTP_400_BAD_REQUEST)
 
         try:
             raw_addr: GeocodeRequest = serializer.save()
@@ -687,15 +687,15 @@ class NYCGeocodeWrapper(APIView):
         except UnsupportedAddressError:
             return Response(
                 {"detail": UNSUPPORTED_ADDRESS_RESPONSE},
-                status=status.HTTP_404_NOT_FOUND,
+                status=http_status.HTTP_404_NOT_FOUND,
             )
         except InvalidAddressError:
             logging.exception("InvalidAddressError when validating address")
-            return Response({"detail": INVALID_ADDRESS_RESPONSE}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"detail": INVALID_ADDRESS_RESPONSE}, status=http_status.HTTP_404_NOT_FOUND)
 
         except Exception:
             # We failed to contact the city, this is probably a retryable error, return 500
-            return Response({"detail": VALIDATION_500_RESPONSE}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({"detail": VALIDATION_500_RESPONSE}, status=http_status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         return Response(
             {
@@ -704,5 +704,5 @@ class NYCGeocodeWrapper(APIView):
                 "longitude": nyc_addr_info.longitude,
                 "altitude": nyc_addr_info.altitude,
             },
-            status=status.HTTP_200_OK,
+            status=http_status.HTTP_200_OK,
         )
