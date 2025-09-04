@@ -30,13 +30,13 @@ DEFAULT_ALTITUDE = 5  # Meters (absolute)
 
 ACTIVE_COLOR = "#F82C55"
 HUB_COLOR = "#5AC8FA"
-
-STANDARD_COLOR = "#F82C55"  
-SUPERNODE_COLOR = "#297AFE" 
-POP_COLOR = "#F6BE00"       
-AP_COLOR = "#38E708"        
-REMOTE_COLOR = "#800080"    
-HUB_COLOR = "#5AC8FA"       
+STANDARD_COLOR = "#F82C55"
+SUPERNODE_COLOR = "#297AFE"
+POP_COLOR = "#F6BE00"
+AP_COLOR = "#38E708"
+REMOTE_COLOR = "#800080"
+HUB_COLOR = "#5AC8FA"
+LOS_COLOR = "#000000"
 
 # Create a mapping of node types to colors
 NODE_TYPE_COLORS = {
@@ -251,10 +251,10 @@ class WholeMeshKML(APIView):
             ],
         )
 
-        grey_line = styles.Style(
-            id="grey_line",
+        los_line = styles.Style(
+            id="los_line",
             styles=[
-                styles.LineStyle(color="ffcccccc", width=2),
+                styles.LineStyle(color=hex_to_kml_color(LOS_COLOR), width=2),
                 styles.PolyStyle(color="00000000", fill=False, outline=True),
             ],
         )
@@ -277,7 +277,7 @@ class WholeMeshKML(APIView):
             styles=[
                 red_dot, blue_dot, hub_dot,
                 green_dot, yellow_dot, purple_dot,
-                grey_line
+                los_line
             ] + link_styles
         )
         kml_root.append(kml_document)
@@ -536,7 +536,7 @@ class WholeMeshKML(APIView):
                 name=f"{link_dict['link_label']}",
                 style_url=styles.StyleUrl(
                     url=(
-                        "#grey_line"
+                        "#los_line"
                         if link_dict["is_los"]
                         else f"#{style_id}"
                     )
