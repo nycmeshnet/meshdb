@@ -300,6 +300,17 @@ class WholeMeshKML(APIView):
                 )
             )
 
+        # Create a LookAt element to set the initial view to New York City
+        nyc_lookat = kml.LookAt(
+            longitude=-73.9857,  # NYC approximate longitude
+            latitude=40.7484,    # NYC approximate latitude
+            altitude=0,
+            heading=0,
+            tilt=0,
+            range=84000,         # Zoom level in meters (adjust as needed)
+            altitude_mode=AltitudeMode.relative_to_ground
+        )
+        
         kml_document = kml.Document(
             ns,
             styles=[
@@ -308,6 +319,8 @@ class WholeMeshKML(APIView):
                 red_line, grey_line, dark_grey_line
             ] + link_styles
         )
+        # Add the LookAt element to set the initial view
+        kml_document.lookat = nyc_lookat
         kml_root.append(kml_document)
 
         nodes_folder = kml.Folder(name="Nodes")
