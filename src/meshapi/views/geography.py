@@ -28,10 +28,29 @@ KML_CONTENT_TYPE = "application/vnd.google-earth.kml+xml"
 KML_CONTENT_TYPE_WITH_CHARSET = f"{KML_CONTENT_TYPE}; charset=utf-8"
 DEFAULT_ALTITUDE = 5  # Meters (absolute)
 
-ACTIVE_COLOR = "#F00"
-INACTIVE_COLOR = "#777"
-POTENTIAL_COLOR = "#CCC"
-HUB_COLOR = "#00F"
+ACTIVE_COLOR = "#F82C55"
+INACTIVE_COLOR = "#979797"
+POTENTIAL_COLOR = "#A87B84"
+HUB_COLOR = "#5AC8FA"
+
+def hex_to_kml_color(hex_color, alpha=255):
+    """Convert hex color (#RRGGBB) to KML color format (AABBGGRR)"""
+    hex_color = hex_color.lstrip('#')
+    r, g, b = hex_color[0:2], hex_color[2:4], hex_color[4:6]
+    return f"{alpha:02x}{b}{g}{r}"
+
+# Define link type colors
+LINK_TYPE_COLORS = {
+    "5 GHz": "#297AFE",      
+    "6 GHz": "#89B6FF",      
+    "24 GHz": "#33BDBA",     
+    "60 GHz": "#44FCF9",     
+    "70-80 GHz": "#AAFFFE",  
+    "VPN": "#940000",        
+    "Fiber": "#F6BE00",      
+    "Ethernet": "#A07B00",   
+    "Other": "#2D2D2D",      
+}
 
 CITY_FOLDER_MAP = {
     "New York": "Manhattan",
@@ -188,7 +207,32 @@ class WholeMeshKML(APIView):
             ],
         )
 
-        kml_document = kml.Document(ns, styles=[grey_dot, red_dot, blue_dot, red_line, grey_line, dark_grey_line])
+        # Create style definitions for each link type
+        link_styles = []
+        for link_type, color in LINK_TYPE_COLORS.items():
+            # Active style
+            link_styles.append(
+                styles.Style(
+                    id=f"{link_type.replace(' ', '_').replace('-', '_')}_active_line",
+                    styles=[
+                        styles.LineStyle(color=hex_to_kml_color(color), width=2),
+                        styles.PolyStyle(color="00000000", fill=False, outline=True),
+                    ],
+                )
+            )
+            
+            # Inactive style (using a semi-transparent version of the color)
+            link_styles.append(
+                styles.Style(
+                    id=f"{link_type.replace(' ', '_').replace('-', '_')}_inactive_line",
+                    styles=[
+                        styles.LineStyle(color=hex_to_kml_color(color, alpha=128), width=2),
+                        styles.PolyStyle(color="00000000", fill=False, outline=True),
+                    ],
+                )
+            )
+
+        kml_document = kml.Document(ns, styles=[grey_dot, red_dot, blue_dot, red_line, grey_line, dark_grey_line] + link_styles)
         kml_root.append(kml_document)
 
         nodes_folder = kml.Folder(name="Nodes")
@@ -217,6 +261,15 @@ class WholeMeshKML(APIView):
         links_folder.append(active_links_folder)
         inactive_links_folder = kml.Folder(name="Inactive")
         links_folder.append(inactive_links_folder)
+
+        # Create type folders under active and inactive
+        active_type_folders = {}
+        inactive_type_folders = {}
+        for link_type in list(LINK_TYPE_COLORS.keys()):
+            active_type_folders[link_type] = kml.Folder(name=link_type)
+            active_links_folder.append(active_type_folders[link_type])
+            inactive_type_folders[link_type] = kml.Folder(name=link_type)
+            inactive_links_folder.append(inactive_type_folders[link_type])
 
         active_hub_folder_map: Dict[Optional[str], kml.Folder] = {}
         active_standard_folder_map: Dict[Optional[str], kml.Folder] = {}
@@ -407,13 +460,21 @@ class WholeMeshKML(APIView):
                 )
 
         for link_dict in kml_links:
+            # Determine link type
+            link_type = link_dict["extended_data"].get("type")
+            if not link_type or link_type not in LINK_TYPE_COLORS:
+                link_type = "Other"
+            
+            # Create style URL based on type and active status
+            style_id = f"{link_type.replace(' ', '_').replace('-', '_')}_{'active' if link_dict['mark_active'] else 'inactive'}_line"
+            
             placemark = kml.Placemark(
                 name=f"Links-{link_dict['link_label']}",
                 style_url=styles.StyleUrl(
                     url=(
                         "#grey_line"
                         if link_dict["is_los"]
-                        else ("#red_line" if link_dict["mark_active"] else "#dark_grey_line")
+                        else f"#{style_id}"
                     )
                 ),
                 kml_geometry=geometry.LineString(
@@ -427,10 +488,18 @@ class WholeMeshKML(APIView):
                 elements=[Data(name=key, value=val) for key, val in link_dict["extended_data"].items()]
             )
 
-            if link_dict["mark_active"]:
-                active_links_folder.append(placemark)
+            # Add to the appropriate folder based on type and active status
+            if link_dict["is_los"]:
+                # LOS links still go to active/inactive folders directly
+                if link_dict["mark_active"]:
+                    active_links_folder.append(placemark)
+                else:
+                    inactive_links_folder.append(placemark)
             else:
-                inactive_links_folder.append(placemark)
+                if link_dict["mark_active"]:
+                    active_type_folders[link_type].append(placemark)
+                else:
+                    inactive_type_folders[link_type].append(placemark)
 
         return HttpResponse(
             kml_root.to_string(),
