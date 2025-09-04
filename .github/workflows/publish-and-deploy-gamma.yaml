@@ -2,7 +2,7 @@ name: Publish and Deploy Gamma
 
 on:
   push:
-    branches: [ dev ]
+    branches: [dev]
   workflow_dispatch:
     branches:
       - dev
@@ -32,5 +32,3 @@ jobs:
     secrets: inherit
     needs: push_to_registry_gamma
     if: github.ref == 'refs/heads/dev'
-
-
