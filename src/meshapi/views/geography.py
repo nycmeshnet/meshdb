@@ -85,7 +85,6 @@ LinkKMLDict = TypedDict(
     "LinkKMLDict",
     {
         "link_label": str,
-        "mark_active": bool,
         "is_los": bool,
         "from_coord": Tuple[float, float, float],
         "to_coord": Tuple[float, float, float],
@@ -280,23 +279,11 @@ class WholeMeshKML(APIView):
         # Create style definitions for each link type
         link_styles = []
         for link_type, color in LINK_TYPE_COLORS.items():
-            # Active style
             link_styles.append(
                 styles.Style(
-                    id=f"{link_type.replace(' ', '_').replace('-', '_')}_active_line",
+                    id=f"{link_type.replace(' ', '_').replace('-', '_')}_line",
                     styles=[
                         styles.LineStyle(color=hex_to_kml_color(color), width=2),
-                        styles.PolyStyle(color="00000000", fill=False, outline=True),
-                    ],
-                )
-            )
-            
-            # Inactive style (using a semi-transparent version of the color)
-            link_styles.append(
-                styles.Style(
-                    id=f"{link_type.replace(' ', '_').replace('-', '_')}_inactive_line",
-                    styles=[
-                        styles.LineStyle(color=hex_to_kml_color(color, alpha=128), width=2),
                         styles.PolyStyle(color="00000000", fill=False, outline=True),
                     ],
                 )
@@ -315,14 +302,8 @@ class WholeMeshKML(APIView):
         nodes_folder = kml.Folder(name="Nodes")
         kml_document.append(nodes_folder)
 
-        active_nodes_folder = kml.Folder(name="Active")
-        nodes_folder.append(active_nodes_folder)
-        inactive_nodes_folder = kml.Folder(name="Inactive")
-        nodes_folder.append(inactive_nodes_folder)
-
-        # Create node type folders under active/inactive
-        active_node_type_folders = {}
-        inactive_node_type_folders = {}
+        # Create node type folders
+        node_type_folders = {}
         
         # Define all node types
         node_types = ["Standard", "Hub", "Supernode", "POP", "AP", "Remote"]
@@ -331,37 +312,27 @@ class WholeMeshKML(APIView):
         for node_type in node_types:
             folder_name = f"{node_type} Nodes"
             
-            # Create active folder for this node type
-            active_node_type_folders[node_type] = kml.Folder(name=folder_name)
-            active_nodes_folder.append(active_node_type_folders[node_type])
-            
-            # Create inactive folder for this node type
-            inactive_node_type_folders[node_type] = kml.Folder(name=folder_name)
-            inactive_nodes_folder.append(inactive_node_type_folders[node_type])
+            # Create folder for this node type
+            node_type_folders[node_type] = kml.Folder(name=folder_name)
+            nodes_folder.append(node_type_folders[node_type])
 
         links_folder = kml.Folder(name="Links")
         kml_document.append(links_folder)
 
-        active_links_folder = kml.Folder(name="Active")
-        links_folder.append(active_links_folder)
-        inactive_links_folder = kml.Folder(name="Inactive")
-        links_folder.append(inactive_links_folder)
-
-        # Create type folders under active and inactive
-        active_type_folders = {}
-        inactive_type_folders = {}
+        # Create type folders for links
+        type_folders = {}
         for link_type in list(LINK_TYPE_COLORS.keys()):
-            active_type_folders[link_type] = kml.Folder(name=link_type)
-            active_links_folder.append(active_type_folders[link_type])
-            inactive_type_folders[link_type] = kml.Folder(name=link_type)
-            inactive_links_folder.append(inactive_type_folders[link_type])
+            type_folders[link_type] = kml.Folder(name=link_type)
+            links_folder.append(type_folders[link_type])
+            
+        # Create a dedicated folder for LOS links
+        los_folder = kml.Folder(name="LOS")
+        links_folder.append(los_folder)
 
         # These maps are no longer used with the new folder structure
         # but kept as empty dicts to avoid changing too much code
         active_hub_folder_map: Dict[Optional[str], kml.Folder] = {}
         active_standard_folder_map: Dict[Optional[str], kml.Folder] = {}
-        inactive_hub_folder_map: Dict[Optional[str], kml.Folder] = {}
-        inactive_standard_folder_map: Dict[Optional[str], kml.Folder] = {}
 
         # for city_name, folder_name in CITY_FOLDER_MAP.items():
         #     # Create city folders under hub nodes
@@ -419,7 +390,7 @@ class WholeMeshKML(APIView):
             if install.node and install.node.network_number:
                 location_map[location_key]['node'] = install.node
         
-        # Second pass: create one placemark per unique location
+        # Second pass: create one placemark per unique location (active nodes only)
         for location, data in location_map.items():
             lon, lat = location
             installs = data['installs']
@@ -427,6 +398,10 @@ class WholeMeshKML(APIView):
             is_active = data['active']
             altitude = data['altitude']
             roof_access = data['roof_access']
+            
+            # Skip inactive nodes
+            if not is_active:
+                continue
             
             # Determine the primary identifier and properties for the placemark
             if node:
@@ -446,11 +421,8 @@ class WholeMeshKML(APIView):
             active_installs = [install for install in installs if install.status == Install.InstallStatus.ACTIVE]
             install_numbers = [str(install.install_number) for install in active_installs]
             
-            # Determine which folder to use based on node type and active status
-            if is_active:
-                folder = active_node_type_folders.get(node_type, active_node_type_folders["Standard"])
-            else:
-                folder = inactive_node_type_folders.get(node_type, inactive_node_type_folders["Standard"])
+            # Determine which folder to use based on node type
+            folder = node_type_folders.get(node_type, node_type_folders["Standard"])
             
             # Create the placemark
             placemark = create_placemark(
@@ -477,14 +449,14 @@ class WholeMeshKML(APIView):
         for link in (
             Link.objects.prefetch_related("from_device")
             .prefetch_related("to_device")
-            .filter(~Q(status=Link.LinkStatus.INACTIVE))
+            .filter(status=Link.LinkStatus.ACTIVE)  # Only include active links
             .filter(from_device__node__network_number__isnull=False)
             .filter(to_device__node__network_number__isnull=False)
             .exclude(type=Link.LinkType.VPN)
             .annotate(highest_altitude=Greatest("from_device__node__altitude", "to_device__node__altitude"))
             .order_by(F("highest_altitude").asc(nulls_first=True))
         ):
-            mark_active: bool = link.status == Link.LinkStatus.ACTIVE
+            # All links are active now
             link_label: str = f"{str(link.from_device.node)}-{str(link.to_device.node)}"
             from_identifier = cast(  # Cast is safe due to corresponding filter above
                 int, link.from_device.node.network_number
@@ -497,7 +469,6 @@ class WholeMeshKML(APIView):
             kml_links.append(
                 {
                     "link_label": link_label,
-                    "mark_active": mark_active,
                     "is_los": False,
                     "from_coord": (
                         link.from_device.node.longitude,
@@ -524,8 +495,8 @@ class WholeMeshKML(APIView):
 
         for los in (
             LOS.objects.filter(
-                Exists(Install.objects.filter(building=OuterRef("from_building")))
-                & Exists(Install.objects.filter(building=OuterRef("to_building")))
+                Exists(Install.objects.filter(building=OuterRef("from_building"), status=Install.InstallStatus.ACTIVE))
+                & Exists(Install.objects.filter(building=OuterRef("to_building"), status=Install.InstallStatus.ACTIVE))
                 & ~Q(from_building=F("to_building"))
             )
             .exclude(
@@ -561,7 +532,6 @@ class WholeMeshKML(APIView):
                 kml_links.append(
                     {
                         "link_label": link_label,
-                        "mark_active": False,
                         "is_los": True,
                         "from_coord": (
                             los.from_building.longitude,
@@ -591,8 +561,8 @@ class WholeMeshKML(APIView):
             if not link_type or link_type not in LINK_TYPE_COLORS:
                 link_type = "Other"
             
-            # Create style URL based on type and active status
-            style_id = f"{link_type.replace(' ', '_').replace('-', '_')}_{'active' if link_dict['mark_active'] else 'inactive'}_line"
+            # Create style URL based on type
+            style_id = f"{link_type.replace(' ', '_').replace('-', '_')}_line"
             
             placemark = kml.Placemark(
                 name=f"{link_dict['link_label']}",
@@ -614,18 +584,11 @@ class WholeMeshKML(APIView):
                 elements=[Data(name=key, value=val) for key, val in link_dict["extended_data"].items()]
             )
 
-            # Add to the appropriate folder based on type and active status
+            # Add to the appropriate folder based on type
             if link_dict["is_los"]:
-                # LOS links still go to active/inactive folders directly
-                if link_dict["mark_active"]:
-                    active_links_folder.append(placemark)
-                else:
-                    inactive_links_folder.append(placemark)
+                los_folder.append(placemark)
             else:
-                if link_dict["mark_active"]:
-                    active_type_folders[link_type].append(placemark)
-                else:
-                    inactive_type_folders[link_type].append(placemark)
+                type_folders[link_type].append(placemark)
 
         # Generate the KML string
         kml_string = kml_root.to_string()
