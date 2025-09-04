@@ -70,7 +70,7 @@ LINK_TYPE_COLORS = {
     "Other": "#2D2D2D",      
 }
 
-DOT_SIZE = 1.3
+DOT_SIZE = 1.5
 
 CITY_FOLDER_MAP = {
     "New York": "Manhattan",
@@ -212,7 +212,7 @@ class WholeMeshKML(APIView):
             styles=[
                 styles.IconStyle(
                     color=hex_to_kml_color(SUPERNODE_COLOR),
-                    scale=DOT_SIZE + 0.2,
+                    scale=DOT_SIZE + 0.5,
                     icon=styles.Icon(href="http://maps.google.com/mapfiles/kml/shapes/dot.png"),
                     hot_spot=styles.HotSpot(x=0.5, y=0.5, xunits=styles.Units.fraction, yunits=styles.Units.fraction),
                 )
@@ -225,7 +225,7 @@ class WholeMeshKML(APIView):
             styles=[
                 styles.IconStyle(
                     color=hex_to_kml_color(HUB_COLOR),
-                    scale=DOT_SIZE + 0.1,
+                    scale=DOT_SIZE + 0.25,
                     icon=styles.Icon(href="http://maps.google.com/mapfiles/kml/shapes/dot.png"),
                     hot_spot=styles.HotSpot(x=0.5, y=0.5, xunits=styles.Units.fraction, yunits=styles.Units.fraction),
                 )
