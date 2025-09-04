@@ -510,7 +510,7 @@ class WholeMeshKML(APIView):
                         link.to_device.node.altitude or DEFAULT_ALTITUDE,
                     ),
                     "extended_data": {
-                        "name": f"Link {link.id}<->{link_label}",
+                        # "name": f"Link {link.id}<->{link_label}",
                         "type": link.type,
                         "status": link.status,
                         "from": str(from_identifier),
@@ -553,7 +553,7 @@ class WholeMeshKML(APIView):
         ):
             representative_from_install = min(los.from_building.installs.all().values_list("install_number", flat=True))
             representative_to_install = min(los.to_building.installs.all().values_list("install_number", flat=True))
-            link_label = f"{representative_from_install}-{representative_to_install}"
+            link_label = f"{representative_from_install}<->{representative_to_install}"
 
             link_tuple = tuple(sorted((representative_from_install, representative_to_install)))
             if link_tuple not in all_links_set:
@@ -574,7 +574,7 @@ class WholeMeshKML(APIView):
                             los.to_building.altitude or DEFAULT_ALTITUDE,
                         ),
                         "extended_data": {
-                            "name": f"LOS {los.id}<->{link_label}",
+                            # "name": f"LOS {los.id}<->{link_label}",
                             # "stroke": POTENTIAL_COLOR,
                             # "fill": "#000000",
                             # "fill-opacity": "0",
@@ -595,7 +595,7 @@ class WholeMeshKML(APIView):
             style_id = f"{link_type.replace(' ', '_').replace('-', '_')}_{'active' if link_dict['mark_active'] else 'inactive'}_line"
             
             placemark = kml.Placemark(
-                name=f"Links-{link_dict['link_label']}",
+                name=f"{link_dict['link_label']}",
                 style_url=styles.StyleUrl(
                     url=(
                         "#grey_line"
