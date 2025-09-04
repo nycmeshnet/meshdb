@@ -29,11 +29,8 @@ KML_CONTENT_TYPE_WITH_CHARSET = f"{KML_CONTENT_TYPE}; charset=utf-8"
 DEFAULT_ALTITUDE = 5  # Meters (absolute)
 
 ACTIVE_COLOR = "#F82C55"
-INACTIVE_COLOR = "#767677"
-POTENTIAL_COLOR = "#A87B84"
 HUB_COLOR = "#5AC8FA"
 
-# Node type colors - updated to match the icon colors
 STANDARD_COLOR = "#F82C55"  
 SUPERNODE_COLOR = "#297AFE" 
 POP_COLOR = "#F6BE00"       
@@ -408,6 +405,14 @@ class WholeMeshKML(APIView):
             # Add the total count of install numbers
             placemark.extended_data.elements.append(Data(name="install_count", value=str(len(install_numbers))))
             
+            # Add install_date if available (from the earliest active install)
+            if active_installs:
+                # Get the earliest install_date from active installs
+                install_dates = [install.install_date for install in active_installs if install.install_date]
+                if install_dates:
+                    earliest_install_date = min(install_dates)
+                    placemark.extended_data.elements.append(Data(name="install_date", value=earliest_install_date.isoformat()))
+            
             # Add to the appropriate folder
             folder.append(placemark)
 
@@ -453,9 +458,7 @@ class WholeMeshKML(APIView):
                         "status": link.status,
                         "from": str(from_identifier),
                         "to": str(to_identifier),
-                        # "stroke": ACTIVE_COLOR if mark_active else INACTIVE_COLOR,
-                        # "fill": "#000000",
-                        # "fill-opacity": "0",
+                        "install_date": link.install_date.isoformat() if link.install_date else None,
                     },
                 }
             )
@@ -496,6 +499,7 @@ class WholeMeshKML(APIView):
             link_tuple = tuple(sorted((representative_from_install, representative_to_install)))
             if link_tuple not in all_links_set:
                 all_links_set.add(link_tuple)
+                
                 kml_links.append(
                     {
                         "link_label": link_label,
@@ -512,9 +516,6 @@ class WholeMeshKML(APIView):
                         ),
                         "extended_data": {
                             # "name": f"LOS {los.id}<->{link_label}",
-                            # "stroke": POTENTIAL_COLOR,
-                            # "fill": "#000000",
-                            # "fill-opacity": "0",
                             "from": f"#{representative_from_install} ({los.from_building.street_address})",
                             "to": f"#{representative_to_install} ({los.to_building.street_address})",
                             "source": los.source,
