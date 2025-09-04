@@ -375,7 +375,10 @@ class WholeMeshKML(APIView):
         #     inactive_standard_folder.append(inactive_standard_folder_map[city_name])
         ## No city-based subfolders - nodes go directly into hub/standard folders
 
-        mapped_nns = set()
+        # Create a dictionary to map coordinates to installs and nodes
+        location_map = {}  # Key: (lon, lat), Value: {'installs': [], 'node': None, 'active': False}
+        
+        # First pass: group installs by location
         for install in (
             Install.objects.prefetch_related("node")
             .prefetch_related("building")
@@ -386,49 +389,79 @@ class WholeMeshKML(APIView):
             )
             .order_by("install_number")
         ):
-            # Determine which folder to use based on node type and install status
-            node_type = install.node.type if install.node else "Standard"  # Default to Standard if no node type
-
+            # Create a location key based on coordinates
+            location_key = (install.building.longitude, install.building.latitude)
+            
+            # Initialize location entry if it doesn't exist
+            if location_key not in location_map:
+                location_map[location_key] = {
+                    'installs': [],
+                    'node': None,
+                    'active': False,
+                    'altitude': install.building.altitude or DEFAULT_ALTITUDE,
+                    'roof_access': False
+                }
+            
+            # Add this install to the location
+            location_map[location_key]['installs'].append(install)
+            
+            # Track if any install at this location is active
             if install.status == Install.InstallStatus.ACTIVE:
+                location_map[location_key]['active'] = True
+            
+            # Track if any install has roof access
+            if install.roof_access:
+                location_map[location_key]['roof_access'] = True
+            
+            # If this install has a node with a network number, store it
+            if install.node and install.node.network_number:
+                location_map[location_key]['node'] = install.node
+        
+        # Second pass: create one placemark per unique location
+        for location, data in location_map.items():
+            lon, lat = location
+            installs = data['installs']
+            node = data['node']
+            is_active = data['active']
+            altitude = data['altitude']
+            roof_access = data['roof_access']
+            
+            # Determine the primary identifier and properties for the placemark
+            if node:
+                # Prioritize node network number as identifier
+                identifier = str(node.network_number)
+                node_type = node.type or "Standard"
+                status = node.status
+            else:
+                # Use the first install as the primary if no node exists
+                identifier = str(installs[0].install_number)
+                node_type = installs[0].node.type if installs[0].node else "Standard"
+                status = installs[0].status
+            
+            # Get all install numbers at this location
+            install_numbers = [str(install.install_number) for install in installs]
+            
+            # Determine which folder to use based on node type and active status
+            if is_active:
                 folder = active_node_type_folders.get(node_type, active_node_type_folders["Standard"])
             else:
                 folder = inactive_node_type_folders.get(node_type, inactive_node_type_folders["Standard"])
-
-            install_placemark = create_placemark(
-                str(install.install_number),
-                Point(
-                    install.building.longitude,
-                    install.building.latitude,
-                    install.building.altitude or DEFAULT_ALTITUDE,
-                ),
-                install.status == Install.InstallStatus.ACTIVE,
-                install.status,
-                install.roof_access,
-                install.node.type if install.node else None,
+            
+            # Create the placemark
+            placemark = create_placemark(
+                identifier,
+                Point(lon, lat, altitude),
+                is_active,
+                status,
+                roof_access,
+                node_type,
             )
-            folder.append(install_placemark)
-
-            # Add an extra placemark for the Node, once for each NN
-            # this makes searching much easier
-            if install.node and install.node.network_number and install.node.network_number not in mapped_nns:
-                # Determine folder for the node placemark (nodes are always inactive in this context)
-                node_type = install.node.type or "Standard"
-                node_folder = inactive_node_type_folders.get(node_type, inactive_node_type_folders["Standard"])
-
-                node_placemark = create_placemark(
-                    str(install.node.network_number),
-                    Point(
-                        install.node.longitude,
-                        install.node.latitude,
-                        install.node.altitude or DEFAULT_ALTITUDE,
-                    ),
-                    False,
-                    install.node.status,
-                    roof_access=False,
-                    node_type=install.node.type,
-                )
-                node_folder.append(node_placemark)
-                mapped_nns.add(install.node.network_number)
+            
+            # Add install numbers to the extended data
+            placemark.extended_data.elements.append(Data(name="installNumbers", value=",".join(install_numbers)))
+            
+            # Add to the appropriate folder
+            folder.append(placemark)
 
         all_links_set = set()
         kml_links: List[LinkKMLDict] = []
