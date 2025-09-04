@@ -146,13 +146,13 @@ def create_placemark(identifier: str, point: Point, active: bool, status: str, r
         marker_color = INACTIVE_COLOR
 
     extended_data = {
-        "name": identifier,
-        "roofAccess": str(roof_access),
-        "marker-color": marker_color,
-        "id": identifier,
-        "status": status,
+        "name": f"NN {identifier}",
         "nodeType": node_type or "Standard",  # Add node type to extended data
-        # Leave disabled, notes can leak a lot of information & this endpoint is public
+        "status": status,
+        "id": identifier,
+        # "roofAccess": str(roof_access),
+        # "marker-color": marker_color,
+        ## Leave disabled, notes can leak a lot of information & this endpoint is public
         # "notes": install.notes,
     }
 
@@ -458,7 +458,7 @@ class WholeMeshKML(APIView):
             )
             
             # Add install numbers to the extended data
-            placemark.extended_data.elements.append(Data(name="installNumbers", value=",".join(install_numbers)))
+            placemark.extended_data.elements.append(Data(name="install_numbers", value=",".join(install_numbers)))
             
             # Add to the appropriate folder
             folder.append(placemark)
@@ -501,14 +501,14 @@ class WholeMeshKML(APIView):
                         link.to_device.node.altitude or DEFAULT_ALTITUDE,
                     ),
                     "extended_data": {
-                        "name": f"Links-{link.id}-{link_label}",
-                        "stroke": ACTIVE_COLOR if mark_active else INACTIVE_COLOR,
-                        "fill": "#000000",
-                        "fill-opacity": "0",
+                        "name": f"Link {link.id}<->{link_label}",
+                        "type": link.type,
+                        "status": link.status,
                         "from": str(from_identifier),
                         "to": str(to_identifier),
-                        "status": link.status,
-                        "type": link.type,
+                        # "stroke": ACTIVE_COLOR if mark_active else INACTIVE_COLOR,
+                        # "fill": "#000000",
+                        # "fill-opacity": "0",
                     },
                 }
             )
@@ -565,10 +565,10 @@ class WholeMeshKML(APIView):
                             los.to_building.altitude or DEFAULT_ALTITUDE,
                         ),
                         "extended_data": {
-                            "name": f"LOS-{los.id} {link_label}",
-                            "stroke": POTENTIAL_COLOR,
-                            "fill": "#000000",
-                            "fill-opacity": "0",
+                            "name": f"LOS {los.id}<->{link_label}",
+                            # "stroke": POTENTIAL_COLOR,
+                            # "fill": "#000000",
+                            # "fill-opacity": "0",
                             "from": f"#{representative_from_install} ({los.from_building.street_address})",
                             "to": f"#{representative_to_install} ({los.to_building.street_address})",
                             "source": los.source,
