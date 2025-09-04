@@ -642,7 +642,7 @@ class WholeMeshKML(APIView):
     <altitude>0</altitude>
     <heading>0</heading>
     <tilt>0</tilt>
-    <range>25000</range>
+    <range>95000</range>
     <altitudeMode>relativeToGround</altitudeMode>
   </LookAt>"""
                 kml_string = kml_string[:doc_end_pos+1] + lookat_xml + kml_string[doc_end_pos+1:]
