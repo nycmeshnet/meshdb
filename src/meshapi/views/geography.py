@@ -28,6 +28,7 @@ KML_CONTENT_TYPE = "application/vnd.google-earth.kml+xml"
 KML_CONTENT_TYPE_WITH_CHARSET = f"{KML_CONTENT_TYPE}; charset=utf-8"
 DEFAULT_ALTITUDE = 5  # Meters (absolute)
 
+# Define node type colors
 ACTIVE_COLOR = "#F82C55"
 HUB_COLOR = "#5AC8FA"
 STANDARD_COLOR = "#F82C55"
@@ -36,7 +37,20 @@ POP_COLOR = "#F6BE00"
 AP_COLOR = "#38E708"
 REMOTE_COLOR = "#800080"
 HUB_COLOR = "#5AC8FA"
+
+# Define link type colors
 LOS_COLOR = "#000000"
+LINK_TYPE_COLORS = {
+    "5 GHz": "#297AFE",      
+    "6 GHz": "#41A3FF",      
+    "24 GHz": "#40D1EE",     
+    "60 GHz": "#44FCF9",     
+    "70-80 GHz": "#44FCDD",  
+    "VPN": "#7F0093",        
+    "Fiber": "#F6BE00",      
+    "Ethernet": "#A07B00",   
+    "Other": "#2D2D2D",      
+}
 
 # Create a mapping of node types to colors
 NODE_TYPE_COLORS = {
@@ -54,30 +68,8 @@ def hex_to_kml_color(hex_color, alpha=255):
     r, g, b = hex_color[0:2], hex_color[2:4], hex_color[4:6]
     return f"{alpha:02x}{b}{g}{r}"
 
-# Define link type colors
-LINK_TYPE_COLORS = {
-    "5 GHz": "#297AFE",      
-    "6 GHz": "#41A3FF",      
-    "24 GHz": "#40D1EE",     
-    "60 GHz": "#44FCF9",     
-    "70-80 GHz": "#44FCDD",  
-    "VPN": "#7F0093",        
-    "Fiber": "#F6BE00",      
-    "Ethernet": "#A07B00",   
-    "Other": "#2D2D2D",      
-}
-
-DOT_SIZE = 1.5
+DOT_SIZE = 1
 DOT_URL = "http://maps.google.com/mapfiles/kml/shapes/dot.png"
-
-CITY_FOLDER_MAP = {
-    "New York": "Manhattan",
-    "Brooklyn": "Brooklyn",
-    "Queens": "Queens",
-    "Bronx": "The Bronx",
-    "Staten Island": "Staten Island",
-    None: "Other",
-}
 
 LinkKMLDict = TypedDict(
     "LinkKMLDict",
@@ -110,7 +102,7 @@ class IgnoreClientContentNegotiation(BaseContentNegotiation):
         return renderers[0], renderers[0].media_type
 
 
-def create_placemark(identifier: str, point: Point, active: bool, status: str, roof_access: bool, node_type: str = None, node_name: str = None) -> kml.Placemark:
+def create_placemark(identifier: str, point: Point, status: str, node_type: str = None, node_name: str = None) -> kml.Placemark:
     # Determine the appropriate style based on node type
     if node_type in ["Hub", "Supernode", "POP", "AP", "Remote"]:
         # Map node types to style URLs based on user's color preferences
@@ -134,21 +126,11 @@ def create_placemark(identifier: str, point: Point, active: bool, status: str, r
         ),
     )
 
-    # Determine the marker color based on node type
-    if node_type and node_type in NODE_TYPE_COLORS:
-        marker_color = NODE_TYPE_COLORS[node_type]
-    else:
-        marker_color = ACTIVE_COLOR
-
     extended_data = {
         "name": node_name if node_name else f"NN {identifier}",
         "nodeType": node_type or "Standard",  # Add node type to extended data
         "status": status,
         "id": identifier,
-        # "roofAccess": str(roof_access),
-        # "marker-color": marker_color,
-        ## Leave disabled, notes can leak a lot of information & this endpoint is public
-        # "notes": install.notes,
     }
 
     placemark.extended_data = ExtendedData(elements=[Data(name=key, value=val) for key, val in extended_data.items()])
@@ -354,14 +336,13 @@ class WholeMeshKML(APIView):
             if install.node and install.node.network_number:
                 location_map[location_key]['node'] = install.node
         
-        # Second pass: create one placemark per unique location (active nodes only)
+        # Second pass: create one placemark per unique location
         for location, data in location_map.items():
             lon, lat = location
             installs = data['installs']
             node = data['node']
             is_active = data['active']
             altitude = data['altitude']
-            roof_access = data['roof_access']
             
             # Skip inactive nodes
             if not is_active:
@@ -369,11 +350,11 @@ class WholeMeshKML(APIView):
             
             # Determine the primary identifier and properties for the placemark
             if node:
-                # Prioritize node network number as identifier
+                # Prioritize network number (NN) as identifier
                 identifier = str(node.network_number)
                 node_type = node.type or "Standard"
                 status = node.status
-                node_name = node.name  # Get the node name if available
+                node_name = node.name  # Get the colloquial name if available
             else:
                 # Use the first install as the primary if no node exists
                 identifier = str(installs[0].install_number)
@@ -392,9 +373,7 @@ class WholeMeshKML(APIView):
             placemark = create_placemark(
                 identifier,
                 Point(lon, lat, altitude),
-                is_active,
                 status,
-                roof_access,
                 node_type,
                 node_name,
             )
@@ -402,7 +381,7 @@ class WholeMeshKML(APIView):
             # Add install numbers to the extended data
             placemark.extended_data.elements.append(Data(name="install_numbers", value=",".join(install_numbers)))
             
-            # Add the total count of install numbers
+            # Add the total count of active installs
             placemark.extended_data.elements.append(Data(name="install_count", value=str(len(install_numbers))))
             
             # Add install_date if available (from the earliest active install)
@@ -428,8 +407,7 @@ class WholeMeshKML(APIView):
             .annotate(highest_altitude=Greatest("from_device__node__altitude", "to_device__node__altitude"))
             .order_by(F("highest_altitude").asc(nulls_first=True))
         ):
-            # All links are active now
-            link_label: str = f"{str(link.from_device.node)}-{str(link.to_device.node)}"
+            link_label: str = f"{str(link.from_device.node)}<->{str(link.to_device.node)}"
             from_identifier = cast(  # Cast is safe due to corresponding filter above
                 int, link.from_device.node.network_number
             )
@@ -453,7 +431,6 @@ class WholeMeshKML(APIView):
                         link.to_device.node.altitude or DEFAULT_ALTITUDE,
                     ),
                     "extended_data": {
-                        # "name": f"Link {link.id}<->{link_label}",
                         "type": link.type,
                         "status": link.status,
                         "from": str(from_identifier),
@@ -470,8 +447,7 @@ class WholeMeshKML(APIView):
                 & ~Q(from_building=F("to_building"))
             )
             .exclude(
-                # Remove any LOS objects that would duplicate Link objects,
-                # to avoid cluttering the file
+                # Remove any LOS objects that would duplicate Link objects
                 Exists(
                     Link.objects.filter(
                         (
@@ -515,7 +491,6 @@ class WholeMeshKML(APIView):
                             los.to_building.altitude or DEFAULT_ALTITUDE,
                         ),
                         "extended_data": {
-                            # "name": f"LOS {los.id}<->{link_label}",
                             "from": f"#{representative_from_install} ({los.from_building.street_address})",
                             "to": f"#{representative_to_install} ({los.to_building.street_address})",
                             "source": los.source,
@@ -561,11 +536,9 @@ class WholeMeshKML(APIView):
         # Generate the KML string
         kml_string = kml_root.to_string()
         
-        # Insert LookAt element directly into the KML XML string to set the initial view
-        # Find the Document opening tag to insert after
+        # Insert LookAt element directly into the KML XML string to set the initial NYC view for tools such as Google Earth
         doc_pos = kml_string.find("<Document")
         if doc_pos != -1:
-            # Find the end of the Document opening tag
             doc_end_pos = kml_string.find(">", doc_pos)
             if doc_end_pos != -1:
                 # Insert LookAt element after the Document opening tag
@@ -576,7 +549,7 @@ class WholeMeshKML(APIView):
     <altitude>0</altitude>
     <heading>0</heading>
     <tilt>0</tilt>
-    <range>95000</range>
+    <range>80000</range>
     <altitudeMode>relativeToGround</altitudeMode>
   </LookAt>"""
                 kml_string = kml_string[:doc_end_pos+1] + lookat_xml + kml_string[doc_end_pos+1:]
