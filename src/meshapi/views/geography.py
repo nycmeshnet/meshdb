@@ -29,17 +29,17 @@ KML_CONTENT_TYPE_WITH_CHARSET = f"{KML_CONTENT_TYPE}; charset=utf-8"
 DEFAULT_ALTITUDE = 5  # Meters (absolute)
 
 ACTIVE_COLOR = "#F82C55"
-INACTIVE_COLOR = "#979797"
+INACTIVE_COLOR = "#767677"
 POTENTIAL_COLOR = "#A87B84"
 HUB_COLOR = "#5AC8FA"
 
 # Node type colors - updated to match the icon colors
-STANDARD_COLOR = "#F82C55"  # Red - Same as ACTIVE_COLOR
-SUPERNODE_COLOR = "#0000FF" # Blue - same as Hub
-POP_COLOR = "#FFCC00"       # Yellow - to match yellow_dot
-AP_COLOR = "#00FF00"        # Green - to match green_dot
-REMOTE_COLOR = "#800080"    # Purple - to match purple_dot
-HUB_COLOR = "#0000FF"       # Blue - closest to teal available
+STANDARD_COLOR = "#F82C55"  
+SUPERNODE_COLOR = "#297AFE" 
+POP_COLOR = "#F6BE00"       
+AP_COLOR = "#38E708"        
+REMOTE_COLOR = "#800080"    
+HUB_COLOR = "#5AC8FA"       
 
 # Create a mapping of node types to colors
 NODE_TYPE_COLORS = {
@@ -116,8 +116,8 @@ def create_placemark(identifier: str, point: Point, active: bool, status: str, r
     if node_type in ["Hub", "Supernode", "POP", "AP", "Remote"]:
         # Map node types to style URLs based on user's color preferences
         style_map = {
-            "Hub": "#blue_dot",          # Hub should be blue
-            "Supernode": "#blue_dot",    # Supernode should also be blue
+            "Hub": "#hub_dot",           # Hub should be teal blue
+            "Supernode": "#blue_dot",    # Supernode should be blue
             "POP": "#yellow_dot",        # POP should be yellow
             "AP": "#green_dot",          # AP should be green
             "Remote": "#purple_dot",     # Remote should be purple
@@ -180,11 +180,14 @@ class WholeMeshKML(APIView):
         kml_root = kml.KML()
         ns = "{http://www.opengis.net/kml/2.2}"
 
+        # Use a simple dot.png for all styles and apply custom colors
         grey_dot = styles.Style(
             id="grey_dot",
             styles=[
                 styles.IconStyle(
-                    icon=styles.Icon(href="http://maps.google.com/mapfiles/kml/shapes/shaded_dot.png"),
+                    color=hex_to_kml_color(INACTIVE_COLOR),
+                    scale=1.2,
+                    icon=styles.Icon(href="http://maps.google.com/mapfiles/kml/shapes/dot.png"),
                     hot_spot=styles.HotSpot(x=0.5, y=0.5, xunits=styles.Units.fraction, yunits=styles.Units.fraction),
                 )
             ],
@@ -194,7 +197,9 @@ class WholeMeshKML(APIView):
             id="red_dot",
             styles=[
                 styles.IconStyle(
-                    icon=styles.Icon(href="http://maps.google.com/mapfiles/kml/paddle/red-circle.png"),
+                    color=hex_to_kml_color(STANDARD_COLOR),
+                    scale=1.2,
+                    icon=styles.Icon(href="http://maps.google.com/mapfiles/kml/shapes/dot.png"),
                     hot_spot=styles.HotSpot(x=0.5, y=0.5, xunits=styles.Units.fraction, yunits=styles.Units.fraction),
                 )
             ],
@@ -204,28 +209,35 @@ class WholeMeshKML(APIView):
             id="blue_dot",
             styles=[
                 styles.IconStyle(
-                    icon=styles.Icon(href="http://maps.google.com/mapfiles/kml/paddle/blu-circle.png"),
+                    color=hex_to_kml_color(SUPERNODE_COLOR),
+                    scale=1.2,
+                    icon=styles.Icon(href="http://maps.google.com/mapfiles/kml/shapes/dot.png"),
+                    hot_spot=styles.HotSpot(x=0.5, y=0.5, xunits=styles.Units.fraction, yunits=styles.Units.fraction),
+                )
+            ],
+        )
+
+        # Add a specific style for Hub nodes
+        hub_dot = styles.Style(
+            id="hub_dot",
+            styles=[
+                styles.IconStyle(
+                    color=hex_to_kml_color(HUB_COLOR),
+                    scale=1.2,
+                    icon=styles.Icon(href="http://maps.google.com/mapfiles/kml/shapes/dot.png"),
                     hot_spot=styles.HotSpot(x=0.5, y=0.5, xunits=styles.Units.fraction, yunits=styles.Units.fraction),
                 )
             ],
         )
 
         # Style definitions for node types based on user's color preferences
-        orange_dot = styles.Style(
-            id="orange_dot",
-            styles=[
-                styles.IconStyle(
-                    icon=styles.Icon(href="http://maps.google.com/mapfiles/kml/paddle/orange-circle.png"),
-                    hot_spot=styles.HotSpot(x=0.5, y=0.5, xunits=styles.Units.fraction, yunits=styles.Units.fraction),
-                )
-            ],
-        )
-
         green_dot = styles.Style(
             id="green_dot",
             styles=[
                 styles.IconStyle(
-                    icon=styles.Icon(href="http://maps.google.com/mapfiles/kml/paddle/grn-circle.png"),
+                    color=hex_to_kml_color(AP_COLOR),
+                    scale=1.2,
+                    icon=styles.Icon(href="http://maps.google.com/mapfiles/kml/shapes/dot.png"),
                     hot_spot=styles.HotSpot(x=0.5, y=0.5, xunits=styles.Units.fraction, yunits=styles.Units.fraction),
                 )
             ],
@@ -235,7 +247,9 @@ class WholeMeshKML(APIView):
             id="yellow_dot",
             styles=[
                 styles.IconStyle(
-                    icon=styles.Icon(href="http://maps.google.com/mapfiles/kml/paddle/ylw-circle.png"),
+                    color=hex_to_kml_color(POP_COLOR),
+                    scale=1.2,
+                    icon=styles.Icon(href="http://maps.google.com/mapfiles/kml/shapes/dot.png"),
                     hot_spot=styles.HotSpot(x=0.5, y=0.5, xunits=styles.Units.fraction, yunits=styles.Units.fraction),
                 )
             ],
@@ -245,17 +259,11 @@ class WholeMeshKML(APIView):
             id="purple_dot",
             styles=[
                 styles.IconStyle(
-                    icon=styles.Icon(href="http://maps.google.com/mapfiles/kml/paddle/purple-circle.png"),
+                    color=hex_to_kml_color(REMOTE_COLOR),
+                    scale=1.2,
+                    icon=styles.Icon(href="http://maps.google.com/mapfiles/kml/shapes/dot.png"),
                     hot_spot=styles.HotSpot(x=0.5, y=0.5, xunits=styles.Units.fraction, yunits=styles.Units.fraction),
                 )
-            ],
-        )
-
-        red_line = styles.Style(
-            id="red_line",
-            styles=[
-                styles.LineStyle(color="ff0000ff", width=2),
-                styles.PolyStyle(color="00000000", fill=False, outline=True),
             ],
         )
 
@@ -263,14 +271,6 @@ class WholeMeshKML(APIView):
             id="grey_line",
             styles=[
                 styles.LineStyle(color="ffcccccc", width=2),
-                styles.PolyStyle(color="00000000", fill=False, outline=True),
-            ],
-        )
-
-        dark_grey_line = styles.Style(
-            id="dark_grey_line",
-            styles=[
-                styles.LineStyle(color="ff777777", width=2),
                 styles.PolyStyle(color="00000000", fill=False, outline=True),
             ],
         )
@@ -300,27 +300,14 @@ class WholeMeshKML(APIView):
                 )
             )
 
-        # Create a LookAt element to set the initial view to New York City
-        nyc_lookat = kml.LookAt(
-            longitude=-73.9857,  # NYC approximate longitude
-            latitude=40.7484,    # NYC approximate latitude
-            altitude=0,
-            heading=0,
-            tilt=0,
-            range=84000,         # Zoom level in meters (adjust as needed)
-            altitude_mode=AltitudeMode.relative_to_ground
-        )
-        
         kml_document = kml.Document(
             ns,
             styles=[
-                grey_dot, red_dot, blue_dot,
-                orange_dot, green_dot, yellow_dot, purple_dot,
-                red_line, grey_line, dark_grey_line
+                grey_dot, red_dot, blue_dot, hub_dot,
+                green_dot, yellow_dot, purple_dot,
+                grey_line
             ] + link_styles
         )
-        # Add the LookAt element to set the initial view
-        kml_document.lookat = nyc_lookat
         kml_root.append(kml_document)
 
         nodes_folder = kml.Folder(name="Nodes")
@@ -635,8 +622,31 @@ class WholeMeshKML(APIView):
                 else:
                     inactive_type_folders[link_type].append(placemark)
 
+        # Generate the KML string
+        kml_string = kml_root.to_string()
+        
+        # Insert LookAt element directly into the KML XML string to set the initial view
+        # Find the Document opening tag to insert after
+        doc_pos = kml_string.find("<Document")
+        if doc_pos != -1:
+            # Find the end of the Document opening tag
+            doc_end_pos = kml_string.find(">", doc_pos)
+            if doc_end_pos != -1:
+                # Insert LookAt element after the Document opening tag
+                lookat_xml = """
+  <LookAt>
+    <longitude>-73.9857</longitude>
+    <latitude>40.7484</latitude>
+    <altitude>0</altitude>
+    <heading>0</heading>
+    <tilt>0</tilt>
+    <range>25000</range>
+    <altitudeMode>relativeToGround</altitudeMode>
+  </LookAt>"""
+                kml_string = kml_string[:doc_end_pos+1] + lookat_xml + kml_string[doc_end_pos+1:]
+        
         return HttpResponse(
-            kml_root.to_string(),
+            kml_string,
             content_type=KML_CONTENT_TYPE_WITH_CHARSET,
             status=http_status.HTTP_200_OK,
         )
