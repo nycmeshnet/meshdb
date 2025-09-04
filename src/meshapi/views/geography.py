@@ -33,6 +33,24 @@ INACTIVE_COLOR = "#979797"
 POTENTIAL_COLOR = "#A87B84"
 HUB_COLOR = "#5AC8FA"
 
+# Node type colors - updated to match the icon colors
+STANDARD_COLOR = "#F82C55"  # Red - Same as ACTIVE_COLOR
+SUPERNODE_COLOR = "#0000FF" # Blue - same as Hub
+POP_COLOR = "#FFCC00"       # Yellow - to match yellow_dot
+AP_COLOR = "#00FF00"        # Green - to match green_dot
+REMOTE_COLOR = "#800080"    # Purple - to match purple_dot
+HUB_COLOR = "#0000FF"       # Blue - closest to teal available
+
+# Create a mapping of node types to colors
+NODE_TYPE_COLORS = {
+    "Standard": STANDARD_COLOR,
+    "Hub": HUB_COLOR,
+    "Supernode": SUPERNODE_COLOR,
+    "POP": POP_COLOR,
+    "AP": AP_COLOR,
+    "Remote": REMOTE_COLOR,
+}
+
 def hex_to_kml_color(hex_color, alpha=255):
     """Convert hex color (#RRGGBB) to KML color format (AABBGGRR)"""
     hex_color = hex_color.lstrip('#')
@@ -42,11 +60,11 @@ def hex_to_kml_color(hex_color, alpha=255):
 # Define link type colors
 LINK_TYPE_COLORS = {
     "5 GHz": "#297AFE",      
-    "6 GHz": "#89B6FF",      
+    "6 GHz": "#29BEFE",      
     "24 GHz": "#33BDBA",     
     "60 GHz": "#44FCF9",     
     "70-80 GHz": "#AAFFFE",  
-    "VPN": "#940000",        
+    "VPN": "#7F0093",        
     "Fiber": "#F6BE00",      
     "Ethernet": "#A07B00",   
     "Other": "#2D2D2D",      
@@ -95,12 +113,20 @@ class IgnoreClientContentNegotiation(BaseContentNegotiation):
 
 def create_placemark(identifier: str, point: Point, active: bool, status: str, roof_access: bool, node_type: str = None) -> kml.Placemark:
     # Determine the appropriate style based on node type and active status
-    if node_type == "Hub":
-        style_url_value = "#blue_dot"
+    if node_type in ["Hub", "Supernode", "POP", "AP", "Remote"]:
+        # Map node types to style URLs based on user's color preferences
+        style_map = {
+            "Hub": "#blue_dot",          # Hub should be blue
+            "Supernode": "#blue_dot",    # Supernode should also be blue
+            "POP": "#yellow_dot",        # POP should be yellow
+            "AP": "#green_dot",          # AP should be green
+            "Remote": "#purple_dot",     # Remote should be purple
+        }
+        style_url_value = style_map.get(node_type, "#red_dot")
     elif active:
-        style_url_value = "#red_dot"
+        style_url_value = "#red_dot"  # Standard active
     else:
-        style_url_value = "#grey_dot"
+        style_url_value = "#grey_dot"  # Inactive
     
     placemark = kml.Placemark(
         name=identifier,
@@ -112,8 +138,8 @@ def create_placemark(identifier: str, point: Point, active: bool, status: str, r
     )
 
     # Determine the marker color based on node type and active status
-    if node_type == "Hub":
-        marker_color = HUB_COLOR
+    if node_type and node_type in NODE_TYPE_COLORS:
+        marker_color = NODE_TYPE_COLORS[node_type]
     elif active:
         marker_color = ACTIVE_COLOR
     else:
@@ -125,6 +151,7 @@ def create_placemark(identifier: str, point: Point, active: bool, status: str, r
         "marker-color": marker_color,
         "id": identifier,
         "status": status,
+        "nodeType": node_type or "Standard",  # Add node type to extended data
         # Leave disabled, notes can leak a lot of information & this endpoint is public
         # "notes": install.notes,
     }
@@ -183,6 +210,47 @@ class WholeMeshKML(APIView):
             ],
         )
 
+        # Style definitions for node types based on user's color preferences
+        orange_dot = styles.Style(
+            id="orange_dot",
+            styles=[
+                styles.IconStyle(
+                    icon=styles.Icon(href="http://maps.google.com/mapfiles/kml/paddle/orange-circle.png"),
+                    hot_spot=styles.HotSpot(x=0.5, y=0.5, xunits=styles.Units.fraction, yunits=styles.Units.fraction),
+                )
+            ],
+        )
+
+        green_dot = styles.Style(
+            id="green_dot",
+            styles=[
+                styles.IconStyle(
+                    icon=styles.Icon(href="http://maps.google.com/mapfiles/kml/paddle/grn-circle.png"),
+                    hot_spot=styles.HotSpot(x=0.5, y=0.5, xunits=styles.Units.fraction, yunits=styles.Units.fraction),
+                )
+            ],
+        )
+
+        yellow_dot = styles.Style(
+            id="yellow_dot",
+            styles=[
+                styles.IconStyle(
+                    icon=styles.Icon(href="http://maps.google.com/mapfiles/kml/paddle/ylw-circle.png"),
+                    hot_spot=styles.HotSpot(x=0.5, y=0.5, xunits=styles.Units.fraction, yunits=styles.Units.fraction),
+                )
+            ],
+        )
+
+        purple_dot = styles.Style(
+            id="purple_dot",
+            styles=[
+                styles.IconStyle(
+                    icon=styles.Icon(href="http://maps.google.com/mapfiles/kml/paddle/purple-circle.png"),
+                    hot_spot=styles.HotSpot(x=0.5, y=0.5, xunits=styles.Units.fraction, yunits=styles.Units.fraction),
+                )
+            ],
+        )
+
         red_line = styles.Style(
             id="red_line",
             styles=[
@@ -232,7 +300,14 @@ class WholeMeshKML(APIView):
                 )
             )
 
-        kml_document = kml.Document(ns, styles=[grey_dot, red_dot, blue_dot, red_line, grey_line, dark_grey_line] + link_styles)
+        kml_document = kml.Document(
+            ns,
+            styles=[
+                grey_dot, red_dot, blue_dot,
+                orange_dot, green_dot, yellow_dot, purple_dot,
+                red_line, grey_line, dark_grey_line
+            ] + link_styles
+        )
         kml_root.append(kml_document)
 
         nodes_folder = kml.Folder(name="Nodes")
@@ -243,16 +318,24 @@ class WholeMeshKML(APIView):
         inactive_nodes_folder = kml.Folder(name="Inactive")
         nodes_folder.append(inactive_nodes_folder)
 
-        # Create hub/standard subfolders under active/inactive
-        active_hub_folder = kml.Folder(name="Hub Nodes")
-        active_nodes_folder.append(active_hub_folder)
-        active_standard_folder = kml.Folder(name="Standard Nodes")
-        active_nodes_folder.append(active_standard_folder)
-
-        inactive_hub_folder = kml.Folder(name="Hub Nodes")
-        inactive_nodes_folder.append(inactive_hub_folder)
-        inactive_standard_folder = kml.Folder(name="Standard Nodes")
-        inactive_nodes_folder.append(inactive_standard_folder)
+        # Create node type folders under active/inactive
+        active_node_type_folders = {}
+        inactive_node_type_folders = {}
+        
+        # Define all node types
+        node_types = ["Standard", "Hub", "Supernode", "POP", "AP", "Remote"]
+        
+        # Create folders for each node type
+        for node_type in node_types:
+            folder_name = f"{node_type} Nodes"
+            
+            # Create active folder for this node type
+            active_node_type_folders[node_type] = kml.Folder(name=folder_name)
+            active_nodes_folder.append(active_node_type_folders[node_type])
+            
+            # Create inactive folder for this node type
+            inactive_node_type_folders[node_type] = kml.Folder(name=folder_name)
+            inactive_nodes_folder.append(inactive_node_type_folders[node_type])
 
         links_folder = kml.Folder(name="Links")
         kml_document.append(links_folder)
@@ -271,6 +354,8 @@ class WholeMeshKML(APIView):
             inactive_type_folders[link_type] = kml.Folder(name=link_type)
             inactive_links_folder.append(inactive_type_folders[link_type])
 
+        # These maps are no longer used with the new folder structure
+        # but kept as empty dicts to avoid changing too much code
         active_hub_folder_map: Dict[Optional[str], kml.Folder] = {}
         active_standard_folder_map: Dict[Optional[str], kml.Folder] = {}
         inactive_hub_folder_map: Dict[Optional[str], kml.Folder] = {}
@@ -302,13 +387,12 @@ class WholeMeshKML(APIView):
             .order_by("install_number")
         ):
             # Determine which folder to use based on node type and install status
-            node_type = install.node.type if install.node else None
-            is_hub = node_type == "Hub"
+            node_type = install.node.type if install.node else "Standard"  # Default to Standard if no node type
 
             if install.status == Install.InstallStatus.ACTIVE:
-                folder = active_hub_folder if is_hub else active_standard_folder
+                folder = active_node_type_folders.get(node_type, active_node_type_folders["Standard"])
             else:
-                folder = inactive_hub_folder if is_hub else inactive_standard_folder
+                folder = inactive_node_type_folders.get(node_type, inactive_node_type_folders["Standard"])
 
             install_placemark = create_placemark(
                 str(install.install_number),
@@ -328,8 +412,8 @@ class WholeMeshKML(APIView):
             # this makes searching much easier
             if install.node and install.node.network_number and install.node.network_number not in mapped_nns:
                 # Determine folder for the node placemark (nodes are always inactive in this context)
-                node_is_hub = install.node.type == "Hub"
-                node_folder = inactive_hub_folder if node_is_hub else inactive_standard_folder
+                node_type = install.node.type or "Standard"
+                node_folder = inactive_node_type_folders.get(node_type, inactive_node_type_folders["Standard"])
 
                 node_placemark = create_placemark(
                     str(install.node.network_number),
