@@ -71,6 +71,7 @@ LINK_TYPE_COLORS = {
 }
 
 DOT_SIZE = 1.5
+DOT_URL = "http://maps.google.com/mapfiles/kml/shapes/dot.png"
 
 CITY_FOLDER_MAP = {
     "New York": "Manhattan",
@@ -113,7 +114,7 @@ class IgnoreClientContentNegotiation(BaseContentNegotiation):
 
 
 def create_placemark(identifier: str, point: Point, active: bool, status: str, roof_access: bool, node_type: str = None, node_name: str = None) -> kml.Placemark:
-    # Determine the appropriate style based on node type and active status
+    # Determine the appropriate style based on node type
     if node_type in ["Hub", "Supernode", "POP", "AP", "Remote"]:
         # Map node types to style URLs based on user's color preferences
         style_map = {
@@ -124,10 +125,8 @@ def create_placemark(identifier: str, point: Point, active: bool, status: str, r
             "Remote": "#purple_dot",     # Remote should be purple
         }
         style_url_value = style_map.get(node_type, "#red_dot")
-    elif active:
-        style_url_value = "#red_dot"  # Standard active
     else:
-        style_url_value = "#grey_dot"  # Inactive
+        style_url_value = "#red_dot"  # Standard node
     
     placemark = kml.Placemark(
         name=identifier,
@@ -138,13 +137,11 @@ def create_placemark(identifier: str, point: Point, active: bool, status: str, r
         ),
     )
 
-    # Determine the marker color based on node type and active status
+    # Determine the marker color based on node type
     if node_type and node_type in NODE_TYPE_COLORS:
         marker_color = NODE_TYPE_COLORS[node_type]
-    elif active:
-        marker_color = ACTIVE_COLOR
     else:
-        marker_color = INACTIVE_COLOR
+        marker_color = ACTIVE_COLOR
 
     extended_data = {
         "name": node_name if node_name else f"NN {identifier}",
@@ -182,17 +179,6 @@ class WholeMeshKML(APIView):
         ns = "{http://www.opengis.net/kml/2.2}"
 
         # Use a simple dot.png for all styles and apply custom colors
-        grey_dot = styles.Style(
-            id="grey_dot",
-            styles=[
-                styles.IconStyle(
-                    color=hex_to_kml_color(INACTIVE_COLOR),
-                    scale=DOT_SIZE,
-                    icon=styles.Icon(href="http://maps.google.com/mapfiles/kml/shapes/dot.png"),
-                    hot_spot=styles.HotSpot(x=0.5, y=0.5, xunits=styles.Units.fraction, yunits=styles.Units.fraction),
-                )
-            ],
-        )
 
         red_dot = styles.Style(
             id="red_dot",
@@ -200,7 +186,7 @@ class WholeMeshKML(APIView):
                 styles.IconStyle(
                     color=hex_to_kml_color(STANDARD_COLOR),
                     scale=DOT_SIZE,
-                    icon=styles.Icon(href="http://maps.google.com/mapfiles/kml/shapes/dot.png"),
+                    icon=styles.Icon(href=DOT_URL),
                     hot_spot=styles.HotSpot(x=0.5, y=0.5, xunits=styles.Units.fraction, yunits=styles.Units.fraction),
                 )
             ],
@@ -212,7 +198,7 @@ class WholeMeshKML(APIView):
                 styles.IconStyle(
                     color=hex_to_kml_color(SUPERNODE_COLOR),
                     scale=DOT_SIZE + 0.5,
-                    icon=styles.Icon(href="http://maps.google.com/mapfiles/kml/shapes/dot.png"),
+                    icon=styles.Icon(href=DOT_URL),
                     hot_spot=styles.HotSpot(x=0.5, y=0.5, xunits=styles.Units.fraction, yunits=styles.Units.fraction),
                 )
             ],
@@ -225,7 +211,7 @@ class WholeMeshKML(APIView):
                 styles.IconStyle(
                     color=hex_to_kml_color(HUB_COLOR),
                     scale=DOT_SIZE + 0.25,
-                    icon=styles.Icon(href="http://maps.google.com/mapfiles/kml/shapes/dot.png"),
+                    icon=styles.Icon(href=DOT_URL),
                     hot_spot=styles.HotSpot(x=0.5, y=0.5, xunits=styles.Units.fraction, yunits=styles.Units.fraction),
                 )
             ],
@@ -238,7 +224,7 @@ class WholeMeshKML(APIView):
                 styles.IconStyle(
                     color=hex_to_kml_color(AP_COLOR),
                     scale=DOT_SIZE,
-                    icon=styles.Icon(href="http://maps.google.com/mapfiles/kml/shapes/dot.png"),
+                    icon=styles.Icon(href=DOT_URL),
                     hot_spot=styles.HotSpot(x=0.5, y=0.5, xunits=styles.Units.fraction, yunits=styles.Units.fraction),
                 )
             ],
@@ -250,7 +236,7 @@ class WholeMeshKML(APIView):
                 styles.IconStyle(
                     color=hex_to_kml_color(POP_COLOR),
                     scale=DOT_SIZE,
-                    icon=styles.Icon(href="http://maps.google.com/mapfiles/kml/shapes/dot.png"),
+                    icon=styles.Icon(href=DOT_URL),
                     hot_spot=styles.HotSpot(x=0.5, y=0.5, xunits=styles.Units.fraction, yunits=styles.Units.fraction),
                 )
             ],
@@ -262,7 +248,7 @@ class WholeMeshKML(APIView):
                 styles.IconStyle(
                     color=hex_to_kml_color(REMOTE_COLOR),
                     scale=DOT_SIZE,
-                    icon=styles.Icon(href="http://maps.google.com/mapfiles/kml/shapes/dot.png"),
+                    icon=styles.Icon(href=DOT_URL),
                     hot_spot=styles.HotSpot(x=0.5, y=0.5, xunits=styles.Units.fraction, yunits=styles.Units.fraction),
                 )
             ],
@@ -292,7 +278,7 @@ class WholeMeshKML(APIView):
         kml_document = kml.Document(
             ns,
             styles=[
-                grey_dot, red_dot, blue_dot, hub_dot,
+                red_dot, blue_dot, hub_dot,
                 green_dot, yellow_dot, purple_dot,
                 grey_line
             ] + link_styles
@@ -328,25 +314,6 @@ class WholeMeshKML(APIView):
         # Create a dedicated folder for LOS links
         los_folder = kml.Folder(name="LOS")
         links_folder.append(los_folder)
-
-        # These maps are no longer used with the new folder structure
-        # but kept as empty dicts to avoid changing too much code
-        active_hub_folder_map: Dict[Optional[str], kml.Folder] = {}
-        active_standard_folder_map: Dict[Optional[str], kml.Folder] = {}
-
-        # for city_name, folder_name in CITY_FOLDER_MAP.items():
-        #     # Create city folders under hub nodes
-        #     active_hub_folder_map[city_name] = kml.Folder(name=folder_name)
-        #     inactive_hub_folder_map[city_name] = kml.Folder(name=folder_name)
-        #     active_hub_folder.append(active_hub_folder_map[city_name])
-        #     inactive_hub_folder.append(inactive_hub_folder_map[city_name])
-
-        #     # Create city folders under standard nodes
-        #     active_standard_folder_map[city_name] = kml.Folder(name=folder_name)
-        #     inactive_standard_folder_map[city_name] = kml.Folder(name=folder_name)
-        #     active_standard_folder.append(active_standard_folder_map[city_name])
-        #     inactive_standard_folder.append(inactive_standard_folder_map[city_name])
-        ## No city-based subfolders - nodes go directly into hub/standard folders
 
         # Create a dictionary to map coordinates to installs and nodes
         location_map = {}  # Key: (lon, lat), Value: {'installs': [], 'node': None, 'active': False}
