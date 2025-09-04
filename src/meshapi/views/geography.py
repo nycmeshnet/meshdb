@@ -176,7 +176,7 @@ class WholeMeshKML(APIView):
             styles=[
                 styles.IconStyle(
                     color=hex_to_kml_color(SUPERNODE_COLOR),
-                    scale=DOT_SIZE + 0.5,
+                    scale=DOT_SIZE + 1,
                     icon=styles.Icon(href=DOT_URL),
                     hot_spot=styles.HotSpot(x=0.5, y=0.5, xunits=styles.Units.fraction, yunits=styles.Units.fraction),
                 )
@@ -189,7 +189,7 @@ class WholeMeshKML(APIView):
             styles=[
                 styles.IconStyle(
                     color=hex_to_kml_color(HUB_COLOR),
-                    scale=DOT_SIZE + 0.25,
+                    scale=DOT_SIZE + 0.5,
                     icon=styles.Icon(href=DOT_URL),
                     hot_spot=styles.HotSpot(x=0.5, y=0.5, xunits=styles.Units.fraction, yunits=styles.Units.fraction),
                 )
@@ -214,7 +214,7 @@ class WholeMeshKML(APIView):
             styles=[
                 styles.IconStyle(
                     color=hex_to_kml_color(POP_COLOR),
-                    scale=DOT_SIZE,
+                    scale=DOT_SIZE + 1,
                     icon=styles.Icon(href=DOT_URL),
                     hot_spot=styles.HotSpot(x=0.5, y=0.5, xunits=styles.Units.fraction, yunits=styles.Units.fraction),
                 )
