@@ -438,8 +438,9 @@ class WholeMeshKML(APIView):
                 node_type = installs[0].node.type if installs[0].node else "Standard"
                 status = installs[0].status
             
-            # Get all install numbers at this location
-            install_numbers = [str(install.install_number) for install in installs]
+            # Get only active install numbers at this location
+            active_installs = [install for install in installs if install.status == Install.InstallStatus.ACTIVE]
+            install_numbers = [str(install.install_number) for install in active_installs]
             
             # Determine which folder to use based on node type and active status
             if is_active:
