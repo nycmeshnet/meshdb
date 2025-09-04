@@ -60,10 +60,10 @@ def hex_to_kml_color(hex_color, alpha=255):
 # Define link type colors
 LINK_TYPE_COLORS = {
     "5 GHz": "#297AFE",      
-    "6 GHz": "#29BEFE",      
-    "24 GHz": "#33BDBA",     
+    "6 GHz": "#41A3FF",      
+    "24 GHz": "#40D1EE",     
     "60 GHz": "#44FCF9",     
-    "70-80 GHz": "#AAFFFE",  
+    "70-80 GHz": "#44FCDD",  
     "VPN": "#7F0093",        
     "Fiber": "#F6BE00",      
     "Ethernet": "#A07B00",   
