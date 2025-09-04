@@ -460,6 +460,9 @@ class WholeMeshKML(APIView):
             # Add install numbers to the extended data
             placemark.extended_data.elements.append(Data(name="install_numbers", value=",".join(install_numbers)))
             
+            # Add the total count of install numbers
+            placemark.extended_data.elements.append(Data(name="install_count", value=str(len(install_numbers))))
+            
             # Add to the appropriate folder
             folder.append(placemark)
 
