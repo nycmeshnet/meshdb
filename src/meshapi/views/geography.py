@@ -113,7 +113,7 @@ class IgnoreClientContentNegotiation(BaseContentNegotiation):
         return renderers[0], renderers[0].media_type
 
 
-def create_placemark(identifier: str, point: Point, active: bool, status: str, roof_access: bool, node_type: str = None) -> kml.Placemark:
+def create_placemark(identifier: str, point: Point, active: bool, status: str, roof_access: bool, node_type: str = None, node_name: str = None) -> kml.Placemark:
     # Determine the appropriate style based on node type and active status
     if node_type in ["Hub", "Supernode", "POP", "AP", "Remote"]:
         # Map node types to style URLs based on user's color preferences
@@ -148,7 +148,7 @@ def create_placemark(identifier: str, point: Point, active: bool, status: str, r
         marker_color = INACTIVE_COLOR
 
     extended_data = {
-        "name": f"NN {identifier}",
+        "name": node_name if node_name else f"NN {identifier}",
         "nodeType": node_type or "Standard",  # Add node type to extended data
         "status": status,
         "id": identifier,
@@ -434,11 +434,13 @@ class WholeMeshKML(APIView):
                 identifier = str(node.network_number)
                 node_type = node.type or "Standard"
                 status = node.status
+                node_name = node.name  # Get the node name if available
             else:
                 # Use the first install as the primary if no node exists
                 identifier = str(installs[0].install_number)
                 node_type = installs[0].node.type if installs[0].node else "Standard"
                 status = installs[0].status
+                node_name = installs[0].node.name if installs[0].node else None  # Get the node name if available
             
             # Get only active install numbers at this location
             active_installs = [install for install in installs if install.status == Install.InstallStatus.ACTIVE]
@@ -458,6 +460,7 @@ class WholeMeshKML(APIView):
                 status,
                 roof_access,
                 node_type,
+                node_name,
             )
             
             # Add install numbers to the extended data
