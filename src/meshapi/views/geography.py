@@ -20,7 +20,7 @@ from rest_framework.views import APIView
 from rest_framework_dataclasses.serializers import DataclassSerializer
 
 from meshapi.exceptions import InvalidAddressError, UnsupportedAddressError
-from meshapi.models import LOS, Install, Link
+from meshapi.models import LOS, Install, Link, Node
 from meshapi.validation import geocode_nyc_address
 from meshapi.views.forms import INVALID_ADDRESS_RESPONSE, UNSUPPORTED_ADDRESS_RESPONSE, VALIDATION_500_RESPONSE
 
@@ -391,6 +391,31 @@ class WholeMeshKML(APIView):
             # If this install has a node with a network number, store it
             if install.node and install.node.network_number:
                 location_map[location_key]['node'] = install.node
+        
+        # Additional pass: add active nodes that might not have active installs
+        for node in (
+            Node.objects.filter(status=Node.NodeStatus.ACTIVE)
+            .filter(latitude__isnull=False)
+            .filter(longitude__isnull=False)
+        ):
+            # Create a location key based on coordinates
+            location_key = (node.longitude, node.latitude)
+            
+            # Initialize location entry if it doesn't exist
+            if location_key not in location_map:
+                location_map[location_key] = {
+                    'installs': [],
+                    'node': node,
+                    'active': True,  # Mark as active since the node is active
+                    'altitude': node.altitude or DEFAULT_ALTITUDE,
+                    'roof_access': False
+                }
+            else:
+                # Update existing location with node information if not already set
+                if not location_map[location_key]['node']:
+                    location_map[location_key]['node'] = node
+                # Mark as active since the node is active
+                location_map[location_key]['active'] = True
         
         # Second pass: create one placemark per unique location
         for location, data in location_map.items():
