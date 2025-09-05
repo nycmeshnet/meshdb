@@ -41,15 +41,15 @@ HUB_COLOR = "#5AC8FA"
 # Define link type colors
 LOS_COLOR = "#000000"
 LINK_TYPE_COLORS = {
+    "Other": "#2D2D2D",
+    "VPN": "#7F0093",
     "5 GHz": "#297AFE",      
     "6 GHz": "#41A3FF",      
     "24 GHz": "#40D1EE",     
     "60 GHz": "#44FCF9",     
     "70-80 GHz": "#44FCDD",  
-    "VPN": "#7F0093",        
     "Fiber": "#F6BE00",      
-    "Ethernet": "#A07B00",   
-    "Other": "#2D2D2D",      
+    "Ethernet": "#A07B00",
 }
 
 # Create a mapping of node types to colors
@@ -141,6 +141,56 @@ def create_placemark(identifier: str, point: Point, status: str, node_type: str 
 class WholeMeshKML(APIView):
     permission_classes = [permissions.AllowAny]
     content_negotiation_class = IgnoreClientContentNegotiation
+    
+    def prioritize_links(self, kml_links):
+        # Define priority order (lower number = higher priority)
+        priority_order = {
+            "Fiber": 1,
+            "Ethernet": 2,
+            "70-80 GHz": 3,
+            "60 GHz": 4,
+            "24 GHz": 5,
+            "6 GHz": 6,
+            "5 GHz": 7,
+            "Other": 8,
+            "VPN": 9
+        }
+        
+        # Group links by coordinates
+        link_groups = {}
+        for link in kml_links:
+            # Create canonical representation of coordinates
+            # Sort coordinates to ensure consistent ordering regardless of from/to direction
+            coords = [link["from_coord"], link["to_coord"]]
+            coords.sort()  # Sort to ensure consistent ordering
+            key = tuple(map(tuple, coords))  # Convert to hashable type
+            
+            if key not in link_groups:
+                link_groups[key] = []
+            link_groups[key].append(link)
+        
+        # Select highest priority link from each group
+        prioritized_links = []
+        for group in link_groups.values():
+            if len(group) == 1:
+                # Only one link in this group, no need to prioritize
+                prioritized_links.append(group[0])
+            else:
+                # Multiple links, select the one with highest priority
+                best_link = group[0]
+                best_priority = priority_order.get(best_link["extended_data"].get("type", "Other"), 9)
+                
+                for link in group[1:]:
+                    link_type = link["extended_data"].get("type", "Other")
+                    link_priority = priority_order.get(link_type, 9)
+                    
+                    if link_priority < best_priority:
+                        best_link = link
+                        best_priority = link_priority
+                
+                prioritized_links.append(best_link)
+        
+        return prioritized_links
 
     @extend_schema(
         tags=["Geographic & KML Data"],
@@ -498,6 +548,9 @@ class WholeMeshKML(APIView):
                     }
                 )
 
+        # Prioritize links to show higher frequency links when there are duplicates
+        kml_links = self.prioritize_links(kml_links)
+        
         for link_dict in kml_links:
             # Determine link type
             link_type = link_dict["extended_data"].get("type")
