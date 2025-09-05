@@ -359,7 +359,13 @@ class WholeMeshKML(APIView):
             .order_by("install_number")
         ):
             # Create a location key based on coordinates
-            location_key = (install.building.longitude, install.building.latitude)
+            # Prioritize node coordinates if available
+            if install.node and install.node.latitude is not None and install.node.longitude is not None:
+                location_key = (install.node.longitude, install.node.latitude)
+                altitude = install.node.altitude or DEFAULT_ALTITUDE
+            else:
+                location_key = (install.building.longitude, install.building.latitude)
+                altitude = install.building.altitude or DEFAULT_ALTITUDE
             
             # Initialize location entry if it doesn't exist
             if location_key not in location_map:
@@ -367,7 +373,7 @@ class WholeMeshKML(APIView):
                     'installs': [],
                     'node': None,
                     'active': False,
-                    'altitude': install.building.altitude or DEFAULT_ALTITUDE,
+                    'altitude': altitude,
                     'roof_access': False
                 }
             
@@ -513,8 +519,10 @@ class WholeMeshKML(APIView):
             )
             .prefetch_related("from_building")
             .prefetch_related("from_building__installs")
+            .prefetch_related("from_building__primary_node")  # Prefetch primary_node
             .prefetch_related("to_building")
             .prefetch_related("to_building__installs")
+            .prefetch_related("to_building__primary_node")  # Prefetch primary_node
             .annotate(highest_altitude=Greatest("from_building__altitude", "to_building__altitude"))
             .order_by(F("highest_altitude").asc(nulls_first=True))
         ):
@@ -526,20 +534,40 @@ class WholeMeshKML(APIView):
             if link_tuple not in all_links_set:
                 all_links_set.add(link_tuple)
                 
+                # Get from coordinates - prioritize node coordinates if available
+                if los.from_building.primary_node and los.from_building.primary_node.latitude is not None and los.from_building.primary_node.longitude is not None:
+                    from_coord = (
+                        los.from_building.primary_node.longitude,
+                        los.from_building.primary_node.latitude,
+                        los.from_building.primary_node.altitude or DEFAULT_ALTITUDE,
+                    )
+                else:
+                    from_coord = (
+                        los.from_building.longitude,
+                        los.from_building.latitude,
+                        los.from_building.altitude or DEFAULT_ALTITUDE,
+                    )
+                
+                # Get to coordinates - prioritize node coordinates if available
+                if los.to_building.primary_node and los.to_building.primary_node.latitude is not None and los.to_building.primary_node.longitude is not None:
+                    to_coord = (
+                        los.to_building.primary_node.longitude,
+                        los.to_building.primary_node.latitude,
+                        los.to_building.primary_node.altitude or DEFAULT_ALTITUDE,
+                    )
+                else:
+                    to_coord = (
+                        los.to_building.longitude,
+                        los.to_building.latitude,
+                        los.to_building.altitude or DEFAULT_ALTITUDE,
+                    )
+                
                 kml_links.append(
                     {
                         "link_label": link_label,
                         "is_los": True,
-                        "from_coord": (
-                            los.from_building.longitude,
-                            los.from_building.latitude,
-                            los.from_building.altitude or DEFAULT_ALTITUDE,
-                        ),
-                        "to_coord": (
-                            los.to_building.longitude,
-                            los.to_building.latitude,
-                            los.to_building.altitude or DEFAULT_ALTITUDE,
-                        ),
+                        "from_coord": from_coord,
+                        "to_coord": to_coord,
                         "extended_data": {
                             "from": f"#{representative_from_install} ({los.from_building.street_address})",
                             "to": f"#{representative_to_install} ({los.to_building.street_address})",
