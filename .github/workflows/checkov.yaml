@@ -24,7 +24,7 @@ jobs:
 
       - name: Run Checkov action
         id: checkov
-        uses: bridgecrewio/checkov-action@7e3930d7acb8482fd506c495250290b269e2e640
+        uses: bridgecrewio/checkov-action@785517c1aa34c033828b1aa855b5adb57fcf238f
         with:
           skip_check: CKV_DOCKER_2,CKV_DOCKER_3,CKV_SECRET_6
           quiet: true
