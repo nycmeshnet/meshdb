@@ -233,12 +233,12 @@ class TestNodeModel(TestCase):
 
     def test_construct_node_with_placement(self):
         active_node_data = self.sample_node.copy()
-        node = Node(**active_node_data, placement='rooftop')
+        node = Node(**active_node_data, placement="rooftop")
         node.save()
 
         node.refresh_from_db()
 
-        self.assertEqual(node.placement, 'rooftop')
+        self.assertEqual(node.placement, "rooftop")
 
     def test_update_planned_node_with_network_number(self):
         node = Node(
