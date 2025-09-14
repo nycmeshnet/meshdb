@@ -231,6 +231,15 @@ class TestNodeModel(TestCase):
         self.assertEqual(node.id, uuid.UUID("23ef170c-f37d-44e3-aaac-93dae636c86e"))
         self.assertEqual(node.network_number, 45)
 
+    def test_construct_node_with_placement(self):
+        active_node_data = self.sample_node.copy()
+        node = Node(**active_node_data, placement='rooftop')
+        node.save()
+
+        node.refresh_from_db()
+
+        self.assertEqual(node.placement, 'rooftop')
+
     def test_update_planned_node_with_network_number(self):
         node = Node(
             id=uuid.UUID("23ef170c-f37d-44e3-aaac-93dae636c86e"),
