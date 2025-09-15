@@ -207,6 +207,7 @@ class TestViewsGetAdmin(TestCaseWithFullData):
             "name": "Amazing Node",
             "network_number": 101,
             "notes": "foo asdf",
+            "placement": "None",
             "status": "Active",
             "type": "Standard",
         }
