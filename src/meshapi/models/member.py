@@ -1,4 +1,6 @@
 import uuid
+import json
+from pathlib import Path
 from typing import Any, List
 
 from django.db import models
@@ -16,6 +18,11 @@ class Member(models.Model):
         ("cash", "Cash"),
         ("stripe", "Stripe"),
     )
+
+    def load_iso_639_choices():
+        file_path = Path(__file__).resolve().parent / "iso_639_codes.json"
+        with open(file_path, "r") as file:
+            return json.load(file)
 
     class Meta:
         ordering = ["id"]
@@ -64,6 +71,9 @@ class Member(models.Model):
         "time and should not be relied on by automated systems. ",
     )
     payment_preference = models.CharField(default=None, choices=payment_preference_choices, blank=True, null=True)
+
+    iso_639_choices = load_iso_639_choices()
+    prefered_language = models.CharField(default=None, choices=iso_639_choices, blank=True, null=True)
 
     def __str__(self) -> str:
         if self.name:
