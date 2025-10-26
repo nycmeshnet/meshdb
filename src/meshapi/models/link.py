@@ -17,8 +17,8 @@ class Link(models.Model):
         ACTIVE = "Active"
 
     class LinkType(models.TextChoices):
-        FIVE_GHZ_UNSPECIFIED = "5 GHz", "5 GHz"
-        FIVE_GHZ_AIRMAX = "5GHz Airmax", "5GHz Airmax"
+        FIVE_GHZ_UNSPECIFIED = "5 GHz", "5 GHz Unspecified"
+        FIVE_GHZ_AIRMAX = "5 GHz Airmax", "5 GHz Airmax"
         FIVE_GHZ_WDS = "5 GHz WDS", "5 GHz WDS"
         FIVE_GHZ_WLAN = "5 GHz Wlan4", "5 GHz Wlan4"
         SIX_GHZ = "6 GHz", "6 GHz"
