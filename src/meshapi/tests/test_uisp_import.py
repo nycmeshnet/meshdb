@@ -71,12 +71,12 @@ class TestUISPImportUtils(TestCase):
 
         self.assertEqual(
             get_link_type({"type": "wireless", "frequency": 5000}),
-            Link.LinkType.FIVE_GHZ_UNSPECIFIED,
+            Link.LinkType.FIVE_GHZ_AIRMAX,
         )
 
         self.assertEqual(
             get_link_type({"type": "wireless", "frequency": 5900}),
-            Link.LinkType.FIVE_GHZ_UNSPECIFIED,
+            Link.LinkType.FIVE_GHZ_AIRMAX,
         )
 
         self.assertEqual(
@@ -84,7 +84,7 @@ class TestUISPImportUtils(TestCase):
             #  for now we consider anything < 7 GHz as 5 GHz
             #  https://github.com/nycmeshnet/meshdb/issues/518
             get_link_type({"type": "wireless", "frequency": 6100}),
-            Link.LinkType.FIVE_GHZ_UNSPECIFIED,
+            Link.LinkType.FIVE_GHZ_AIRMAX,
         )
 
         self.assertEqual(
@@ -1606,7 +1606,7 @@ class TestUISPImportHandlers(TransactionTestCase):
         self.assertEqual(created_link3.from_device, self.device2)
         self.assertEqual(created_link3.to_device, self.device4)
         self.assertEqual(created_link3.status, Link.LinkStatus.ACTIVE)
-        self.assertEqual(created_link3.type, Link.LinkType.FIVE_GHZ_UNSPECIFIED)
+        self.assertEqual(created_link3.type, Link.LinkType.FIVE_GHZ_AIRMAX)
         self.assertEqual(created_link3.install_date, None)
         self.assertEqual(created_link3.abandon_date, None)
         self.assertEqual(created_link3.description, None)
