@@ -8,6 +8,8 @@ from django.db.models.fields import EmailField
 from django_jsonform.models.fields import ArrayField as JSONFormArrayField
 from simple_history.models import HistoricalRecords
 
+from .util.lang_codes import LANG_CODES
+
 from meshapi.validation import normalize_phone_number, validate_multi_phone_number_field, validate_phone_number_field
 
 
@@ -72,8 +74,7 @@ class Member(models.Model):
     )
     payment_preference = models.CharField(default=None, choices=payment_preference_choices, blank=True, null=True)
 
-    iso_639_choices = load_iso_639_choices()
-    prefered_language = models.CharField(default=None, choices=iso_639_choices, blank=True, null=True)
+    prefered_language = models.CharField(max_length=2, default=None, choices=LANG_CODES, blank=True, null=True)
 
     def __str__(self) -> str:
         if self.name:
