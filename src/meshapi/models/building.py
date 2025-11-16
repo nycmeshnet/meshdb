@@ -34,6 +34,11 @@ class Building(models.Model):
     history = HistoricalRecords(m2m_fields=["nodes"])
 
     class Meta:
+        indexes = [
+            models.Index(fields=["bin"]),
+            models.Index(fields=["street_address"]),
+            models.Index(fields=["zip_code"])
+        ]
         ordering = ["id"]
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
