@@ -46,7 +46,7 @@ class Building(models.Model):
     )
 
     street_address = models.CharField(
-        blank=True, null=True, help_text="Line 1 only of the address of this building: i.e. <house num> <street>"
+        blank=True, null=True, help_text="Line 1 only of the address of this building: i.e. <house num> <street>", db_index=True
     )
     city = models.CharField(
         blank=True,
