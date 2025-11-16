@@ -216,6 +216,7 @@ INSTALLED_APPS = [
     "admin_site_search",
     "dal",
     "dal_select2",
+    'schema_viewer',
 ]
 
 MIDDLEWARE = [

@@ -41,6 +41,7 @@ urlpatterns = [
         MemberAutocomplete.as_view(),
         name="member-autocomplete",
     ),
+     path('schema-viewer/', include('schema_viewer.urls')),
 ]
 
 if PROFILING_ENABLED:
