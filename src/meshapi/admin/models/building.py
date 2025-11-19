@@ -68,22 +68,14 @@ class BuildingAdmin(RankedSearchMixin, ImportExportMixin, ExportActionMixin, Sim
         "nodes__name__icontains",
         # Address info
         "street_address__icontains",
-        "zip_code__iexact",
-        "bin__iexact",
-        # Search by NN
-        "nodes__network_number__iexact",
-        "installs__install_number__iexact",
-        # Notes
-        "@notes",
+        "zip_code__icontains",
+        "bin__icontains",
     ]
     search_vector = (
         SearchVector("nodes__name", weight="A")
         + SearchVector("street_address", weight="A")
         + SearchVector("zip_code", weight="A")
         + SearchVector("bin", weight="A")
-        + SearchVector("nodes__network_number", weight="B")
-        + SearchVector("installs__install_number", weight="B")
-        + SearchVector("notes", weight="D")
     )
     list_filter = [
         BoroughFilter,

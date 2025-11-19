@@ -27,6 +27,9 @@ class Node(models.Model):
     buildings: Manager["Building"]
 
     class Meta:
+        indexes = [
+            models.Index(fields=["name"]),
+        ]
         ordering = ["network_number"]
 
     class NodeStatus(models.TextChoices):
