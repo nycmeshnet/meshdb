@@ -73,8 +73,6 @@ class BuildingAdmin(RankedSearchMixin, ImportExportMixin, ExportActionMixin, Sim
         # Search by NN
         "nodes__network_number__iexact",
         "installs__install_number__iexact",
-        # Notes
-        "@notes",
     ]
     search_vector = (
         SearchVector("nodes__name", weight="A")
@@ -83,7 +81,6 @@ class BuildingAdmin(RankedSearchMixin, ImportExportMixin, ExportActionMixin, Sim
         + SearchVector("bin", weight="A")
         + SearchVector("nodes__network_number", weight="B")
         + SearchVector("installs__install_number", weight="B")
-        + SearchVector("notes", weight="D")
     )
     list_filter = [
         BoroughFilter,
