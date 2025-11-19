@@ -510,3 +510,260 @@ Aggregate  (cost=2209.20..2209.21 rows=1 width=8)
                                         ->  Index Scan using meshapi_node_pkey on meshapi_node u2  (cost=0.28..8.29 rows=1 width=32)
                                               Index Cond: (id = u1.node_id)
 ```
+
+Results search from the buildings page after removing the notes column
+
+```
+SELECT DISTINCT ON ("rank",
+                    "meshapi_building"."id") "meshapi_building"."id",
+                   "meshapi_building"."bin",
+                   "meshapi_building"."street_address",
+                   "meshapi_building"."city",
+                   "meshapi_building"."state",
+                   "meshapi_building"."zip_code",
+                   "meshapi_building"."address_truth_sources",
+                   "meshapi_building"."latitude",
+                   "meshapi_building"."longitude",
+                   "meshapi_building"."altitude",
+                   "meshapi_building"."notes",
+                   "meshapi_building"."panoramas",
+                   "meshapi_building"."primary_node_id",
+                   ts_rank((((((setweight(to_tsvector(COALESCE("meshapi_node"."name",)), A) || setweight(to_tsvector(COALESCE("meshapi_building"."street_address",)), A)) || setweight(to_tsvector(COALESCE("meshapi_building"."zip_code",)), A)) || setweight(to_tsvector(COALESCE(("meshapi_building"."bin")::text,)), A)) || setweight(to_tsvector(COALESCE(("meshapi_node"."network_number")::text,)), B)) || setweight(to_tsvector(COALESCE(("meshapi_install"."install_number")::text,)), B)), plainto_tsquery(444)) AS "rank",
+
+  (SELECT ts_rank((((((setweight(to_tsvector(COALESCE(U2."name",)), A) || setweight(to_tsvector(COALESCE(U0."street_address",)), A)) || setweight(to_tsvector(COALESCE(U0."zip_code",)), A)) || setweight(to_tsvector(COALESCE((U0."bin")::text,)), A)) || setweight(to_tsvector(COALESCE((U2."network_number")::text,)), B)) || setweight(to_tsvector(COALESCE((U3."install_number")::text,)), B)), plainto_tsquery(444)) AS "rank"
+   FROM "meshapi_building" U0
+   LEFT OUTER JOIN "meshapi_building_nodes" U1 ON (U0."id" = U1."building_id")
+   LEFT OUTER JOIN "meshapi_node" U2 ON (U1."node_id" = U2."id")
+   LEFT OUTER JOIN "meshapi_install" U3 ON (U0."id" = U3."building_id")
+   WHERE ((UPPER(U2."name"::text) LIKE UPPER(%444%)
+           OR UPPER(U0."street_address"::text) LIKE UPPER(%444%)
+           OR UPPER(U0."zip_code"::text) = UPPER(444)
+           OR UPPER(U0."bin"::text) = UPPER(444)
+           OR UPPER(U2."network_number"::text) = UPPER(444)
+           OR UPPER(U3."install_number"::text) = UPPER(444))
+          AND U0."id" = ("meshapi_building"."id"))
+   ORDER BY 1 DESC
+   LIMIT 1) AS "highest_rank",
+                   T5."id",
+                   T5."network_number",
+                   T5."name",
+                   T5."status",
+                   T5."type",
+                   T5."latitude",
+                   T5."longitude",
+                   T5."altitude",
+                   T5."install_date",
+                   T5."abandon_date",
+                   T5."placement",
+                   T5."notes"
+FROM "meshapi_building"
+LEFT OUTER JOIN "meshapi_building_nodes" ON ("meshapi_building"."id" = "meshapi_building_nodes"."building_id")
+LEFT OUTER JOIN "meshapi_node" ON ("meshapi_building_nodes"."node_id" = "meshapi_node"."id")
+LEFT OUTER JOIN "meshapi_install" ON ("meshapi_building"."id" = "meshapi_install"."building_id")
+LEFT OUTER JOIN "meshapi_node" T5 ON ("meshapi_building"."primary_node_id" = T5."id")
+WHERE ((UPPER("meshapi_node"."name"::text) LIKE UPPER(%444%)
+        OR UPPER("meshapi_building"."street_address"::text) LIKE UPPER(%444%)
+        OR UPPER("meshapi_building"."zip_code"::text) = UPPER(444)
+        OR UPPER("meshapi_building"."bin"::text) = UPPER(444)
+        OR UPPER("meshapi_node"."network_number"::text) = UPPER(444)
+        OR UPPER("meshapi_install"."install_number"::text) = UPPER(444))
+       AND ts_rank((((((setweight(to_tsvector(COALESCE("meshapi_node"."name",)), A) || setweight(to_tsvector(COALESCE("meshapi_building"."street_address",)), A)) || setweight(to_tsvector(COALESCE("meshapi_building"."zip_code",)), A)) || setweight(to_tsvector(COALESCE(("meshapi_building"."bin")::text,)), A)) || setweight(to_tsvector(COALESCE(("meshapi_node"."network_number")::text,)), B)) || setweight(to_tsvector(COALESCE(("meshapi_install"."install_number")::text,)), B)), plainto_tsquery(444)) =
+         (SELECT ts_rank((((((setweight(to_tsvector(COALESCE(U2."name",)), A) || setweight(to_tsvector(COALESCE(U0."street_address",)), A)) || setweight(to_tsvector(COALESCE(U0."zip_code",)), A)) || setweight(to_tsvector(COALESCE((U0."bin")::text,)), A)) || setweight(to_tsvector(COALESCE((U2."network_number")::text,)), B)) || setweight(to_tsvector(COALESCE((U3."install_number")::text,)), B)), plainto_tsquery(444)) AS "rank"
+          FROM "meshapi_building" U0
+          LEFT OUTER JOIN "meshapi_building_nodes" U1 ON (U0."id" = U1."building_id")
+          LEFT OUTER JOIN "meshapi_node" U2 ON (U1."node_id" = U2."id")
+          LEFT OUTER JOIN "meshapi_install" U3 ON (U0."id" = U3."building_id")
+          WHERE ((UPPER(U2."name"::text) LIKE UPPER(%444%)
+                  OR UPPER(U0."street_address"::text) LIKE UPPER(%444%)
+                  OR UPPER(U0."zip_code"::text) = UPPER(444)
+                  OR UPPER(U0."bin"::text) = UPPER(444)
+                  OR UPPER(U2."network_number"::text) = UPPER(444)
+                  OR UPPER(U3."install_number"::text) = UPPER(444))
+                 AND U0."id" = ("meshapi_building"."id"))
+          ORDER BY 1 DESC
+          LIMIT 1))
+ORDER BY 14 DESC,
+         "meshapi_building"."id" ASC
+
+29.557ms
+10 joins
+Query Plan
+Unique  (cost=2438.47..2438.53 rows=8 width=570)
+  ->  Sort  (cost=2438.47..2438.49 rows=8 width=570)
+        Sort Key: (ts_rank((((((setweight(to_tsvector((COALESCE(meshapi_node.name, ''::character varying))::text), 'A'::"char") || setweight(to_tsvector((COALESCE(meshapi_building.street_address, ''::character varying))::text), 'A'::"char")) || setweight(to_tsvector((COALESCE(meshapi_building.zip_code, ''::character varying))::text), 'A'::"char")) || setweight(to_tsvector(COALESCE((meshapi_building.bin)::text, ''::text)), 'A'::"char")) || setweight(to_tsvector(COALESCE((meshapi_node.network_number)::text, ''::text)), 'B'::"char")) || setweight(to_tsvector(COALESCE((meshapi_install.install_number)::text, ''::text)), 'B'::"char")), plainto_tsquery('444'::text))) DESC, meshapi_building.id
+        ->  Nested Loop Left Join  (cost=838.63..2438.35 rows=8 width=570)
+              ->  Hash Left Join  (cost=838.35..2172.83 rows=8 width=322)
+                    Hash Cond: (meshapi_building_nodes.node_id = meshapi_node.id)
+                    Filter: (((upper((meshapi_node.name)::text) ~~ '%444%'::text) OR (upper((meshapi_building.street_address)::text) ~~ '%444%'::text) OR (upper((meshapi_building.zip_code)::text) = '444'::text) OR (upper((meshapi_building.bin)::text) = '444'::text) OR (upper((meshapi_node.network_number)::text) = '444'::text) OR (upper((meshapi_install.install_number)::text) = '444'::text)) AND (ts_rank((((((setweight(to_tsvector((COALESCE(meshapi_node.name, ''::character varying))::text), 'A'::"char") || setweight(to_tsvector((COALESCE(meshapi_building.street_address, ''::character varying))::text), 'A'::"char")) || setweight(to_tsvector((COALESCE(meshapi_building.zip_code, ''::character varying))::text), 'A'::"char")) || setweight(to_tsvector(COALESCE((meshapi_building.bin)::text, ''::text)), 'A'::"char")) || setweight(to_tsvector(COALESCE((meshapi_node.network_number)::text, ''::text)), 'B'::"char")) || setweight(to_tsvector(COALESCE((meshapi_install.install_number)::text, ''::text)), 'B'::"char")), plainto_tsquery('444'::text)) = (SubPlan 2)))
+                    ->  Hash Left Join  (cost=772.06..1637.43 rows=15582 width=322)
+                          Hash Cond: (meshapi_building.id = meshapi_building_nodes.building_id)
+                          ->  Hash Right Join  (cost=729.75..1479.48 rows=15582 width=306)
+                                Hash Cond: (meshapi_install.building_id = meshapi_building.id)
+                                ->  Seq Scan on meshapi_install  (cost=0.00..708.82 rows=15582 width=20)
+                                ->  Hash  (cost=586.00..586.00 rows=11500 width=302)
+                                      ->  Seq Scan on meshapi_building  (cost=0.00..586.00 rows=11500 width=302)
+                          ->  Hash  (cost=25.47..25.47 rows=1347 width=32)
+                                ->  Seq Scan on meshapi_building_nodes  (cost=0.00..25.47 rows=1347 width=32)
+                    ->  Hash  (cost=51.13..51.13 rows=1213 width=32)
+                          ->  Seq Scan on meshapi_node  (cost=0.00..51.13 rows=1213 width=32)
+                    SubPlan 2
+                      ->  Limit  (cost=31.08..31.08 rows=1 width=4)
+                            ->  Sort  (cost=31.08..31.08 rows=1 width=4)
+                                  Sort Key: (ts_rank((((((setweight(to_tsvector((COALESCE(u2_1.name, ''::character varying))::text), 'A'::"char") || setweight(to_tsvector((COALESCE(u0_1.street_address, ''::character varying))::text), 'A'::"char")) || setweight(to_tsvector((COALESCE(u0_1.zip_code, ''::character varying))::text), 'A'::"char")) || setweight(to_tsvector(COALESCE((u0_1.bin)::text, ''::text)), 'A'::"char")) || setweight(to_tsvector(COALESCE((u2_1.network_number)::text, ''::text)), 'B'::"char")) || setweight(to_tsvector(COALESCE((u3_1.install_number)::text, ''::text)), 'B'::"char")), plainto_tsquery('444'::text))) DESC
+                                  ->  Nested Loop Left Join  (cost=1.12..31.07 rows=1 width=4)
+                                        Filter: ((upper((u2_1.name)::text) ~~ '%444%'::text) OR (upper((u0_1.street_address)::text) ~~ '%444%'::text) OR (upper((u0_1.zip_code)::text) = '444'::text) OR (upper((u0_1.bin)::text) = '444'::text) OR (upper((u2_1.network_number)::text) = '444'::text) OR (upper((u3_1.install_number)::text) = '444'::text))
+                                        ->  Nested Loop Left Join  (cost=0.85..20.92 rows=1 width=49)
+                                              Join Filter: (u0_1.id = u3_1.building_id)
+                                              ->  Nested Loop Left Join  (cost=0.56..12.61 rows=1 width=61)
+                                                    Join Filter: (u0_1.id = u1_1.building_id)
+                                                    ->  Index Scan using meshapi_building_pkey on meshapi_building u0_1  (cost=0.29..8.30 rows=1 width=45)
+                                                          Index Cond: (id = meshapi_building.id)
+                                                    ->  Index Only Scan using meshapi_building_nodes_building_id_node_id_7b8ad31c_uniq on meshapi_building_nodes u1_1  (cost=0.28..4.29 rows=1 width=32)
+                                                          Index Cond: (building_id = meshapi_building.id)
+                                              ->  Index Scan using meshapi_install_building_id_34417ad4 on meshapi_install u3_1  (cost=0.29..8.30 rows=1 width=20)
+                                                    Index Cond: (building_id = meshapi_building.id)
+                                        ->  Index Scan using meshapi_node_pkey on meshapi_node u2_1  (cost=0.28..8.29 rows=1 width=32)
+                                              Index Cond: (id = u1_1.node_id)
+              ->  Index Scan using meshapi_node_pkey on meshapi_node t5  (cost=0.28..0.31 rows=1 width=260)
+                    Index Cond: (id = meshapi_building.primary_node_id)
+              SubPlan 1
+                ->  Limit  (cost=31.08..31.08 rows=1 width=4)
+                      ->  Sort  (cost=31.08..31.08 rows=1 width=4)
+                            Sort Key: (ts_rank((((((setweight(to_tsvector((COALESCE(u2.name, ''::character varying))::text), 'A'::"char") || setweight(to_tsvector((COALESCE(u0.street_address, ''::character varying))::text), 'A'::"char")) || setweight(to_tsvector((COALESCE(u0.zip_code, ''::character varying))::text), 'A'::"char")) || setweight(to_tsvector(COALESCE((u0.bin)::text, ''::text)), 'A'::"char")) || setweight(to_tsvector(COALESCE((u2.network_number)::text, ''::text)), 'B'::"char")) || setweight(to_tsvector(COALESCE((u3.install_number)::text, ''::text)), 'B'::"char")), plainto_tsquery('444'::text))) DESC
+                            ->  Nested Loop Left Join  (cost=1.12..31.07 rows=1 width=4)
+                                  Filter: ((upper((u2.name)::text) ~~ '%444%'::text) OR (upper((u0.street_address)::text) ~~ '%444%'::text) OR (upper((u0.zip_code)::text) = '444'::text) OR (upper((u0.bin)::text) = '444'::text) OR (upper((u2.network_number)::text) = '444'::text) OR (upper((u3.install_number)::text) = '444'::text))
+                                  ->  Nested Loop Left Join  (cost=0.85..20.92 rows=1 width=49)
+                                        Join Filter: (u0.id = u3.building_id)
+                                        ->  Nested Loop Left Join  (cost=0.56..12.61 rows=1 width=61)
+                                              Join Filter: (u0.id = u1.building_id)
+                                              ->  Index Scan using meshapi_building_pkey on meshapi_building u0  (cost=0.29..8.30 rows=1 width=45)
+                                                    Index Cond: (id = meshapi_building.id)
+                                              ->  Index Only Scan using meshapi_building_nodes_building_id_node_id_7b8ad31c_uniq on meshapi_building_nodes u1  (cost=0.28..4.29 rows=1 width=32)
+                                                    Index Cond: (building_id = meshapi_building.id)
+                                        ->  Index Scan using meshapi_install_building_id_34417ad4 on meshapi_install u3  (cost=0.29..8.30 rows=1 width=20)
+                                              Index Cond: (building_id = meshapi_building.id)
+                                  ->  Index Scan using meshapi_node_pkey on meshapi_node u2  (cost=0.28..8.29 rows=1 width=32)
+                                        Index Cond: (id = u1.node_id)
+```
+
+Results search from the buildings dropdown after removing the notes column
+
+```
+SELECT DISTINCT ON ("rank",
+                    "meshapi_building"."id") "meshapi_building"."id",
+                   "meshapi_building"."bin",
+                   "meshapi_building"."street_address",
+                   "meshapi_building"."city",
+                   "meshapi_building"."state",
+                   "meshapi_building"."zip_code",
+                   "meshapi_building"."address_truth_sources",
+                   "meshapi_building"."latitude",
+                   "meshapi_building"."longitude",
+                   "meshapi_building"."altitude",
+                   "meshapi_building"."notes",
+                   "meshapi_building"."panoramas",
+                   "meshapi_building"."primary_node_id",
+                   ts_rank((((((setweight(to_tsvector(COALESCE("meshapi_node"."name",)), A) || setweight(to_tsvector(COALESCE("meshapi_building"."street_address",)), A)) || setweight(to_tsvector(COALESCE("meshapi_building"."zip_code",)), A)) || setweight(to_tsvector(COALESCE(("meshapi_building"."bin")::text,)), A)) || setweight(to_tsvector(COALESCE(("meshapi_node"."network_number")::text,)), B)) || setweight(to_tsvector(COALESCE(("meshapi_install"."install_number")::text,)), B)), plainto_tsquery(444)) AS "rank",
+
+  (SELECT ts_rank((((((setweight(to_tsvector(COALESCE(U2."name",)), A) || setweight(to_tsvector(COALESCE(U0."street_address",)), A)) || setweight(to_tsvector(COALESCE(U0."zip_code",)), A)) || setweight(to_tsvector(COALESCE((U0."bin")::text,)), A)) || setweight(to_tsvector(COALESCE((U2."network_number")::text,)), B)) || setweight(to_tsvector(COALESCE((U3."install_number")::text,)), B)), plainto_tsquery(444)) AS "rank"
+   FROM "meshapi_building" U0
+   LEFT OUTER JOIN "meshapi_building_nodes" U1 ON (U0."id" = U1."building_id")
+   LEFT OUTER JOIN "meshapi_node" U2 ON (U1."node_id" = U2."id")
+   LEFT OUTER JOIN "meshapi_install" U3 ON (U0."id" = U3."building_id")
+   WHERE ((UPPER(U2."name"::text) LIKE UPPER(%444%)
+           OR UPPER(U0."street_address"::text) LIKE UPPER(%444%)
+           OR UPPER(U0."zip_code"::text) = UPPER(444)
+           OR UPPER(U0."bin"::text) = UPPER(444)
+           OR UPPER(U2."network_number"::text) = UPPER(444)
+           OR UPPER(U3."install_number"::text) = UPPER(444))
+          AND U0."id" = ("meshapi_building"."id"))
+   ORDER BY 1 DESC
+   LIMIT 1) AS "highest_rank"
+FROM "meshapi_building"
+LEFT OUTER JOIN "meshapi_building_nodes" ON ("meshapi_building"."id" = "meshapi_building_nodes"."building_id")
+LEFT OUTER JOIN "meshapi_node" ON ("meshapi_building_nodes"."node_id" = "meshapi_node"."id")
+LEFT OUTER JOIN "meshapi_install" ON ("meshapi_building"."id" = "meshapi_install"."building_id")
+WHERE ((UPPER("meshapi_node"."name"::text) LIKE UPPER(%444%)
+        OR UPPER("meshapi_building"."street_address"::text) LIKE UPPER(%444%)
+        OR UPPER("meshapi_building"."zip_code"::text) = UPPER(444)
+        OR UPPER("meshapi_building"."bin"::text) = UPPER(444)
+        OR UPPER("meshapi_node"."network_number"::text) = UPPER(444)
+        OR UPPER("meshapi_install"."install_number"::text) = UPPER(444))
+       AND ts_rank((((((setweight(to_tsvector(COALESCE("meshapi_node"."name",)), A) || setweight(to_tsvector(COALESCE("meshapi_building"."street_address",)), A)) || setweight(to_tsvector(COALESCE("meshapi_building"."zip_code",)), A)) || setweight(to_tsvector(COALESCE(("meshapi_building"."bin")::text,)), A)) || setweight(to_tsvector(COALESCE(("meshapi_node"."network_number")::text,)), B)) || setweight(to_tsvector(COALESCE(("meshapi_install"."install_number")::text,)), B)), plainto_tsquery(444)) =
+         (SELECT ts_rank((((((setweight(to_tsvector(COALESCE(U2."name",)), A) || setweight(to_tsvector(COALESCE(U0."street_address",)), A)) || setweight(to_tsvector(COALESCE(U0."zip_code",)), A)) || setweight(to_tsvector(COALESCE((U0."bin")::text,)), A)) || setweight(to_tsvector(COALESCE((U2."network_number")::text,)), B)) || setweight(to_tsvector(COALESCE((U3."install_number")::text,)), B)), plainto_tsquery(444)) AS "rank"
+          FROM "meshapi_building" U0
+          LEFT OUTER JOIN "meshapi_building_nodes" U1 ON (U0."id" = U1."building_id")
+          LEFT OUTER JOIN "meshapi_node" U2 ON (U1."node_id" = U2."id")
+          LEFT OUTER JOIN "meshapi_install" U3 ON (U0."id" = U3."building_id")
+          WHERE ((UPPER(U2."name"::text) LIKE UPPER(%444%)
+                  OR UPPER(U0."street_address"::text) LIKE UPPER(%444%)
+                  OR UPPER(U0."zip_code"::text) = UPPER(444)
+                  OR UPPER(U0."bin"::text) = UPPER(444)
+                  OR UPPER(U2."network_number"::text) = UPPER(444)
+                  OR UPPER(U3."install_number"::text) = UPPER(444))
+                 AND U0."id" = ("meshapi_building"."id"))
+          ORDER BY 1 DESC
+          LIMIT 1))
+ORDER BY 14 DESC,
+         "meshapi_building"."id" ASC
+LIMIT 10
+
+30.966ms
+9 joins
+Query Plan
+Limit  (cost=2187.31..2450.49 rows=8 width=310)
+  ->  Result  (cost=2187.31..2450.49 rows=8 width=310)
+        ->  Unique  (cost=2187.31..2187.37 rows=8 width=306)
+              ->  Sort  (cost=2187.31..2187.33 rows=8 width=306)
+                    Sort Key: (ts_rank((((((setweight(to_tsvector((COALESCE(meshapi_node.name, ''::character varying))::text), 'A'::"char") || setweight(to_tsvector((COALESCE(meshapi_building.street_address, ''::character varying))::text), 'A'::"char")) || setweight(to_tsvector((COALESCE(meshapi_building.zip_code, ''::character varying))::text), 'A'::"char")) || setweight(to_tsvector(COALESCE((meshapi_building.bin)::text, ''::text)), 'A'::"char")) || setweight(to_tsvector(COALESCE((meshapi_node.network_number)::text, ''::text)), 'B'::"char")) || setweight(to_tsvector(COALESCE((meshapi_install.install_number)::text, ''::text)), 'B'::"char")), plainto_tsquery('444'::text))) DESC, meshapi_building.id
+                    ->  Hash Left Join  (cost=838.35..2187.19 rows=8 width=306)
+                          Hash Cond: (meshapi_building_nodes.node_id = meshapi_node.id)
+                          Filter: (((upper((meshapi_node.name)::text) ~~ '%444%'::text) OR (upper((meshapi_building.street_address)::text) ~~ '%444%'::text) OR (upper((meshapi_building.zip_code)::text) = '444'::text) OR (upper((meshapi_building.bin)::text) = '444'::text) OR (upper((meshapi_node.network_number)::text) = '444'::text) OR (upper((meshapi_install.install_number)::text) = '444'::text)) AND (ts_rank((((((setweight(to_tsvector((COALESCE(meshapi_node.name, ''::character varying))::text), 'A'::"char") || setweight(to_tsvector((COALESCE(meshapi_building.street_address, ''::character varying))::text), 'A'::"char")) || setweight(to_tsvector((COALESCE(meshapi_building.zip_code, ''::character varying))::text), 'A'::"char")) || setweight(to_tsvector(COALESCE((meshapi_building.bin)::text, ''::text)), 'A'::"char")) || setweight(to_tsvector(COALESCE((meshapi_node.network_number)::text, ''::text)), 'B'::"char")) || setweight(to_tsvector(COALESCE((meshapi_install.install_number)::text, ''::text)), 'B'::"char")), plainto_tsquery('444'::text)) = (SubPlan 2)))
+                          ->  Hash Left Join  (cost=772.06..1637.43 rows=15582 width=322)
+                                Hash Cond: (meshapi_building.id = meshapi_building_nodes.building_id)
+                                ->  Hash Right Join  (cost=729.75..1479.48 rows=15582 width=306)
+                                      Hash Cond: (meshapi_install.building_id = meshapi_building.id)
+                                      ->  Seq Scan on meshapi_install  (cost=0.00..708.82 rows=15582 width=20)
+                                      ->  Hash  (cost=586.00..586.00 rows=11500 width=302)
+                                            ->  Seq Scan on meshapi_building  (cost=0.00..586.00 rows=11500 width=302)
+                                ->  Hash  (cost=25.47..25.47 rows=1347 width=32)
+                                      ->  Seq Scan on meshapi_building_nodes  (cost=0.00..25.47 rows=1347 width=32)
+                          ->  Hash  (cost=51.13..51.13 rows=1213 width=32)
+                                ->  Seq Scan on meshapi_node  (cost=0.00..51.13 rows=1213 width=32)
+                          SubPlan 2
+                            ->  Limit  (cost=31.08..31.08 rows=1 width=4)
+                                  ->  Sort  (cost=31.08..31.08 rows=1 width=4)
+                                        Sort Key: (ts_rank((((((setweight(to_tsvector((COALESCE(u2_1.name, ''::character varying))::text), 'A'::"char") || setweight(to_tsvector((COALESCE(u0_1.street_address, ''::character varying))::text), 'A'::"char")) || setweight(to_tsvector((COALESCE(u0_1.zip_code, ''::character varying))::text), 'A'::"char")) || setweight(to_tsvector(COALESCE((u0_1.bin)::text, ''::text)), 'A'::"char")) || setweight(to_tsvector(COALESCE((u2_1.network_number)::text, ''::text)), 'B'::"char")) || setweight(to_tsvector(COALESCE((u3_1.install_number)::text, ''::text)), 'B'::"char")), plainto_tsquery('444'::text))) DESC
+                                        ->  Nested Loop Left Join  (cost=1.12..31.07 rows=1 width=4)
+                                              Filter: ((upper((u2_1.name)::text) ~~ '%444%'::text) OR (upper((u0_1.street_address)::text) ~~ '%444%'::text) OR (upper((u0_1.zip_code)::text) = '444'::text) OR (upper((u0_1.bin)::text) = '444'::text) OR (upper((u2_1.network_number)::text) = '444'::text) OR (upper((u3_1.install_number)::text) = '444'::text))
+                                              ->  Nested Loop Left Join  (cost=0.85..20.92 rows=1 width=49)
+                                                    Join Filter: (u0_1.id = u3_1.building_id)
+                                                    ->  Nested Loop Left Join  (cost=0.56..12.61 rows=1 width=61)
+                                                          Join Filter: (u0_1.id = u1_1.building_id)
+                                                          ->  Index Scan using meshapi_building_pkey on meshapi_building u0_1  (cost=0.29..8.30 rows=1 width=45)
+                                                                Index Cond: (id = meshapi_building.id)
+                                                          ->  Index Only Scan using meshapi_building_nodes_building_id_node_id_7b8ad31c_uniq on meshapi_building_nodes u1_1  (cost=0.28..4.29 rows=1 width=32)
+                                                                Index Cond: (building_id = meshapi_building.id)
+                                                    ->  Index Scan using meshapi_install_building_id_34417ad4 on meshapi_install u3_1  (cost=0.29..8.30 rows=1 width=20)
+                                                          Index Cond: (building_id = meshapi_building.id)
+                                              ->  Index Scan using meshapi_node_pkey on meshapi_node u2_1  (cost=0.28..8.29 rows=1 width=32)
+                                                    Index Cond: (id = u1_1.node_id)
+        SubPlan 1
+          ->  Limit  (cost=31.08..31.08 rows=1 width=4)
+                ->  Sort  (cost=31.08..31.08 rows=1 width=4)
+                      Sort Key: (ts_rank((((((setweight(to_tsvector((COALESCE(u2.name, ''::character varying))::text), 'A'::"char") || setweight(to_tsvector((COALESCE(u0.street_address, ''::character varying))::text), 'A'::"char")) || setweight(to_tsvector((COALESCE(u0.zip_code, ''::character varying))::text), 'A'::"char")) || setweight(to_tsvector(COALESCE((u0.bin)::text, ''::text)), 'A'::"char")) || setweight(to_tsvector(COALESCE((u2.network_number)::text, ''::text)), 'B'::"char")) || setweight(to_tsvector(COALESCE((u3.install_number)::text, ''::text)), 'B'::"char")), plainto_tsquery('444'::text))) DESC
+                      ->  Nested Loop Left Join  (cost=1.12..31.07 rows=1 width=4)
+                            Filter: ((upper((u2.name)::text) ~~ '%444%'::text) OR (upper((u0.street_address)::text) ~~ '%444%'::text) OR (upper((u0.zip_code)::text) = '444'::text) OR (upper((u0.bin)::text) = '444'::text) OR (upper((u2.network_number)::text) = '444'::text) OR (upper((u3.install_number)::text) = '444'::text))
+                            ->  Nested Loop Left Join  (cost=0.85..20.92 rows=1 width=49)
+                                  Join Filter: (u0.id = u3.building_id)
+                                  ->  Nested Loop Left Join  (cost=0.56..12.61 rows=1 width=61)
+                                        Join Filter: (u0.id = u1.building_id)
+                                        ->  Index Scan using meshapi_building_pkey on meshapi_building u0  (cost=0.29..8.30 rows=1 width=45)
+                                              Index Cond: (id = meshapi_building.id)
+                                        ->  Index Only Scan using meshapi_building_nodes_building_id_node_id_7b8ad31c_uniq on meshapi_building_nodes u1  (cost=0.28..4.29 rows=1 width=32)
+                                              Index Cond: (building_id = meshapi_building.id)
+                                  ->  Index Scan using meshapi_install_building_id_34417ad4 on meshapi_install u3  (cost=0.29..8.30 rows=1 width=20)
+                                        Index Cond: (building_id = meshapi_building.id)
+                            ->  Index Scan using meshapi_node_pkey on meshapi_node u2  (cost=0.28..8.29 rows=1 width=32)
+                                  Index Cond: (id = u1.node_id)
+```
