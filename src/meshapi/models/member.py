@@ -1,10 +1,14 @@
 import uuid
+import json
+from pathlib import Path
 from typing import Any, List
 
 from django.db import models
 from django.db.models.fields import EmailField
 from django_jsonform.models.fields import ArrayField as JSONFormArrayField
 from simple_history.models import HistoricalRecords
+
+from .util.lang_codes import LANG_CODES
 
 from meshapi.validation import normalize_phone_number, validate_multi_phone_number_field, validate_phone_number_field
 
@@ -16,6 +20,11 @@ class Member(models.Model):
         ("cash", "Cash"),
         ("stripe", "Stripe"),
     )
+
+    def load_iso_639_choices():
+        file_path = Path(__file__).resolve().parent / "iso_639_codes.json"
+        with open(file_path, "r") as file:
+            return json.load(file)
 
     class Meta:
         ordering = ["id"]
@@ -64,6 +73,8 @@ class Member(models.Model):
         "time and should not be relied on by automated systems. ",
     )
     payment_preference = models.CharField(default=None, choices=payment_preference_choices, blank=True, null=True)
+
+    prefered_language = models.CharField(max_length=2, default=None, choices=LANG_CODES, blank=True, null=True)
 
     def __str__(self) -> str:
         if self.name:
