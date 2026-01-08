@@ -42,6 +42,13 @@ class Node(models.Model):
         AP = "AP", "AP"
         REMOTE = "Remote", "Remote"
 
+    class NodePlacement(models.TextChoices):
+        ROOFTOP = "rooftop", "Rooftop"
+        BALCONY = "balcony", "Balcony"
+        WINDOW = "window", "Window"
+        INDOOR = "indoor", "Indoor"
+        UNKNOWN = None, "Unknown"
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4)
 
     network_number = models.IntegerField(
@@ -96,6 +103,12 @@ class Node(models.Model):
         null=True,
         help_text="The date the last Install or Device associated with this Node was abandoned, "
         "unplugged, or removed from service",
+    )
+
+    placement = models.CharField(
+        choices=NodePlacement.choices,
+        help_text="The placement of the node within the building it is located on",
+        default=NodePlacement.UNKNOWN,
     )
 
     notes = models.TextField(
