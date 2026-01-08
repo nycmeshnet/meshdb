@@ -1120,7 +1120,7 @@ class TestLinkLookups(TestCase):
             from_device=self.d1,
             to_device=self.d2,
             status=Link.LinkStatus.ACTIVE,
-            type=Link.LinkType.FIVE_GHZ,
+            type=Link.LinkType.FIVE_GHZ_UNSPECIFIED,
             uisp_id="1231",
         )
         self.l1.save()

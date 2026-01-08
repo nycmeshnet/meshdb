@@ -108,6 +108,7 @@ class NodeAdmin(RankedSearchMixin, ExportActionMixin, ImportExportModelAdmin, Si
             "Misc",
             {
                 "fields": [
+                    "placement",
                     "notes",
                     "validate_install_abandon_date_set_widget",
                 ]

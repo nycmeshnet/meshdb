@@ -152,7 +152,7 @@ class TestCaseWithFullData(TestCase):
             status=Link.LinkStatus.ACTIVE,
             notes="abc def ghi",
             description="xyz abc",
-            type=Link.LinkType.FIVE_GHZ,
+            type=Link.LinkType.FIVE_GHZ_UNSPECIFIED,
             uisp_id="35eecca6-0186-4a33-9837-451de8b12da0",
             install_date=datetime.date(2016, 1, 2),
             abandon_date=datetime.date(2017, 1, 2),
@@ -207,6 +207,7 @@ class TestViewsGetAdmin(TestCaseWithFullData):
             "name": "Amazing Node",
             "network_number": 101,
             "notes": "foo asdf",
+            "placement": "None",
             "status": "Active",
             "type": "Standard",
         }
