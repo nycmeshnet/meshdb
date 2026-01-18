@@ -8,7 +8,7 @@ jobs:
   docker_build_only:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v4
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v4
       - name: Build and push Docker image
         id: build
         uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83
