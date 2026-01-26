@@ -10,6 +10,7 @@ admin.site.unregister(CelerySerializerHook)
 class CelerySerializerHookAdmin(drf_hooks.admin.HookAdmin):
     fields = ("enabled", "user", "target", "event", "headers", "consecutive_failures")
     readonly_fields = ["consecutive_failures"]
+    raw_id_fields = []
 
     class Meta:
         model = CelerySerializerHook
