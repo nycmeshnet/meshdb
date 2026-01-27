@@ -1,3 +1,5 @@
+from typing import List
+
 import drf_hooks.admin
 from django.contrib import admin
 
@@ -10,7 +12,7 @@ admin.site.unregister(CelerySerializerHook)
 class CelerySerializerHookAdmin(drf_hooks.admin.HookAdmin):
     fields = ("enabled", "user", "target", "event", "headers", "consecutive_failures")
     readonly_fields = ["consecutive_failures"]
-    raw_id_fields = []
+    raw_id_fields: List[str] = []
 
     class Meta:
         model = CelerySerializerHook
