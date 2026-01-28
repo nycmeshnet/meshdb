@@ -36,6 +36,7 @@ dependencies = [
     "django-import-export==4.0.*",
     "boto3==1.34.*",
     "six==1.16.0",
+    "stripe==12.1.*",
     "django-flags==5.0.*",
     "django-sql-explorer==5.2.*",
     "django-simple-history==3.7.*",
