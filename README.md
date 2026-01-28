@@ -36,17 +36,8 @@ Firstly, fork this repo.
 > git remote add upstream https://github.com/nycmeshnet/meshdb
 > ```
 
-#### Dev Container
+#### Advanced - MinIO for Local Dev
 
-If you would like to develop in a [Dev Container](https://code.visualstudio.com/docs/devcontainers/containers)
-
-1. Make sure you have VS Code installed.
-2. Install the Dev Containers extension: `ms-vscode-remote.remote-containers`
-3. [Open the repo folder in the container](https://code.visualstudio.com/docs/devcontainers/containers#_quick-start-open-an-existing-folder-in-a-container).
-4. In a different shell, outside of VS Code, start the other containers: `docker compose up -d postgres pelias redis` (as below).
-5. Continue on the VS Code terminal (where your project is opened) follow normal developer setup.
-
-##### Advanced - MinIO for Local Dev
 If you are going to use [minio](https://min.io/) for local S3 bucket emulation (not required for most tasks), also
 start the minio related containers with `docker compose up -d minio createbuckets`. To have your local DB instance
 use Minio, you will also need to set `S3_ENDPOINT="http://127.0.0.1:9000"` in your `.env` file.
@@ -54,9 +45,9 @@ use Minio, you will also need to set `S3_ENDPOINT="http://127.0.0.1:9000"` in yo
 > [!NOTE]
 > You only need `createbuckets` once. It will initialize the bucket that MinIO talks to
 
-#### Host
+#### Set up Venv
 
-If you are not using a Dev Container, for safety, create a venv
+Create a new virtual environment, or venv.
 
 ```
 python --version # Make sure this is python 3.11.x before continuing
@@ -70,7 +61,7 @@ Then, install dependencies.
 pip install -e '.[dev]'
 ```
 
-### Set Environment Variables
+#### Set Environment Variables
 
 Next, fill out the `.env.sample` file and load it into your environment.
 
@@ -80,7 +71,7 @@ nano .env # Or your favorite text editor, fill in the blank variables
 ```
 You're gonna need a `DJANGO_SECRET_KEY`:
 
-### Generating `DJANGO_SECRET_KEY`
+#### Generating `DJANGO_SECRET_KEY`
 
 There's already a secret key for you in the .env.sample, but if you need another one...
 
@@ -92,8 +83,7 @@ python -c 'from django.core.management.utils import get_random_secret_key; print
 > Make sure you're running in Debug mode if you want to see detailed traces.
 > Set DEBUG=True in your `.env` file.
 
-If you have a database, great, go nuts. If you don't, you can use
-`docker-compose`.
+start up the databases in containers using `docker-compose`.
 
 ```sh
 docker-compose up -d postgres pelias redis
@@ -111,18 +101,18 @@ You'll probably want an admin account
 python src/manage.py createsuperuser
 ```
 
-And if you have access to it, you can use `import_datadump.sh` script to populate
-your database.
+Now to seed the database with scrambled data.
 
-> [!WARNING]
-> This is _real member data_. DO NOT share this database with anyone under any
-> circumstances.
+#### Seeding the Database
 
-```sh
-mkdir data/
-cp <path_to_data_dump>/full_dump.sql data/
-./scripts/import_datadump.sh
+Ask a maintainer for a scrambled db dump and store it in the directory `./postgres_portal`.
+Once you have it confirm that the postgres container in `docker-compose.yaml` has the following volume: `./postgres_portal:/postgres_portal`
+
+while the containers are running, use this command:
+``` bash
+docker exec -i meshdb-postgres-1 pg_restore -d meshdb -U meshdb -C /postgres_portal/meshdb_scrambled.sql
 ```
+#### Celery
 
 If you want to do work with celery, you'll need to run a worker as well as a beat.
 You can do this in two other terminals with these commands. `DEBUG` level is recommended
