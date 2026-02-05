@@ -2129,7 +2129,6 @@ class TestUISPImportHandlers(TransactionTestCase):
 
         self.assertEqual(500, response.status_code)
 
-
     @patch("meshapi.views.uisp_import.app.control.inspect")
     def test_view_uisp_on_demand_import_status_none(self, mock_celery_app):
         class BrokenMockInspect(MagicMock):
