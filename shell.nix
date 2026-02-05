@@ -5,7 +5,7 @@ pkgs.mkShell {
   #buildInputs = [
   #];
 
-  packages = [ 
+  packages = [
     pkgs.python311
   ];
 }
