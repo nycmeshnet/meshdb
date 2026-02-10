@@ -18,6 +18,7 @@ services:
       POSTGRES_PASSWORD: ${DB_PASSWORD}
     volumes:
       - postgres_data:/var/lib/postgresql/data/
+      - ./postgres_portal:/postgres_portal
 
   redis:
     container_name: meshdb-redis-1

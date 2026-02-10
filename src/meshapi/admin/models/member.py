@@ -94,6 +94,7 @@ class MemberAdmin(RankedSearchMixin, ImportExportMixin, ExportActionMixin, Simpl
                 "fields": [
                     "payment_preference",
                     "notes",
+                    "prefered_language"
                 ]
             },
         ),
