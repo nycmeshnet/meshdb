@@ -46,6 +46,8 @@ def view_uisp_on_demand_import_status(request: Request) -> Response:
 
         def parse_tasks(tasks_by_worker: dict[str, list], status: str) -> list[dict[str, str]]:
             parsed_tasks = []
+            if tasks_by_worker is None:
+                raise Exception("Got None for tasks_by_worker. Is something wrong with celery-worker?")
             for _, tasks in tasks_by_worker.items():
                 for t in tasks:
                     if "run_uisp_on_demand_import" in t.get("name"):
