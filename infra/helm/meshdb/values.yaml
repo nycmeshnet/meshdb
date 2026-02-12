@@ -93,7 +93,7 @@ ingress:
     - host: db.nycmesh.net # This will get overridden. Set Values.ingress.hosts[0].host
       paths:
         - path: /
-          pathType: Prefix 
+          pathType: Prefix
   tls: []
 
 uisp:
@@ -126,8 +126,8 @@ pelias:
   securityContext: {}
   resources:
     limits:
-     cpu: 250m
-     memory: 1536Mi
+      cpu: 250m
+      memory: 1536Mi
     requests:
       cpu: 250m
       memory: 512Mi
@@ -226,7 +226,7 @@ celery:
           cpu: 100m
           memory: 2Gi
     - name: celery-beat
-      command: 
+      command:
         - sh
         - -c
         - ./scripts/celery/celery_beat.sh

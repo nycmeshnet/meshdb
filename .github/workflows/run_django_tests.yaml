@@ -1,6 +1,6 @@
 name: Run Django Tests
 
-on: 
+on:
   pull_request:
   push:
     branches: [ main ]
@@ -34,9 +34,9 @@ jobs:
         ports:
           - 6379:6379
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v4
       - name: Set up Python
-        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v4
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v4
         with:
           python-version: '3.11'
       - name: "Upgrade pip"
@@ -62,10 +62,11 @@ jobs:
           AWS_ACCESS_KEY_ID: sampleaccesskey
           AWS_SECRET_ACCESS_KEY: samplesecretkey
           AWS_REGION: us-east-1
+          SITE_BASE_URL: http://localhost
         run: coverage run src/manage.py test meshapi meshapi_hooks
       - name: Write coverage report to disk
         run: coverage html
       - name: Upload coverage reports to Codecov
-        uses: codecov/codecov-action@18283e04ce6e62d37312384ff67231eb8fd56d24 # v5.4.3
+        uses: codecov/codecov-action@671740ac38dd9b0130fbe1cec585b89eea48d3de # v5.5.2
         with:
           token: ${{ secrets.CODECOV_TOKEN }}

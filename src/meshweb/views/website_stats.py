@@ -53,36 +53,83 @@ def cors_allow_website_stats_to_all(sender: None, request: HttpRequest, **kwargs
 
 
 def compute_graph_stats(data_source: str, start_datetime: datetime, end_datetime: datetime) -> List[int]:
+    if data_source == "active_installs":
+        return compute_graph_stats_for_active_installs(start_datetime, end_datetime)
+    else:
+        return compute_graph_stats_for_all_installs(start_datetime, end_datetime)
+
+
+def compute_graph_stats_for_active_installs(start_datetime: datetime, end_datetime: datetime) -> List[int]:
+    # GRAPH_X_AXIS_DATAPOINT_COUNT = 100
+    # buckets is a zero indexed array of length 100.
     buckets = [0 for _ in range(GRAPH_X_AXIS_DATAPOINT_COUNT)]
 
     total_duration_seconds = (end_datetime - start_datetime).total_seconds()
     base_object_queryset = Install.objects.all()
 
-    if data_source == "active_installs":
-        # FYI This logic doesn't account for installs that have been abandoned,
-        # so it definitely underestimates historical values
-        base_object_queryset = base_object_queryset.filter(status=Install.InstallStatus.ACTIVE)
-        object_queryset = base_object_queryset.filter(
-            install_date__gte=start_datetime.date(),
-            install_date__lte=end_datetime.date(),
-        )
-        buckets[0] = base_object_queryset.filter(install_date__lt=start_datetime).count()
-    else:
-        object_queryset = base_object_queryset.filter(
-            request_date__gte=start_datetime.date(),
-            request_date__lte=end_datetime.date(),
-        )
-        buckets[0] = base_object_queryset.filter(request_date__lt=start_datetime).count()
+    # FYI This logic doesn't account for installs that have been abandoned,
+    # so it definitely underestimates historical values
+    base_object_queryset = base_object_queryset.filter(status=Install.InstallStatus.ACTIVE)
+    object_queryset = base_object_queryset.filter(
+        install_date__gte=start_datetime.date(),
+        install_date__lt=end_datetime.date(),
+    )
+    buckets[0] = base_object_queryset.filter(install_date__lt=start_datetime).count()
 
     for install in object_queryset:
-        if data_source == "active_installs":
-            counting_date = install.install_date or install.request_date.date()
-        else:
-            counting_date = install.request_date.date()
+        counting_date = install.install_date
+
+        if counting_date is None:
+            raise Exception(f"No counting date for install {install.id}")
 
         relative_seconds = (counting_date - start_datetime.date()).total_seconds()
         bucket_index = math.floor((relative_seconds / total_duration_seconds) * GRAPH_X_AXIS_DATAPOINT_COUNT)
-        buckets[bucket_index] += 1
+
+        if bucket_index == 0:
+            continue
+        elif bucket_index > 0 and bucket_index < 100:
+            buckets[bucket_index] += 1
+        elif bucket_index == 100:
+            continue
+        else:
+            raise Exception(f"Bucket index {bucket_index} is out of range")
+
+    # Make cumulative
+    for i in range(GRAPH_X_AXIS_DATAPOINT_COUNT):
+        if i > 0:
+            buckets[i] += buckets[i - 1]
+
+    return buckets
+
+
+def compute_graph_stats_for_all_installs(start_datetime: datetime, end_datetime: datetime) -> List[int]:
+    # GRAPH_X_AXIS_DATAPOINT_COUNT = 100
+    # buckets is a zero indexed array of length 100.
+    buckets = [0 for _ in range(GRAPH_X_AXIS_DATAPOINT_COUNT)]
+
+    total_duration_seconds = (end_datetime - start_datetime).total_seconds()
+    base_object_queryset = Install.objects.all()
+
+    object_queryset = base_object_queryset.filter(
+        request_date__gte=start_datetime.date(),
+        request_date__lt=end_datetime.date(),
+    )
+    buckets[0] = base_object_queryset.filter(request_date__lt=start_datetime).count()
+
+    for install in object_queryset:
+        counting_date = install.request_date.date()
+
+        relative_seconds = (counting_date - start_datetime.date()).total_seconds()
+        bucket_index = math.floor((relative_seconds / total_duration_seconds) * GRAPH_X_AXIS_DATAPOINT_COUNT)
+
+        if bucket_index == 0:
+            continue
+        elif bucket_index > 0 and bucket_index < 100:
+            buckets[bucket_index] += 1
+        elif bucket_index == 100:
+            continue
+        else:
+            raise Exception(f"Bucket index {bucket_index} is out of range")
 
     # Make cumulative
     for i in range(GRAPH_X_AXIS_DATAPOINT_COUNT):

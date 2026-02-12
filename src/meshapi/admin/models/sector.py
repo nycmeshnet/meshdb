@@ -27,6 +27,7 @@ class SectorAdmin(RankedSearchMixin, ImportExportMixin, ExportActionMixin, Simpl
     form = SectorAdminForm
     search_fields = ["name__icontains", "@notes"]
     search_vector = SearchVector("name", weight="A") + SearchVector("notes", weight="D")
+    autocomplete_fields = ["node"]
     list_display = [
         "__str__",
         "name",

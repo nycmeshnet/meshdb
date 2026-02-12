@@ -110,7 +110,7 @@ class TestKMLEndpoint(TestCase):
                 from_device=sn1_omni,
                 to_device=brian_omni,
                 status=Link.LinkStatus.ACTIVE,
-                type=Link.LinkType.FIVE_GHZ,
+                type=Link.LinkType.FIVE_GHZ_UNSPECIFIED,
             )
         )
 
@@ -128,7 +128,7 @@ class TestKMLEndpoint(TestCase):
                 from_device=grand_omni,
                 to_device=random_omni,
                 status=Link.LinkStatus.PLANNED,
-                type=Link.LinkType.FIVE_GHZ,
+                type=Link.LinkType.FIVE_GHZ_UNSPECIFIED,
             )
         )
 
@@ -138,7 +138,7 @@ class TestKMLEndpoint(TestCase):
                 from_device=dead_omni,
                 to_device=random_omni,
                 status=Link.LinkStatus.ACTIVE,
-                type=Link.LinkType.FIVE_GHZ,
+                type=Link.LinkType.FIVE_GHZ_UNSPECIFIED,
             )
         )
 
@@ -203,7 +203,7 @@ class TestKMLEndpoint(TestCase):
         self.maxDiff = None
         response = self.c.get("/api/v1/geography/whole-mesh.kml")
 
-        kml_doc = kml.KML.class_from_string(response.content.decode("UTF8")).features[0]
+        kml_doc = kml.KML.from_string(response.content.decode("UTF8")).features[0]
 
         self.assertEqual(len(kml_doc.styles), 5)
         self.assertEqual(len(kml_doc.features), 2)

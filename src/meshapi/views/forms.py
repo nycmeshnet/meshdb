@@ -19,11 +19,11 @@ from rest_framework.response import Response
 from rest_framework_dataclasses.serializers import DataclassSerializer
 from validate_email.exceptions import EmailValidationError
 
-from meshapi.exceptions import AddressError
+from meshapi.exceptions import InvalidAddressError, UnsupportedAddressError
 from meshapi.models import AddressTruthSource, Building, Install, Member, Node
 from meshapi.permissions import HasNNAssignPermission, LegacyNNAssignmentPassword
 from meshapi.serializers import MemberSerializer
-from meshapi.util.admin_notifications import notify_administrators_of_data_issue
+from meshapi.util.admin_notifications import get_slack_link_to_model, notify_administrators_of_data_issue, notify_admins
 from meshapi.util.constants import RECAPTCHA_CHECKBOX_TOKEN_HEADER, RECAPTCHA_INVISIBLE_TOKEN_HEADER
 from meshapi.util.django_pglocks import advisory_lock
 from meshapi.util.network_number import NETWORK_NUMBER_ASSIGN_MIN, NETWORK_NUMBER_MAX, get_next_available_network_number
@@ -39,6 +39,19 @@ from meshapi.validation import (
 logging.basicConfig()
 
 DISABLE_RECAPTCHA_VALIDATION = os.environ.get("RECAPTCHA_DISABLE_VALIDATION", "").lower() == "true"
+
+INVALID_ADDRESS_RESPONSE = (
+    "Your address is invalid. Please double-check your address or contact support@nycmesh.net for assistance."
+)
+
+UNSUPPORTED_ADDRESS_RESPONSE = (
+    "Non-NYC registrations are not supported at this time. "
+    "Please double-check your address, or contact support@nycmesh.net"
+)
+
+VALIDATION_500_RESPONSE = (
+    "Your address could not be validated at this time. Please try again later, or contact support@nycmesh.net"
+)
 
 
 # Join Form
@@ -135,6 +148,7 @@ def join_form(request: Request) -> Response:
     return response
 
 
+@tracer.wrap()
 def process_join_form(r: JoinFormRequest, request: Optional[Request] = None) -> Response:
     if not r.ncl:
         return Response(
@@ -166,27 +180,22 @@ def process_join_form(r: JoinFormRequest, request: Optional[Request] = None) -> 
     formatted_phone_number = normalize_phone_number(r.phone_number) if r.phone_number else None
 
     try:
-        try:
-            nyc_addr_info: Optional[NYCAddressInfo] = geocode_nyc_address(r.street_address, r.city, r.state, r.zip_code)
-        except Exception as e:
-            # Ensure this gets logged
-            logging.exception(e)
-            raise e
-    except ValueError:
-        logging.debug(r.street_address, r.city, r.state, r.zip_code)
+        nyc_addr_info: NYCAddressInfo = geocode_nyc_address(r.street_address, r.city, r.state, r.zip_code)
+    except UnsupportedAddressError:
         return Response(
-            {
-                "detail": "Non-NYC registrations are not supported at this time. Please double check your zip code, "
-                "or send an email to support@nycmesh.net"
-            },
+            {"detail": UNSUPPORTED_ADDRESS_RESPONSE},
             status=status.HTTP_400_BAD_REQUEST,
         )
-    except AddressError as e:
-        return Response({"detail": e.args[0]}, status=status.HTTP_400_BAD_REQUEST)
-
-    if not nyc_addr_info:
+    except InvalidAddressError:
         return Response(
-            {"detail": "Your address could not be validated."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            {"detail": INVALID_ADDRESS_RESPONSE},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+    except Exception:
+        # Either an API is down, or we have no idea what went wrong. It was probably our fault.
+        return Response(
+            {"detail": VALIDATION_500_RESPONSE},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
 
     changed_info: dict[str, str | int] = {}
@@ -208,7 +217,7 @@ def process_join_form(r: JoinFormRequest, request: Optional[Request] = None) -> 
             logging.warning(
                 "Got trust_me_bro, even though info was still updated "
                 f"(email: {r.email_address}, changed_info: {changed_info}). "
-                "Proceeding with install request submission."
+                "Notifying admins and proceeding with install request submission."
             )
         else:
             logging.warning("Please confirm a few details")
@@ -413,6 +422,25 @@ install_number: {join_form_install.install_number}"""
 
     if r.trust_me_bro:
         logging.warning(success_message)
+        if changed_info:
+            building_url = get_slack_link_to_model(join_form_building)
+            member_url = get_slack_link_to_model(join_form_member)
+            install_url = get_slack_link_to_model(join_form_install)
+
+            notify_string = "[join_form_bug] A new member rejected our changes to their address.\n"
+            "**This is most likely due to a bug in MeshDB. Human intervention is "
+            "required to ensure data correctness.**\n"
+            "Please review the submission and verify building information.\n"
+            "If necessary, please reach out to the member and confirm their details.\n"
+            f"email: {r.email_address}\n"
+            f"building: {building_url}\n"
+            f"member: {member_url}\n"
+            f"install: {install_url}\n"
+            if r.street_address != nyc_addr_info.street_address:
+                notify_string += f"Changed street_address: {r.street_address} != {nyc_addr_info.street_address}\n"
+            if r.city != nyc_addr_info.city:
+                notify_string += f"Changed city: {r.city} != {nyc_addr_info.city}"
+            notify_admins(notify_string)
     else:
         logging.info(success_message)
 

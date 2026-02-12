@@ -66,17 +66,17 @@ class TestUISPImportUtils(TestCase):
     def test_get_link_type(self):
         self.assertEqual(
             get_link_type({"type": "wireless", "frequency": None}),  # Default to 5 GHz
-            Link.LinkType.FIVE_GHZ,
+            Link.LinkType.FIVE_GHZ_UNSPECIFIED,
         )
 
         self.assertEqual(
             get_link_type({"type": "wireless", "frequency": 5000}),
-            Link.LinkType.FIVE_GHZ,
+            Link.LinkType.FIVE_GHZ_AIRMAX,
         )
 
         self.assertEqual(
             get_link_type({"type": "wireless", "frequency": 5900}),
-            Link.LinkType.FIVE_GHZ,
+            Link.LinkType.FIVE_GHZ_AIRMAX,
         )
 
         self.assertEqual(
@@ -84,7 +84,7 @@ class TestUISPImportUtils(TestCase):
             #  for now we consider anything < 7 GHz as 5 GHz
             #  https://github.com/nycmeshnet/meshdb/issues/518
             get_link_type({"type": "wireless", "frequency": 6100}),
-            Link.LinkType.FIVE_GHZ,
+            Link.LinkType.FIVE_GHZ_AIRMAX,
         )
 
         self.assertEqual(
@@ -412,7 +412,7 @@ class TestUISPImportUpdateObjects(TransactionTestCase):
             from_device=self.device1,
             to_device=self.device2,
             status=Link.LinkStatus.ACTIVE,
-            type=Link.LinkType.FIVE_GHZ,
+            type=Link.LinkType.FIVE_GHZ_UNSPECIFIED,
             uisp_id="fake-uisp-uuid",
         )
         self.link.save()
@@ -438,7 +438,7 @@ class TestUISPImportUpdateObjects(TransactionTestCase):
         self.assertEqual(self.link.from_device, self.device1)
         self.assertEqual(self.link.to_device, self.device3)
         self.assertEqual(self.link.status, Link.LinkStatus.INACTIVE)
-        self.assertEqual(self.link.type, Link.LinkType.FIVE_GHZ)
+        self.assertEqual(self.link.type, Link.LinkType.FIVE_GHZ_UNSPECIFIED)
         self.assertEqual(self.link.abandon_date, last_seen_date.date())
 
         self.assertEqual(
@@ -485,7 +485,7 @@ class TestUISPImportUpdateObjects(TransactionTestCase):
         self.assertEqual(self.link.from_device, self.device1)
         self.assertEqual(self.link.to_device, self.device2)
         self.assertEqual(self.link.status, Link.LinkStatus.INACTIVE)
-        self.assertEqual(self.link.type, Link.LinkType.FIVE_GHZ)
+        self.assertEqual(self.link.type, Link.LinkType.FIVE_GHZ_UNSPECIFIED)
         self.assertEqual(self.link.abandon_date, last_seen_date.date())
 
         self.assertEqual(
@@ -512,7 +512,7 @@ class TestUISPImportUpdateObjects(TransactionTestCase):
         self.assertEqual(self.link.from_device, self.device1)
         self.assertEqual(self.link.to_device, self.device2)
         self.assertEqual(self.link.status, Link.LinkStatus.ACTIVE)
-        self.assertEqual(self.link.type, Link.LinkType.FIVE_GHZ)
+        self.assertEqual(self.link.type, Link.LinkType.FIVE_GHZ_UNSPECIFIED)
         self.assertEqual(self.link.abandon_date, None)
 
         self.assertEqual(change_messages, [])
@@ -533,7 +533,7 @@ class TestUISPImportUpdateObjects(TransactionTestCase):
         self.assertEqual(self.link.from_device, self.device1)
         self.assertEqual(self.link.to_device, self.device2)
         self.assertEqual(self.link.status, Link.LinkStatus.INACTIVE)
-        self.assertEqual(self.link.type, Link.LinkType.FIVE_GHZ)
+        self.assertEqual(self.link.type, Link.LinkType.FIVE_GHZ_UNSPECIFIED)
         self.assertEqual(self.link.abandon_date, None)
 
         self.assertEqual(change_messages, ["Marked as Inactive due to it being offline in UISP"])
@@ -559,7 +559,7 @@ class TestUISPImportUpdateObjects(TransactionTestCase):
         self.assertEqual(self.link.from_device, self.device1)
         self.assertEqual(self.link.to_device, self.device2)
         self.assertEqual(self.link.status, Link.LinkStatus.ACTIVE)
-        self.assertEqual(self.link.type, Link.LinkType.FIVE_GHZ)
+        self.assertEqual(self.link.type, Link.LinkType.FIVE_GHZ_UNSPECIFIED)
         self.assertEqual(self.link.abandon_date, None)
 
         self.assertEqual(
@@ -588,7 +588,7 @@ class TestUISPImportUpdateObjects(TransactionTestCase):
         self.assertEqual(self.link.from_device, self.device1)
         self.assertEqual(self.link.to_device, self.device2)
         self.assertEqual(self.link.status, Link.LinkStatus.ACTIVE)
-        self.assertEqual(self.link.type, Link.LinkType.FIVE_GHZ)
+        self.assertEqual(self.link.type, Link.LinkType.FIVE_GHZ_UNSPECIFIED)
         self.assertEqual(self.link.abandon_date, None)
 
         self.assertEqual(
@@ -623,7 +623,7 @@ class TestUISPImportUpdateObjects(TransactionTestCase):
         self.assertEqual(self.link.from_device, self.device1)
         self.assertEqual(self.link.to_device, self.device2)
         self.assertEqual(self.link.status, Link.LinkStatus.ACTIVE)
-        self.assertEqual(self.link.type, Link.LinkType.FIVE_GHZ)
+        self.assertEqual(self.link.type, Link.LinkType.FIVE_GHZ_UNSPECIFIED)
         self.assertEqual(self.link.abandon_date, None)
 
     def test_update_device_many_changes(self):
@@ -821,7 +821,7 @@ class TestUISPImportHandlersDontDuplicateHistory(TransactionTestCase):
             from_device=self.device1,
             to_device=self.device2,
             status=Link.LinkStatus.ACTIVE,
-            type=Link.LinkType.FIVE_GHZ,
+            type=Link.LinkType.FIVE_GHZ_UNSPECIFIED,
             uisp_id="uisp-uuid1",
         )
         self.link1.save()
@@ -1001,7 +1001,7 @@ class TestUISPImportHandlers(TransactionTestCase):
             from_device=self.device1,
             to_device=self.device2,
             status=Link.LinkStatus.ACTIVE,
-            type=Link.LinkType.FIVE_GHZ,
+            type=Link.LinkType.FIVE_GHZ_UNSPECIFIED,
             uisp_id="uisp-uuid1",
         )
         self.link1.save()
@@ -1010,7 +1010,7 @@ class TestUISPImportHandlers(TransactionTestCase):
             from_device=self.device1,
             to_device=self.device3,
             status=Link.LinkStatus.ACTIVE,
-            type=Link.LinkType.FIVE_GHZ,
+            type=Link.LinkType.FIVE_GHZ_UNSPECIFIED,
             uisp_id="uisp-uuid2",
         )
         self.link2.save()
@@ -1019,7 +1019,7 @@ class TestUISPImportHandlers(TransactionTestCase):
             from_device=self.device2,
             to_device=self.device3,
             status=Link.LinkStatus.ACTIVE,
-            type=Link.LinkType.FIVE_GHZ,
+            type=Link.LinkType.FIVE_GHZ_UNSPECIFIED,
             uisp_id="uisp-uuid-not-real-dont-match-me",
         )
         self.link3.save()
@@ -1606,7 +1606,7 @@ class TestUISPImportHandlers(TransactionTestCase):
         self.assertEqual(created_link3.from_device, self.device2)
         self.assertEqual(created_link3.to_device, self.device4)
         self.assertEqual(created_link3.status, Link.LinkStatus.ACTIVE)
-        self.assertEqual(created_link3.type, Link.LinkType.FIVE_GHZ)
+        self.assertEqual(created_link3.type, Link.LinkType.FIVE_GHZ_AIRMAX)
         self.assertEqual(created_link3.install_date, None)
         self.assertEqual(created_link3.abandon_date, None)
         self.assertEqual(created_link3.description, None)
@@ -1811,7 +1811,7 @@ class TestUISPImportHandlers(TransactionTestCase):
             from_device=self.device1,
             to_device=self.device2,
             status=Link.LinkStatus.ACTIVE,
-            type=Link.LinkType.FIVE_GHZ,
+            type=Link.LinkType.FIVE_GHZ_UNSPECIFIED,
             uisp_id="uisp-uuid12345",
         )
         dup_link_1.save()
@@ -1821,7 +1821,7 @@ class TestUISPImportHandlers(TransactionTestCase):
             from_device=self.device1,
             to_device=self.device2,
             status=Link.LinkStatus.ACTIVE,
-            type=Link.LinkType.FIVE_GHZ,
+            type=Link.LinkType.FIVE_GHZ_UNSPECIFIED,
             uisp_id="uisp-uuid12345",
         )
         dup_link_2.save()
@@ -1991,7 +1991,7 @@ class TestUISPImportHandlers(TransactionTestCase):
             from_device=self.device3,
             to_device=self.device3b,
             status=Link.LinkStatus.ACTIVE,
-            type=Link.LinkType.FIVE_GHZ,
+            type=Link.LinkType.FIVE_GHZ_UNSPECIFIED,
         )
         link.save()
 
@@ -2116,6 +2116,30 @@ class TestUISPImportHandlers(TransactionTestCase):
 
             def active(self):
                 raise Exception
+
+        mock_celery_app.side_effect = BrokenMockInspect()
+
+        # Create a client
+        self.admin_user = User.objects.create_superuser(
+            username="admin", password="admin_password", email="admin@example.com"
+        )
+        c = Client()
+        c.login(username="admin", password="admin_password")
+        response = c.get("/api/v1/uisp-import/status/")
+
+        self.assertEqual(500, response.status_code)
+
+    @patch("meshapi.views.uisp_import.app.control.inspect")
+    def test_view_uisp_on_demand_import_status_none(self, mock_celery_app):
+        class BrokenMockInspect(MagicMock):
+            def scheduled(self):
+                return None
+
+            def reserved(self):
+                return None
+
+            def active(self):
+                return None
 
         mock_celery_app.side_effect = BrokenMockInspect()
 

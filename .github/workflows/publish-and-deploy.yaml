@@ -1,5 +1,5 @@
 name: Publish and Deploy
-# Combined these two workflows for visbility
+# Combined these two workflows for visibility
 
 on:
   push:
@@ -20,7 +20,7 @@ jobs:
     name: Push to prod
     uses: ./.github/workflows/build-push-image.yaml
     with:
-      environment: prod
+      environment: dev3
       image_tag: willnilges/meshdb:main
     secrets: inherit
     if: github.ref == 'refs/heads/main'

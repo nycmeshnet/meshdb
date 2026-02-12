@@ -130,4 +130,4 @@ INVALID_ADDRESS_GEOCODE_RESPONSE = {
     "bbox": [-73.827527, 40.709085, -73.827527, 40.709085],
 }
 
-VALID_BUILDING_HEIGHT_RESPONSE = [{"groundelev": "26", "heightroof": "14.58"}]
+VALID_BUILDING_HEIGHT_RESPONSE = [{"ground_elevation": "26", "height_roof": "14.58"}]

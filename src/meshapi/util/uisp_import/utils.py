@@ -22,7 +22,7 @@ def get_link_type(uisp_link: USIPDataLink) -> Link.LinkType:
     if uisp_link["type"] == "wireless":
         if uisp_link["frequency"]:
             if uisp_link["frequency"] < 7_000:
-                return Link.LinkType.FIVE_GHZ
+                return Link.LinkType.FIVE_GHZ_AIRMAX
             elif uisp_link["frequency"] < 40_000:
                 return Link.LinkType.TWENTYFOUR_GHZ
             elif uisp_link["frequency"] < 70_000:
@@ -30,7 +30,7 @@ def get_link_type(uisp_link: USIPDataLink) -> Link.LinkType:
 
             return Link.LinkType.SEVENTY_EIGHTY_GHZ
 
-        return Link.LinkType.FIVE_GHZ
+        return Link.LinkType.FIVE_GHZ_UNSPECIFIED
     elif uisp_link["type"] == "ethernet":
         return Link.LinkType.ETHERNET
     elif uisp_link["type"] == "pon":

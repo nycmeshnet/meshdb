@@ -16,7 +16,8 @@ def index(request: HttpRequest) -> HttpResponse:
         ],
         ("meshweb/volunteer.png", "Volunteer Tools"): [
             ("/admin", "Admin Panel"),
-            ("/api/v1/geography/whole-mesh.kml", "KML Download"),
+            ("/static/meshweb/meshdb.kml", "KML Download"),
+            ("/api/v1/geography/whole-mesh.kml", "KML Download (Offline)"),
             ("/explorer/play", "SQL Explorer"),
             (f"{settings.FORMS_URL}/nn-assign/", "NN Assign Form"),
             (f"{settings.FORMS_URL}/query/", "Query Form"),
@@ -28,6 +29,10 @@ def index(request: HttpRequest) -> HttpResponse:
             ("/api/v1/", "MeshDB Data API"),
             ("/api-docs/swagger/", "API Docs (Swagger)"),
             ("/api-docs/redoc/", "API Docs (Redoc)"),
+            (
+                "https://raw.githubusercontent.com/nycmeshnet/meshdb/refs/heads/main/sampledata/meshdb_local.kml",
+                "KML Download (Localdev)",
+            ),
         ],
     }
     context = {"links": links, "logo": "meshweb/logo.svg"}
