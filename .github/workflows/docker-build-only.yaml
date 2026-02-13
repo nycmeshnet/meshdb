@@ -11,7 +11,7 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v4
       - name: Build and push Docker image
         id: build
-        uses: docker/build-push-action@601a80b39c9405e50806ae38af30926f9d957c47
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8
         with:
           context: .
           file: ./Dockerfile
