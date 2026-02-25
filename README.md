@@ -118,6 +118,14 @@ cp <path_to_data_dump>/full_dump.sql data/
 ./scripts/import_datadump.sh
 ```
 
+### Advanced - MinIO for Local Dev
+If you are going to use [minio](https://min.io/) for local S3 bucket emulation (not required for most tasks), also
+start the minio related containers with `docker compose up -d minio createbuckets`. To have your local DB instance
+use Minio, you will also need to set `S3_ENDPOINT="http://127.0.0.1:9000"` in your `.env` file.
+
+> [!NOTE]
+> You only need `createbuckets` once. It will initialize the bucket that MinIO talks to
+
 ### Background Workers
 
 If you want to do work with celery, you'll need to run a worker as well as a beat.
@@ -165,14 +173,6 @@ When you're done, you can stop the server with `Ctrl+C`, and run `docker compose
 > docker-compose up -d postgres pelias redis
 > python src/manage.py runserver
 > ```
-
-##### Advanced - MinIO for Local Dev
-If you are going to use [minio](https://min.io/) for local S3 bucket emulation (not required for most tasks), also
-start the minio related containers with `docker compose up -d minio createbuckets`. To have your local DB instance
-use Minio, you will also need to set `S3_ENDPOINT="http://127.0.0.1:9000"` in your `.env` file.
-
-> [!NOTE]
-> You only need `createbuckets` once. It will initialize the bucket that MinIO talks to
 
 ### Prod Environment
 
