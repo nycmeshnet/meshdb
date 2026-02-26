@@ -38,7 +38,7 @@ dependencies = [
     "six==1.16.0",
     "django-flags==5.0.*",
     "django-sql-explorer==5.2.*",
-    "django-simple-history==3.7.*",
+    "django-simple-history==3.10.*",
     "prettytable==3.11.*",
     "matplotlib==3.9.*",
     "django-ipware==7.0.1",
