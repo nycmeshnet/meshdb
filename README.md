@@ -19,14 +19,11 @@ wiki](https://wiki.nycmesh.net/books/6-services-software/chapter/meshdb)
 
 To start contributing, find a [good first issue](https://github.com/nycmeshnet/meshdb/issues?q=is%3Aissue%20state%3Aopen%20label%3A%22good%20first%20issue%22).
 
-## Setup
+## Local Setup
 
-### Dev Environment
+### Fork Repo
 
-The production environment relies on Nginx and Gunicorn, but for development,
-you can use Django's tools. You'll also need Python 3.11, and pip, of course.
-
-Firstly, fork this repo.
+Fork this repo.
 
 > [!NOTE]
 > If you cloned nycmeshnet/meshdb, you can change your origin by doing the following:
@@ -36,27 +33,22 @@ Firstly, fork this repo.
 > git remote add upstream https://github.com/nycmeshnet/meshdb
 > ```
 
-#### Dev Container
+### with Dev Container
 
 If you would like to develop in a [Dev Container](https://code.visualstudio.com/docs/devcontainers/containers)
 
 1. Make sure you have VS Code installed.
 2. Install the Dev Containers extension: `ms-vscode-remote.remote-containers`
 3. [Open the repo folder in the container](https://code.visualstudio.com/docs/devcontainers/containers#_quick-start-open-an-existing-folder-in-a-container).
-4. In a different shell, outside of VS Code, start the other containers: `docker compose up -d postgres pelias redis` (as below).
-5. Continue on the VS Code terminal (where your project is opened) follow normal developer setup.
+4. Continue on the VS Code terminal (where your project is opened) follow normal developer setup.
 
-##### Advanced - MinIO for Local Dev
-If you are going to use [minio](https://min.io/) for local S3 bucket emulation (not required for most tasks), also
-start the minio related containers with `docker compose up -d minio createbuckets`. To have your local DB instance
-use Minio, you will also need to set `S3_ENDPOINT="http://127.0.0.1:9000"` in your `.env` file.
+### with Host
 
-> [!NOTE]
-> You only need `createbuckets` once. It will initialize the bucket that MinIO talks to
+If you would like to develop directly on your host machine
 
-#### Host
+Install Python 3.11 and pip.
 
-If you are not using a Dev Container, for safety, create a venv
+Create a venv
 
 ```
 python --version # Make sure this is python 3.11.x before continuing
@@ -92,6 +84,8 @@ python -c 'from django.core.management.utils import get_random_secret_key; print
 > Make sure you're running in Debug mode if you want to see detailed traces.
 > Set DEBUG=True in your `.env` file.
 
+### Database
+
 If you have a database, great, go nuts. If you don't, you can use
 `docker-compose`.
 
@@ -124,6 +118,16 @@ cp <path_to_data_dump>/full_dump.sql data/
 ./scripts/import_datadump.sh
 ```
 
+### Advanced - MinIO for Local Dev
+If you are going to use [minio](https://min.io/) for local S3 bucket emulation (not required for most tasks), also
+start the minio related containers with `docker compose up -d minio createbuckets`. To have your local DB instance
+use Minio, you will also need to set `S3_ENDPOINT="http://127.0.0.1:9000"` in your `.env` file.
+
+> [!NOTE]
+> You only need `createbuckets` once. It will initialize the bucket that MinIO talks to
+
+### Background Workers
+
 If you want to do work with celery, you'll need to run a worker as well as a beat.
 You can do this in two other terminals with these commands. `DEBUG` level is recommended
 for the beat to see what beats are going to run
@@ -147,6 +151,8 @@ docker compose up -d celery-worker celery-beat
 > celery -A meshdb worker -l INFO --pool=solo
 > ```
 
+### Server
+
 Then, you can get crackin'
 
 ```sh
@@ -169,6 +175,8 @@ When you're done, you can stop the server with `Ctrl+C`, and run `docker compose
 > ```
 
 ### Prod Environment
+
+The production environment relies on Nginx and Gunicorn.
 
 Clone the package with git and create the expected `.env` file (or otherwise
 configure the environment variables specified in `.env.sample` as appropriate
