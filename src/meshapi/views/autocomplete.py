@@ -1,5 +1,5 @@
 from dal_select2.views import Select2QuerySetView
-from django.db.models import QuerySet
+from django.db.models import QuerySet, Q
 
 from meshapi.models import Member
 
@@ -14,6 +14,6 @@ class MemberAutocomplete(Select2QuerySetView):
         queryset = Member.objects.all()
 
         if self.q:
-            queryset = queryset.filter(name__istartswith=self.q)
+            queryset = queryset.filter(Q(name__istartswith=self.q) | Q(primary_email_address__istartswith=self.q))
 
         return queryset
