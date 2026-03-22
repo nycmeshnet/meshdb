@@ -1,5 +1,5 @@
 from dal_select2.views import Select2QuerySetView
-from django.db.models import QuerySet, Q
+from django.db.models import Q, QuerySet
 
 from meshapi.models import Member
 
