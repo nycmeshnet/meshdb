@@ -14,6 +14,6 @@ class MemberAutocomplete(Select2QuerySetView):
         queryset = Member.objects.all()
 
         if self.q:
-            queryset = queryset.filter(Q(name__istartswith=self.q) | Q(primary_email_address__istartswith=self.q))
+            queryset = queryset.filter(Q(name__istartswith=self.q) | Q(primary_email_address__icontains=self.q))
 
         return queryset
