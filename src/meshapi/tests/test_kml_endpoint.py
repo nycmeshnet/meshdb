@@ -49,6 +49,7 @@ class TestKMLEndpoint(TestCase):
     def test_views_get_unauthenticated(self):
         routes = [
             ("/api/v1/geography/whole-mesh.kml", 200),
+            ("/api/v1/geography/active-mesh.kml", 200),
         ]
 
         for route, code in routes:

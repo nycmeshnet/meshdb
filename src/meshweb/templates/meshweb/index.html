@@ -36,7 +36,7 @@
           <h5>{{ category.1 }}</h5>
         </div>
         {% for link, description in tools %}
-        <a class="toolListLink" href={{ link }}>
+        <a class="toolListLink" href="{{ link }}">
         <div class="toolListItem">
         <h6>{{ description }}</h6>
         </div>
@@ -45,6 +45,50 @@
       </div>
       {% endfor %}
     </div>
+
+    <div class="modal fade" id="kmlDownloadModal" tabindex="-1" aria-labelledby="kmlDownloadModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="kmlDownloadModalLabel">Download full-network KML</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <p class="mb-3">Choose which KML you want to download:</p>
+            <div class="d-grid gap-2">
+              <a class="btn btn-outline-primary" href="/static/meshweb/meshdb-active.kml">
+                Active Mesh (live updating)
+              </a>
+              <a class="btn btn-outline-primary" href="/api/v1/geography/active-mesh.kml">
+                Active Mesh (static / offline)
+              </a>
+              <a class="btn btn-outline-secondary" href="/static/meshweb/meshdb.kml">
+                Legacy Full Mesh (live updating)
+              </a>
+              <a class="btn btn-outline-secondary" href="/api/v1/geography/whole-mesh.kml">
+                Legacy Full Mesh (static / offline)
+              </a>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  <script>
+    let kmlDownloadModal;
+
+    function openKmlDownloadModal() {
+      if (!kmlDownloadModal) {
+        const modalElement = document.getElementById("kmlDownloadModal");
+        kmlDownloadModal = new bootstrap.Modal(modalElement);
+      }
+      kmlDownloadModal.show();
+      return false;
+    }
+  </script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"
     integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL"
     crossorigin="anonymous"></script>
