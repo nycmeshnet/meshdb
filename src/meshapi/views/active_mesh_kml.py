@@ -41,6 +41,7 @@ POP_COLOR = "#F6BE00"
 AP_COLOR = "#38E708"
 REMOTE_COLOR = "#800080"
 HUB_COLOR = "#5AC8FA"
+PENDING_COLOR = "#FFFFFF"  # White for Pending nodes and Planned links
 
 # Define link type colors
 WDS_5_GHZ_LINK_TYPE = "WDS (5 GHz)"
@@ -172,6 +173,7 @@ def create_placemark(
     status: str,
     node_type: Optional[str] = None,
     node_name: Optional[str] = None,
+    has_node: bool = True,
 ) -> kml.Placemark:
     # Determine the appropriate style based on node type
     if node_type in ["Hub", "Supernode", "POP", "AP", "Remote"]:
@@ -196,7 +198,7 @@ def create_placemark(
     )
 
     extended_data = {
-        "name": node_name if node_name else f"NN {identifier}",
+        "name": node_name if node_name else (f"NN {identifier}" if has_node else f"Install {identifier}"),
         "nodeType": node_type or "Standard",  # Add node type to extended data
         "status": status,
         "id": identifier,
@@ -213,6 +215,7 @@ LocationMapData = TypedDict(
         "installs": List[Install],
         "node": Optional[Node],
         "active": bool,
+        "pending": bool,
         "altitude": float,
         "roof_access": bool,
     },
@@ -373,6 +376,29 @@ class ActiveMeshKML(APIView):
             ],
         )
 
+        # White dot style for Pending nodes
+        white_dot_url = base_dot_url
+        white_dot = styles.Style(
+            id="white_dot",
+            styles=[
+                styles.IconStyle(
+                    color=hex_to_kml_color(PENDING_COLOR),
+                    scale=0.5,
+                    icon=styles.Icon(href=white_dot_url),
+                    hot_spot=styles.HotSpot(x=0.5, y=0.5, xunits=styles.Units.fraction, yunits=styles.Units.fraction),
+                )
+            ],
+        )
+
+        # White line style for Planned links
+        white_line = styles.Style(
+            id="white_line",
+            styles=[
+                styles.LineStyle(color=hex_to_kml_color(PENDING_COLOR), width=3),
+                styles.PolyStyle(color="00000000", fill=False, outline=True),
+            ],
+        )
+
         # Create style definitions for each link type
         link_styles = []
         for link_type, color in LINK_TYPE_COLORS.items():
@@ -387,7 +413,7 @@ class ActiveMeshKML(APIView):
             )
 
         kml_document = kml.Document(
-            ns, styles=[red_dot, blue_dot, hub_dot, green_dot, yellow_dot, purple_dot] + link_styles
+            ns, styles=[red_dot, blue_dot, hub_dot, green_dot, yellow_dot, purple_dot, white_dot, white_line] + link_styles
         )
         kml_root.append(kml_document)
 
@@ -408,6 +434,10 @@ class ActiveMeshKML(APIView):
             node_type_folders[node_type] = kml.Folder(name=folder_name)
             nodes_folder.append(node_type_folders[node_type])
 
+        # Create a separate folder for Planned nodes
+        planned_nodes_folder = kml.Folder(name="Planned Nodes")
+        nodes_folder.append(planned_nodes_folder)
+
         links_folder = kml.Folder(name="Links")
         kml_document.append(links_folder)
 
@@ -417,6 +447,10 @@ class ActiveMeshKML(APIView):
             type_folders[link_type] = kml.Folder(name=link_type)
             links_folder.append(type_folders[link_type])
 
+        # Create a separate folder for Planned links
+        planned_links_folder = kml.Folder(name="Planned Links")
+        links_folder.append(planned_links_folder)
+
         # Create a dictionary to map coordinates to installs and nodes
         location_map: Dict[Tuple[float, float], LocationMapData] = {}
 
@@ -424,7 +458,7 @@ class ActiveMeshKML(APIView):
         for install in (
             Install.objects.select_related("node", "building")
             .filter(
-                ~Q(status__in=[Install.InstallStatus.CLOSED, Install.InstallStatus.NN_REASSIGNED])
+                Q(status__in=[Install.InstallStatus.ACTIVE, Install.InstallStatus.PENDING])
                 & Q(building__longitude__isnull=False)
                 & Q(building__latitude__isnull=False)
             )
@@ -445,6 +479,7 @@ class ActiveMeshKML(APIView):
                     "installs": [],
                     "node": None,
                     "active": False,
+                    "pending": False,
                     "altitude": altitude,
                     "roof_access": False,
                 }
@@ -456,6 +491,10 @@ class ActiveMeshKML(APIView):
             if install.status == Install.InstallStatus.ACTIVE:
                 location_map[location_key]["active"] = True
 
+            # Track if any install at this location is pending
+            if install.status == Install.InstallStatus.PENDING:
+                location_map[location_key]["pending"] = True
+
             # Track if any install has roof access
             if install.roof_access:
                 location_map[location_key]["roof_access"] = True
@@ -464,9 +503,9 @@ class ActiveMeshKML(APIView):
             if install.node and install.node.network_number:
                 location_map[location_key]["node"] = install.node
 
-        # Additional pass: add active nodes that might not have active installs
+        # Additional pass: add active and planned nodes that might not have installs
         for active_node in (
-            Node.objects.filter(status=Node.NodeStatus.ACTIVE)
+            Node.objects.filter(status__in=[Node.NodeStatus.ACTIVE, Node.NodeStatus.PLANNED])
             .filter(latitude__isnull=False)
             .filter(longitude__isnull=False)
         ):
@@ -478,7 +517,8 @@ class ActiveMeshKML(APIView):
                 location_map[location_key] = {
                     "installs": [],
                     "node": active_node,
-                    "active": True,  # Mark as active since the node is active
+                    "active": active_node.status == Node.NodeStatus.ACTIVE,
+                    "pending": active_node.status == Node.NodeStatus.PLANNED,
                     "altitude": float(active_node.altitude or DEFAULT_ALTITUDE),
                     "roof_access": False,
                 }
@@ -486,8 +526,10 @@ class ActiveMeshKML(APIView):
                 # Update existing location with node information if not already set
                 if not location_map[location_key]["node"]:
                     location_map[location_key]["node"] = active_node
-                # Mark as active since the node is active
-                location_map[location_key]["active"] = True
+                if active_node.status == Node.NodeStatus.ACTIVE:
+                    location_map[location_key]["active"] = True
+                if active_node.status == Node.NodeStatus.PLANNED:
+                    location_map[location_key]["pending"] = True
 
         # Second pass: create one placemark per unique location
         for location, data in location_map.items():
@@ -495,10 +537,11 @@ class ActiveMeshKML(APIView):
             installs = data["installs"]
             node = data["node"]
             is_active = data["active"]
+            is_pending = data["pending"]
             altitude = data["altitude"]
 
-            # Skip inactive nodes
-            if not is_active:
+            # Skip nodes that are neither active nor pending
+            if not is_active and not is_pending:
                 continue
 
             # Determine the primary identifier and properties for the placemark
@@ -508,19 +551,43 @@ class ActiveMeshKML(APIView):
                 node_type = node.type or "Standard"
                 status = node.status
                 node_name = node.name  # Get the colloquial name if available
+                has_node = True
             else:
                 # Use the first install as the primary if no node exists
-                identifier = str(installs[0].install_number)
+                identifier = f"#{installs[0].install_number}"
                 node_type = installs[0].node.type if installs[0].node else "Standard"
                 status = installs[0].status
                 node_name = installs[0].node.name if installs[0].node else None  # Get the node name if available
+                has_node = False
 
-            # Get only active install numbers at this location
+            # Get active and pending install numbers at this location
             active_installs = [install for install in installs if install.status == Install.InstallStatus.ACTIVE]
-            install_numbers = [str(install.install_number) for install in active_installs]
+            pending_installs = [install for install in installs if install.status == Install.InstallStatus.PENDING]
+            active_install_numbers = [str(install.install_number) for install in active_installs]
+            pending_install_numbers = [str(install.install_number) for install in pending_installs]
+            install_numbers = active_install_numbers + pending_install_numbers
 
-            # Determine which folder to use based on node type
-            folder = node_type_folders.get(node_type, node_type_folders["Standard"])
+            # Determine which folder and style to use
+            # Pending nodes go to the Pending folder with white styling
+            # Only if no active installs exist (active takes precedence)
+            if is_pending and not is_active:
+                folder = planned_nodes_folder
+                style_url_value = "#white_dot"
+            else:
+                # Determine which folder to use based on node type
+                folder = node_type_folders.get(node_type, node_type_folders["Standard"])
+                # Determine the appropriate style based on node type
+                if node_type in ["Hub", "Supernode", "POP", "AP", "Remote"]:
+                    style_map = {
+                        "Hub": "#hub_dot",
+                        "Supernode": "#blue_dot",
+                        "POP": "#yellow_dot",
+                        "AP": "#green_dot",
+                        "Remote": "#purple_dot",
+                    }
+                    style_url_value = style_map.get(node_type, "#red_dot")
+                else:
+                    style_url_value = "#red_dot"  # Standard node
 
             # Create the placemark
             placemark = create_placemark(
@@ -529,7 +596,12 @@ class ActiveMeshKML(APIView):
                 status,
                 node_type,
                 node_name,
+                has_node,
             )
+
+            # Override style for pending nodes
+            if is_pending:
+                placemark.style_url = styles.StyleUrl(url=style_url_value)
 
             placemark_extended_data = placemark.extended_data
             if placemark_extended_data is None:
@@ -558,7 +630,7 @@ class ActiveMeshKML(APIView):
         kml_links: List[LinkKMLDict] = []
         for link in (
             Link.objects.select_related("from_device__node", "to_device__node")
-            .filter(status=Link.LinkStatus.ACTIVE)  # Only include active links
+            .filter(status__in=[Link.LinkStatus.ACTIVE, Link.LinkStatus.PLANNED])  # Include active and planned links
             .filter(from_device__node__network_number__isnull=False)
             .filter(to_device__node__network_number__isnull=False)
             .filter(from_device__node__latitude__isnull=False)
@@ -615,12 +687,23 @@ class ActiveMeshKML(APIView):
             if link_type not in LINK_TYPE_COLORS:
                 link_type = "Other"
 
-            # Create style URL based on type
-            style_id = link_type_to_style_id(link_type)
+            # Determine if this is a Planned link
+            link_status = link_dict["extended_data"].get("status", "")
+            is_planned = link_status == Link.LinkStatus.PLANNED
+
+            # Planned links go to the Planned Links folder with white styling
+            if is_planned:
+                target_folder = planned_links_folder
+                style_url_value = "#white_line"
+            else:
+                # Create style URL based on type
+                style_id = link_type_to_style_id(link_type)
+                style_url_value = f"#{style_id}"
+                target_folder = type_folders[link_type]
 
             placemark = kml.Placemark(
                 name=f"{link_dict['link_label']}",
-                style_url=styles.StyleUrl(url=f"#{style_id}"),
+                style_url=styles.StyleUrl(url=style_url_value),
                 kml_geometry=geometry.LineString(
                     geometry=LineString([link_dict["from_coord"], link_dict["to_coord"]]),
                     altitude_mode=AltitudeMode.absolute,
@@ -632,8 +715,8 @@ class ActiveMeshKML(APIView):
                 elements=[Data(name=key, value=val) for key, val in link_dict["extended_data"].items()]
             )
 
-            # Add to the appropriate folder based on type
-            type_folders[link_type].append(placemark)
+            # Add to the appropriate folder
+            target_folder.append(placemark)
 
         # Generate the KML string
         kml_string = kml_root.to_string()
