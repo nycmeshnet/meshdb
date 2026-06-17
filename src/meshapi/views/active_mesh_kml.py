@@ -413,7 +413,8 @@ class ActiveMeshKML(APIView):
             )
 
         kml_document = kml.Document(
-            ns, styles=[red_dot, blue_dot, hub_dot, green_dot, yellow_dot, purple_dot, white_dot, white_line] + link_styles
+            ns,
+            styles=[red_dot, blue_dot, hub_dot, green_dot, yellow_dot, purple_dot, white_dot, white_line] + link_styles,
         )
         kml_root.append(kml_document)
 
