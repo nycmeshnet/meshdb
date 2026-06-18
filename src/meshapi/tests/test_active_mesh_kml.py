@@ -17,8 +17,8 @@ from meshapi.views.active_mesh_kml import (
     link_type_to_style_id,
 )
 
-
 # Helpers
+
 
 def _make_node(nn: int, status=Node.NodeStatus.ACTIVE, node_type=Node.NodeType.STANDARD, lat=40.7, lon=-73.9, alt=20):
     node = Node(network_number=nn, status=status, type=node_type, latitude=lat, longitude=lon, altitude=alt)
@@ -51,7 +51,13 @@ def _make_device(node, status=Device.DeviceStatus.ACTIVE):
     return device
 
 
-def _make_link(from_device, to_device, status=Link.LinkStatus.ACTIVE, link_type=Link.LinkType.FIVE_GHZ_UNSPECIFIED, install_date=None):
+def _make_link(
+    from_device,
+    to_device,
+    status=Link.LinkStatus.ACTIVE,
+    link_type=Link.LinkType.FIVE_GHZ_UNSPECIFIED,
+    install_date=None,
+):
     link = Link(from_device=from_device, to_device=to_device, status=status, type=link_type, install_date=install_date)
     link.save()
     return link
@@ -63,6 +69,7 @@ def _parse_kml(response) -> kml.Document:
 
 
 # Utility function tests
+
 
 class TestHelpers(TestCase):
     """Tests for hex_to_kml_color, link_type_to_style_id, get_kml_link_type, absolute_static_url."""
@@ -98,11 +105,15 @@ class TestHelpers(TestCase):
         request = factory.get("/api/v1/geography/active-mesh.kml", SERVER_NAME="meshdb.example.com", SERVER_PORT="443")
 
         with patch("meshapi.views.active_mesh_kml.KML_ICON_URL", "https://cdn.example.com/icon.png"):
-            self.assertEqual(absolute_static_url(request, "meshapi/kml-icons/dot-100.png"), "https://cdn.example.com/icon.png")
+            self.assertEqual(
+                absolute_static_url(request, "meshapi/kml-icons/dot-100.png"), "https://cdn.example.com/icon.png"
+            )
 
         with patch("meshapi.views.active_mesh_kml.KML_ICON_URL", None):
             with patch("meshapi.views.active_mesh_kml.KML_ICON_BASE_URL", "https://meshdb.example.com"):
-                self.assertIn("https://meshdb.example.com", absolute_static_url(request, "meshapi/kml-icons/dot-100.png"))
+                self.assertIn(
+                    "https://meshdb.example.com", absolute_static_url(request, "meshapi/kml-icons/dot-100.png")
+                )
 
         with patch("meshapi.views.active_mesh_kml.KML_ICON_URL", None):
             with patch("meshapi.views.active_mesh_kml.KML_ICON_BASE_URL", None):
@@ -111,6 +122,7 @@ class TestHelpers(TestCase):
 
 
 # Endpoint tests
+
 
 class TestActiveMeshKMLEndpoint(TestCase):
     """Tests for the ActiveMeshKML endpoint: structure, nodes, links, and edge cases."""
@@ -137,14 +149,31 @@ class TestActiveMeshKMLEndpoint(TestCase):
 
         nodes_folder = next(f for f in doc.features if f.name == "Nodes")
         subfolder_names = [f.name for f in nodes_folder.features]
-        for expected in ["Standard Nodes", "Hub Nodes", "Supernode Nodes", "POP Nodes", "AP Nodes", "Remote Nodes", "Planned Nodes"]:
+        for expected in [
+            "Standard Nodes",
+            "Hub Nodes",
+            "Supernode Nodes",
+            "POP Nodes",
+            "AP Nodes",
+            "Remote Nodes",
+            "Planned Nodes",
+        ]:
             self.assertIn(expected, subfolder_names)
 
     def test_all_styles_present(self):
         response = self.c.get("/api/v1/geography/active-mesh.kml")
         doc = _parse_kml(response)
         style_ids = {s.id for s in doc.styles}
-        for expected in ["red_dot", "blue_dot", "hub_dot", "green_dot", "yellow_dot", "purple_dot", "white_dot", "white_line"]:
+        for expected in [
+            "red_dot",
+            "blue_dot",
+            "hub_dot",
+            "green_dot",
+            "yellow_dot",
+            "purple_dot",
+            "white_dot",
+            "white_line",
+        ]:
             self.assertIn(expected, style_ids)
         for link_type in LINK_TYPE_COLORS:
             self.assertIn(link_type_to_style_id(link_type), style_ids)
@@ -154,9 +183,11 @@ class TestActiveMeshKMLEndpoint(TestCase):
         member = Member(name="Test Member")
         member.save()
 
-        for nn, nt, folder_name in [(100, Node.NodeType.STANDARD, "Standard Nodes"),
-                                     (200, Node.NodeType.HUB, "Hub Nodes"),
-                                     (300, Node.NodeType.SUPERNODE, "Supernode Nodes")]:
+        for nn, nt, folder_name in [
+            (100, Node.NodeType.STANDARD, "Standard Nodes"),
+            (200, Node.NodeType.HUB, "Hub Nodes"),
+            (300, Node.NodeType.SUPERNODE, "Supernode Nodes"),
+        ]:
             node = _make_node(nn, node_type=nt)
             building = _make_building(lat=node.latitude, lon=node.longitude)
             _make_install(member, building, node, status=Install.InstallStatus.ACTIVE)
@@ -273,8 +304,12 @@ class TestActiveMeshKMLEndpoint(TestCase):
         member.save()
         node = _make_node(1400, lat=40.79, lon=-73.99)
         building = _make_building(lat=40.79, lon=-73.99)
-        _make_install(member, building, node, status=Install.InstallStatus.ACTIVE, install_date=datetime.date(2023, 6, 15))
-        _make_install(member, building, node, status=Install.InstallStatus.ACTIVE, install_date=datetime.date(2022, 3, 10))
+        _make_install(
+            member, building, node, status=Install.InstallStatus.ACTIVE, install_date=datetime.date(2023, 6, 15)
+        )
+        _make_install(
+            member, building, node, status=Install.InstallStatus.ACTIVE, install_date=datetime.date(2022, 3, 10)
+        )
 
         response = self.c.get("/api/v1/geography/active-mesh.kml")
         self.assertIn("2022-03-10", response.content.decode("UTF-8"))
@@ -415,10 +450,18 @@ class TestActiveMeshKMLEndpoint(TestCase):
         coord_b = (-73.92, 40.72, 25.0)
 
         kml_links = [
-            {"link_label": "A<->B", "from_coord": coord_a, "to_coord": coord_b,
-             "extended_data": {"type": "5 GHz", "from": "3001", "to": "3002"}},
-            {"link_label": "B<->A", "from_coord": coord_b, "to_coord": coord_a,
-             "extended_data": {"type": "Ethernet", "from": "3002", "to": "3001"}},
+            {
+                "link_label": "A<->B",
+                "from_coord": coord_a,
+                "to_coord": coord_b,
+                "extended_data": {"type": "5 GHz", "from": "3001", "to": "3002"},
+            },
+            {
+                "link_label": "B<->A",
+                "from_coord": coord_b,
+                "to_coord": coord_a,
+                "extended_data": {"type": "Ethernet", "from": "3002", "to": "3001"},
+            },
         ]
 
         result = view.prioritize_links(kml_links)

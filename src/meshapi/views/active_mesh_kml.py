@@ -19,9 +19,9 @@ from rest_framework.views import APIView
 from meshapi.models import Install, Link, Node
 from meshapi.views.geography import (
     DEFAULT_ALTITUDE,
-    IgnoreClientContentNegotiation,
     KML_CONTENT_TYPE,
     KML_CONTENT_TYPE_WITH_CHARSET,
+    IgnoreClientContentNegotiation,
 )
 
 # Define node type colors
@@ -719,4 +719,3 @@ class ActiveMeshKML(APIView):
             content_type=KML_CONTENT_TYPE_WITH_CHARSET,
             status=http_status.HTTP_200_OK,
         )
-
