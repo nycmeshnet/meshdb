@@ -1,6 +1,5 @@
 import logging
 import os
-from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple, TypedDict, cast
 from urllib.parse import urlparse
 
@@ -9,28 +8,21 @@ from django.db.models.functions import Greatest
 from django.http import HttpRequest, HttpResponse
 from django.templatetags.static import static
 from drf_spectacular.types import OpenApiTypes
-from drf_spectacular.utils import OpenApiResponse, extend_schema, extend_schema_view, inline_serializer
+from drf_spectacular.utils import OpenApiResponse, extend_schema
 from fastkml import Data, ExtendedData, geometry, kml, styles
 from fastkml.enums import AltitudeMode
 from pygeoif import LineString, Point
-from rest_framework import permissions, serializers
+from rest_framework import permissions
 from rest_framework import status as http_status
-from rest_framework.negotiation import BaseContentNegotiation
-from rest_framework.parsers import BaseParser
-from rest_framework.renderers import BaseRenderer
-from rest_framework.request import Request
-from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework_dataclasses.serializers import DataclassSerializer
 
-from meshapi.exceptions import InvalidAddressError, UnsupportedAddressError
 from meshapi.models import Install, Link, Node
-from meshapi.validation import geocode_nyc_address
-from meshapi.views.forms import INVALID_ADDRESS_RESPONSE, UNSUPPORTED_ADDRESS_RESPONSE, VALIDATION_500_RESPONSE
-
-KML_CONTENT_TYPE = "application/vnd.google-earth.kml+xml"
-KML_CONTENT_TYPE_WITH_CHARSET = f"{KML_CONTENT_TYPE}; charset=utf-8"
-DEFAULT_ALTITUDE = 5  # Meters (absolute)
+from meshapi.views.geography import (
+    DEFAULT_ALTITUDE,
+    IgnoreClientContentNegotiation,
+    KML_CONTENT_TYPE,
+    KML_CONTENT_TYPE_WITH_CHARSET,
+)
 
 # Define node type colors
 ACTIVE_COLOR = "#F82C55"
@@ -116,25 +108,6 @@ LinkKMLDict = TypedDict(
         "extended_data": Dict[str, Any],
     },
 )
-
-
-class IgnoreClientContentNegotiation(BaseContentNegotiation):
-    def select_parser(self, request: HttpRequest, parsers: List[BaseParser]) -> BaseParser:  # type: ignore[override]
-        """
-        Select the first parser in the `.parser_classes` list.
-        """
-        return parsers[0]
-
-    def select_renderer(
-        self,
-        request: HttpRequest,
-        renderers: List[BaseRenderer],  # type: ignore[override]
-        format_suffix: Optional[str] = None,
-    ) -> Tuple[BaseRenderer, str]:
-        """
-        Select the first renderer in the `.renderer_classes` list.
-        """
-        return renderers[0], renderers[0].media_type
 
 
 def absolute_static_url(request: HttpRequest, static_path: str, fallback_url: str = DOT_FALLBACK_URL) -> str:
@@ -747,85 +720,3 @@ class ActiveMeshKML(APIView):
             status=http_status.HTTP_200_OK,
         )
 
-
-@dataclass
-class GeocodeRequest:
-    street_address: str
-    city: str
-    state: str
-    zip: str
-
-
-class GeocodeSerializer(DataclassSerializer):
-    class Meta:
-        dataclass = GeocodeRequest
-
-
-@extend_schema_view(
-    get=extend_schema(
-        tags=["Geographic & KML Data"],
-        summary="Use the NYC geocoding APIs to look up an address, and return the lat/lon/alt "
-        "corresponding to it or 404 if the address cannot be found within NYC",
-        parameters=[GeocodeSerializer],
-        responses={
-            "201": OpenApiResponse(
-                inline_serializer(
-                    "GeocodeSuccessResponse",
-                    fields={
-                        "BIN": serializers.IntegerField(),
-                        "latitude": serializers.FloatField(),
-                        "longitude": serializers.FloatField(),
-                        "altitude": serializers.FloatField(required=False),
-                    },
-                ),
-                description="Request received, an install has been created (along with member and "
-                "building objects if necessary).",
-            ),
-            "400": OpenApiResponse(
-                inline_serializer("ErrorResponseMissingFields", fields={"detail": serializers.DictField()}),
-                description="Invalid request body JSON or missing required fields",
-            ),
-            "404": OpenApiResponse(
-                inline_serializer("ErrorResponseInvalidAddr", fields={"detail": serializers.CharField()}),
-                description="Invalid address, or not found within NYC",
-            ),
-            "500": OpenApiResponse(
-                inline_serializer("ErrorResponseInternalFailure", fields={"detail": serializers.CharField()}),
-                description="Could not geocode address due to internal failure. Try again?",
-            ),
-        },
-    )
-)
-class NYCGeocodeWrapper(APIView):
-    permission_classes = [permissions.IsAuthenticated]
-
-    def get(self, request: Request) -> Response:
-        serializer = GeocodeSerializer(data=request.query_params)
-        if not serializer.is_valid():
-            return Response({"detail": serializer.errors}, status=http_status.HTTP_400_BAD_REQUEST)
-
-        try:
-            raw_addr: GeocodeRequest = serializer.save()
-            nyc_addr_info = geocode_nyc_address(raw_addr.street_address, raw_addr.city, raw_addr.state, raw_addr.zip)
-        except UnsupportedAddressError:
-            return Response(
-                {"detail": UNSUPPORTED_ADDRESS_RESPONSE},
-                status=http_status.HTTP_404_NOT_FOUND,
-            )
-        except InvalidAddressError:
-            logging.exception("InvalidAddressError when validating address")
-            return Response({"detail": INVALID_ADDRESS_RESPONSE}, status=http_status.HTTP_404_NOT_FOUND)
-
-        except Exception:
-            # We failed to contact the city, this is probably a retryable error, return 500
-            return Response({"detail": VALIDATION_500_RESPONSE}, status=http_status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-        return Response(
-            {
-                "BIN": nyc_addr_info.bin,
-                "latitude": nyc_addr_info.latitude,
-                "longitude": nyc_addr_info.longitude,
-                "altitude": nyc_addr_info.altitude,
-            },
-            status=http_status.HTTP_200_OK,
-        )
