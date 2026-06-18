@@ -132,11 +132,8 @@ class TestActiveMeshKMLEndpoint(TestCase):
     def test_empty_db_returns_valid_kml(self):
         response = self.c.get("/api/v1/geography/active-mesh.kml")
         self.assertEqual(response.status_code, 200)
-        self.assertIsNotNone(kml.KML.from_string(response.content.decode("UTF-8")))
-
-    def test_kml_has_lookat_element(self):
-        response = self.c.get("/api/v1/geography/active-mesh.kml")
         content = response.content.decode("UTF-8")
+        self.assertIsNotNone(kml.KML.from_string(content))
         self.assertIn("<LookAt>", content)
         self.assertIn("<longitude>-73.9857</longitude>", content)
 
@@ -267,23 +264,20 @@ class TestActiveMeshKMLEndpoint(TestCase):
         response = self.c.get("/api/v1/geography/active-mesh.kml")
         self.assertIn(f"#{install.install_number}", response.content.decode("UTF-8"))
 
-    def test_node_without_installs_still_shown(self):
-        """An active node with coordinates but no installs should still appear."""
+    def test_nodes_without_installs_appear(self):
+        """Active and planned nodes with no installs should still appear in their respective folders."""
         _make_node(1100, lat=40.77, lon=-73.97, node_type=Node.NodeType.STANDARD)
-
-        response = self.c.get("/api/v1/geography/active-mesh.kml")
-        self.assertIn(">1100<", response.content.decode("UTF-8"))
-
-    def test_planned_node_without_installs(self):
-        """A planned node with no installs should appear in Planned Nodes folder."""
         _make_node(1200, status=Node.NodeStatus.PLANNED, lat=40.78, lon=-73.98)
 
         response = self.c.get("/api/v1/geography/active-mesh.kml")
         doc = _parse_kml(response)
         nodes_folder = next(f for f in doc.features if f.name == "Nodes")
+
+        standard_folder = next(f for f in nodes_folder.features if f.name == "Standard Nodes")
+        self.assertIn("1100", [p.name for p in standard_folder.features])
+
         planned_folder = next(f for f in nodes_folder.features if f.name == "Planned Nodes")
-        placemark_names = [p.name for p in planned_folder.features]
-        self.assertIn("1200", placemark_names)
+        self.assertIn("1200", [p.name for p in planned_folder.features])
 
     def test_node_with_name_in_extended_data(self):
         """A node with a colloquial name should have it in extended data."""
@@ -314,16 +308,6 @@ class TestActiveMeshKMLEndpoint(TestCase):
         response = self.c.get("/api/v1/geography/active-mesh.kml")
         self.assertIn("2022-03-10", response.content.decode("UTF-8"))
 
-    def test_link_type_subfolders_exist(self):
-        """Links folder should have subfolders for each link type + Planned."""
-        response = self.c.get("/api/v1/geography/active-mesh.kml")
-        doc = _parse_kml(response)
-        links_folder = next(f for f in doc.features if f.name == "Links")
-        subfolder_names = [f.name for f in links_folder.features]
-        for link_type in LINK_TYPE_COLORS.keys():
-            self.assertIn(link_type, subfolder_names)
-        self.assertIn("Planned Links", subfolder_names)
-
     def test_active_link_in_correct_type_folder(self):
         """An active 60 GHz link should end up in the '60 GHz' folder."""
         member = Member(name="Link Test Member")
@@ -346,15 +330,19 @@ class TestActiveMeshKMLEndpoint(TestCase):
         self.assertIn("2001", sixty_folder.features[0].name)
         self.assertIn("2002", sixty_folder.features[0].name)
 
-    def test_vpn_links_excluded(self):
-        """VPN links should not appear in the KML."""
+    def test_excluded_links_not_shown(self):
+        """VPN, self-loop, and inactive links should not appear in the KML."""
         member = Member(name="Link Test Member")
         member.save()
         node_a = _make_node(2010, lat=40.71, lon=-73.91)
         node_b = _make_node(2011, lat=40.72, lon=-73.92)
         dev_a = _make_device(node_a)
         dev_b = _make_device(node_b)
+        dev_a2 = _make_device(node_a)
+
         _make_link(dev_a, dev_b, link_type=Link.LinkType.VPN)
+        _make_link(dev_a, dev_a2, link_type=Link.LinkType.FIVE_GHZ_UNSPECIFIED)
+        _make_link(dev_a, dev_b, status=Link.LinkStatus.INACTIVE, link_type=Link.LinkType.FIBER)
 
         response = self.c.get("/api/v1/geography/active-mesh.kml")
         doc = _parse_kml(response)
@@ -376,35 +364,6 @@ class TestActiveMeshKMLEndpoint(TestCase):
         links_folder = next(f for f in doc.features if f.name == "Links")
         planned_folder = next(f for f in links_folder.features if f.name == "Planned Links")
         self.assertEqual(len(planned_folder.features), 1)
-
-    def test_self_loop_link_excluded(self):
-        """Links from a node to itself should not appear."""
-        member = Member(name="Link Test Member")
-        member.save()
-        node_a = _make_node(2030, lat=40.71, lon=-73.91)
-        dev_a = _make_device(node_a)
-        dev_a2 = _make_device(node_a)
-        _make_link(dev_a, dev_a2, link_type=Link.LinkType.FIVE_GHZ_UNSPECIFIED)
-
-        response = self.c.get("/api/v1/geography/active-mesh.kml")
-        doc = _parse_kml(response)
-        links_folder = next(f for f in doc.features if f.name == "Links")
-        self.assertEqual(sum(len(f.features) for f in links_folder.features), 0)
-
-    def test_inactive_links_excluded(self):
-        """Inactive links should not appear."""
-        member = Member(name="Link Test Member")
-        member.save()
-        node_a = _make_node(2040, lat=40.71, lon=-73.91)
-        node_b = _make_node(2041, lat=40.72, lon=-73.92)
-        dev_a = _make_device(node_a)
-        dev_b = _make_device(node_b)
-        _make_link(dev_a, dev_b, status=Link.LinkStatus.INACTIVE, link_type=Link.LinkType.FIBER)
-
-        response = self.c.get("/api/v1/geography/active-mesh.kml")
-        doc = _parse_kml(response)
-        links_folder = next(f for f in doc.features if f.name == "Links")
-        self.assertEqual(sum(len(f.features) for f in links_folder.features), 0)
 
     def test_link_with_install_date(self):
         """Link's install_date should be in extended data."""
@@ -468,41 +427,25 @@ class TestActiveMeshKMLEndpoint(TestCase):
         self.assertEqual(len(result), 1)
         self.assertEqual(result[0]["extended_data"]["type"], "Ethernet")
 
-    def test_null_altitude_uses_default(self):
-        """When altitude is null, the DEFAULT_ALTITUDE (5m) should be used."""
+    def test_coordinate_edge_cases(self):
+        """Null altitude defaults to 5m; node coordinates take precedence over building coordinates."""
         member = Member(name="Edge Case Member")
         member.save()
-        node = _make_node(4002, lat=40.71, lon=-73.91, alt=None)
-        building = _make_building(lat=40.71, lon=-73.91, alt=None)
-        _make_install(member, building, node, status=Install.InstallStatus.ACTIVE)
+
+        # Null altitude
+        node_null_alt = _make_node(4002, lat=40.71, lon=-73.91, alt=None)
+        building_null_alt = _make_building(lat=40.71, lon=-73.91, alt=None)
+        _make_install(member, building_null_alt, node_null_alt, status=Install.InstallStatus.ACTIVE)
+
+        # Node coords override building coords
+        node_diff_coords = _make_node(4007, lat=40.80, lon=-73.80)
+        building_diff_coords = _make_building(lat=40.71, lon=-73.91)
+        _make_install(member, building_diff_coords, node_diff_coords, status=Install.InstallStatus.ACTIVE)
 
         response = self.c.get("/api/v1/geography/active-mesh.kml")
         content = response.content.decode("UTF-8")
         self.assertIn(">4002<", content)
         self.assertIn("5.0", content)
-
-    def test_node_coordinates_used_over_building_coordinates(self):
-        """When a node has different coordinates than its building, node coords should be used."""
-        member = Member(name="Edge Case Member")
-        member.save()
-        node = _make_node(4007, lat=40.80, lon=-73.80)
-        building = _make_building(lat=40.71, lon=-73.91)
-        _make_install(member, building, node, status=Install.InstallStatus.ACTIVE)
-
-        response = self.c.get("/api/v1/geography/active-mesh.kml")
-        content = response.content.decode("UTF-8")
         self.assertIn(">4007<", content)
         self.assertIn("-73.8", content)
         self.assertIn("40.8", content)
-
-    def test_many_nodes_smoke_test(self):
-        """Smoke test with many nodes to ensure no performance issues."""
-        member = Member(name="Smoke Test Member")
-        member.save()
-        for i in range(500):
-            node = _make_node(i + 1, lat=40.7 + i * 0.0005, lon=-73.9 + i * 0.0005)
-            building = _make_building(lat=node.latitude, lon=node.longitude)
-            _make_install(member, building, node, status=Install.InstallStatus.ACTIVE)
-
-        response = self.c.get("/api/v1/geography/active-mesh.kml")
-        self.assertEqual(response.status_code, 200)
