@@ -1,3 +1,4 @@
+import logging
 import uuid
 from typing import Optional
 
@@ -59,6 +60,23 @@ def validate_network_number_unused_and_claim_install_if_needed(
             return
 
         if nn_donor_install.status == Install.InstallStatus.ACTIVE:
+            if (
+                pre_existing_node_with_nn
+                and nn_donor_install.node
+                and (set(pre_existing_node_with_nn.buildings.all()) == set(nn_donor_install.node.buildings.all()))
+            ):
+                # This usually we means we can't use this install's number, because the install is active.
+                # However, there are edge cases where saving a node with the same NN as an install's number is valid, such as at, *sigh*... Jefferson. So, we need
+                # to check if this Install's Node and the network_number_candidate share buildings, like at Jefferson. If they do, we
+                # shouldn't raise an error and instead just log a warning and return.
+                # XXX (wdn): Perhaps this check ought to be for new nodes being saved for the first time.
+                logging.warning(
+                    f"NN{network_number_candidate} has a Jefferson situation. This pre-existing Node's NN matches an install's "
+                    f"install number, and that install is active and connected to another Node. However, that "
+                    "install shares a building with that pre-existing Node. Therefore, we won't touch the install."
+                )
+                return
+
             raise ValueError(
                 f"Invalid NN: {network_number_candidate} has an install associated that "
                 f"looks active (#{nn_donor_install.install_number})"

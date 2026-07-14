@@ -957,3 +957,93 @@ class TestNNRaceCondition(TransactionTestCase):
             resp_nn,
             f"nn incorrect for test_nn_valid_install_number. Should be {expected_nn}, but got {resp_nn}",
         )
+
+
+class TestSavingNodesWhenInstallWithNNIsActiveAndOnAnotherNode(TransactionTestCase):
+    admin_c = Client()
+
+    def setUp(self):
+        self.admin_user = User.objects.create_superuser(
+            username="admin", password="admin_password", email="admin@example.com"
+        )
+        self.admin_c.login(username="admin", password="admin_password")
+
+        member_obj = Member(**sample_member)
+        member_obj.save()
+
+        # Building A — the shared building between node_a and node_b
+        self.building_a = Building(**sample_building)
+        self.building_a.save()
+
+        # Building B — only on node_b, so the building sets are NOT equal
+        self.building_b = Building(**sample_building)
+        self.building_b.save()
+
+        # Node A holds NN 1001 — this is the pre-existing NN holder
+        # Has Building A only
+        self.node_a = Node(
+            network_number=1001,
+            status=Node.NodeStatus.PLANNED,
+            type=Node.NodeType.STANDARD,
+            latitude=0,
+            longitude=0,
+        )
+        self.node_a.save()
+        self.node_a.buildings.add(self.building_a)
+
+        # Node B holds the active install — has Building A only (same set as node_a)
+        self.node_b = Node(
+            network_number=1002,
+            status=Node.NodeStatus.ACTIVE,
+            type=Node.NodeType.STANDARD,
+            latitude=1,
+            longitude=1,
+        )
+        self.node_b.save()
+        self.node_b.buildings.add(self.building_a)
+
+        # Create an active install with install_number=1001, attached to node_b
+        inst = sample_install.copy()
+        if inst["abandon_date"] == "":
+            inst["abandon_date"] = None
+        inst["status"] = Install.InstallStatus.ACTIVE
+        inst["building"] = self.building_a
+        inst["member"] = member_obj
+
+        self.active_install = Install(**inst)
+        self.active_install.install_number = 1001
+        self.active_install.node = self.node_b
+        self.active_install.save()
+
+        # This node will be modified to have NN=1001
+        self.other_node = Node(
+            status=Node.NodeStatus.PLANNED,
+            type=Node.NodeType.STANDARD,
+            latitude=2,
+            longitude=2,
+        )
+        self.other_node.save()
+        self.other_node.buildings.add(self.building_a)
+
+    def test_node_with_nn_matching_active_install_can_be_saved_when_sharing_buildings(self):
+        # The Jefferson situation: a node whose network_number matches an active
+        # install's install number, where that install is attached to a different node,
+        # but the pre-existing NN holder (node_a) and the install's node (node_b)
+        # share the exact same set of buildings. This should succeed with a warning.
+        self.node_a.notes = "Chom"
+        self.node_a.save()
+        self.node_a.refresh_from_db()
+        self.assertEqual(self.node_a.network_number, 1001)
+
+    def test_node_with_nn_matching_active_install_fails_when_no_identical_building_sets(self):
+        # If the pre-existing NN holder and the install's node do NOT share the
+        # exact same set of buildings, it should fail with ValueError
+        # Add building_b to node_b so the building sets differ
+        self.node_b.buildings.add(self.building_b)
+
+        self.node_a.notes = "Chom"
+
+        with self.assertRaises(ValueError) as context:
+            self.node_a.save()
+
+        self.assertIn("has an install associated", str(context.exception))
