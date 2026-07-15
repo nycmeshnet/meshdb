@@ -5,11 +5,10 @@ from datetime import date, timedelta
 from random import randint, randrange
 from typing import Any, Optional, Tuple
 
+from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand
 from django.db import transaction
 from faker import Faker
-
-from django.contrib.auth.models import User
 
 from meshapi.models import LOS, Install, Member
 from meshapi.models.billing import InstallFeeBillingDatum
