@@ -959,7 +959,7 @@ class TestNNRaceCondition(TransactionTestCase):
         )
 
 
-class TestSavingNodesWhenInstallWithNNIsActiveAndOnAnotherNode(TransactionTestCase):
+class TestSavingExistingNodeWhenNNMatchesInstallNumberOfActiveNode(TransactionTestCase):
     admin_c = Client()
 
     def setUp(self):
@@ -1002,6 +1002,16 @@ class TestSavingNodesWhenInstallWithNNIsActiveAndOnAnotherNode(TransactionTestCa
         self.node_b.save()
         self.node_b.buildings.add(self.building_a)
 
+        self.node_c = Node(
+            network_number=1003,
+            status=Node.NodeStatus.PLANNED,
+            type=Node.NodeType.STANDARD,
+            latitude=0,
+            longitude=0,
+        )
+        self.node_c.save()
+        self.node_c.buildings.add(self.building_a)
+
         # Create an active install with install_number=1001, attached to node_b
         inst = sample_install.copy()
         if inst["abandon_date"] == "":
@@ -1015,6 +1025,11 @@ class TestSavingNodesWhenInstallWithNNIsActiveAndOnAnotherNode(TransactionTestCa
         self.active_install.node = self.node_b
         self.active_install.save()
 
+        self.active_install = Install(**inst)
+        self.active_install.install_number = 1004
+        self.active_install.node = self.node_b
+        self.active_install.save()
+
         # This node will be modified to have NN=1001
         self.other_node = Node(
             status=Node.NodeStatus.PLANNED,
@@ -1025,25 +1040,18 @@ class TestSavingNodesWhenInstallWithNNIsActiveAndOnAnotherNode(TransactionTestCa
         self.other_node.save()
         self.other_node.buildings.add(self.building_a)
 
-    def test_node_with_nn_matching_active_install_can_be_saved_when_sharing_buildings(self):
-        # The Jefferson situation: a node whose network_number matches an active
-        # install's install number, where that install is attached to a different node,
-        # but the pre-existing NN holder (node_a) and the install's node (node_b)
-        # share the exact same set of buildings. This should succeed with a warning.
+    def test_node_with_nn_matching_active_install_can_be_saved(self):
         self.node_a.notes = "Chom"
         self.node_a.save()
         self.node_a.refresh_from_db()
         self.assertEqual(self.node_a.network_number, 1001)
 
-    def test_node_with_nn_matching_active_install_fails_when_no_identical_building_sets(self):
-        # If the pre-existing NN holder and the install's node do NOT share the
-        # exact same set of buildings, it should fail with ValueError
-        # Add building_b to node_b so the building sets differ
-        self.node_b.buildings.add(self.building_b)
+    def test_changing_node_nn_to_number_of_active_install_fails_because_nn_immutable(self):
+        from django.core.exceptions import ValidationError
 
-        self.node_a.notes = "Chom"
+        self.node_c.network_number = 1004
 
-        with self.assertRaises(ValueError) as context:
-            self.node_a.save()
+        with self.assertRaises(ValidationError) as context:
+            self.node_c.save()
 
-        self.assertIn("has an install associated", str(context.exception))
+        self.assertIn("Network number is immutable once set", str(context.exception))
