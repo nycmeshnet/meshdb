@@ -2,9 +2,17 @@
 {% get_current_language as LANGUAGE_CODE %}{% get_current_language_bidi as LANGUAGE_BIDI %}
 <html lang="{{ LANGUAGE_CODE|default:"en-us" }}" dir="{{ LANGUAGE_BIDI|yesno:'rtl,ltr,auto' }}">
 <head>
-<script>const PANEL_URL = "/admin/iframe_wrapper/";</script>
-<script src="{% static '/admin/mobile_check.js' %}"></script>
-<script src="{% static '/admin/iframe_check.js' %}"></script>
+
+{% load feature_flags %}
+{% flag_enabled 'ADMIN_MAP_PANEL' as admin_map_panel_enabled %}
+
+{% if admin_map_panel_enabled %}
+  <script>const PANEL_URL = "/admin/iframe_wrapper/";</script>
+  <script src="{% static '/admin/mobile_check.js' %}"></script>
+  <script src="{% static '/admin/iframe_check.js' %}"></script>
+{% endif %}
+
+
 <title>{% block title %}{% endblock %}</title>
 <link rel="stylesheet" href="{% block stylesheet %}{% static "admin/css/base.css" %}{% endblock %}">
 {% block dark-mode-vars %}
