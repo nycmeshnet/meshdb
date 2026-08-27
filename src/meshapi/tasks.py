@@ -13,7 +13,6 @@ from meshapi.util.uisp_import.fetch_uisp import get_uisp_devices, get_uisp_links
 from meshapi.util.uisp_import.sync_handlers import (
     import_and_sync_uisp_devices,
     import_and_sync_uisp_links,
-    sync_link_table_into_los_objects,
 )
 from meshdb.celery import app as celery_app
 from meshdb.settings import MESHDB_ENVIRONMENT
@@ -24,7 +23,6 @@ def run_uisp_on_demand_import(target_nn: int) -> None:
     try:
         import_and_sync_uisp_devices(get_uisp_devices(), target_nn)
         import_and_sync_uisp_links(get_uisp_links(), target_nn)
-        sync_link_table_into_los_objects(target_nn)
     except Exception as e:
         logging.exception(e)
         statsd.increment("meshdb.tasks.run_uisp_on_demand", tags=["status:failure"])
@@ -100,7 +98,6 @@ def run_update_from_uisp() -> None:
     try:
         import_and_sync_uisp_devices(get_uisp_devices())
         import_and_sync_uisp_links(get_uisp_links())
-        sync_link_table_into_los_objects()
     except Exception as e:
         # Make sure the failure gets logged.
         logging.exception(e)
