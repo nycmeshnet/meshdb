@@ -1,2 +1,3 @@
 from .join_requests_slack_channel import send_join_request_slack_message
 from .osticket_creation import create_os_ticket_for_install
+from .update_stripe_subscription import update_stripe_subscription_on_install_update

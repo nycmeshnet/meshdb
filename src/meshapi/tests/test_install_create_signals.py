@@ -1,4 +1,5 @@
 import json
+from unittest import mock
 from unittest.mock import patch
 
 import requests_mock
@@ -6,6 +7,7 @@ from django.test import TestCase
 from flags.state import disable_flag, enable_flag
 
 from meshapi.models import Building, Install, Member, Node
+from meshapi.serializers import InstallSerializer
 from meshapi.tests.sample_data import sample_building, sample_install, sample_member
 
 
@@ -22,12 +24,29 @@ class TestInstallCreateSignals(TestCase):
 
         self.maxDiff = None
 
+        self.mock_add_install_to_stripe_subscription_patch = mock.patch(
+            "meshapi.util.events.update_stripe_subscription.add_install_to_subscription"
+        )
+        self.mock_add_install_to_stripe_subscription = self.mock_add_install_to_stripe_subscription_patch.start()
+        self.mock_remove_install_from_stripe_subscription_patch = mock.patch(
+            "meshapi.util.events.update_stripe_subscription.remove_install_from_subscription"
+        )
+        self.mock_remove_install_from_stripe_subscription = (
+            self.mock_remove_install_from_stripe_subscription_patch.start()
+        )
+
+    def tearDown(self):
+        self.mock_add_install_to_stripe_subscription_patch.stop()
+        self.mock_remove_install_from_stripe_subscription_patch.stop()
+
     @requests_mock.Mocker()
     def test_no_events_happen_by_default(self, request_mocker):
         install = Install(**self.sample_install_copy)
         install.save()
 
         self.assertEqual(len(request_mocker.request_history), 0)
+        self.mock_add_install_to_stripe_subscription.assert_not_called()
+        self.mock_remove_install_from_stripe_subscription.assert_not_called()
 
     @patch(
         "meshapi.util.events.join_requests_slack_channel.SLACK_JOIN_REQUESTS_CHANNEL_WEBHOOK_URL",
@@ -323,4 +342,181 @@ class TestInstallCreateSignals(TestCase):
                 ]
             ),
             4,
+        )
+
+    @patch(
+        "meshapi.util.events.update_stripe_subscription.STRIPE_API_TOKEN",
+        "mock-token",
+    )
+    def test_constructing_install_calls_stripe_install_number_add(self):
+        disable_flag("INTEGRATION_ENABLED_SEND_JOIN_REQUEST_SLACK_MESSAGES")
+        disable_flag("INTEGRATION_ENABLED_CREATE_OSTICKET_TICKETS")
+        enable_flag("INTEGRATION_ENABLED_UPDATE_STRIPE_SUBSCRIPTIONS")
+
+        install = Install(**self.sample_install_copy)
+        install.save()
+
+        self.mock_add_install_to_stripe_subscription.assert_called_with(
+            install.install_number, install.stripe_subscription_id
+        )
+        self.mock_remove_install_from_stripe_subscription.assert_not_called()
+
+    @patch(
+        "meshapi.util.events.update_stripe_subscription.STRIPE_API_TOKEN",
+        "mock-token",
+    )
+    def test_constructing_install_no_subscription_id_doesnt_call_stripe_install_number_add(self):
+        disable_flag("INTEGRATION_ENABLED_SEND_JOIN_REQUEST_SLACK_MESSAGES")
+        disable_flag("INTEGRATION_ENABLED_CREATE_OSTICKET_TICKETS")
+        enable_flag("INTEGRATION_ENABLED_UPDATE_STRIPE_SUBSCRIPTIONS")
+
+        install = Install(**self.sample_install_copy)
+        install.stripe_subscription_id = None
+        install.save()
+
+        self.mock_add_install_to_stripe_subscription.assert_not_called()
+        self.mock_remove_install_from_stripe_subscription.assert_not_called()
+
+    @patch(
+        "meshapi.util.events.update_stripe_subscription.STRIPE_API_TOKEN",
+        "mock-token",
+    )
+    def test_adding_a_subscription_id_calls_stripe_install_number_remove(self):
+        disable_flag("INTEGRATION_ENABLED_SEND_JOIN_REQUEST_SLACK_MESSAGES")
+        disable_flag("INTEGRATION_ENABLED_CREATE_OSTICKET_TICKETS")
+        disable_flag("INTEGRATION_ENABLED_UPDATE_STRIPE_SUBSCRIPTIONS")
+
+        install = Install(**self.sample_install_copy)
+        install.stripe_subscription_id = None
+        install.save()
+
+        enable_flag("INTEGRATION_ENABLED_UPDATE_STRIPE_SUBSCRIPTIONS")
+
+        install.stripe_subscription_id = "sub_foobar"
+        install.save()
+
+        self.mock_add_install_to_stripe_subscription.assert_called_with(install.install_number, "sub_foobar")
+        self.mock_remove_install_from_stripe_subscription.assert_not_called()
+
+    @patch(
+        "meshapi.util.events.update_stripe_subscription.STRIPE_API_TOKEN",
+        "mock-token",
+    )
+    def test_removing_a_subscription_id_calls_stripe_install_number_remove(self):
+        disable_flag("INTEGRATION_ENABLED_SEND_JOIN_REQUEST_SLACK_MESSAGES")
+        disable_flag("INTEGRATION_ENABLED_CREATE_OSTICKET_TICKETS")
+        disable_flag("INTEGRATION_ENABLED_UPDATE_STRIPE_SUBSCRIPTIONS")
+
+        install = Install(**self.sample_install_copy)
+        original_stripe_subscription_id = install.stripe_subscription_id
+        install.save()
+
+        enable_flag("INTEGRATION_ENABLED_UPDATE_STRIPE_SUBSCRIPTIONS")
+
+        install.stripe_subscription_id = None
+        install.save()
+
+        self.mock_remove_install_from_stripe_subscription.assert_called_with(
+            install.install_number, original_stripe_subscription_id
+        )
+        self.mock_add_install_to_stripe_subscription.assert_not_called()
+
+    @patch(
+        "meshapi.util.events.update_stripe_subscription.STRIPE_API_TOKEN",
+        "mock-token",
+    )
+    def test_modifying_a_subscription_id_calls_stripe_install_number_add(self):
+        disable_flag("INTEGRATION_ENABLED_SEND_JOIN_REQUEST_SLACK_MESSAGES")
+        disable_flag("INTEGRATION_ENABLED_CREATE_OSTICKET_TICKETS")
+        disable_flag("INTEGRATION_ENABLED_UPDATE_STRIPE_SUBSCRIPTIONS")
+
+        install = Install(**self.sample_install_copy)
+        original_stripe_subscription_id = install.stripe_subscription_id
+        install.save()
+
+        enable_flag("INTEGRATION_ENABLED_UPDATE_STRIPE_SUBSCRIPTIONS")
+
+        install.stripe_subscription_id = "sub_foobarbaz"
+        install.save()
+
+        self.mock_remove_install_from_stripe_subscription.assert_called_with(
+            install.install_number, original_stripe_subscription_id
+        )
+        self.mock_add_install_to_stripe_subscription.assert_called_with(
+            install.install_number, install.stripe_subscription_id
+        )
+
+    @patch(
+        "meshapi.util.events.update_stripe_subscription.STRIPE_API_TOKEN",
+        "mock-token",
+    )
+    def test_modifying_an_install_without_changing_subscription_id_no_stripe_calls(self):
+        disable_flag("INTEGRATION_ENABLED_SEND_JOIN_REQUEST_SLACK_MESSAGES")
+        disable_flag("INTEGRATION_ENABLED_CREATE_OSTICKET_TICKETS")
+        disable_flag("INTEGRATION_ENABLED_UPDATE_STRIPE_SUBSCRIPTIONS")
+
+        install1 = Install(**self.sample_install_copy)
+        install1.save()
+
+        self.assertIsNotNone(install1.stripe_subscription_id)
+
+        install2 = Install(**self.sample_install_copy)
+        install2.stripe_subscription_id = None
+        install2.save()
+
+        self.assertIsNone(install2.stripe_subscription_id)
+
+        enable_flag("INTEGRATION_ENABLED_UPDATE_STRIPE_SUBSCRIPTIONS")
+
+        install1.notes = "Some unrelated change"
+        install1.save()
+
+        install2.notes = "Some unrelated change"
+        install2.save()
+
+        self.assertIsNotNone(install1.stripe_subscription_id)
+        self.assertIsNone(install2.stripe_subscription_id)
+
+        self.mock_remove_install_from_stripe_subscription.assert_not_called()
+        self.mock_add_install_to_stripe_subscription.assert_not_called()
+
+    @patch(
+        "meshapi.util.events.update_stripe_subscription.STRIPE_API_TOKEN",
+        None,
+    )
+    def test_constructing_install_no_stripe_token_doesnt_fail_create(self):
+        disable_flag("INTEGRATION_ENABLED_SEND_JOIN_REQUEST_SLACK_MESSAGES")
+        disable_flag("INTEGRATION_ENABLED_CREATE_OSTICKET_TICKETS")
+        enable_flag("INTEGRATION_ENABLED_UPDATE_STRIPE_SUBSCRIPTIONS")
+
+        self.mock_add_install_to_stripe_subscription.side_effect = RuntimeError()
+
+        install = Install(**self.sample_install_copy)
+        install.save()
+
+        self.mock_remove_install_from_stripe_subscription.assert_not_called()
+        self.mock_add_install_to_stripe_subscription.assert_not_called()
+
+    @patch(
+        "meshapi.util.events.update_stripe_subscription.STRIPE_API_TOKEN",
+        "mock-token",
+    )
+    @patch("meshapi.util.events.update_stripe_subscription.notify_administrators_of_data_issue")
+    def test_constructing_install_stripe_exception_sends_slack_admin_alert(
+        self, mock_notify_administrators_of_data_issue
+    ):
+        disable_flag("INTEGRATION_ENABLED_SEND_JOIN_REQUEST_SLACK_MESSAGES")
+        disable_flag("INTEGRATION_ENABLED_CREATE_OSTICKET_TICKETS")
+        enable_flag("INTEGRATION_ENABLED_UPDATE_STRIPE_SUBSCRIPTIONS")
+
+        self.mock_add_install_to_stripe_subscription.side_effect = RuntimeError()
+
+        install = Install(**self.sample_install_copy)
+        install.save()
+
+        mock_notify_administrators_of_data_issue.assert_called_with(
+            [install],
+            InstallSerializer,
+            "Fatal exception (after retries) when trying to update the Stripe subscription(s): "
+            "[None, 'sub_NotARealSubscriptionIDValue']",
         )
