@@ -205,7 +205,6 @@ class AdditionalMembersInline(TabularInline):
     show_change_link = True
 
     def name(self, instance: Any) -> str:
-        print(type(instance))
         return instance.member.name if instance.member else "-"
 
     def primary_email_address(self, instance: Any) -> str:

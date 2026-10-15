@@ -44,6 +44,8 @@ If you would like to develop in a [Dev Container](https://code.visualstudio.com/
 
 ### with Host
 
+If you are using NixOS, activate the dev environment with `nix-shell`, and then proceed with the below instructions.
+
 If you would like to develop directly on your host machine
 
 Install Python 3.11 and pip.

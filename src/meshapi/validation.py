@@ -7,15 +7,8 @@ from typing import List, Optional
 import phonenumbers
 import requests
 from django.core.exceptions import ValidationError
+from email_validator import EmailNotValidError, validate_email
 from flags.state import flag_state
-from validate_email import validate_email_or_fail
-from validate_email.exceptions import (
-    DNSTimeoutError,
-    EmailValidationError,
-    SMTPCommunicationError,
-    SMTPTemporaryError,
-    TLSNegotiationError,
-)
 
 from meshapi.exceptions import AddressAPIError, InvalidAddressError, UnsupportedAddressError
 from meshapi.util.constants import DEFAULT_EXTERNAL_API_TIMEOUT_SECONDS, INVALID_ALTITUDE
@@ -43,26 +36,15 @@ RECAPTCHA_TOKEN_VALIDATION_URL = "https://www.google.com/recaptcha/api/siteverif
 INVALID_BIN_NUMBERS = [-2, -1, 0, 1000000, 2000000, 3000000, 4000000]
 
 
-def validate_email_address(email_address: str) -> Optional[bool]:
+def validate_email_address(email_address: str) -> bool:
     try:
-        return validate_email_or_fail(
-            email_address=email_address,
-            check_format=True,
-            check_blacklist=True,
-            check_dns=True,
-            dns_timeout=5,
-            check_smtp=False,
-        )
-    except SMTPTemporaryError:
-        # SMTPTemporaryError indicates address validity
-        # is ambiguous. We give the submitter the benefit of the doubt in this case
+        # email_validator checks syntax and (with check_deliverability=True) DNS/MX records.
+        # Transient DNS issues are handled by the library as "unknown deliverability" and do not raise,
+        # so we no longer need separate timeout/SMTP exception handling.
+        validate_email(email_address, check_deliverability=True, timeout=5)
         return True
-    except (DNSTimeoutError, SMTPCommunicationError, TLSNegotiationError) as error:
-        # These errors indicate a transient failure in our ability to validate the requested email,
-        # re-raise the exception to trigger a 500 at the top level handler
-        raise error
-    except EmailValidationError:
-        # Failures for any other reason indicate the email address is invalid, and we should 400 them
+    except EmailNotValidError:
+        # The address is syntactically invalid or its domain is not deliverable.
         return False
 
 

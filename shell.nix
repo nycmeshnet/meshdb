@@ -3,8 +3,8 @@
   name = "pipzone";
   targetPkgs = pkgs: (with pkgs; [
     python311
-    python311Packages.pip
-    python311Packages.virtualenv
+    python312Packages.pip
+    python312Packages.virtualenv
   ]);
   runScript = "zsh";
 }).env

@@ -2,7 +2,7 @@ import datetime
 
 from bs4 import BeautifulSoup
 from django.contrib.auth.models import Group, User
-from django.test import Client, TestCase
+from django.test import Client, TestCase, override_settings
 from rest_framework.authtoken.models import TokenProxy
 
 from meshapi.models import LOS, AccessPoint, Building, Device, Install, Link, Member, Node, Sector
@@ -87,6 +87,7 @@ class TestAdminPanel(TestCase):
             user=self.admin_user, target="http://example.com", event="building.created", headers=""
         )
 
+    @override_settings(FLAGS={"ADMIN_MAP_PANEL": [("boolean", True)]})
     def test_iframe_loads(self):
         route = "/admin/iframe_wrapper/"
         code = 200

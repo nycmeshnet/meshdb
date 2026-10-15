@@ -51,6 +51,12 @@ def validate_network_number_unused_and_claim_install_if_needed(
     if pre_existing_node_with_nn is not None and pre_existing_node_with_nn.id != pre_existing_node_id:
         raise ValueError("Network number already in use by another node")
 
+    if pre_existing_node_with_nn is not None and pre_existing_node_with_nn.id == pre_existing_node_id:
+        # This ensures that existing nodes that have an NN that matches the install # of an active
+        # install can be saved. In this case, we don't want to touch that install. We don't need to,
+        # because the node already exists.
+        return
+
     nn_donor_install = Install.objects.select_for_update().filter(install_number=network_number_candidate).first()
     if nn_donor_install:
         if pre_existing_node_id and nn_donor_install.node_id == pre_existing_node_id:

@@ -11,7 +11,6 @@ from django.db.models import Q
 from django.test import Client, TestCase, TransactionTestCase
 from flags.state import enable_flag
 from parameterized import parameterized
-from validate_email.exceptions import DNSTimeoutError, SMTPTemporaryError
 
 from meshapi.models import Building, Install, Member, Node
 from meshapi.views import JoinFormRequest
@@ -390,47 +389,22 @@ class TestJoinForm(TestCase):
             f"status code incorrect for invalid email valid phone. Should be {code}, but got {response.status_code}.\n Response is: {response.content.decode('utf-8')}",
         )
 
-    @patch("meshapi.validation.validate_email_or_fail")
-    def test_email_parsing_fails(self, mock_validate):
-        mock_validate.side_effect = DNSTimeoutError()
-        request, _ = pull_apart_join_form_submission(valid_join_form_submission)
-
-        response = self.c.post("/api/v1/join/", request, content_type="application/json")
-        code = 500
-        self.assertEqual(
-            code,
-            response.status_code,
-            f"status code incorrect for invalid email valid phone. Should be {code}, but got {response.status_code}.\n Response is: {response.content.decode('utf-8')}",
-        )
-
-    @patch("meshapi.validation.validate_email_or_fail")
-    def test_email_parsing_fails_temporary_issue(self, mock_validate):
-        mock_validate.side_effect = SMTPTemporaryError({"err": "temporary mock issue"})
-        request, _ = pull_apart_join_form_submission(valid_join_form_submission)
-
-        response = self.c.post("/api/v1/join/", request, content_type="application/json")
-        code = 201
-        self.assertEqual(
-            code,
-            response.status_code,
-            f"status code incorrect for invalid email valid phone. Should be {code}, but got {response.status_code}.\n Response is: {response.content.decode('utf-8')}",
-        )
-
-    @patch("meshapi.validation.validate_email_or_fail")
-    def test_email_parsing_fails_temporary_issue_bad_email(self, mock_validate):
-        """Check that an invalid email is given the benefit of the doubt when SMTPTemporaryError is thrown"""
-        mock_validate.side_effect = SMTPTemporaryError({"err": "temporary mock issue"})
+    @patch("meshapi.validation.validate_email_address")
+    def test_invalid_email_returns_400_when_validator_rejects(self, mock_validate):
+        """Verify the view returns 400 when validate_email_address() returns False."""
         submission = valid_join_form_submission.copy()
-
         submission["email_address"] = "aljksdafljkasfjldsaf"
-        request, _ = pull_apart_join_form_submission(valid_join_form_submission)
+        request, _ = pull_apart_join_form_submission(submission)
+
+        mock_validate.return_value = False
 
         response = self.c.post("/api/v1/join/", request, content_type="application/json")
-        code = 201
+        code = 400
         self.assertEqual(
             code,
             response.status_code,
-            f"status code incorrect for invalid email valid phone. Should be {code}, but got {response.status_code}.\n Response is: {response.content.decode('utf-8')}",
+            f"status code incorrect for invalid email. Should be {code}, but got {response.status_code}.\n"
+            f"Response is: {response.content.decode('utf-8')}",
         )
 
     def test_non_nyc_join_form(self):

@@ -66,5 +66,6 @@ urlpatterns = [
     path("mapdata/sectors/", views.MapDataSectorList.as_view(), name="meshapi-v1-map-data-sectors"),
     path("mapdata/kiosks/", views.KioskListWrapper.as_view(), name="meshapi-v1-map-data-kiosks"),
     path("geography/whole-mesh.kml", views.WholeMeshKML.as_view(), name="meshapi-v1-geography-whole-mesh-kml"),
+    path("geography/active-mesh.kml", views.ActiveMeshKML.as_view(), name="meshapi-v1-geography-active-mesh-kml"),
     path("geography/nyc-geocode/v2/search", views.NYCGeocodeWrapper.as_view(), name="meshapi-v1-geography-geocode"),
 ]
