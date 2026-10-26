@@ -28,10 +28,12 @@ jobs:
         uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version-file: "pyproject.toml"
-      - name: "Upgrade pip"
-        run: "pip install --upgrade pip"
+      - name: "Install uv" # using it intead of pip
+        uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          version: ">=0.13.0,<0.14"
       - name: "Install package"
-        run: pip install ".[dev]"
+        run: uv sync --all-extras
       - name: "You forgot to run manage.py makemigrations for model changes"
         env:
           DB_NAME: nycmesh-dev
@@ -41,5 +43,5 @@ jobs:
           DB_PORT: 5432
           DJANGO_SECRET_KEY: k7j&!u07c%%97s!^a_6%mh_wbzo*$hl4lj_6c2ee6dk)y9!k88
         run: |
-          python src/manage.py makemigrations meshapi meshapi_hooks --dry-run # Run extra time for debug output
-          python src/manage.py makemigrations meshapi meshapi_hooks --dry-run | grep "No changes detected in apps"
+          uv run python src/manage.py makemigrations meshapi meshapi_hooks --dry-run # Run extra time for debug output
+          uv run python src/manage.py makemigrations meshapi meshapi_hooks --dry-run | grep "No changes detected in apps"
