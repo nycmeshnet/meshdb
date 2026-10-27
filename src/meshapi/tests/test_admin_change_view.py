@@ -23,7 +23,13 @@ from meshapi.models import (
 )
 from meshapi_hooks.hooks import CelerySerializerHook
 
-from .sample_data import sample_building, sample_device, sample_install, sample_member, sample_node
+from .sample_data import (
+    sample_building,
+    sample_device,
+    sample_install,
+    sample_member,
+    sample_node,
+)
 
 
 def fill_in_admin_form(soup: bs4.BeautifulSoup, form_data: Dict[str, str]) -> None:
@@ -124,13 +130,18 @@ class TestAdminChangeView(TestCase):
         self.test_auth_token = TokenProxy.objects.create(user=self.admin_user)
 
         self.test_webhook = CelerySerializerHook.objects.create(
-            user=self.admin_user, target="http://example.com", event="building.created", headers=""
+            user=self.admin_user,
+            target="http://example.com",
+            event="building.created",
+            headers="",
         )
 
     def _call(self, route, code):
         response = self.c.get(route)
         self.assertEqual(
-            code, response.status_code, f"Call to admin panel route {route} failed. Got code {response.status_code}."
+            code,
+            response.status_code,
+            f"Call to admin panel route {route} failed. Got code {response.status_code}.",
         )
         return response
 
@@ -187,7 +198,7 @@ class TestAdminChangeView(TestCase):
                 form_data[key] = value
 
         response = self.c.post(route, data=form_data)
-        response_soup = bs4.BeautifulSoup(response.content.decode(), "html.parser")
+        response_soup = bs4.BeautifulSoup(markup=response.content.decode(), features="lxml")
         response_forms = response_soup.find_all("form")
         assertion_func = self.assertEqual
 
@@ -211,17 +222,29 @@ class TestAdminChangeView(TestCase):
     def test_change_building(self):
         change_url = f"/admin/meshapi/building/{self.building_1.id}/change/"
         response = self._call(change_url, 200)
-        self._submit_form(change_url, bs4.BeautifulSoup(response.content.decode()).find(id="building_form"), 302)
+        self._submit_form(
+            change_url,
+            bs4.BeautifulSoup(markup=response.content.decode(), features="lxml").find(id="building_form"),
+            302,
+        )
 
     def test_change_member(self):
         change_url = f"/admin/meshapi/member/{self.member.id}/change/"
         response = self._call(change_url, 200)
-        self._submit_form(change_url, bs4.BeautifulSoup(response.content.decode()).find(id="member_form"), 302)
+        self._submit_form(
+            change_url,
+            bs4.BeautifulSoup(markup=response.content.decode(), features="lxml").find(id="member_form"),
+            302,
+        )
 
     def test_change_member_no_email(self):
         change_url = f"/admin/meshapi/member/{self.member2.id}/change/"
         response = self._call(change_url, 200)
-        self._submit_form(change_url, bs4.BeautifulSoup(response.content.decode()).find(id="member_form"), 302)
+        self._submit_form(
+            change_url,
+            bs4.BeautifulSoup(markup=response.content.decode(), features="lxml").find(id="member_form"),
+            302,
+        )
 
         self.member2.refresh_from_db()
         self.assertIsNone(self.member2.primary_email_address)
@@ -229,7 +252,7 @@ class TestAdminChangeView(TestCase):
     def test_add_new_member(self):
         change_url = "/admin/meshapi/member/add/"
         response = self._call(change_url, 200)
-        form_soup = bs4.BeautifulSoup(response.content.decode()).find(id="member_form")
+        form_soup = bs4.BeautifulSoup(markup=response.content.decode(), features="lxml").find(id="member_form")
         fill_in_admin_form(
             form_soup,
             {
@@ -251,7 +274,10 @@ class TestAdminChangeView(TestCase):
         self.assertEqual(member.name, "Test Member")
         self.assertEqual(member.primary_email_address, "test1@example.com")
         self.assertEqual(member.stripe_email_address, "test2@example.com")
-        self.assertEqual(member.additional_email_addresses, ["test3@example.com", "test4@example.com"])
+        self.assertEqual(
+            member.additional_email_addresses,
+            ["test3@example.com", "test4@example.com"],
+        )
         self.assertEqual(member.phone_number, "+1 1235555555")
         self.assertEqual(member.additional_phone_numbers, ["+1 1235555566", "+1 1235555577"])
         self.assertEqual(member.slack_handle, "abcdef")
@@ -260,7 +286,7 @@ class TestAdminChangeView(TestCase):
     def test_add_new_member_name_only(self):
         change_url = "/admin/meshapi/member/add/"
         response = self._call(change_url, 200)
-        form_soup = bs4.BeautifulSoup(response.content.decode()).find(id="member_form")
+        form_soup = bs4.BeautifulSoup(markup=response.content.decode(), features="lxml").find(id="member_form")
         fill_in_admin_form(
             form_soup,
             {
@@ -284,39 +310,63 @@ class TestAdminChangeView(TestCase):
     def test_change_install(self):
         change_url = f"/admin/meshapi/install/{self.install.id}/change/"
         response = self._call(change_url, 200)
-        self._submit_form(change_url, bs4.BeautifulSoup(response.content.decode()).find(id="install_form"), 302)
+        self._submit_form(
+            change_url,
+            bs4.BeautifulSoup(markup=response.content.decode(), features="lxml").find(id="install_form"),
+            302,
+        )
 
     def test_change_installfeebillingdatum(self):
         change_url = f"/admin/meshapi/installfeebillingdatum/{self.billing_datum.id}/change/"
         response = self._call(change_url, 200)
         self._submit_form(
-            change_url, bs4.BeautifulSoup(response.content.decode()).find(id="installfeebillingdatum_form"), 302
+            change_url,
+            bs4.BeautifulSoup(markup=response.content.decode(), features="lxml").find(id="installfeebillingdatum_form"),
+            302,
         )
 
     def test_change_link(self):
         change_url = f"/admin/meshapi/link/{self.link.id}/change/"
         response = self._call(change_url, 200)
-        self._submit_form(change_url, bs4.BeautifulSoup(response.content.decode()).find(id="link_form"), 302)
+        self._submit_form(
+            change_url,
+            bs4.BeautifulSoup(markup=response.content.decode(), features="lxml").find(id="link_form"),
+            302,
+        )
 
     def test_change_los(self):
         change_url = f"/admin/meshapi/los/{self.los.id}/change/"
         response = self._call(change_url, 200)
-        self._submit_form(change_url, bs4.BeautifulSoup(response.content.decode()).find(id="los_form"), 302)
+        self._submit_form(
+            change_url,
+            bs4.BeautifulSoup(markup=response.content.decode(), features="lxml").find(id="los_form"),
+            302,
+        )
 
     def test_change_device(self):
         change_url = f"/admin/meshapi/device/{self.device1.id}/change/"
         response = self._call(change_url, 200)
-        self._submit_form(change_url, bs4.BeautifulSoup(response.content.decode()).find(id="device_form"), 302)
+        self._submit_form(
+            change_url,
+            bs4.BeautifulSoup(markup=response.content.decode(), features="lxml").find(id="device_form"),
+            302,
+        )
 
     def test_change_sector_accessed_via_device_redirect(self):
         change_url = f"/admin/meshapi/device/{self.sector.id}/change/"
         response = self._call(change_url, 302)
-        self.assertEqual(response.url, f"http://testserver/admin/meshapi/sector/{self.sector.id}/change/")
+        self.assertEqual(
+            response.url,
+            f"http://testserver/admin/meshapi/sector/{self.sector.id}/change/",
+        )
 
     def test_change_ap_accessed_via_device_redirect(self):
         change_url = f"/admin/meshapi/device/{self.access_point.id}/change/"
         response = self._call(change_url, 302)
-        self.assertEqual(response.url, f"http://testserver/admin/meshapi/accesspoint/{self.access_point.id}/change/")
+        self.assertEqual(
+            response.url,
+            f"http://testserver/admin/meshapi/accesspoint/{self.access_point.id}/change/",
+        )
 
     def test_change_device_bad_id(self):
         change_url = "/admin/meshapi/device/00000000-0000-0000-0000-000000000000/change/"
@@ -326,22 +376,34 @@ class TestAdminChangeView(TestCase):
     def test_change_sector(self):
         change_url = f"/admin/meshapi/sector/{self.sector.id}/change/"
         response = self._call(change_url, 200)
-        self._submit_form(change_url, bs4.BeautifulSoup(response.content.decode()).find(id="sector_form"), 302)
+        self._submit_form(
+            change_url,
+            bs4.BeautifulSoup(markup=response.content.decode(), features="lxml").find(id="sector_form"),
+            302,
+        )
 
     def test_change_accesspoint(self):
         change_url = f"/admin/meshapi/accesspoint/{self.access_point.id}/change/"
         response = self._call(change_url, 200)
-        self._submit_form(change_url, bs4.BeautifulSoup(response.content.decode()).find(id="accesspoint_form"), 302)
+        self._submit_form(
+            change_url,
+            bs4.BeautifulSoup(markup=response.content.decode(), features="lxml").find(id="accesspoint_form"),
+            302,
+        )
 
     def test_change_node(self):
         change_url = f"/admin/meshapi/node/{self.node1.id}/change/"
         response = self._call(change_url, 200)
-        self._submit_form(change_url, bs4.BeautifulSoup(response.content.decode()).find(id="node_form"), 302)
+        self._submit_form(
+            change_url,
+            bs4.BeautifulSoup(markup=response.content.decode(), features="lxml").find(id="node_form"),
+            302,
+        )
 
     def test_change_node_remove_building(self):
         change_url = f"/admin/meshapi/node/{self.node1.id}/change/"
         response = self._call(change_url, 200)
-        soup = bs4.BeautifulSoup(response.content.decode()).find(id="node_form")
+        soup = bs4.BeautifulSoup(markup=response.content.decode(), features="lxml").find(id="node_form")
         fill_in_admin_form(
             soup,
             {
@@ -355,7 +417,7 @@ class TestAdminChangeView(TestCase):
     def test_add_new_node(self):
         change_url = "/admin/meshapi/node/add/"
         response = self._call(change_url, 200)
-        form_soup = bs4.BeautifulSoup(response.content.decode()).find(id="node_form")
+        form_soup = bs4.BeautifulSoup(markup=response.content.decode(), features="lxml").find(id="node_form")
         fill_in_admin_form(
             form_soup,
             {
@@ -398,7 +460,7 @@ class TestAdminChangeView(TestCase):
     def test_add_new_node_no_building(self):
         change_url = "/admin/meshapi/node/add/"
         response = self._call(change_url, 200)
-        form_soup = bs4.BeautifulSoup(response.content.decode()).find(id="node_form")
+        form_soup = bs4.BeautifulSoup(markup=response.content.decode(), features="lxml").find(id="node_form")
         fill_in_admin_form(
             form_soup,
             {
@@ -421,7 +483,7 @@ class TestAdminChangeView(TestCase):
     def test_add_new_node_no_nn(self):
         change_url = "/admin/meshapi/node/add/"
         response = self._call(change_url, 200)
-        form_soup = bs4.BeautifulSoup(response.content.decode()).find(id="node_form")
+        form_soup = bs4.BeautifulSoup(markup=response.content.decode(), features="lxml").find(id="node_form")
         fill_in_admin_form(
             form_soup,
             {
@@ -463,7 +525,7 @@ class TestAdminChangeView(TestCase):
     def test_add_new_planned_node_no_nn(self):
         change_url = "/admin/meshapi/node/add/"
         response = self._call(change_url, 200)
-        form_soup = bs4.BeautifulSoup(response.content.decode()).find(id="node_form")
+        form_soup = bs4.BeautifulSoup(markup=response.content.decode(), features="lxml").find(id="node_form")
         fill_in_admin_form(
             form_soup,
             {
@@ -506,7 +568,7 @@ class TestAdminChangeView(TestCase):
         enable_flag("EDIT_PANORAMAS")
         change_url = "/admin/meshapi/building/add/"
         response = self._call(change_url, 200)
-        form_soup = bs4.BeautifulSoup(response.content.decode()).find(id="building_form")
+        form_soup = bs4.BeautifulSoup(markup=response.content.decode(), features="lxml").find(id="building_form")
 
         fill_in_admin_form(
             form_soup,
@@ -547,7 +609,7 @@ class TestAdminChangeView(TestCase):
         disable_flag("EDIT_PANORAMAS")
         change_url = "/admin/meshapi/building/add/"
         response = self._call(change_url, 200)
-        form_soup = bs4.BeautifulSoup(response.content.decode()).find(id="building_form")
+        form_soup = bs4.BeautifulSoup(markup=response.content.decode(), features="lxml").find(id="building_form")
 
         fill_in_admin_form(
             form_soup,
@@ -587,7 +649,7 @@ class TestAdminChangeView(TestCase):
         enable_flag("EDIT_PANORAMAS")
         change_url = f"/admin/meshapi/building/{self.building_1.id}/change/"
         response = self._call(change_url, 200)
-        form_soup = bs4.BeautifulSoup(response.content.decode()).find(id="building_form")
+        form_soup = bs4.BeautifulSoup(markup=response.content.decode(), features="lxml").find(id="building_form")
         fill_in_admin_form(
             form_soup,
             {
@@ -627,7 +689,7 @@ class TestAdminChangeView(TestCase):
         enable_flag("EDIT_PANORAMAS")
         change_url = f"/admin/meshapi/building/{self.building_1.id}/change/"
         response = self._call(change_url, 200)
-        form_soup = bs4.BeautifulSoup(response.content.decode()).find(id="building_form")
+        form_soup = bs4.BeautifulSoup(markup=response.content.decode(), features="lxml").find(id="building_form")
         fill_in_admin_form(
             form_soup,
             {
@@ -661,7 +723,10 @@ class TestAdminChangeView(TestCase):
         self.assertEqual(building.panoramas, ["http://example.com"])
         self.assertEqual(
             building.address_truth_sources,
-            [AddressTruthSource.NYCPlanningLabs.value, AddressTruthSource.HumanEntry.value],
+            [
+                AddressTruthSource.NYCPlanningLabs.value,
+                AddressTruthSource.HumanEntry.value,
+            ],
         )
         self.assertEqual(building.primary_node, self.node1)
         self.assertEqual(list(building.nodes.all()), [self.node1])
@@ -680,7 +745,7 @@ class TestAdminChangeView(TestCase):
 
         change_url = f"/admin/meshapi/install/{old_install.id}/change/"
         response = self._call(change_url, 200)
-        form_soup = bs4.BeautifulSoup(response.content.decode()).find(id="install_form")
+        form_soup = bs4.BeautifulSoup(markup=response.content.decode(), features="lxml").find(id="install_form")
         link_tag = form_soup.find("select", {"id": "id_status"}).parent.find("a")
         self.assertEqual(link_tag.attrs["href"], f"/admin/meshapi/node/{new_node.id}")
         self.assertEqual(link_tag.attrs["title"], "Show the node that got this install's number")
