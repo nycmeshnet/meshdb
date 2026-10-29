@@ -1,7 +1,8 @@
 {
-    "image": "docker.io/python:3.11-bookworm",
+    "image": "docker.io/astral/uv:python3.14-trixie-slim",
     "runArgs": [
-        "--network=host",
+        "--network=host"
     ],
-    "postStartCommand": "pip install -e '.[dev]'"
+    "postCreateCommand": "apt-get -y update && apt-get -y install ca-certificates git ",
+    "postStartCommand": "uv sync --all-extras"
 }
