@@ -10,16 +10,18 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v4
       - name: Set up Python
-        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v4
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
-          python-version: '3.11'
-      - name: "Upgrade pip"
-        run: "pip install --upgrade pip"
+          python-version-file: "pyproject.toml"
+      - name: "Install uv" # using it intead of pip
+        uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          version: ">=0.13.0,<0.14"
       - name: "Print python version"
         run: "python --version"
       - name: "Install package"
-        run: pip install ".[dev]"
+        run: uv sync --all-extras
       - name: "Run lint checks"
-        run: invoke lint
+        run: uv run invoke lint
     env:
       DJANGO_SECRET_KEY: SECRET_KEY

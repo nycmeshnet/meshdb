@@ -3,7 +3,7 @@ name: Run Django Tests
 on:
   pull_request:
   push:
-    branches: [ main ]
+    branches: [main]
 
 permissions: read-all
 
@@ -36,13 +36,15 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v4
       - name: Set up Python
-        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v4
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
-          python-version: '3.11'
-      - name: "Upgrade pip"
-        run: "pip install --upgrade pip"
+          python-version-file: "pyproject.toml"
+      - name: "Install uv" # using it intead of pip
+        uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          version: ">=0.13.0,<0.14"
       - name: "Install package"
-        run: pip install ".[dev]"
+        run: uv sync --all-extras
       - name: Run Django Tests
         env:
           DB_NAME: nycmesh-dev
@@ -63,9 +65,9 @@ jobs:
           AWS_SECRET_ACCESS_KEY: samplesecretkey
           AWS_REGION: us-east-1
           SITE_BASE_URL: http://localhost
-        run: coverage run src/manage.py test meshapi meshapi_hooks
+        run: uv run coverage run src/manage.py test meshapi meshapi_hooks
       - name: Write coverage report to disk
-        run: coverage html
+        run: uv run coverage html
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@671740ac38dd9b0130fbe1cec585b89eea48d3de # v5.5.2
         with:
