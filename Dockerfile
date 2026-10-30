@@ -27,9 +27,11 @@ FROM debian:trixie-slim
 
 # netcat-openbsd is used to check if the db is available
 # ca-certificates is needed for outbound HTTPS (S3, Datadog, geocoding, etc.)
+# curl is needed for k8s health probes
 RUN apt-get -y update && \
     apt-get -y install \
     ca-certificates \
+    curl \
     netcat-openbsd \
     postgresql-client && \
     rm -rf /var/lib/apt/lists/*
