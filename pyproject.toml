@@ -5,7 +5,7 @@ version = "0.1"
 
 dependencies = [
     "celery[redis]==5.3.*",
-    "django==4.2.*",
+    "django>=4.2,<4.3",
     # FIXME: Go back to PyPI once DRF adds support for using Django's read-only permissions
     #  https://github.com/nycmeshnet/meshdb/issues/524
     "djangorestframework@git+https://github.com/encode/django-rest-framework.git@4bbfa8d4556b5847e91ba95f457cc862b7a0f027",
@@ -31,9 +31,7 @@ dependencies = [
     "django-filter==24.1",
     "django-jsonform==2.23.*",
     "faker==24.3.*",
-    # FIXME: Go back to PyPI when https://github.com/jazzband/django-dbbackup/pull/515 or https://github.com/jazzband/django-dbbackup/pull/511 is merged
-    #  https://github.com/nycmeshnet/meshdb/issues/527
-    "django-dbbackup@git+https://github.com/willnilges/django-dbbackup.git@62048411ff5beac4beac1578f686824214f1f33a",
+    "django-dbbackup==4.3.0",
     "django-storages==1.14.*",
     "django-import-export==4.0.*",
     "boto3==1.34.*",
