@@ -233,7 +233,11 @@ Integration tests are defined in subdirectories within the
 They are automatically run by the deployment pipeline to prevent issues
 from reaching our production stages. To run them locally, first edit
 the `.env` file to set the `SITE_BASE_URL` environment variable to the
-domain of the stage you want to run the tests against:
+Integration tests are defined in subdirectories within the
+[integ-tests/](integ-tests/) directory.
+
+To run them locally, first edit
+the `.env` file to set the `SITE_BASE_URL` environment variable to the
 
 - `http://localhost:8000` to run them against a local copy of MeshDB (`manage.py runserver`)
 - `https://devdb.nycmesh.net` to run them against the dev copy of MeshDB
