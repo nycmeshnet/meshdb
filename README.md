@@ -195,29 +195,25 @@ curl http://127.0.0.1:8000/api/v1/    # Should echo "We're Meshin" to indicate 2
 
 ### Running the Unit Tests
 
-We use django's testing framework, based on
-[unittest](https://docs.python.org/3/library/unittest.html)
+We use [pytest](https://docs.pytest.org/en/stable/) with the
+[pytest-django](https://pytest-django.readthedocs.io/en/stable/) plugin
 
 ```console
-uv run python src/manage.py test meshapi meshapi_hooks
+uv run pytest
 ```
 
 ### Code Coverage
 
-We'd like to cover as much of the code as is reasonable, and to see what we hit,
-we use `coverage.py` as suggested by Django.
+To view coverage add the `--cov` flag which will print per-file coverage
+the the console.
 
 ```console
-uv run coverage run --source='.' src/manage.py test meshapi meshapi_hooks
-```
-
-To see the report,
-
-```console
-uv run coverage report
+uv run pytest --cov
 ```
 
 ### Adding Tests
+
+#### Unit Tests
 
 Tests live in [src/meshapi/tests/](src/meshapi/tests/). It might make
 sense to add your test to an existing file within that directory,
@@ -225,15 +221,23 @@ depending on what it's doing, or you can add a whole new file.
 See the [django documentation](https://docs.djangoproject.com/en/4.2/topics/testing/overview/)
 for details on how to write a test, or check the directory for examples.
 
-### Integration Tests
+#### Integration Tests
 
 > [!WARNING]
 > Don't run the integration tests against the production copy of MeshDB. These tests make fake
 > objects and could pollute the real database.
 
-Integration tests are automatically run by the deployment pipeline to prevent issues
-from reaching our production stages. To run them locally, first edit the `.env` file to set the
-`SITE_BASE_URL` environment variable to the domain of the stage you want to run the tests against:
+Integration tests are defined in subdirectories within the
+[integ-tests/](integ-tests/) directory.
+
+They are automatically run by the deployment pipeline to prevent issues
+from reaching our production stages. To run them locally, first edit
+the `.env` file to set the `SITE_BASE_URL` environment variable to the
+Integration tests are defined in subdirectories within the
+[integ-tests/](integ-tests/) directory.
+
+To run them locally, first edit
+the `.env` file to set the `SITE_BASE_URL` environment variable to the
 
 - `http://localhost:8000` to run them against a local copy of MeshDB (`manage.py runserver`)
 - `https://devdb.nycmesh.net` to run them against the dev copy of MeshDB
