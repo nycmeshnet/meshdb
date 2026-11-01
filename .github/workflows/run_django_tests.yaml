@@ -65,10 +65,11 @@ jobs:
           AWS_SECRET_ACCESS_KEY: samplesecretkey
           AWS_REGION: us-east-1
           SITE_BASE_URL: http://localhost
-        run: uv run coverage run src/manage.py test meshapi meshapi_hooks
-      - name: Write coverage report to disk
-        run: uv run coverage html
+          CI: yes
+          INTEG_TEST_MESHDB_API_TOKEN: ""
+          MESHDB_ENVIRONMENT: local
+        run: uv run pytest --cov --cov-report=xml --ignore=integ-tests/
       - name: Upload coverage reports to Codecov
-        uses: codecov/codecov-action@671740ac38dd9b0130fbe1cec585b89eea48d3de # v5.5.2
+        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}

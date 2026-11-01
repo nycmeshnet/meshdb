@@ -17,4 +17,4 @@ def lint(context):
 
 @task
 def test(context):
-    context.run("uv run python src/manage.py test meshapi meshapi_hooks")
+    context.run("uv run pytest")
