@@ -6,7 +6,7 @@
 
 ## A Database for Tracking NYCMesh Member Installs
 
-![Python Version from PEP 621 TOML](https://img.shields.io/python/required-version-toml?tomlFilePath=https%3A%2F%2Fraw.githubusercontent.com%2Flotia%2Fmeshdb%2Frefs%2Fheads%2Fspecify-python-version-in-pyproject%2Fpyproject.toml)
+![Python Version from PEP 621 TOML](https://img.shields.io/python/required-version-toml?tomlFilePath=https%3A%2F%2Fraw.githubusercontent.com%2Fnycmeshnet%2Fmeshdb%2Frefs%2Fheads%2Fmain%2Fpyproject.toml)
 [![Deployment Status](https://github.com/WillNilges/meshdb/actions/workflows/publish-and-deploy.yaml/badge.svg)](https://github.com/WillNilges/meshdb/actions/workflows/publish-and-deploy.yaml)
 [![codecov](https://codecov.io/github/nycmeshnet/meshdb/graph/badge.svg?token=9PK9R0H6ZO)](https://codecov.io/github/nycmeshnet/meshdb)
 
