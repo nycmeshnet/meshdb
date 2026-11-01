@@ -33,7 +33,7 @@ jobs:
         run: |
           # Run integ tests (only if we are not deploying to prod, since these tests can write data)
           if ! [[ "${{ inputs.environment }}" =~ "prod" ]]; then
-            uv run pytest integ-tests
+            uv run pytest -p no:django integ-tests
           else
             echo "This action should not be run against prod, is something wrong with the workflow config?"
             exit 1
