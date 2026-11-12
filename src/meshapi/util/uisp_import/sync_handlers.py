@@ -1,7 +1,7 @@
 import datetime
 import logging
 import re
-from typing import List, Optional
+from typing import List, Optional, Union
 
 from django.db import transaction
 from django.db.models import Q
@@ -10,6 +10,8 @@ from meshapi.admin import downclass_device
 from meshapi.models import LOS, Device, Link, Node, Sector
 from meshapi.serializers import DeviceSerializer, LinkSerializer
 from meshapi.types.uisp_api.data_links import DataLink as UISPDataLink
+from meshapi.types.uisp_api.data_links import From as UISPDataLinkFrom
+from meshapi.types.uisp_api.data_links import To as UISPDataLinkTo
 from meshapi.types.uisp_api.devices import Device as UISPDevice
 from meshapi.util.admin_notifications import notify_administrators_of_data_issue
 from meshapi.util.uisp_import.constants import (
@@ -192,6 +194,43 @@ def import_and_sync_uisp_devices(uisp_devices: List[UISPDevice], target_network_
                 )
 
 
+def get_uisp_interface_identification(
+    uisp_link_end: Optional[Union[UISPDataLinkFrom, UISPDataLinkTo]],
+) -> tuple[Optional[str], Optional[str]]:
+    """Return the (name, description) of the UISP interface on one end of a link.
+
+    Returns (None, None) if the payload does not include interface information.
+    """
+    if not uisp_link_end:
+        return None, None
+    interface = uisp_link_end.get("interface") or {}
+    identification = interface.get("identification") or {}
+    return identification.get("name"), identification.get("description")
+
+
+def link_interface_signature(
+    link: Link,
+) -> tuple[tuple[Optional[str], Optional[str]], tuple[Optional[str], Optional[str]]]:
+    """Return ((from interface name, description), (to interface name, description)) for a Link."""
+    return (
+        (link.from_interface_name, link.from_interface_description),
+        (link.to_interface_name, link.to_interface_description),
+    )
+
+
+def interfaces_match(
+    candidate: Link,
+    incoming_from: tuple[Optional[str], Optional[str]],
+    incoming_to: tuple[Optional[str], Optional[str]],
+) -> bool:
+    """Check whether a candidate link's per-end interface identification matches an
+    incoming UISP link's, in either orientation (from/to are not meaningful)."""
+    candidate_from, candidate_to = link_interface_signature(candidate)
+    same_orientation = candidate_from == incoming_from and candidate_to == incoming_to
+    reversed_orientation = candidate_from == incoming_to and candidate_to == incoming_from
+    return same_orientation or reversed_orientation
+
+
 def import_and_sync_uisp_links(uisp_links: List[UISPDataLink], target_network_number: Optional[int] = None) -> None:
     uisp_session = get_uisp_session()
     uisp_uuid_set = {uisp_link["id"] for uisp_link in uisp_links}
@@ -250,6 +289,9 @@ def import_and_sync_uisp_links(uisp_links: List[UISPDataLink], target_network_nu
 
         uisp_link_type = get_link_type(uisp_link)
 
+        uisp_from_interface = get_uisp_interface_identification(uisp_link.get("from"))
+        uisp_to_interface = get_uisp_interface_identification(uisp_link.get("to"))
+
         with transaction.atomic():
             existing_links: List[Link] = list(Link.objects.filter(uisp_id=uisp_uuid).select_for_update())
 
@@ -282,6 +324,35 @@ def import_and_sync_uisp_links(uisp_links: List[UISPDataLink], target_network_nu
                     ).select_for_update()
                 )
 
+                # Narrow the orphan candidates down to links whose per-end interface
+                # identification matches this link's. This is what makes rotating
+                # UUIDs safe for device pairs that have multiple links (e.g. MLO
+                # links, which UISP reports as one data-link object per radio):
+                # each incoming sublink adopts only the orphaned row that belongs
+                # to the same radio, instead of every orphaned row on the pair.
+                incoming_has_interface = any(uisp_from_interface) or any(uisp_to_interface)
+                if incoming_has_interface and existing_links:
+                    matching_candidates = [
+                        link
+                        for link in existing_links
+                        if interfaces_match(link, uisp_from_interface, uisp_to_interface)
+                    ]
+                    candidates_with_known_interfaces = [
+                        link
+                        for link in existing_links
+                        if any(link_interface_signature(link)[0]) or any(link_interface_signature(link)[1])
+                    ]
+                    if matching_candidates:
+                        existing_links = matching_candidates
+                    elif candidates_with_known_interfaces:
+                        # Some orphaned links on this pair have known interfaces and
+                        # none of them match this link, so this is a different radio
+                        # (a genuinely new link), not a UUID rotation of an existing one.
+                        # Do not adopt them; a new link will be created below.
+                        existing_links = []
+                # Otherwise (no interface info in the payload, or only legacy rows
+                # without interfaces), keep the existing best-guess behavior.
+
                 if len(existing_links) > 1:
                     notify_administrators_of_data_issue(
                         existing_links,
@@ -299,6 +370,8 @@ def import_and_sync_uisp_links(uisp_links: List[UISPDataLink], target_network_nu
                         uisp_from_device,
                         uisp_to_device,
                         uisp_status,
+                        uisp_from_interface,
+                        uisp_to_interface,
                         uisp_session,
                     )
                     if change_list:
@@ -313,6 +386,10 @@ def import_and_sync_uisp_links(uisp_links: List[UISPDataLink], target_network_nu
             status=uisp_status,
             type=uisp_link_type,
             uisp_id=uisp_uuid,
+            from_interface_name=uisp_from_interface[0],
+            from_interface_description=uisp_from_interface[1],
+            to_interface_name=uisp_to_interface[0],
+            to_interface_description=uisp_to_interface[1],
             notes=f"Automatically imported from UISP on {datetime.date.today().isoformat()}\n\n",
             # UISP doesn't track the following info
             install_date=None,

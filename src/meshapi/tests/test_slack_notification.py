@@ -149,6 +149,10 @@ class TestSlackNotification(TestCase):
             '    "description": null,\n'
             '    "notes": null,\n'
             '    "uisp_id": null,\n'
+            '    "from_interface_name": null,\n'
+            '    "from_interface_description": null,\n'
+            '    "to_interface_name": null,\n'
+            '    "to_interface_description": null,\n'
             '    "from_device": {\n'
             '      "id": "eb9c8e74-26b1-46e2-abda-62e74ade7c87"\n'
             "    },\n"

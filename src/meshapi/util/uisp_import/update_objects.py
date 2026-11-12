@@ -101,6 +101,8 @@ def update_link_from_uisp_data(
     uisp_from_device: Device,
     uisp_to_device: Device,
     uisp_status: Link.LinkStatus,
+    uisp_from_interface: tuple[Optional[str], Optional[str]] = (None, None),
+    uisp_to_interface: tuple[Optional[str], Optional[str]] = (None, None),
     uisp_session: Optional[requests.Session] = None,
 ) -> List[str]:
     change_messages = []
@@ -116,6 +118,20 @@ def update_link_from_uisp_data(
             f"This is likely due to a UISP UUID rotation"
         )
         uisp_link_id_changed = True
+
+    # Persist the per-end interface identification when we have it, so that future
+    # UUID rotations can be matched to the correct link even when the device pair
+    # has multiple links (e.g. MLO sublinks).
+    uisp_interface_changed = False
+    for field, value in (
+        ("from_interface_name", uisp_from_interface[0]),
+        ("from_interface_description", uisp_from_interface[1]),
+        ("to_interface_name", uisp_to_interface[0]),
+        ("to_interface_description", uisp_to_interface[1]),
+    ):
+        if value is not None and getattr(existing_link, field) != value:
+            setattr(existing_link, field, value)
+            uisp_interface_changed = True
 
     uisp_device_pair = {uisp_to_device, uisp_from_device}
     db_device_pair = {existing_link.from_device, existing_link.to_device}
@@ -172,6 +188,6 @@ def update_link_from_uisp_data(
 
     # Only save the object if there actually are change_messages, otherwise don't
     # to avoid creating an unnecessary object.
-    if change_messages or uisp_link_id_changed:
+    if change_messages or uisp_link_id_changed or uisp_interface_changed:
         existing_link.save()
     return change_messages
