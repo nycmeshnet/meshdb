@@ -33,7 +33,8 @@ To start contributing, find a [good first issue](https://github.com/nycmeshnet/m
 - [Pelias](https://pelias.io/)
 - [Redis](https://redis.io)
 
-We have a handy [docker-compose](docker-compose.yaml) file that allows you to set all the external services up with a single command. See
+We have a handy [compose.yaml](compose.yaml) file that allows you to
+set up all the external services with a single command. See
 [Setting up the required external services](#setting-up-the-required-external-services)
 
 > [!NOTE]
@@ -80,12 +81,14 @@ uv sync --all extras
 
 ### Set Environment Variables
 
-Next, copy the out the `.env.sample` file to `.env` and load it into
-your environment.
+Next, copy the [`.env.sample`](.env.sample) file to `.env` and make any
+changes you'd like to make. The settings in `.env.sample` are generally
+good to go out of the box, you may need to change port numbers if
+you're running existing services on the ports set in the sample file.
 
 ```console
 cp .env.sample .env
-nano .env # Or your favorite text editor, fill in the blank variables
+nano .env # Or your favorite text editor make any changes
 ```
 
 You're gonna need a `DJANGO_SECRET_KEY`, one is already provided in the
@@ -94,7 +97,7 @@ below.
 
 ### Generating `DJANGO_SECRET_KEY` (optional)
 
-There's already a secret key for you in the .env.sample, but here's how
+There's already a secret key for you in `.env.sample`, but here's how
 to generate a new one
 
 ```python
@@ -108,7 +111,7 @@ uv run python -c 'from django.core.management.utils import get_random_secret_key
 ### Setting up the required external services
 
 You will need the services identified in [External Services](#external-services)
-which have been pre-defined in docker compose
+which have been pre-defined in the compose.yaml file.
 
 ```console
 docker compose up -d postgres pelias redis
@@ -290,7 +293,7 @@ When you're done, you can stop the server with `Ctrl+C`, and run
 > To spin things back up again later, just run:
 >
 > ```console
-> docker-compose up -d postgres pelias redis
+> docker compose up -d postgres pelias redis
 > uv run python src/manage.py runserver
 > ```
 
