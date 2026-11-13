@@ -86,7 +86,7 @@ class Link(models.Model):
     # stable across UISP data-link UUID rotation. This matters for links that UISP
     # reports as multiple data-link objects on the same device pair (e.g. MLO links,
     # one object per radio): matching on the device pair alone is ambiguous, but
-    # matching on the device pair + interfaces is not.
+    # matching on the device pair + interfaces is not (in theory).
     from_interface_name = models.CharField(
         default=None,
         blank=True,
