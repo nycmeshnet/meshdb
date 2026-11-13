@@ -81,6 +81,41 @@ class Link(models.Model):
         default=None, blank=True, null=True, help_text="The UUID used to indentify this link in UISP (if applicable)"
     )
 
+    # The UISP interface identification for each end of the link. These identify the
+    # physical interface (e.g. radio) used by the link, and unlike uisp_id they are
+    # stable across UISP data-link UUID rotation. This matters for links that UISP
+    # reports as multiple data-link objects on the same device pair (e.g. MLO links,
+    # one object per radio): matching on the device pair alone is ambiguous, but
+    # matching on the device pair + interfaces is not (in theory).
+    from_interface_name = models.CharField(
+        default=None,
+        blank=True,
+        null=True,
+        max_length=255,
+        help_text='The UISP interface name on the "from" device (e.g. "main", "port4")',
+    )
+    from_interface_description = models.CharField(
+        default=None,
+        blank=True,
+        null=True,
+        max_length=255,
+        help_text='The UISP interface description on the "from" device (e.g. "wifi0", "eth1")',
+    )
+    to_interface_name = models.CharField(
+        default=None,
+        blank=True,
+        null=True,
+        max_length=255,
+        help_text='The UISP interface name on the "to" device (e.g. "main", "port4")',
+    )
+    to_interface_description = models.CharField(
+        default=None,
+        blank=True,
+        null=True,
+        max_length=255,
+        help_text='The UISP interface description on the "to" device (e.g. "wifi0", "eth1")',
+    )
+
     def __str__(self) -> str:
         from_name = None
         to_name = None

@@ -1563,6 +1563,8 @@ class TestUISPImportHandlers(TransactionTestCase):
                     self.device1,
                     self.device2,
                     Link.LinkStatus.ACTIVE,
+                    (None, None),
+                    (None, None),
                     "mock_uisp_session",
                 ),
                 call(
@@ -1571,6 +1573,8 @@ class TestUISPImportHandlers(TransactionTestCase):
                     self.device1,
                     self.device3,
                     Link.LinkStatus.INACTIVE,
+                    (None, None),
+                    (None, None),
                     "mock_uisp_session",
                 ),
             ]
@@ -1837,6 +1841,254 @@ class TestUISPImportHandlers(TransactionTestCase):
         )
 
         self.assertEqual(2, Link.objects.filter(uisp_id="uisp-uuid12345").count())
+
+    def make_uisp_wireless_link(self, link_id, from_device_id, to_device_id, from_iface, to_iface):
+        """Build a minimal UISP wireless data-link payload, optionally with interface info."""
+        from_end = {
+            "device": {
+                "identification": {
+                    "id": from_device_id,
+                    "category": "wireless",
+                    "name": "nycmesh-1234-dev1",
+                }
+            }
+        }
+        to_end = {
+            "device": {
+                "identification": {
+                    "id": to_device_id,
+                    "category": "wireless",
+                    "name": "nycmesh-5678-dev2",
+                }
+            }
+        }
+        if from_iface is not None:
+            from_end["interface"] = {
+                "identification": {"type": "wlan", "name": from_iface[0], "description": from_iface[1]}
+            }
+        if to_iface is not None:
+            to_end["interface"] = {"identification": {"type": "wlan", "name": to_iface[0], "description": to_iface[1]}}
+        return {
+            "from": from_end,
+            "to": to_end,
+            "state": "active",
+            "id": link_id,
+            "type": "wireless",
+            "frequency": 5_000,
+        }
+
+    @patch("meshapi.util.uisp_import.sync_handlers.get_uisp_session")
+    @patch("meshapi.util.uisp_import.sync_handlers.notify_admins_of_changes")
+    @patch("meshapi.util.uisp_import.update_objects.get_uisp_link_last_seen")
+    def test_mlo_sublink_uuid_rotation_adopts_matching_links(
+        self, mock_get_uisp_last_seen, mock_notify_admins, mock_get_uisp_session
+    ):
+        """Regression test for MLO links: UISP reports one data-link object per radio,
+        and the objects' UUIDs rotate. Each incoming sublink must adopt only the
+        orphaned row belonging to the same radio, instead of all of them, and no new
+        rows may be created."""
+        mock_get_uisp_session.return_value = "mock_uisp_session"
+        mock_get_uisp_last_seen.return_value = datetime.datetime.now()
+
+        self.link1.delete()
+        self.link2.delete()
+        self.link3.delete()
+        self.link4.delete()
+        self.link5a.delete()
+        self.link5b.delete()
+        self.link6a.delete()
+        self.link6b.delete()
+
+        # Two radios between device1 <-> device2 (MLO), with stale UISP IDs.
+        wifi0_link = Link(
+            from_device=self.device1,
+            to_device=self.device2,
+            status=Link.LinkStatus.ACTIVE,
+            type=Link.LinkType.FIVE_GHZ_UNSPECIFIED,
+            uisp_id="uisp-uuid-stale-0",
+            from_interface_name="main",
+            from_interface_description="wifi0",
+            to_interface_name="main",
+            to_interface_description="wifi0",
+        )
+        wifi0_link.save()
+        wifi1_link = Link(
+            from_device=self.device1,
+            to_device=self.device2,
+            status=Link.LinkStatus.ACTIVE,
+            type=Link.LinkType.FIVE_GHZ_UNSPECIFIED,
+            uisp_id="uisp-uuid-stale-1",
+            from_interface_name="main",
+            from_interface_description="wifi0",
+            to_interface_name="backup",
+            to_interface_description="wifi1",
+        )
+        wifi1_link.save()
+
+        uisp_links = [
+            self.make_uisp_wireless_link(
+                "uisp-uuid-new-0", "uisp-uuid1", "uisp-uuid2", ("main", "wifi0"), ("main", "wifi0")
+            ),
+            self.make_uisp_wireless_link(
+                "uisp-uuid-new-1", "uisp-uuid1", "uisp-uuid2", ("main", "wifi0"), ("backup", "wifi1")
+            ),
+        ]
+
+        import_and_sync_uisp_links(uisp_links)
+
+        wifi0_link.refresh_from_db()
+        wifi1_link.refresh_from_db()
+
+        self.assertEqual(2, Link.objects.count())
+        # Each sublink adopted the orphaned row for its own radio
+        self.assertEqual(wifi0_link.uisp_id, "uisp-uuid-new-0")
+        self.assertEqual(wifi1_link.uisp_id, "uisp-uuid-new-1")
+        self.assertEqual(wifi0_link.status, Link.LinkStatus.ACTIVE)
+        self.assertEqual(wifi1_link.status, Link.LinkStatus.ACTIVE)
+
+    @patch("meshapi.util.uisp_import.sync_handlers.get_uisp_session")
+    @patch("meshapi.util.uisp_import.sync_handlers.notify_admins_of_changes")
+    @patch("meshapi.util.uisp_import.update_objects.get_uisp_link_last_seen")
+    def test_mlo_new_radio_creates_new_link(self, mock_get_uisp_last_seen, mock_notify_admins, mock_get_uisp_session):
+        """A sublink whose interface matches no orphaned row on the pair is a
+        genuinely new link and must be created, while a matching sublink is adopted."""
+        mock_get_uisp_session.return_value = "mock_uisp_session"
+        mock_get_uisp_last_seen.return_value = datetime.datetime.now()
+
+        self.link1.delete()
+        self.link2.delete()
+        self.link3.delete()
+        self.link4.delete()
+        self.link5a.delete()
+        self.link5b.delete()
+        self.link6a.delete()
+        self.link6b.delete()
+
+        wifi0_link = Link(
+            from_device=self.device1,
+            to_device=self.device2,
+            status=Link.LinkStatus.ACTIVE,
+            type=Link.LinkType.FIVE_GHZ_UNSPECIFIED,
+            uisp_id="uisp-uuid-stale-0",
+            from_interface_name="main",
+            from_interface_description="wifi0",
+            to_interface_name="main",
+            to_interface_description="wifi0",
+        )
+        wifi0_link.save()
+
+        uisp_links = [
+            # The wifi0 radio's UUID rotated
+            self.make_uisp_wireless_link(
+                "uisp-uuid-new-0", "uisp-uuid1", "uisp-uuid2", ("main", "wifi0"), ("main", "wifi0")
+            ),
+            # A brand-new radio on the same device pair
+            self.make_uisp_wireless_link(
+                "uisp-uuid-new-2", "uisp-uuid1", "uisp-uuid2", ("main", "wifi0"), ("backup", "wifi2")
+            ),
+        ]
+
+        import_and_sync_uisp_links(uisp_links)
+
+        wifi0_link.refresh_from_db()
+
+        self.assertEqual(2, Link.objects.count())
+        self.assertEqual(wifi0_link.uisp_id, "uisp-uuid-new-0")
+        new_link = Link.objects.get(uisp_id="uisp-uuid-new-2")
+        self.assertEqual(new_link.from_device, self.device1)
+        self.assertEqual(new_link.to_device, self.device2)
+        self.assertEqual(new_link.from_interface_name, "main")
+        self.assertEqual(new_link.from_interface_description, "wifi0")
+        self.assertEqual(new_link.to_interface_name, "backup")
+        self.assertEqual(new_link.to_interface_description, "wifi2")
+
+    @patch("meshapi.util.uisp_import.sync_handlers.get_uisp_session")
+    @patch("meshapi.util.uisp_import.sync_handlers.notify_admins_of_changes")
+    @patch("meshapi.util.uisp_import.update_objects.get_uisp_link_last_seen")
+    def test_orphan_link_without_interfaces_still_adopted(
+        self, mock_get_uisp_last_seen, mock_notify_admins, mock_get_uisp_session
+    ):
+        """Legacy rows without interface information keep the existing adoption
+        behavior, and the incoming link's interfaces are persisted on adoption."""
+        mock_get_uisp_session.return_value = "mock_uisp_session"
+        mock_get_uisp_last_seen.return_value = datetime.datetime.now()
+
+        self.link1.delete()
+        self.link2.delete()
+        self.link3.delete()
+        self.link4.delete()
+        self.link5a.delete()
+        self.link5b.delete()
+        self.link6a.delete()
+        self.link6b.delete()
+
+        legacy_link = Link(
+            from_device=self.device1,
+            to_device=self.device2,
+            status=Link.LinkStatus.ACTIVE,
+            type=Link.LinkType.FIVE_GHZ_UNSPECIFIED,
+            uisp_id="uisp-uuid-stale",
+        )
+        legacy_link.save()
+
+        uisp_links = [
+            self.make_uisp_wireless_link(
+                "uisp-uuid-new", "uisp-uuid1", "uisp-uuid2", ("main", "wifi0"), ("main", "wifi0")
+            ),
+        ]
+
+        import_and_sync_uisp_links(uisp_links)
+
+        legacy_link.refresh_from_db()
+
+        self.assertEqual(1, Link.objects.count())
+        self.assertEqual(legacy_link.uisp_id, "uisp-uuid-new")
+        self.assertEqual(legacy_link.from_interface_name, "main")
+        self.assertEqual(legacy_link.from_interface_description, "wifi0")
+        self.assertEqual(legacy_link.to_interface_name, "main")
+        self.assertEqual(legacy_link.to_interface_description, "wifi0")
+
+    @patch("meshapi.util.uisp_import.sync_handlers.get_uisp_session")
+    @patch("meshapi.util.uisp_import.sync_handlers.notify_admins_of_changes")
+    @patch("meshapi.util.uisp_import.update_objects.get_uisp_link_last_seen")
+    def test_link_payload_without_interfaces_uses_legacy_behavior(
+        self, mock_get_uisp_last_seen, mock_notify_admins, mock_get_uisp_session
+    ):
+        """If the payload has no interface info, matching falls back to the
+        existing device-pair-only behavior."""
+        mock_get_uisp_session.return_value = "mock_uisp_session"
+        mock_get_uisp_last_seen.return_value = datetime.datetime.now()
+
+        self.link1.delete()
+        self.link2.delete()
+        self.link3.delete()
+        self.link4.delete()
+        self.link5a.delete()
+        self.link5b.delete()
+        self.link6a.delete()
+        self.link6b.delete()
+
+        legacy_link = Link(
+            from_device=self.device1,
+            to_device=self.device2,
+            status=Link.LinkStatus.ACTIVE,
+            type=Link.LinkType.FIVE_GHZ_UNSPECIFIED,
+            uisp_id="uisp-uuid-stale",
+            from_interface_name="main",
+            from_interface_description="wifi0",
+            to_interface_name="main",
+            to_interface_description="wifi0",
+        )
+        legacy_link.save()
+
+        uisp_links = [self.make_uisp_wireless_link("uisp-uuid-new", "uisp-uuid1", "uisp-uuid2", None, None)]
+
+        import_and_sync_uisp_links(uisp_links)
+
+        legacy_link.refresh_from_db()
+
+        self.assertEqual(1, Link.objects.count())
+        self.assertEqual(legacy_link.uisp_id, "uisp-uuid-new")
 
     @patch("meshapi.util.uisp_import.sync_handlers.get_uisp_session")
     @patch("meshapi.util.uisp_import.sync_handlers.notify_admins_of_changes")
