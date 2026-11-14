@@ -292,17 +292,23 @@ def import_and_sync_uisp_links(uisp_links: List[UISPDataLink], target_network_nu
                     )
 
             if existing_links:
-                for existing_link in existing_links:
-                    change_list = update_link_from_uisp_data(
-                        existing_link,
-                        uisp_uuid,
-                        uisp_from_device,
-                        uisp_to_device,
-                        uisp_status,
-                        uisp_session,
-                    )
-                    if change_list:
-                        notify_admins_of_changes(existing_link, change_list)
+                # Adopt at most one stale row per UISP link ID so that when
+                # UISP reports multiple link objects for the same device pair
+                # (e.g. MLO sublinks) the first iteration can't consume every
+                # stale row before the second ID gets its own match.  Any
+                # remaining stale rows are handled by later iterations or the
+                # end-of-import inactive sweep.
+                existing_link = existing_links[0]
+                change_list = update_link_from_uisp_data(
+                    existing_link,
+                    uisp_uuid,
+                    uisp_from_device,
+                    uisp_to_device,
+                    uisp_status,
+                    uisp_session,
+                )
+                if change_list:
+                    notify_admins_of_changes(existing_link, change_list)
                 continue
 
         # By now, we're reasonably sure the link doesn't exist, so go ahead and
