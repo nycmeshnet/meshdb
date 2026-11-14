@@ -127,9 +127,17 @@ You'll probably want an admin account
 uv run python src/manage.py createsuperuser
 ```
 
-And if you have access to a database export, you can use the
-[scripts/import_datadump.sh](scripts/import_datadump.sh) script to populate
-your database
+### Loading a Database Export
+
+Use these commands.
+
+```
+docker compose down -v #tear down the containers and delete the volumes
+docker compose up -d postgres pelias redis #boot up
+docker cp data.psql.bin meshdb-postgres-1:/ #copy
+docker exec -it meshdb-postgres-1 pg_restore -d meshdb -U meshdb -j 6 --verbose scrambled2.psql.bin #restore
+python src/manage.py runserver #run meshdb
+```
 
 > [!WARNING]
 > This is *real member data*. DO NOT share this database with anyone
