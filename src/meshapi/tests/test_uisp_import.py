@@ -1838,6 +1838,136 @@ class TestUISPImportHandlers(TransactionTestCase):
 
         self.assertEqual(2, Link.objects.filter(uisp_id="uisp-uuid12345").count())
 
+    @patch("meshapi.util.uisp_import.sync_handlers.notify_administrators_of_data_issue")
+    @patch("meshapi.util.uisp_import.sync_handlers.notify_admins_of_changes")
+    @patch("meshapi.util.uisp_import.update_objects.get_uisp_link_last_seen")
+    @patch("meshapi.util.uisp_import.sync_handlers.get_uisp_session")
+    def test_import_and_sync_links_mlo_two_ids_same_device_pair(
+        self,
+        mock_notify_administrators_of_data_issue,
+        mock_notify_admins_of_changes,
+        mock_get_uisp_last_seen,
+        mock_get_uisp_session,
+    ):
+        """When UISP reports two link objects for the same device pair (MLO
+        sublinks with distinct UUIDs), the orphan-adoption fallback must adopt
+        at most one stale row per UISP ID so that each ID claims its own row
+        rather than the first ID consuming every stale row and forcing the
+        second ID to create a spurious extra Link."""
+        mock_get_uisp_session.return_value = "mock_uisp_session"
+        mock_get_uisp_last_seen.return_value = None
+
+        # Remove the pre-existing device1->device2 link so we start clean.
+        self.link1.delete()
+
+        # Create three stale rows for the device1<->device2 pair, all sharing
+        # an old UUID that is absent from the upcoming UISP fetch.
+        stale1 = Link(
+            id=uuid.UUID("aaaa1000-0000-0000-0000-000000000001"),
+            from_device=self.device1,
+            to_device=self.device2,
+            status=Link.LinkStatus.ACTIVE,
+            type=Link.LinkType.FIVE_GHZ_AIRMAX,
+            uisp_id="OLD-UUID",
+        )
+        stale1.save()
+        stale2 = Link(
+            id=uuid.UUID("aaaa1000-0000-0000-0000-000000000002"),
+            from_device=self.device1,
+            to_device=self.device2,
+            status=Link.LinkStatus.ACTIVE,
+            type=Link.LinkType.FIVE_GHZ_AIRMAX,
+            uisp_id="OLD-UUID",
+        )
+        stale2.save()
+        stale3 = Link(
+            id=uuid.UUID("aaaa1000-0000-0000-0000-000000000003"),
+            from_device=self.device1,
+            to_device=self.device2,
+            status=Link.LinkStatus.ACTIVE,
+            type=Link.LinkType.FIVE_GHZ_AIRMAX,
+            uisp_id="OLD-UUID",
+        )
+        stale3.save()
+
+        # UISP reports two wireless link objects for the same device pair with
+        # two fresh UUIDs.  OLD-UUID is absent from this fetch.
+        uisp_links = [
+            {
+                "from": {
+                    "device": {
+                        "identification": {
+                            "id": "uisp-uuid1",
+                            "category": "wireless",
+                            "name": "nycmesh-1234-dev1",
+                        }
+                    },
+                },
+                "to": {
+                    "device": {
+                        "identification": {
+                            "id": "uisp-uuid2",
+                            "category": "wireless",
+                            "name": "nycmesh-5678-dev2",
+                        }
+                    },
+                },
+                "state": "active",
+                "id": "NEW-A",
+                "type": "wireless",
+                "frequency": 5000,
+            },
+            {
+                "from": {
+                    "device": {
+                        "identification": {
+                            "id": "uisp-uuid1",
+                            "category": "wireless",
+                            "name": "nycmesh-1234-dev1",
+                        }
+                    },
+                },
+                "to": {
+                    "device": {
+                        "identification": {
+                            "id": "uisp-uuid2",
+                            "category": "wireless",
+                            "name": "nycmesh-5678-dev2",
+                        }
+                    },
+                },
+                "state": "active",
+                "id": "NEW-B",
+                "type": "wireless",
+                "frequency": 5000,
+            },
+        ]
+
+        links_before = Link.objects.count()
+
+        import_and_sync_uisp_links(uisp_links)
+
+        # Exactly two rows now carry the new IDs — one adopted per UISP link ID.
+        self.assertEqual(Link.objects.filter(uisp_id="NEW-A").count(), 1)
+        self.assertEqual(Link.objects.filter(uisp_id="NEW-B").count(), 1)
+
+        # No spurious new rows were created: count stayed the same.
+        self.assertEqual(Link.objects.count(), links_before)
+
+        # The remaining stale row kept OLD-UUID and was marked INACTIVE by the
+        # end-of-import sweep because OLD-UUID is absent from the UISP fetch.
+        remaining = Link.objects.get(uisp_id="OLD-UUID")
+        self.assertEqual(remaining.status, Link.LinkStatus.INACTIVE)
+
+        # The two adopted rows are still ACTIVE.
+        adopted_a = Link.objects.get(uisp_id="NEW-A")
+        adopted_b = Link.objects.get(uisp_id="NEW-B")
+        self.assertEqual(adopted_a.status, Link.LinkStatus.ACTIVE)
+        self.assertEqual(adopted_b.status, Link.LinkStatus.ACTIVE)
+
+        # Admins were notified about the multi-stale condition.
+        self.assertTrue(mock_notify_administrators_of_data_issue.called)
+
     @patch("meshapi.util.uisp_import.sync_handlers.get_uisp_session")
     @patch("meshapi.util.uisp_import.sync_handlers.notify_admins_of_changes")
     @patch("meshapi.util.uisp_import.sync_handlers.update_link_from_uisp_data")
