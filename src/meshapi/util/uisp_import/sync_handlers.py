@@ -298,7 +298,10 @@ def import_and_sync_uisp_links(uisp_links: List[UISPDataLink], target_network_nu
                 # stale row before the second ID gets its own match.  Any
                 # remaining stale rows are handled by later iterations or the
                 # end-of-import inactive sweep.
-                existing_link = existing_links[0]
+                existing_link = next(
+                    (link for link in existing_links if link.type == uisp_link_type),
+                    existing_links[0],
+                )
                 change_list = update_link_from_uisp_data(
                     existing_link,
                     uisp_uuid,
