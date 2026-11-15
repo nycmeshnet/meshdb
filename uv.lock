@@ -8,14 +8,14 @@ resolution-markers = [
 
 [[package]]
 name = "amqp"
-version = "5.4.1"
+version = "5.4.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "vine" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/66/41/63526ffa542b7dbeb671ab2252fb38e26cd2dbc68c0775cdc5ba11af78a7/amqp-5.4.1.tar.gz", hash = "sha256:79a9c0ab70e71745667f127ff80666894a734c26236b6f33149c964b096f0b20", size = 132240, upload-time = "2026-10-05T14:03:23.415Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/4b/46/64c69cdd9705a5b312920cf76c3cb7c2c4718ffeafbfbcf87a842890765e/amqp-5.4.2.tar.gz", hash = "sha256:9362660c4a31150cf18e78cae2ce8aa1e929fc6c6739e69f6dd5dbea9c3edc82", size = 133663, upload-time = "2026-11-02T10:34:18.483Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/28/8e/25f762f8cf0da76c7b1a66a9cadc291168537598c533954b0e2c9de3a0a3/amqp-5.4.1-py3-none-any.whl", hash = "sha256:ac2b816a14a380ed10c5ebbf85a334fd68111fa476496867a5ccd2fd09926d5e", size = 51858, upload-time = "2026-10-05T14:03:18.61Z" },
+    { url = "https://files.pythonhosted.org/packages/e1/1d/2da3a059d2736e2ad8104762f93ad2145b6b0586aaa6be5290bab5d96c68/amqp-5.4.2-py3-none-any.whl", hash = "sha256:e6e756b15c89c86818b48a4947a424706238afbf67d457428d3269bc4590db9e", size = 51956, upload-time = "2026-11-02T10:34:16.66Z" },
 ]
 
 [[package]]
@@ -94,11 +94,11 @@ wheels = [
 
 [[package]]
 name = "billiard"
-version = "4.3.1"
+version = "4.3.2"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/ea/0d/8921e960be19fa226358bf933509f57ec679d9b35a1e7ea43460af4b7fef/billiard-4.3.1.tar.gz", hash = "sha256:c88559b306ee5dc93f8d5f843d07da15d795d67af26720d14ee9d09f09eb0b22", size = 166478, upload-time = "2026-10-05T06:38:30.496Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/96/ba/4ee8c6d14b3e9b5ce89b5b070f1352e6cadefde3f6bc36afcfee5e7158a2/billiard-4.3.2.tar.gz", hash = "sha256:9eb83c99b1cf7acb1fed86c1dfd477157000a1a2c0108005c1e5837b55d2acba", size = 169668, upload-time = "2026-11-02T09:12:45.346Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/bb/b1/360936699597063a2d9863aa94ccc3a6951e906ced032a9a1d8e562fc56b/billiard-4.3.1-py3-none-any.whl", hash = "sha256:2c7075283191d9c0add66cf8fca8e06ba599e75fe7319b67186759f8877dfdaf", size = 90178, upload-time = "2026-10-05T06:38:28.373Z" },
+    { url = "https://files.pythonhosted.org/packages/21/05/3d445479b3f7e4ae0901cdf2c45f561b436d1a5b8ed1c5c97e260152ae50/billiard-4.3.2-py3-none-any.whl", hash = "sha256:37735a7b4117aafa73532b3b493db4c02fb85c0e69d5f3447f113fd30ff27872", size = 90632, upload-time = "2026-11-02T09:12:43.707Z" },
 ]
 
 [[package]]
@@ -169,7 +169,7 @@ wheels = [
 
 [[package]]
 name = "celery"
-version = "5.3.6"
+version = "5.7.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "billiard" },
@@ -179,17 +179,17 @@ dependencies = [
     { name = "click-repl" },
     { name = "kombu" },
     { name = "python-dateutil" },
-    { name = "tzdata" },
+    { name = "tzlocal" },
     { name = "vine" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/99/72/45a2d2f9b45ccc6e80e2168ce169d17bf06a98711c192d7b53d5a8accf77/celery-5.3.6.tar.gz", hash = "sha256:870cc71d737c0200c397290d730344cc991d13a057534353d124c9380267aab9", size = 1544498, upload-time = "2023-11-22T15:16:33.646Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/ef/f7/166bfd22cbd0dd4f77715ddd207881c1332cd1f304d79b1a123aff7cdf10/celery-5.7.0.tar.gz", hash = "sha256:6a5dfcf6662287204f009a02002b9e66c83d4105e47ebabdc7079108772fc6f0", size = 2075113, upload-time = "2026-11-05T15:14:24.027Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/37/c2/4c8a67a4d98a6fcd55dbdd79b641f945d7f59637c3e885c4abbda3c431f6/celery-5.3.6-py3-none-any.whl", hash = "sha256:9da4ea0118d232ce97dff5ed4974587fb1c0ff5c10042eb15278487cdd27d1af", size = 422035, upload-time = "2023-11-22T15:16:19.555Z" },
+    { url = "https://files.pythonhosted.org/packages/e9/cf/cd7fcb9d8f5a21fa420ddf19ee96969e36820182275a731abdf4260ed86a/celery-5.7.0-py3-none-any.whl", hash = "sha256:18310a9c919f9029e4735367484d93e6a25cdfd30afdc474622cc263d9b35f6e", size = 519594, upload-time = "2026-11-05T15:14:17.649Z" },
 ]
 
 [package.optional-dependencies]
 redis = [
-    { name = "redis" },
+    { name = "kombu", extra = ["redis"] },
 ]
 
 [[package]]
@@ -1160,17 +1160,22 @@ wheels = [
 
 [[package]]
 name = "kombu"
-version = "5.6.2"
+version = "5.7.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "amqp" },
-    { name = "packaging" },
-    { name = "tzdata" },
+    { name = "tzdata", marker = "sys_platform == 'win32'" },
     { name = "vine" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/b6/a5/607e533ed6c83ae1a696969b8e1c137dfebd5759a2e9682e26ff1b97740b/kombu-5.6.2.tar.gz", hash = "sha256:8060497058066c6f5aed7c26d7cd0d3b574990b09de842a8c5aaed0b92cc5a55", size = 472594, upload-time = "2025-12-29T20:30:07.779Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/57/31/3e632ebce43c684dcc6eead4660b33307e6153be87e33c14e1ed9875deff/kombu-5.7.0.tar.gz", hash = "sha256:31e62fdfd2381caa3422f8e02b84a491d9a2180ddda74507b57f4cb1e1c2c2c9", size = 627051, upload-time = "2026-11-03T05:58:33.446Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/fb/0f/834427d8c03ff1d7e867d3db3d176470c64871753252b21b4f4897d1fa45/kombu-5.6.2-py3-none-any.whl", hash = "sha256:efcfc559da324d41d61ca311b0c64965ea35b4c55cc04ee36e55386145dace93", size = 214219, upload-time = "2025-12-29T20:30:05.74Z" },
+    { url = "https://files.pythonhosted.org/packages/84/20/f73d8e0bff9708b0f2337220be1b5d7ebd738bc3a89b63cf44d257157014/kombu-5.7.0-py3-none-any.whl", hash = "sha256:dede73bff4c89175be382c4203d2f167cf7017c384396ec75c36a1b5678f1587", size = 266635, upload-time = "2026-11-03T05:58:31.475Z" },
+]
+
+[package.optional-dependencies]
+redis = [
+    { name = "packaging" },
+    { name = "redis" },
 ]
 
 [[package]]
@@ -1416,7 +1421,7 @@ requires-dist = [
     { name = "beautifulsoup4", marker = "extra == 'dev'", specifier = "==4.12.*" },
     { name = "black", marker = "extra == 'dev'", specifier = "==25.1.*" },
     { name = "boto3", specifier = "==1.34.*" },
-    { name = "celery", extras = ["redis"], specifier = "==5.3.*" },
+    { name = "celery", extras = ["redis"], specifier = "==5.7.*" },
     { name = "coverage", marker = "extra == 'dev'", specifier = "==7.3.*" },
     { name = "datadog", specifier = "==0.50.*" },
     { name = "ddtrace", specifier = "==3.1.*" },
@@ -1734,15 +1739,6 @@ wheels = [
 ]
 
 [[package]]
-name = "pyjwt"
-version = "2.15.1"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/43/ea/5194e52748b0da83d71e082d75496eaec6e58f419f5e184786ded517e6a9/pyjwt-2.15.1.tar.gz", hash = "sha256:4f259e80cdfb6b3fc18a7de51fd1ef9ec79652f25019bae68975ca2468a34df8", size = 121252, upload-time = "2026-09-28T18:40:42.598Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/50/ca/44de4e75f8aadc457f0634be3b542815078ded46dca30efb960edeecad6e/pyjwt-2.15.1-py3-none-any.whl", hash = "sha256:42d59d631f7768a1028a64c7ff581a9bf7519804daf91fc5b6c56e30eec5e193", size = 33860, upload-time = "2026-09-28T18:40:41.429Z" },
-]
-
-[[package]]
 name = "pyparsing"
 version = "3.3.3"
 source = { registry = "https://pypi.org/simple" }
@@ -1850,15 +1846,14 @@ wheels = [
 
 [[package]]
 name = "redis"
-version = "5.3.1"
+version = "8.1.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "async-timeout", marker = "python_full_version < '3.11.3'" },
-    { name = "pyjwt" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/6a/cf/128b1b6d7086200c9f387bd4be9b2572a30b90745ef078bd8b235042dc9f/redis-5.3.1.tar.gz", hash = "sha256:ca49577a531ea64039b5a36db3d6cd1a0c7a60c34124d46924a45b956e8cf14c", size = 4626200, upload-time = "2025-07-25T08:06:27.778Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/a8/99/604f0b666d4c616d891cf77ebb9db6bb21601344c051aebf1b72b9ff915f/redis-8.1.0.tar.gz", hash = "sha256:6e1a19beef9225c83efd689c7e6b7da2d5215b1f42cd13b7fc3714d0a09c7b25", size = 5254356, upload-time = "2026-07-30T08:51:00.269Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/7f/26/5c5fa0e83c3621db835cfc1f1d789b37e7fa99ed54423b5f519beb931aa7/redis-5.3.1-py3-none-any.whl", hash = "sha256:dc1909bd24669cc31b5f67a039700b16ec30571096c5f1f0d9d2324bff31af97", size = 272833, upload-time = "2025-07-25T08:06:26.317Z" },
+    { url = "https://files.pythonhosted.org/packages/66/9d/c5731f6e3608663d4d3656fd8d3aecee8b509c3082818f5a13eae925baea/redis-8.1.0-py3-none-any.whl", hash = "sha256:a4fe1aac3d3b3cc791d4b3d5931c5a956045dc951ee74d1c913ee3ac4d2ee9fb", size = 560618, upload-time = "2026-07-30T08:50:58.497Z" },
 ]
 
 [[package]]
@@ -2105,6 +2100,18 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/7a/29/6a1391d31cd00ff9e927215a224a880e1e84e826b64ba80a499e51c074d8/tzdata-2026.6.tar.gz", hash = "sha256:85d2cd9c09f81f0bb29db27759fc83af4f1e620efb814f8c5bf8b4cc4feece6d", size = 201017, upload-time = "2026-10-28T09:57:09.137Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/0a/66/9a06c2227fedfd4919f0eaaa8b94377d9730882a7e4f95823c9a331ab5e1/tzdata-2026.6-py2.py3-none-any.whl", hash = "sha256:0a10eec6e13ef16b627fabed9a5f2ba61a62b1c67f327305f4e7e412a70b4aec", size = 348210, upload-time = "2026-10-28T09:57:07.276Z" },
+]
+
+[[package]]
+name = "tzlocal"
+version = "5.4.5"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "tzdata", marker = "sys_platform == 'win32'" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/d8/89/2bd035df331499589fc92e59375c17c6cea6a500453b2c5f6a6ec9572825/tzlocal-5.4.5.tar.gz", hash = "sha256:ba976898bad27945178c9ca25c222c19e322b30c10342b9f40b46714f70d2d5f", size = 31483, upload-time = "2026-10-22T09:09:26.38Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/7b/c1/9be4e1a8a30db8729a86628073910e56f85aaf8a659e053f376a2e6ea5a8/tzlocal-5.4.5-py3-none-any.whl", hash = "sha256:ecab534f6d65d9deb4c4ea52c121ab6dd5958e9b878e71dcb102578269752454", size = 18215, upload-time = "2026-10-22T09:09:24.447Z" },
 ]
 
 [[package]]
