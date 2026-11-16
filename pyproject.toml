@@ -4,7 +4,7 @@ requires-python = ">=3.11, < 3.12"
 version = "0.1"
 
 dependencies = [
-    "celery[redis]==5.3.*",
+    "celery[redis]==5.7.*",
     "django>=4.2,<4.3",
     # FIXME: Go back to PyPI once DRF adds support for using Django's read-only permissions
     #  https://github.com/nycmeshnet/meshdb/issues/524
