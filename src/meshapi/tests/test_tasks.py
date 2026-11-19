@@ -4,7 +4,7 @@ from unittest import mock, skip
 from django.test import TestCase
 from flags.state import enable_flag
 
-from meshapi.tasks import reset_dev_database, run_database_backup, run_update_panoramas
+from meshapi.tasks import reset_dev_database, run_database_backup, run_update_from_uisp, run_update_panoramas
 
 
 # Not intended to test the functionality of, say, dbbackup. More intended
@@ -72,6 +72,36 @@ class TestResetDevDatabaseTask(TestCase):
         enable_flag("TASK_ENABLED_RESET_DEV_DATABASE")
         with self.assertRaises(ValueError):
             reset_dev_database()
+
+
+class TestRunUpdateFromUispTask(TestCase):
+    @mock.patch("meshapi.tasks.sync_link_table_into_los_objects")
+    @mock.patch("meshapi.tasks.import_and_sync_uisp_links")
+    @mock.patch("meshapi.tasks.import_and_sync_uisp_devices")
+    @mock.patch("meshapi.tasks.get_uisp_links")
+    @mock.patch("meshapi.tasks.get_uisp_devices")
+    def test_run_update_from_uisp(
+        self,
+        mock_get_uisp_devices,
+        mock_get_uisp_links,
+        mock_import_devices,
+        mock_import_links,
+        mock_sync_los,
+    ):
+        uisp_devices = [{"identification": {"id": "uisp-uuid1", "type": "blackBox"}}]
+        uisp_links = [{"id": "uisp-link-uuid1"}]
+        mock_get_uisp_devices.return_value = uisp_devices
+        mock_get_uisp_links.return_value = uisp_links
+
+        enable_flag("TASK_ENABLED_SYNC_WITH_UISP")
+        run_update_from_uisp()
+
+        # The device list is fetched once and shared with the link import, so the link import
+        # can tell which links UISP can't detect
+        mock_get_uisp_devices.assert_called_once_with()
+        mock_import_devices.assert_called_once_with(uisp_devices)
+        mock_import_links.assert_called_once_with(uisp_links, uisp_devices=uisp_devices)
+        mock_sync_los.assert_called_once_with()
 
 
 @skip(reason="Currently fails using both the unittest and pytest test runners")
