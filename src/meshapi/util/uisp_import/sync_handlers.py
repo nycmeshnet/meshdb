@@ -199,12 +199,16 @@ def import_and_sync_uisp_links(
     uisp_devices: Optional[List[UISPDevice]] = None,
 ) -> None:
     """
-    Create and update MeshDB links from UISP data links, and mark links inactive when they
-    disappear from UISP.
+    Create and update MeshDB links from UISP data links, then mark Active links inactive if
+    their UISP link no longer exists.
 
-    :param uisp_devices: The UISP device list. When given, links that touch a device UISP can't
-        detect links for (see UISP_DEVICE_TYPES_WITHOUT_LINK_DETECTION) are not marked inactive
-        just because they're missing from UISP
+    :param uisp_links: The data links fetched from UISP
+    :param target_network_number: If given, only create and update links with an end at this
+        network number (used by the on-demand import for a single NN)
+    :param uisp_devices: The devices fetched from UISP. When given, links with an end at a
+        device type UISP can't detect links for (see UISP_DEVICE_TYPES_WITHOUT_LINK_DETECTION)
+        are not marked inactive just because they're missing from UISP
+    :return: None
     """
     uisp_session = get_uisp_session()
     uisp_uuid_set = {uisp_link["id"] for uisp_link in uisp_links}
