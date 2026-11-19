@@ -20,6 +20,7 @@ from meshapi.util.uisp_import.constants import (
     DEVICE_NAME_NETWORK_NUMBER_SUBSTITUTIONS,
     EXCLUDED_UISP_DEVICE_CATEGORIES,
     NETWORK_NUMBER_REGEX_FOR_DEVICE_NAME,
+    UISP_DEVICE_TYPES_WITHOUT_LINK_DETECTION,
 )
 from meshapi.util.uisp_import.fetch_uisp import get_uisp_session
 from meshapi.util.uisp_import.update_objects import update_device_from_uisp_data, update_link_from_uisp_data
@@ -192,9 +193,26 @@ def import_and_sync_uisp_devices(uisp_devices: List[UISPDevice], target_network_
                 )
 
 
-def import_and_sync_uisp_links(uisp_links: List[UISPDataLink], target_network_number: Optional[int] = None) -> None:
+def import_and_sync_uisp_links(
+    uisp_links: List[UISPDataLink],
+    target_network_number: Optional[int] = None,
+    uisp_devices: Optional[List[UISPDevice]] = None,
+) -> None:
+    """
+    Create and update MeshDB links from UISP data links, and mark links inactive when they
+    disappear from UISP.
+
+    :param uisp_devices: The UISP device list. When given, links that touch a device UISP can't
+        detect links for (see UISP_DEVICE_TYPES_WITHOUT_LINK_DETECTION) are not marked inactive
+        just because they're missing from UISP
+    """
     uisp_session = get_uisp_session()
     uisp_uuid_set = {uisp_link["id"] for uisp_link in uisp_links}
+    undetectable_link_device_uuids = {
+        uisp_device["identification"]["id"]
+        for uisp_device in uisp_devices or []
+        if uisp_device["identification"].get("type") in UISP_DEVICE_TYPES_WITHOUT_LINK_DETECTION
+    }
 
     for uisp_link in uisp_links:
         uisp_uuid = uisp_link["id"]
@@ -341,8 +359,20 @@ def import_and_sync_uisp_links(uisp_links: List[UISPDataLink], target_network_nu
             )
 
     with transaction.atomic():
-        for link in Link.objects.filter(uisp_id__isnull=False):
+        for link in Link.objects.filter(uisp_id__isnull=False).select_related("from_device", "to_device"):
             if link.uisp_id and link.uisp_id not in uisp_uuid_set and link.status == Link.LinkStatus.ACTIVE:
+                if (
+                    link.from_device.uisp_id in undetectable_link_device_uuids
+                    or link.to_device.uisp_id in undetectable_link_device_uuids
+                ):
+                    # UISP can't detect this link, it was drawn there by hand. Its absence from UISP
+                    # doesn't mean the link is down, so leave its status alone
+                    logging.info(
+                        f"Not marking {link} (ID {link.id}) inactive even though its UISP link "
+                        f"({link.uisp_id}) is gone, because UISP can't detect links to one of its devices"
+                    )
+                    continue
+
                 # If this link has been removed from UISP, mark it as inactive
                 link.status = Link.LinkStatus.INACTIVE
                 link.save()
