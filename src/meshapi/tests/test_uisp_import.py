@@ -1768,6 +1768,80 @@ class TestUISPImportHandlers(TransactionTestCase):
 
     @patch("meshapi.util.uisp_import.sync_handlers.get_uisp_session")
     @patch("meshapi.util.uisp_import.sync_handlers.notify_admins_of_changes")
+    def test_import_and_sync_links_missing_from_uisp_with_blackbox_end(self, mock_notify_admins, mock_get_uisp_session):
+        """
+        UISP can't detect links to blackBox devices (e.g. MikroTik routers), so those links only
+        exist in UISP because someone drew them by hand. When one disappears from UISP, that's
+        not evidence the link is down, so it must not be marked inactive. Links between devices
+        UISP does detect links for are still marked inactive as before.
+        """
+        mock_get_uisp_session.return_value = "mock_uisp_session"
+
+        uisp_devices = [
+            {"identification": {"id": "uisp-uuid1", "type": "airMax"}},
+            {"identification": {"id": "uisp-uuid2", "type": "airMax"}},
+            {"identification": {"id": "uisp-uuid3", "type": "airMax"}},
+            {"identification": {"id": "uisp-uuid6", "type": "blackBox"}},
+        ]
+
+        # No links in UISP at all, so every Active MeshDB link with a UISP ID looks deleted there
+        import_and_sync_uisp_links([], uisp_devices=uisp_devices)
+
+        for link in [
+            self.link1,
+            self.link2,
+            self.link3,
+            self.link4,
+            self.link5a,
+            self.link5b,
+            self.link6a,
+            self.link6b,
+        ]:
+            link.refresh_from_db()
+
+        # Neither end is a blackBox device: marked inactive as before
+        self.assertEqual(self.link1.status, Link.LinkStatus.INACTIVE)
+        self.assertEqual(self.link2.status, Link.LinkStatus.INACTIVE)
+        self.assertEqual(self.link3.status, Link.LinkStatus.INACTIVE)
+
+        # One end is the blackBox device6: left alone
+        self.assertEqual(self.link4.status, Link.LinkStatus.ACTIVE)
+        self.assertEqual(self.link5a.status, Link.LinkStatus.ACTIVE)
+        self.assertEqual(self.link5b.status, Link.LinkStatus.INACTIVE)
+        self.assertEqual(self.link6a.status, Link.LinkStatus.ACTIVE)
+        self.assertEqual(self.link6b.status, Link.LinkStatus.ACTIVE)
+
+        deleted_message = [
+            "Marked as inactive because there is no corresponding link in UISP, it was probably deleted there"
+        ]
+        mock_notify_admins.assert_has_calls(
+            [
+                call(self.link1, deleted_message),
+                call(self.link2, deleted_message),
+                call(self.link3, deleted_message),
+            ],
+            any_order=True,
+        )
+        self.assertEqual(mock_notify_admins.call_count, 3)
+
+    @patch("meshapi.util.uisp_import.sync_handlers.get_uisp_session")
+    @patch("meshapi.util.uisp_import.sync_handlers.notify_admins_of_changes")
+    def test_import_and_sync_links_missing_from_uisp_without_device_list(
+        self, mock_notify_admins, mock_get_uisp_session
+    ):
+        """Without the UISP device list, device types are unknown, so every link missing from UISP is
+        marked inactive, as before"""
+        mock_get_uisp_session.return_value = "mock_uisp_session"
+
+        import_and_sync_uisp_links([])
+
+        self.link4.refresh_from_db()
+        self.link6a.refresh_from_db()
+        self.assertEqual(self.link4.status, Link.LinkStatus.INACTIVE)
+        self.assertEqual(self.link6a.status, Link.LinkStatus.INACTIVE)
+
+    @patch("meshapi.util.uisp_import.sync_handlers.get_uisp_session")
+    @patch("meshapi.util.uisp_import.sync_handlers.notify_admins_of_changes")
     @patch("meshapi.util.uisp_import.sync_handlers.update_link_from_uisp_data")
     @patch("meshapi.util.uisp_import.sync_handlers.notify_administrators_of_data_issue")
     def test_duplicate_uisp_id_links(

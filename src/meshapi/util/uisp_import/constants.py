@@ -2,6 +2,12 @@ import datetime
 
 EXCLUDED_UISP_DEVICE_CATEGORIES = ["optical"]
 
+# UISP can't detect links that touch these device types (e.g. MikroTik routers added to UISP as
+# "blackBox" devices). Such links only exist in UISP because someone drew them by hand ("manual"
+# origin), so a link disappearing from UISP says nothing about whether it still works. We don't
+# mark these links inactive just because they're missing from UISP
+UISP_DEVICE_TYPES_WITHOUT_LINK_DETECTION = ["blackBox"]
+
 
 DEVICE_NAME_NETWORK_NUMBER_SUBSTITUTIONS = {
     "sn1": "227",

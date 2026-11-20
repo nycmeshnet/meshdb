@@ -22,8 +22,9 @@ from meshdb.settings import MESHDB_ENVIRONMENT
 @celery_app.task
 def run_uisp_on_demand_import(target_nn: int) -> None:
     try:
-        import_and_sync_uisp_devices(get_uisp_devices(), target_nn)
-        import_and_sync_uisp_links(get_uisp_links(), target_nn)
+        uisp_devices = get_uisp_devices()
+        import_and_sync_uisp_devices(uisp_devices, target_nn)
+        import_and_sync_uisp_links(get_uisp_links(), target_nn, uisp_devices=uisp_devices)
         sync_link_table_into_los_objects(target_nn)
     except Exception as e:
         logging.exception(e)
@@ -98,8 +99,9 @@ def run_update_panoramas() -> None:
 def run_update_from_uisp() -> None:
     logging.info("Running UISP import & sync tasks")
     try:
-        import_and_sync_uisp_devices(get_uisp_devices())
-        import_and_sync_uisp_links(get_uisp_links())
+        uisp_devices = get_uisp_devices()
+        import_and_sync_uisp_devices(uisp_devices)
+        import_and_sync_uisp_links(get_uisp_links(), uisp_devices=uisp_devices)
         sync_link_table_into_los_objects()
     except Exception as e:
         # Make sure the failure gets logged.
