@@ -1,0 +1,41 @@
+{% extends "admin/index.html" %}
+{% load i18n static %}
+
+{% block sidebar %}
+<div id="content-related">
+    <div class="module" id="recent-actions-module">
+        <h2>Recent Admin Edits</h2>
+            {% load log %}
+            {% get_admin_log 15 as admin_log %}
+            {% if not admin_log %}
+            <p>{% translate 'None available' %}</p>
+            {% else %}
+            <ul class="actionlist">
+            {% for entry in admin_log %}
+            <li class="{% if entry.is_addition %}addlink{% endif %}{% if entry.is_change %}changelink{% endif %}{% if entry.is_deletion %}deletelink{% endif %}">
+                {% if entry.is_deletion or not entry.get_admin_url %}
+                    {% if entry.content_type %}
+                        {% filter capfirst %}{{ entry.content_type.name }}{% endfilter %}:
+                    {% else %}
+                        {% translate 'Unknown content' %}:
+                    {% endif %} {{ entry.object_repr }}
+                {% else %}
+                    <a href="{{ entry.get_admin_url }}">{% if entry.content_type %}
+                    {% filter capfirst %}{{ entry.content_type.name }}{% endfilter %}:
+                {% else %}
+                    {% translate 'Unknown content' %}:
+                {% endif %} {{ entry.object_repr }}</a>
+                {% endif %}
+                <br>
+                {% if entry.user %}
+                    <span class="mini quiet">{% filter capfirst %}{{ entry.user.username }}{% endfilter %}</span>
+                {% else %}
+                    <span class="mini quiet">{% translate 'Unknown user' %}</span>
+                {% endif %}
+            </li>
+            {% endfor %}
+            </ul>
+            {% endif %}
+    </div>
+</div>
+{% endblock %}
