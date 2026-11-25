@@ -4,6 +4,7 @@ from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiExample, OpenApiResponse, extend_schema, extend_schema_view
 from rest_framework import generics, permissions
 from rest_framework.decorators import api_view, permission_classes
+from rest_framework.renderers import JSONRenderer
 from rest_framework.request import Request
 from rest_framework.response import Response
 
@@ -19,6 +20,7 @@ from meshapi.models import (
     Node,
     Sector,
 )
+from meshapi.models.devices.oxidized import OXIDIZED_MODELS
 from meshapi.serializers import (
     AccessPointSerializer,
     BuildingSerializer,
@@ -30,6 +32,7 @@ from meshapi.serializers import (
     MemberSerializer,
     NodeEditSerializer,
     NodeSerializer,
+    OxidizedDeviceSerializer,
     SectorSerializer,
 )
 
@@ -204,6 +207,20 @@ class LOSDetail(generics.RetrieveUpdateDestroyAPIView):
 class DeviceList(generics.ListCreateAPIView):
     queryset = Device.objects.all().prefetch_related("node")
     serializer_class = DeviceSerializer
+
+
+@extend_schema_view(get=extend_schema(tags=["Devices"], summary="Export active devices for Oxidized"))
+class OxidizedDeviceList(generics.ListAPIView):
+    queryset = (
+        Device.objects.filter(
+            status=Device.DeviceStatus.ACTIVE, ip_address__isnull=False, name__isnull=False, type__in=OXIDIZED_MODELS
+        )
+        .exclude(name="")
+        .order_by("id")
+    )
+    serializer_class = OxidizedDeviceSerializer
+    pagination_class = None
+    renderer_classes = [JSONRenderer]
 
 
 @extend_schema_view(

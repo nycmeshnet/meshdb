@@ -2,6 +2,7 @@ import json
 
 from django.contrib.auth.models import User
 from django.test import Client, TestCase
+from rest_framework.authtoken.models import Token
 
 from ..models import Device, Node
 from .sample_data import sample_device, sample_node
@@ -54,6 +55,92 @@ class TestDevice(TestCase):
             response.status_code,
             f"status code incorrect. Should be {code}, but got {response.status_code}",
         )
+
+    def test_device_hardware_details(self):
+        details = {"model": "Example Model", "ip_address": "10.69.123.45", "type": "aos7"}
+        response = self.c.post(
+            "/api/v1/devices/",
+            {"status": Device.DeviceStatus.ACTIVE, "node": {"id": str(self.node1.id)}, **details},
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 201, response.content)
+        device_id = response.json()["id"]
+        listing = self.c.get("/api/v1/devices/")
+        self.assertEqual(listing.status_code, 200)
+        device = next(device for device in listing.json()["results"] if device["id"] == device_id)
+        for field, value in details.items():
+            self.assertEqual(device[field], value)
+
+        detail_url = f"/api/v1/devices/{device_id}/"
+        response = self.c.patch(detail_url, {"ip_address": "2001:db8::10"}, content_type="application/json")
+        self.assertEqual(response.status_code, 200, response.content)
+        self.assertEqual(self.c.get(detail_url).json()["ip_address"], "2001:db8::10")
+        for device_type in ("other", None):
+            with self.subTest(device_type=device_type):
+                response = self.c.patch(detail_url, {"type": device_type}, content_type="application/json")
+                self.assertEqual(response.status_code, 200, response.content)
+                self.assertEqual(self.c.get(detail_url).json()["type"], device_type)
+
+    def test_oxidized_feed(self):
+        url = "/api/v1/devices/oxidized/"
+        self.assertIn(Client().get(url).status_code, (401, 403))
+
+        ipv4 = Device.objects.create(
+            node=self.node1, status=Device.DeviceStatus.ACTIVE, name="router-v4", type="ios", ip_address="10.69.123.45"
+        )
+        ipv6 = Device.objects.create(
+            node=self.node1,
+            status=Device.DeviceStatus.ACTIVE,
+            name="router-v6",
+            type="iosxr",
+            ip_address="2001:db8::10",
+        )
+        for status, device_type, address in (
+            (Device.DeviceStatus.ACTIVE, "other", "10.69.123.46"),
+            (Device.DeviceStatus.ACTIVE, None, "10.69.123.47"),
+            (Device.DeviceStatus.ACTIVE, "ios", None),
+            (Device.DeviceStatus.INACTIVE, "ios", "10.69.123.48"),
+        ):
+            Device.objects.create(
+                node=self.node1, name="excluded-router", status=status, type=device_type, ip_address=address
+            )
+
+        Device.objects.create(node=self.node1, status=Device.DeviceStatus.ACTIVE, type="ios", ip_address="10.69.123.49")
+
+        token = Token.objects.create(user=self.admin_user)
+        response = Client().get(url, {"page_size": 1}, HTTP_AUTHORIZATION=f"Token {token.key}")
+        self.assertEqual(response.status_code, 200, response.content)
+        self.assertCountEqual(
+            response.json(),
+            [
+                {"name": ipv4.name, "ip": "10.69.123.45", "model": "ios"},
+                {"name": ipv6.name, "ip": "2001:db8::10", "model": "iosxr"},
+            ],
+        )
+
+    def test_invalid_hardware_details_are_rejected_on_create_and_update(self):
+        for field, value in (
+            ("ip_address", "10.69.123.256"),
+            ("ip_address", "2001:db8::xyz"),
+            ("type", "unknown-driver"),
+            ("type", ""),
+        ):
+            with self.subTest(field=field, value=value):
+                response = self.c.post(
+                    "/api/v1/devices/",
+                    {"status": Device.DeviceStatus.ACTIVE, "node": {"id": str(self.node1.id)}, field: value},
+                    content_type="application/json",
+                )
+                self.assertEqual(response.status_code, 400)
+                self.assertIn(field, response.json())
+
+                response = self.c.patch(
+                    f"/api/v1/devices/{self.device.id}/", {field: value}, content_type="application/json"
+                )
+                self.assertEqual(response.status_code, 400)
+                self.assertIn(field, response.json())
+                self.device.refresh_from_db()
+                self.assertIsNone(getattr(self.device, field))
 
     def test_broken_device_status(self):
         response = self.c.post(

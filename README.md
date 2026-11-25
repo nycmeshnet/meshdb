@@ -356,6 +356,27 @@ curl -X GET http://127.0.0.1:8000/api/v1/members/ \
   -H 'Authorization:Token   <auth_token>'
 ```
 
+### Oxidized device inventory
+
+Use the authenticated `/api/v1/devices/oxidized/` endpoint as an Oxidized HTTP source.
+It returns an unpaginated JSON array of active devices with a name, an IP address,
+and a supported Type. Each entry uses the MeshDB device name and the Type as the
+Oxidized model identifier. Devices with Type unset or set to Other are omitted.
+
+```yaml
+source:
+  default: http
+  http:
+    url: https://db.nycmesh.net/api/v1/devices/oxidized/
+    secure: true
+    headers:
+      Authorization: "Token <meshdb-api-token>"
+    map:
+      name: name
+      ip: ip
+      model: model
+```
+
 ### Admin Map
 
 In `.env.sample`, the admin map frontend assets are configured to pull

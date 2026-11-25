@@ -7,6 +7,8 @@ from simple_history.models import HistoricalRecords
 
 from meshapi.models.node import Node
 
+from .oxidized import DEVICE_TYPE_CHOICES
+
 
 class Device(models.Model):
     history = HistoricalRecords()
@@ -41,6 +43,15 @@ class Device(models.Model):
     )
 
     status = models.CharField(choices=DeviceStatus.choices, help_text="The current status of this device")
+
+    model = models.CharField(blank=True, null=True, help_text="The hardware model of this device")
+    type = models.CharField(
+        blank=True,
+        null=True,
+        choices=DEVICE_TYPE_CHOICES,
+        help_text="The Oxidized driver for this device. Select Other if no listed driver applies.",
+    )
+    ip_address = models.GenericIPAddressField(blank=True, null=True, help_text="The IP address")
 
     install_date = models.DateField(
         default=None,

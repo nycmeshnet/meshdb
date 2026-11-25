@@ -103,6 +103,7 @@ class DeviceSerializer(NestedKeyRelatedMixIn, serializers.ModelSerializer):
         fields = "__all__"
         extra_kwargs = {
             "node": {"additional_keys": ("network_number",)},
+            "type": {"allow_blank": False},
         }
 
     latitude = serializers.FloatField(
@@ -125,12 +126,19 @@ class DeviceSerializer(NestedKeyRelatedMixIn, serializers.ModelSerializer):
     links_to = NestedKeyObjectRelatedField(many=True, read_only=True)
 
 
+class OxidizedDeviceSerializer(serializers.Serializer):
+    name = serializers.CharField(read_only=True)
+    ip = serializers.IPAddressField(source="ip_address", read_only=True)
+    model = serializers.CharField(source="type", read_only=True)
+
+
 class SectorSerializer(NestedKeyRelatedMixIn, serializers.ModelSerializer):
     class Meta:
         model = Sector
         fields = "__all__"
         extra_kwargs = {
             "node": {"additional_keys": ("network_number",)},
+            "type": {"allow_blank": False},
         }
 
     latitude = serializers.FloatField(
@@ -159,6 +167,7 @@ class AccessPointSerializer(NestedKeyRelatedMixIn, serializers.ModelSerializer):
         fields = "__all__"
         extra_kwargs = {
             "node": {"additional_keys": ("network_number",)},
+            "type": {"allow_blank": False},
         }
 
     links_from = NestedKeyObjectRelatedField(many=True, read_only=True)

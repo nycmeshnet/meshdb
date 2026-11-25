@@ -3,12 +3,14 @@
     {% include "django/forms/widgets/input.html" %}
     {% block links %}
     {% spaceless %}
-    <a class="related-widget-wrapper-link view-related"
-         {% if widget.value %}href="http://{{ widget.value }}"{% endif %}
-         target="_blank"
-         title="{% blocktranslate %}Navigate to device IP address{% endblocktranslate %}">
-        <img src="{% static 'admin/img/icon-viewlink.svg' %}" alt="{% translate 'Navigate' %}">
-      </a>
+    {% if widget.device_url %}
+        <a class="related-widget-wrapper-link view-related"
+           href="{{ widget.device_url }}"
+           target="_blank"
+           title="{% blocktranslate %}Navigate to device IP address{% endblocktranslate %}">
+            <img src="{% static 'admin/img/icon-viewlink.svg' %}" alt="{% translate 'Navigate' %}">
+        </a>
+    {% endif %}
     {% endspaceless %}
     {% endblock %}
 </div>

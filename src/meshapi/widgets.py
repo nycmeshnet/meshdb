@@ -1,5 +1,6 @@
 import json
 import logging
+from ipaddress import ip_address
 from typing import Any, Callable, Dict, Optional
 
 from django import forms
@@ -89,6 +90,17 @@ class ExternalHyperlinkWidget(widgets.TextInput):
 
 class DeviceIPAddressWidget(widgets.TextInput):
     template_name = "widgets/ip_address.html"
+
+    def get_context(self, name: str, value: Any, attrs: Optional[Dict[str, Any]]) -> dict:
+        context = super().get_context(name, value, attrs)
+        try:
+            address = ip_address(value)
+        except ValueError:
+            return context
+
+        host = f"[{address}]" if address.version == 6 else str(address)
+        context["widget"]["device_url"] = f"http://{host}"
+        return context
 
 
 class DOBIdentifierWidget(forms.NumberInput):
