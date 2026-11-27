@@ -19,8 +19,19 @@ def update_device_from_uisp_data(
     uisp_name: str,
     uisp_status: Device.DeviceStatus,
     uisp_last_seen: Optional[datetime.datetime],
+    *,
+    ip_address: Optional[str] = None,
+    backup_platform: Optional[str] = None,
+    model: Optional[str] = None,
 ) -> List[str]:
     change_messages = []
+
+    # UISP can return incomplete metadata for offline or unrecognized devices.
+    for field, value in (("ip_address", ip_address), ("type", backup_platform), ("model", model)):
+        old_value = getattr(existing_device, field)
+        if value is not None and value != old_value:
+            change_messages.append(f'Changed {field} from "{old_value}" to "{value}"')
+            setattr(existing_device, field, value)
 
     if existing_device.name != uisp_name:
         change_messages.append(f'Changed name from "{existing_device.name}" to "{uisp_name}"')

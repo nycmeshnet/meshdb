@@ -831,6 +831,7 @@ class TestUISPImportHandlersDontDuplicateHistory(TransactionTestCase):
 
         uisp_devices = [
             {
+                "ipAddress": "10.69.123.45",
                 "overview": {
                     "status": "active",
                     "createdAt": "2018-11-14T15:20:32.004Z",
@@ -839,6 +840,7 @@ class TestUISPImportHandlersDontDuplicateHistory(TransactionTestCase):
                 },
                 "identification": {
                     "id": "uisp-uuid1",
+                    "modelName": "LiteBeam 5AC",
                     "name": "nycmesh-1234-dev69",  # Gonna change dev1 to dev69
                     "category": "wireless",
                     "type": "airMax",
@@ -867,9 +869,10 @@ class TestUISPImportHandlersDontDuplicateHistory(TransactionTestCase):
                 },
                 "identification": {
                     "id": "uisp-uuid100",
+                    "model": "RB4011iGS+RM",
+                    "ip": "2001:db8::10",
                     "name": "nycmesh-1234-dev100",
                     "category": "wireless",
-                    "type": "airMax",
                 },
             },
         ]
@@ -885,6 +888,14 @@ class TestUISPImportHandlersDontDuplicateHistory(TransactionTestCase):
         created_device.refresh_from_db()
         length_2 = len(created_device.history.all())
         self.assertEqual(2, length_2)
+        self.assertEqual(
+            (created_device.ip_address, created_device.type, created_device.model),
+            ("10.69.123.45", "airos", "LiteBeam 5AC"),
+        )
+        new_device = Device.objects.get(uisp_id="uisp-uuid100")
+        self.assertEqual(
+            (new_device.ip_address, new_device.type, new_device.model), ("2001:db8::10", "routeros", "RB4011iGS+RM")
+        )
 
         # Run it again. Should be a noop
         import_and_sync_uisp_devices(uisp_devices)
@@ -893,6 +904,28 @@ class TestUISPImportHandlersDontDuplicateHistory(TransactionTestCase):
         created_device.refresh_from_db()
         length_3 = len(created_device.history.all())
         self.assertEqual(2, length_3)
+
+        # Missing or unusable source values must not erase the last known details.
+        uisp_devices[0]["ipAddress"] = "bad address"
+        uisp_devices[0]["identification"].pop("modelName")
+        uisp_devices[0]["identification"]["type"] = "blackBox"
+        import_and_sync_uisp_devices(uisp_devices)
+        created_device.refresh_from_db()
+        self.assertEqual(created_device.history.count(), 2)
+        self.assertEqual(
+            (created_device.ip_address, created_device.type, created_device.model),
+            ("10.69.123.45", "airos", "LiteBeam 5AC"),
+        )
+
+        uisp_devices[0]["ipAddress"] = "2001:db8::45"
+        uisp_devices[0]["identification"]["modelName"] = "Juniper EX4300"
+        import_and_sync_uisp_devices(uisp_devices)
+        created_device.refresh_from_db()
+        self.assertEqual(created_device.history.count(), 3)
+        self.assertEqual(
+            (created_device.ip_address, created_device.type, created_device.model),
+            ("2001:db8::45", "junos", "Juniper EX4300"),
+        )
 
 
 class TestUISPImportHandlers(TransactionTestCase):
@@ -1182,7 +1215,14 @@ class TestUISPImportHandlers(TransactionTestCase):
 
         last_seen_date = datetime.datetime(2024, 8, 12, 2, 4, 35, 335000, tzinfo=tzutc())
         mock_update_device.assert_called_once_with(
-            self.device1, self.node1, "nycmesh-1234-dev1", Device.DeviceStatus.ACTIVE, last_seen_date
+            self.device1,
+            self.node1,
+            "nycmesh-1234-dev1",
+            Device.DeviceStatus.ACTIVE,
+            last_seen_date,
+            ip_address=None,
+            backup_platform="airos",
+            model=None,
         )
 
         created_device = Device.objects.get(uisp_id="uisp-uuid9")
@@ -1198,6 +1238,7 @@ class TestUISPImportHandlers(TransactionTestCase):
         self.assertEqual(created_sector1.status, Device.DeviceStatus.ACTIVE)
         self.assertEqual(created_sector1.install_date, datetime.date(2018, 11, 14))
         self.assertEqual(created_sector1.abandon_date, None)
+        self.assertEqual((created_sector1.model, created_sector1.type), ("LAP-120", "airos"))
         self.assertEqual(created_sector1.width, 120)  # From device model
         self.assertEqual(created_sector1.azimuth, 90)  # From device name ("east")
         self.assertEqual(created_sector1.radius, 1)  # Default for airmax sectors
@@ -1252,9 +1293,36 @@ class TestUISPImportHandlers(TransactionTestCase):
         last_seen_date = datetime.datetime(2024, 8, 12, 2, 4, 35, 335000, tzinfo=tzutc())
         mock_update_device.assert_has_calls(
             [
-                call(self.device1, self.node1, "nycmesh-1234-dev1", Device.DeviceStatus.ACTIVE, last_seen_date),
-                call(self.device2, self.node2, "nycmesh-5678-dev2", Device.DeviceStatus.ACTIVE, last_seen_date),
-                call(self.device3, self.node3, "nycmesh-7012-dev3", Device.DeviceStatus.INACTIVE, last_seen_date),
+                call(
+                    self.device1,
+                    self.node1,
+                    "nycmesh-1234-dev1",
+                    Device.DeviceStatus.ACTIVE,
+                    last_seen_date,
+                    ip_address=None,
+                    backup_platform="airos",
+                    model=None,
+                ),
+                call(
+                    self.device2,
+                    self.node2,
+                    "nycmesh-5678-dev2",
+                    Device.DeviceStatus.ACTIVE,
+                    last_seen_date,
+                    ip_address=None,
+                    backup_platform="airos",
+                    model=None,
+                ),
+                call(
+                    self.device3,
+                    self.node3,
+                    "nycmesh-7012-dev3",
+                    Device.DeviceStatus.INACTIVE,
+                    last_seen_date,
+                    ip_address=None,
+                    backup_platform="airos",
+                    model=None,
+                ),
             ]
         )
 

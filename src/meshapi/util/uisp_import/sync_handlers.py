@@ -22,6 +22,7 @@ from meshapi.util.uisp_import.constants import (
     NETWORK_NUMBER_REGEX_FOR_DEVICE_NAME,
     UISP_DEVICE_TYPES_WITHOUT_LINK_DETECTION,
 )
+from meshapi.util.uisp_import.device_metadata import backup_platform, management_ip
 from meshapi.util.uisp_import.fetch_uisp import get_uisp_session
 from meshapi.util.uisp_import.update_objects import update_device_from_uisp_data, update_link_from_uisp_data
 from meshapi.util.uisp_import.utils import (
@@ -37,9 +38,10 @@ def import_and_sync_uisp_devices(uisp_devices: List[UISPDevice], target_network_
     if target_network_number:
         logging.info(f"Attempting import for NN{target_network_number}")
     for uisp_device in uisp_devices:
-        uisp_uuid = uisp_device["identification"]["id"]
-        uisp_category = uisp_device["identification"]["category"]
-        uisp_name = uisp_device["identification"]["name"]
+        identification = uisp_device["identification"]
+        uisp_uuid = identification["id"]
+        uisp_category = identification["category"]
+        uisp_name = identification["name"]
 
         if uisp_category in EXCLUDED_UISP_DEVICE_CATEGORIES:
             logging.debug(
@@ -49,7 +51,7 @@ def import_and_sync_uisp_devices(uisp_devices: List[UISPDevice], target_network_
             )
             continue
 
-        modified_name = uisp_device["identification"]["name"]
+        modified_name = uisp_name
         for find, replace in DEVICE_NAME_NETWORK_NUMBER_SUBSTITUTIONS.items():
             modified_name = modified_name.replace(find, replace)
 
@@ -90,6 +92,10 @@ def import_and_sync_uisp_devices(uisp_devices: List[UISPDevice], target_network_
             parse_uisp_datetime(uisp_device["overview"]["lastSeen"]) if uisp_device["overview"]["lastSeen"] else None
         )
 
+        ip_address = management_ip(uisp_device)
+        platform = backup_platform(identification)
+        model = (identification.get("modelName") or "").strip() or (identification.get("model") or "").strip() or None
+
         # This block guards against most duplication by checking uisp-uuid against
         # the uisp-uuids we already know about.
         # Further avoidance of saving historical records is done in the update function
@@ -111,12 +117,18 @@ def import_and_sync_uisp_devices(uisp_devices: List[UISPDevice], target_network_
                         uisp_name,
                         uisp_status,
                         uisp_last_seen,
+                        ip_address=ip_address,
+                        backup_platform=platform,
+                        model=model,
                     )
                     if change_list:
                         notify_admins_of_changes(existing_device, change_list)
                 continue
 
         device_fields = {
+            "ip_address": ip_address,
+            "type": platform,
+            "model": model,
             "node": uisp_node,
             "name": uisp_name,
             "uisp_id": uisp_uuid,
@@ -128,16 +140,14 @@ def import_and_sync_uisp_devices(uisp_devices: List[UISPDevice], target_network_
             "notes": f"Automatically imported from UISP on {datetime.date.today().isoformat()}\n\n",
         }
 
-        if uisp_device["identification"]["type"] == "airMax" and uisp_device["overview"]["wirelessMode"] == "ap-ptmp":
+        if identification.get("type") == "airMax" and uisp_device["overview"].get("wirelessMode") == "ap-ptmp":
             try:
                 guessed_compass_heading = guess_compass_heading_from_device_name(uisp_name)
             except ValueError:
                 logging.exception("Invalid device name detected")
                 guessed_compass_heading = None
 
-            guessed_beam_width = DEVICE_MODEL_TO_BEAM_WIDTH.get(
-                uisp_device["identification"]["model"], DEFAULT_SECTOR_WIDTH
-            )
+            guessed_beam_width = DEVICE_MODEL_TO_BEAM_WIDTH.get(identification.get("model", ""), DEFAULT_SECTOR_WIDTH)
 
             # Only when we're sure the sector doesn't exist do we save it
             sector = Sector(
