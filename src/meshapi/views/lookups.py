@@ -9,6 +9,7 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 
 from meshapi.models import LOS, AccessPoint, Building, Device, Install, Link, Member, Node, Sector
+from meshapi.models.devices.oxidized import DEVICE_TYPE_CHOICES
 from meshapi.serializers import (
     AccessPointSerializer,
     BuildingSerializer,
@@ -431,6 +432,26 @@ class DeviceFilter(filters.FilterSet):
         fields = ["status", "uisp_id"]
 
 
+class DeviceLookupFilter(DeviceFilter):
+    type = filters.ChoiceFilter(choices=DEVICE_TYPE_CHOICES, help_text="Filter by an exact backup platform")
+    exclude_type = filters.ChoiceFilter(
+        field_name="type", choices=DEVICE_TYPE_CHOICES, exclude=True, help_text="Exclude an exact backup platform"
+    )
+    has_type = filters.BooleanFilter(
+        field_name="type", method="filter_has_value", help_text="Filter by whether a backup platform is set"
+    )
+    has_ip_address = filters.BooleanFilter(
+        field_name="ip_address", lookup_expr="isnull", exclude=True, help_text="Filter by whether an IP address is set"
+    )
+    has_name = filters.BooleanFilter(
+        field_name="name", method="filter_has_value", help_text="Filter by whether a device name is set"
+    )
+
+    def filter_has_value(self, queryset: QuerySet[Device], field_name: str, value: bool) -> QuerySet[Device]:
+        missing = Q(**{f"{field_name}__isnull": True}) | Q(**{field_name: ""})
+        return queryset.exclude(missing) if value else queryset.filter(missing)
+
+
 @extend_schema_view(
     get=extend_schema(
         tags=["Devices"],
@@ -469,7 +490,7 @@ class DeviceFilter(filters.FilterSet):
 class LookupDevice(FilterRequiredListAPIView):
     queryset = Device.objects.all().order_by("id").prefetch_related("node")
     serializer_class = DeviceSerializer
-    filterset_class = DeviceFilter
+    filterset_class = DeviceLookupFilter
 
 
 class SectorFilter(DeviceFilter):

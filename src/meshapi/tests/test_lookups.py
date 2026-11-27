@@ -1766,8 +1766,7 @@ class TestDeviceLookups(TestCase):
         response_objs = json.loads(response.content)["results"]
         self.assertEqual(len(response_objs), 0)
 
-    def test_device_type_search(self):
-        # Device type lookup is no longer supported
+    def test_device_lookup_rejects_unsupported_type(self):
         response = self.c.get("/api/v1/devices/lookup/?type=station")
         code = 400
         self.assertEqual(

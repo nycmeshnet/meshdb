@@ -56,6 +56,9 @@ class DeviceAdmin(RankedSearchMixin, ImportExportMixin, ExportActionMixin, Simpl
                     "status",
                     "name",
                     "node",
+                    "model",
+                    "type",
+                    "ip_address",
                 ]
             },
         ),

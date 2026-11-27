@@ -346,11 +346,40 @@ class TestAdminChangeView(TestCase):
     def test_change_device(self):
         change_url = f"/admin/meshapi/device/{self.device1.id}/change/"
         response = self._call(change_url, 200)
+        form = bs4.BeautifulSoup(markup=response.content.decode(), features="lxml").find(id="device_form")
+        details = form.find("fieldset", class_="module")
+        self.assertEqual(details.find("h2").get_text(strip=True), "Details")
+        for field in ("model", "ip_address"):
+            self.assertIsNotNone(details.find("input", attrs={"name": field}))
+
+        type_dropdown = details.find("select", attrs={"name": "type"})
+        self.assertIsNotNone(type_dropdown)
+        self.assertEqual(details.find("label", attrs={"for": "id_type"}).get_text(strip=True), "Backup platform:")
+        self.assertContains(response, "Oxidized model used for configuration backups, such as routeros or junos.")
+        self.assertIsNone(type_dropdown.find("option", value="screenos"))
+        self.assertEqual(type_dropdown.find_all("option")[-1]["value"], "other")
+        for value in ("", "routeros", "junos", "airos10", "other"):
+            self.assertIsNotNone(type_dropdown.find("option", value=value))
+
+        response = self._submit_form(
+            change_url,
+            form,
+            200,
+            {"ip_address": "10.69.123.256", "type": "unknown-driver"},
+            expect_failure=True,
+        )
+        self.assertContains(response, "Enter a valid IPv4 or IPv6 address.")
+        self.assertContains(response, "unknown-driver is not one of the available choices.")
         self._submit_form(
             change_url,
-            bs4.BeautifulSoup(markup=response.content.decode(), features="lxml").find(id="device_form"),
+            form,
             302,
+            {"model": "Example Model", "ip_address": "2001:db8::10", "type": "ios"},
         )
+        self.device1.refresh_from_db()
+        self.assertEqual(self.device1.model, "Example Model")
+        self.assertEqual(self.device1.type, "ios")
+        self.assertEqual(self.device1.ip_address, "2001:db8::10")
 
     def test_change_sector_accessed_via_device_redirect(self):
         change_url = f"/admin/meshapi/device/{self.sector.id}/change/"
@@ -359,6 +388,25 @@ class TestAdminChangeView(TestCase):
             response.url,
             f"http://testserver/admin/meshapi/sector/{self.sector.id}/change/",
         )
+
+    def test_access_point_ip_address_link(self):
+        change_url = f"/admin/meshapi/accesspoint/{self.access_point.id}/change/"
+        for address, url in (
+            ("10.69.123.45", "http://10.69.123.45"),
+            ("2001:db8::10", "http://[2001:db8::10]"),
+            (None, None),
+        ):
+            with self.subTest(address=address):
+                self.access_point.ip_address = address
+                self.access_point.save()
+                response = self._call(change_url, 200)
+                soup = bs4.BeautifulSoup(markup=response.content.decode(), features="lxml")
+                widget = soup.select_one('#accesspoint_form input[name="ip_address"]').parent
+                link = widget.find("a", class_="view-related")
+                if url is None:
+                    self.assertIsNone(link)
+                else:
+                    self.assertEqual(link["href"], url)
 
     def test_change_ap_accessed_via_device_redirect(self):
         change_url = f"/admin/meshapi/device/{self.access_point.id}/change/"

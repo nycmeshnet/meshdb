@@ -103,6 +103,7 @@ class DeviceSerializer(NestedKeyRelatedMixIn, serializers.ModelSerializer):
         fields = "__all__"
         extra_kwargs = {
             "node": {"additional_keys": ("network_number",)},
+            "type": {"allow_blank": False},
         }
 
     latitude = serializers.FloatField(
@@ -131,6 +132,7 @@ class SectorSerializer(NestedKeyRelatedMixIn, serializers.ModelSerializer):
         fields = "__all__"
         extra_kwargs = {
             "node": {"additional_keys": ("network_number",)},
+            "type": {"allow_blank": False},
         }
 
     latitude = serializers.FloatField(
@@ -159,6 +161,7 @@ class AccessPointSerializer(NestedKeyRelatedMixIn, serializers.ModelSerializer):
         fields = "__all__"
         extra_kwargs = {
             "node": {"additional_keys": ("network_number",)},
+            "type": {"allow_blank": False},
         }
 
     links_from = NestedKeyObjectRelatedField(many=True, read_only=True)
