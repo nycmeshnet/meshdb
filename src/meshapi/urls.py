@@ -39,7 +39,6 @@ urlpatterns = [
         name="meshapi-v1-install-fee-data-detail",
     ),
     path("devices/", views.DeviceList.as_view(), name="meshapi-v1-device-list"),
-    path("devices/oxidized/", views.OxidizedDeviceList.as_view(), name="meshapi-v1-device-oxidized"),
     path("devices/<uuid:pk>/", views.DeviceDetail.as_view(), name="meshapi-v1-device-detail"),
     path("join/", views.join_form, name="meshapi-v1-join"),
     path("nn-assign/", views.network_number_assignment, name="meshapi-v1-nn-assign"),

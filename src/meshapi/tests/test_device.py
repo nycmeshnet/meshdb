@@ -57,7 +57,7 @@ class TestDevice(TestCase):
         )
 
     def test_device_hardware_details(self):
-        details = {"model": "Example Model", "ip_address": "10.69.123.45", "type": "aos7"}
+        details = {"model": "Example Model", "ip_address": "10.69.123.45", "type": "routeros"}
         response = self.c.post(
             "/api/v1/devices/",
             {"status": Device.DeviceStatus.ACTIVE, "node": {"id": str(self.node1.id)}, **details},
@@ -81,48 +81,69 @@ class TestDevice(TestCase):
                 self.assertEqual(response.status_code, 200, response.content)
                 self.assertEqual(self.c.get(detail_url).json()["type"], device_type)
 
-    def test_oxidized_feed(self):
-        url = "/api/v1/devices/oxidized/"
-        self.assertIn(Client().get(url).status_code, (401, 403))
+    def test_oxidized_device_lookup(self):
+        url = "/api/v1/devices/lookup/"
+        filters = {
+            "status": Device.DeviceStatus.ACTIVE,
+            "has_type": "true",
+            "exclude_type": "other",
+            "has_ip_address": "true",
+            "has_name": "true",
+            "page_size": 1,
+        }
+        self.assertIn(Client().get(url, filters).status_code, (401, 403))
 
+        active = Device.DeviceStatus.ACTIVE
         ipv4 = Device.objects.create(
-            node=self.node1, status=Device.DeviceStatus.ACTIVE, name="router-v4", type="ios", ip_address="10.69.123.45"
+            node=self.node1, status=active, name="router-v4", type="routeros", ip_address="10.69.123.45"
         )
         ipv6 = Device.objects.create(
-            node=self.node1,
-            status=Device.DeviceStatus.ACTIVE,
-            name="router-v6",
-            type="iosxr",
-            ip_address="2001:db8::10",
+            node=self.node1, status=active, name="router-v6", type="junos", ip_address="2001:db8::10"
         )
-        for status, device_type, address in (
-            (Device.DeviceStatus.ACTIVE, "other", "10.69.123.46"),
-            (Device.DeviceStatus.ACTIVE, None, "10.69.123.47"),
-            (Device.DeviceStatus.ACTIVE, "ios", None),
-            (Device.DeviceStatus.INACTIVE, "ios", "10.69.123.48"),
+        for status, name, device_type, address in (
+            (active, "other-platform", "other", "10.69.123.46"),
+            (active, "unset-platform", None, "10.69.123.47"),
+            (active, "blank-platform", "", "10.69.123.48"),
+            (active, "no-address", "routeros", None),
+            (Device.DeviceStatus.INACTIVE, "inactive", "routeros", "10.69.123.49"),
+            (active, None, "routeros", "10.69.123.50"),
+            (active, "", "routeros", "10.69.123.51"),
         ):
-            Device.objects.create(
-                node=self.node1, name="excluded-router", status=status, type=device_type, ip_address=address
-            )
-
-        Device.objects.create(node=self.node1, status=Device.DeviceStatus.ACTIVE, type="ios", ip_address="10.69.123.49")
+            Device.objects.create(node=self.node1, name=name, status=status, type=device_type, ip_address=address)
 
         token = Token.objects.create(user=self.admin_user)
-        response = Client().get(url, {"page_size": 1}, HTTP_AUTHORIZATION=f"Token {token.key}")
+        client = Client(HTTP_AUTHORIZATION=f"Token {token.key}")
+        response = client.get(url, filters)
+        self.assertEqual(response.status_code, 200, response.content)
+        first_page = response.json()
+        self.assertEqual(first_page["count"], 2)
+        self.assertEqual(len(first_page["results"]), 1)
+
+        response = client.get(first_page["next"])
+        self.assertEqual(response.status_code, 200, response.content)
+        second_page = response.json()
+        self.assertIsNone(second_page["next"])
+        devices = first_page["results"] + second_page["results"]
+        self.assertCountEqual(
+            [(device["name"], device["ip_address"], device["type"]) for device in devices],
+            [(ipv4.name, "10.69.123.45", "routeros"), (ipv6.name, "2001:db8::10", "junos")],
+        )
+
+        response = client.get(url, {**filters, "type": "junos"})
+        self.assertEqual(response.status_code, 200, response.content)
+        self.assertEqual([device["id"] for device in response.json()["results"]], [str(ipv6.id)])
+
+        response = client.get(url, {"has_type": "false", "has_ip_address": "true"})
         self.assertEqual(response.status_code, 200, response.content)
         self.assertCountEqual(
-            response.json(),
-            [
-                {"name": ipv4.name, "ip": "10.69.123.45", "model": "ios"},
-                {"name": ipv6.name, "ip": "2001:db8::10", "model": "iosxr"},
-            ],
+            [device["name"] for device in response.json()["results"]], ["unset-platform", "blank-platform"]
         )
 
     def test_invalid_hardware_details_are_rejected_on_create_and_update(self):
         for field, value in (
             ("ip_address", "10.69.123.256"),
             ("ip_address", "2001:db8::xyz"),
-            ("type", "unknown-driver"),
+            ("type", "screenos"),
             ("type", ""),
         ):
             with self.subTest(field=field, value=value):

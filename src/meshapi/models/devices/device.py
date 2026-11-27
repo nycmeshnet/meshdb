@@ -49,7 +49,8 @@ class Device(models.Model):
         blank=True,
         null=True,
         choices=DEVICE_TYPE_CHOICES,
-        help_text="The Oxidized driver for this device. Select Other if no listed driver applies.",
+        verbose_name="Backup platform",
+        help_text="Oxidized model used for configuration backups, such as routeros or junos.",
     )
     ip_address = models.GenericIPAddressField(blank=True, null=True, help_text="The IP address")
 

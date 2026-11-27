@@ -23,7 +23,8 @@ class Migration(migrations.Migration):
                 models.CharField(
                     blank=True,
                     choices=DEVICE_TYPE_CHOICES,
-                    help_text="The Oxidized driver for this device. Select Other if no listed driver applies.",
+                    verbose_name="Backup platform",
+                    help_text="Oxidized model used for configuration backups, such as routeros or junos.",
                     null=True,
                 ),
             ),

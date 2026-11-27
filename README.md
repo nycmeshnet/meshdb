@@ -358,23 +358,25 @@ curl -X GET http://127.0.0.1:8000/api/v1/members/ \
 
 ### Oxidized device inventory
 
-Use the authenticated `/api/v1/devices/oxidized/` endpoint as an Oxidized HTTP source.
-It returns an unpaginated JSON array of active devices with a name, an IP address,
-and a supported Type. Each entry uses the MeshDB device name and the Type as the
-Oxidized model identifier. Devices with Type unset or set to Other are omitted.
+Use the authenticated `/api/v1/devices/lookup/` endpoint as an Oxidized HTTP source.
+The example selects active devices with a name, an IP address, and a backup
+platform other than `other`. It uses Oxidized 0.35.0 or later for pagination.
 
 ```yaml
 source:
   default: http
   http:
-    url: https://db.nycmesh.net/api/v1/devices/oxidized/
+    url: "https://db.nycmesh.net/api/v1/devices/lookup/?status=Active&has_type=true&exclude_type=other&has_ip_address=true&has_name=true"
     secure: true
+    hosts_location: results
+    pagination: true
+    pagination_key_name: next
     headers:
       Authorization: "Token <meshdb-api-token>"
     map:
       name: name
-      ip: ip
-      model: model
+      ip: ip_address
+      model: type
 ```
 
 ### Admin Map

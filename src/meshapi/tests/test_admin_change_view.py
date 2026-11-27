@@ -354,7 +354,11 @@ class TestAdminChangeView(TestCase):
 
         type_dropdown = details.find("select", attrs={"name": "type"})
         self.assertIsNotNone(type_dropdown)
-        for value in ("", "ios", "iosxr", "aos7", "other"):
+        self.assertEqual(details.find("label", attrs={"for": "id_type"}).get_text(strip=True), "Backup platform:")
+        self.assertContains(response, "Oxidized model used for configuration backups, such as routeros or junos.")
+        self.assertIsNone(type_dropdown.find("option", value="screenos"))
+        self.assertEqual(type_dropdown.find_all("option")[-1]["value"], "other")
+        for value in ("", "routeros", "junos", "airos10", "other"):
             self.assertIsNotNone(type_dropdown.find("option", value=value))
 
         response = self._submit_form(
