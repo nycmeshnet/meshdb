@@ -4,9 +4,12 @@ import re
 from meshapi.types.uisp_api.devices import Device as UISPDevice
 from meshapi.types.uisp_api.devices import DeviceIdentification
 
+PRIMARY_MANAGEMENT_NETWORK = ipaddress.IPv4Network("10.69.0.0/16")
+SECONDARY_MANAGEMENT_NETWORK = ipaddress.IPv4Network("10.70.0.0/16")
+
 
 def management_ip(device: UISPDevice) -> str | None:
-    """Prefer non-link-local management addresses, then IPv4, then UISP source order."""
+    """Prefer 10.69/16, then 10.70/16, then other IPv4, then IPv6."""
     meta = device.get("meta")
     candidates = [
         device.get("ipAddress"),
@@ -35,7 +38,16 @@ def management_ip(device: UISPDevice) -> str | None:
 
     if not addresses:
         return None
-    return str(min(addresses, key=lambda address: (address.is_link_local, address.version)))
+    preferred = min(
+        addresses,
+        key=lambda address: (
+            address.version,
+            address not in PRIMARY_MANAGEMENT_NETWORK,
+            address not in SECONDARY_MANAGEMENT_NETWORK,
+            address.is_link_local,
+        ),
+    )
+    return str(preferred)
 
 
 def backup_platform(identification: DeviceIdentification) -> str | None:
